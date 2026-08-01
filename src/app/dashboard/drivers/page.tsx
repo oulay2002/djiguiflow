@@ -19,8 +19,31 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 
+// Type pour les statuts des livreurs
+type DriverStatus = 'disponible' | 'en_livraison' | 'indisponible';
+
+// Type pour un livreur
+interface Driver {
+  id: number;
+  name: string;
+  phone: string;
+  vehicle: string;
+  status: DriverStatus;
+  deliveries: number;
+  rating: number;
+  zone: string;
+  avatar: string;
+}
+
+// Configuration des statuts
+const statusConfig: Record<DriverStatus, { label: string; color: string }> = {
+  disponible: { label: 'Disponible', color: 'bg-green-100 text-green-700' },
+  en_livraison: { label: 'En livraison', color: 'bg-blue-100 text-blue-700' },
+  indisponible: { label: 'Indisponible', color: 'bg-red-100 text-red-700' },
+};
+
 // Données de démonstration
-const mockDrivers = [
+const mockDrivers: Driver[] = [
   {
     id: 1,
     name: 'Jean Paul',
@@ -67,18 +90,10 @@ const mockDrivers = [
   },
 ];
 
-type DriverStatus = 'disponible' | 'en_livraison' | 'indisponible';
-
-const statusConfig: Record<DriverStatus, { label: string; color: string }> = {
-  disponible: { label: 'Disponible', color: 'bg-green-100 text-green-700' },
-  en_livraison: { label: 'En livraison', color: 'bg-blue-100 text-blue-700' },
-  indisponible: { label: 'Indisponible', color: 'bg-red-100 text-red-700' },
-};
-
 export default function DriversPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
-  const [drivers, setDrivers] = useState(mockDrivers);
+  const [drivers, setDrivers] = useState<Driver[]>(mockDrivers);
   const [search, setSearch] = useState('');
 
   useEffect(() => {
