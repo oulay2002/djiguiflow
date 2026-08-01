@@ -67,7 +67,9 @@ const mockDrivers = [
   },
 ];
 
-const statusConfig = {
+type DriverStatus = 'disponible' | 'en_livraison' | 'indisponible';
+
+const statusConfig: Record<DriverStatus, { label: string; color: string }> = {
   disponible: { label: 'Disponible', color: 'bg-green-100 text-green-700' },
   en_livraison: { label: 'En livraison', color: 'bg-blue-100 text-blue-700' },
   indisponible: { label: 'Indisponible', color: 'bg-red-100 text-red-700' },
