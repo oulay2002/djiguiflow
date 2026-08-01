@@ -6,24 +6,16 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
   ArrowLeft,
-  Bell,
   CheckCircle,
-  CheckCircle2,
   Clock,
   Edit,
-  Gauge,
-  LogOut,
   MapPin,
-  Package2,
   Phone,
   Plus,
   Search,
-  Settings,
-  ShoppingCart,
   Star,
   Trash2,
   Truck,
-  Users,
 } from 'lucide-react';
 import Link from 'next/link';
 

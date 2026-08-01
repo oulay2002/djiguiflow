@@ -17,6 +17,7 @@ import {
   Search,
   Settings,
   ShoppingCart,
+  Store,
   Truck,
   UserRound,
   Users,
@@ -44,7 +45,8 @@ const topProducts = [
 ];
 
 const sidebarItems = [
-  { label: 'Vue d’ensemble', href: '/dashboard', active: true, icon: Gauge },
+  { label: 'Vue d\'ensemble', href: '/dashboard', active: true, icon: Gauge },
+  { label: 'Ma Boutique', href: '/dashboard/ma-boutique', active: false, icon: Store },
   { label: 'Commandes', href: '/dashboard/orders', active: false, icon: ShoppingCart },
   { label: 'Clients', href: '/dashboard/customers', active: false, icon: Users },
   { label: 'Produits', href: '/dashboard/products', active: false, icon: Package2 },
