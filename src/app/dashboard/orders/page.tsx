@@ -17,8 +17,23 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 
+type OrderStatus = 'en_attente' | 'en_livraison' | 'livree' | 'annulee';
+type OrderFilter = 'toutes' | OrderStatus;
+
+type Order = {
+  id: string;
+  customer: string;
+  phone: string;
+  items: string;
+  total: number;
+  status: OrderStatus;
+  driver: string | null;
+  date: string;
+  address: string;
+};
+
 // Données de démonstration (seront remplacées par Supabase plus tard)
-const mockOrders = [
+const mockOrders: Order[] = [
   {
     id: 'DJ-7823',
     customer: 'Maëlys Kouamé',
@@ -76,18 +91,20 @@ const mockOrders = [
   },
 ];
 
-const statusConfig = {
+const statusConfig: Record<OrderStatus, { label: string; color: string; icon: typeof Clock }> = {
   en_attente: { label: 'En attente', color: 'bg-yellow-100 text-yellow-700', icon: Clock },
   en_livraison: { label: 'En livraison', color: 'bg-blue-100 text-blue-700', icon: Truck },
   livree: { label: 'Livrée', color: 'bg-green-100 text-green-700', icon: CheckCircle },
   annulee: { label: 'Annulée', color: 'bg-red-100 text-red-700', icon: XCircle },
 };
 
+const statusOptions: OrderFilter[] = ['toutes', 'en_attente', 'en_livraison', 'livree', 'annulee'];
+
 export default function OrdersPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
-  const [orders, setOrders] = useState(mockOrders);
-  const [filter, setFilter] = useState('toutes');
+  const [orders, setOrders] = useState<Order[]>(mockOrders);
+  const [filter, setFilter] = useState<OrderFilter>('toutes');
   const [search, setSearch] = useState('');
 
   useEffect(() => {
@@ -147,19 +164,23 @@ export default function OrdersPage() {
             />
           </div>
           <div className="flex gap-2 flex-wrap">
-            {['toutes', 'en_attente', 'en_livraison', 'livree', 'annulee'].map((status) => (
-              <button
-                key={status}
-                onClick={() => setFilter(status)}
-                className={`px-4 py-2 rounded-lg font-medium transition ${
-                  filter === status
-                    ? 'bg-primary-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                {status === 'toutes' ? 'Toutes' : statusConfig[status].label}
-              </button>
-            ))}
+            {statusOptions.map((status) => {
+              const label = status === 'toutes' ? 'Toutes' : statusConfig[status].label;
+
+              return (
+                <button
+                  key={status}
+                  onClick={() => setFilter(status)}
+                  className={`px-4 py-2 rounded-lg font-medium transition ${
+                    filter === status
+                      ? 'bg-primary-600 text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  {label}
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>

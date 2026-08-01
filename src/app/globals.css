@@ -1,45 +1,84 @@
 @import "tailwindcss";
 
-/* --- VOS COULEURS PERSONNALISÉES DJIGUIFLOW (Tailwind v4) --- */
 @theme {
-  --color-primary-50: #f0f4ff;
-  --color-primary-100: #dbe4ff;
-  --color-primary-200: #bac8ff;
-  --color-primary-300: #91a7ff;
-  --color-primary-400: #748ffc;
-  --color-primary-500: #5c7cfa;
-  --color-primary-600: #4c6ef5;
-  --color-primary-700: #4263eb;
-  --color-primary-800: #3b5bdb;
-  --color-primary-900: #364fc7;
+  --color-primary-50: #fff8ee;
+  --color-primary-100: #fce7c2;
+  --color-primary-200: #f8d38b;
+  --color-primary-300: #efb75a;
+  --color-primary-400: #de9b31;
+  --color-primary-500: #c77b1d;
+  --color-primary-600: #a75d14;
+  --color-primary-700: #7e4411;
+  --color-primary-800: #5f3413;
+  --color-primary-900: #41270e;
 
-  --color-accent-50: #fff4e6;
-  --color-accent-100: #ffe8cc;
-  --color-accent-200: #ffd8a8;
-  --color-accent-300: #ffc078;
-  --color-accent-400: #ffa94d;
-  --color-accent-500: #ff922b;
-  --color-accent-600: #fd7e14;
-  --color-accent-700: #f76707;
-  --color-accent-800: #e8590c;
-  --color-accent-900: #d9480f;
+  --color-accent-50: #edfaf3;
+  --color-accent-100: #d7f3e2;
+  --color-accent-200: #b5e7ca;
+  --color-accent-300: #8ad4ad;
+  --color-accent-400: #4dbb87;
+  --color-accent-500: #1f9a70;
+  --color-accent-600: #177a5d;
+  --color-accent-700: #125d49;
+  --color-accent-800: #0f4738;
+  --color-accent-900: #0b2f28;
+
+  --color-sand-50: #fffdf7;
+  --color-sand-100: #f8f1e5;
+  --color-sand-200: #eedfc6;
+  --color-sand-300: #e1c79e;
+  --color-sand-400: #d0a76a;
+  --color-sand-500: #be8751;
 }
-/* ----------------------------------------------------------- */
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f9f4ec;
+  --foreground: #1b1b1b;
+  --panel: rgba(255, 255, 255, 0.72);
+  --panel-strong: rgba(255, 255, 255, 0.88);
+  --shadow-soft: 0 24px 70px rgba(78, 50, 16, 0.12);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  background: var(--background);
+  background:
+    radial-gradient(circle at top left, rgba(219, 149, 52, 0.20), transparent 26%),
+    radial-gradient(circle at right, rgba(31, 154, 112, 0.16), transparent 32%),
+    linear-gradient(180deg, #fffdf9 0%, #f7f0e7 48%, #efe8dc 100%);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+}
+
+::selection {
+  background: rgba(199, 123, 29, 0.25);
+}
+
+.african-pattern {
+  background-image:
+    linear-gradient(rgba(31, 154, 112, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(31, 154, 112, 0.08) 1px, transparent 1px),
+    radial-gradient(circle at top left, rgba(199, 123, 29, 0.16), transparent 26%);
+  background-size: 22px 22px, 22px 22px, 100% 100%;
+}
+
+.glass-panel {
+  background: var(--panel);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(123, 92, 63, 0.08);
+  box-shadow: var(--shadow-soft);
+}
+
+.soft-shadow {
+  box-shadow: 0 20px 50px rgba(49, 35, 20, 0.10);
+}
+
+.gold-ring {
+  box-shadow: 0 0 0 1px rgba(199, 123, 29, 0.12), 0 18px 36px rgba(199, 123, 29, 0.18);
+}
+
+.text-balance {
+  text-wrap: balance;
 }

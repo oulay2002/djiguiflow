@@ -1,20 +1,24 @@
 'use client';
 
+import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { 
-  MessageSquare, 
-  TrendingUp, 
-  Clock, 
-  Shield, 
-  Zap, 
-  Users,
-  CheckCircle,
+import {
   ArrowRight,
+  CheckCircle,
+  Clock3,
+  Globe2,
+  Handshake,
+  Leaf,
+  MessageSquare,
+  ShieldCheck,
+  Sparkles,
   Star,
-  ChevronDown
+  Store,
+  TrendingUp,
+  Users,
+  Zap,
 } from 'lucide-react';
 
-// Fonction pour le smooth scroll
 const scrollToSection = (sectionId: string) => {
   const element = document.getElementById(sectionId);
   if (element) {
@@ -22,314 +26,389 @@ const scrollToSection = (sectionId: string) => {
   }
 };
 
+const stats = [
+  { value: '+30%', label: 'de commandes en plus', icon: TrendingUp },
+  { value: '-80%', label: 'de retards de livraison', icon: Clock3 },
+  { value: '2h', label: 'gagnées par jour', icon: Zap },
+];
+
+const values = [
+  {
+    icon: Handshake,
+    title: 'Solidarité',
+    text: 'Un commerce qui soutient les communautés, les familles et les réseaux de proximité.',
+  },
+  {
+    icon: Sparkles,
+    title: 'Créativité',
+    text: 'Des solutions adaptées au terrain, à l’énergie des marchés et à la modernité locale.',
+  },
+  {
+    icon: ShieldCheck,
+    title: 'Confiance',
+    text: 'Des transactions sécurisées, des livraisons fiables et une relation durable avec les clients.',
+  },
+  {
+    icon: Leaf,
+    title: 'Croissance',
+    text: 'Un modèle pensé pour faire grandir les boutiques, restaurants et services partout en Afrique.',
+  },
+];
+
+const steps = [
+  {
+    step: '01',
+    icon: MessageSquare,
+    title: 'Le client commande',
+    description: 'La commande est reçue par message, WhatsApp ou Telegram, sans friction pour le client.',
+  },
+  {
+    step: '02',
+    icon: Users,
+    title: 'Le livreur est assigné',
+    description: 'Le bon livreur est sélectionné selon la zone, le délai et la disponibilité en temps réel.',
+  },
+  {
+    step: '03',
+    icon: TrendingUp,
+    title: 'La vente est optimisée',
+    description: 'Le dashboard centralise les ventes, les performances, les avis et la satisfaction client.',
+  },
+];
+
+const features = [
+  {
+    icon: MessageSquare,
+    title: 'Bot intelligent 24/7',
+    description: 'Votre assistant répond, confirme et transforme des messages en ventes même tard le soir.',
+  },
+  {
+    icon: Store,
+    title: 'Gestion de boutique',
+    description: 'Suivi des produits, des stocks, et des demandes clients depuis un seul espace de travail.',
+  },
+  {
+    icon: TrendingUp,
+    title: 'Analytics en temps réel',
+    description: 'Une vue claire sur les ventes, les zones fortes, les meilleurs produits et les retards.',
+  },
+  {
+    icon: Clock3,
+    title: 'Alertes intelligentes',
+    description: 'Recevez des notifications pour les commandes prioritaires, les retards et les demandes urgentes.',
+  },
+  {
+    icon: ShieldCheck,
+    title: 'Paiement sécurisé',
+    description: 'Mobile Money, carte bancaire et suivi des transactions avec une couche de sécurité solide.',
+  },
+  {
+    icon: Globe2,
+    title: 'Prêt pour le marché local',
+    description: 'Conçu pour les réalités africaines, les habitudes de paiement et la dynamique des quartiers.',
+  },
+];
+
+const testimonials = [
+  {
+    name: 'Moussa Koné',
+    role: 'Gérant, Restaurant Le Palmier',
+    avatar: '🍽️',
+    text: 'DjiguiFlow a transformé notre service. Les commandes arrivent plus vite, les livreurs sont mieux organisés et nos clients reviennent plus souvent.',
+    rating: 5,
+  },
+  {
+    name: 'Aminata Diallo',
+    role: 'Boutique Mode Express',
+    avatar: '💼',
+    text: 'Le système est simple à utiliser et visuellement très moderne. On a gagné du temps et augmenté nos ventes pendant les heures creuses.',
+    rating: 5,
+  },
+  {
+    name: 'Yacouba Diakité',
+    role: 'Directeur, Fresh Market',
+    avatar: '🥭',
+    text: 'Ce qui nous a marqué, c’est la simplicité et la logique locale. L’outil comprend notre marché, nos rythmes et nos besoins.',
+    rating: 5,
+  },
+];
+
+const plans = [
+  {
+    name: 'Starter',
+    price: '25 000',
+    description: 'Pour les petits commerces qui veulent se structurer.',
+    features: ['1 bot Telegram', 'Suivi de base', '3 workflows', 'Support email'],
+    popular: false,
+  },
+  {
+    name: 'Pro',
+    price: '50 000',
+    description: 'Pour les boutiques et restaurants en croissance.',
+    features: ['4 bots', 'Dashboard complet', '7 workflows', 'Support prioritaire', 'Analytics avancés'],
+    popular: true,
+  },
+  {
+    name: 'Premium',
+    price: '100 000',
+    description: 'Pour les structures qui veulent l’excellence.',
+    features: ['Tout illimité', 'WhatsApp Business', 'Support 24/7', 'Formation sur site', 'Personnalisation complète'],
+    popular: false,
+  },
+];
+
+const faqs = [
+  {
+    question: 'Quel est l’avantage principal pour un commerce africain ?',
+    answer: 'DjiguiFlow s’adapte aux réalités locales : paiements, délais, messagerie, livraisons et gestion quotidienne, sans complexité inutile.',
+  },
+  {
+    question: 'Mes clients ont-ils besoin d’une application ?',
+    answer: 'Non. Ils peuvent commander via WhatsApp ou Telegram, outils qu’ils utilisent déjà au quotidien.',
+  },
+  {
+    question: 'Peut-on personnaliser le système ?',
+    answer: 'Oui. Le produit est pensé pour évoluer avec votre catalogue, vos services et votre façon de travailler.',
+  },
+  {
+    question: 'Est-ce que cela fonctionne même la nuit ?',
+    answer: 'Oui. Les commandes peuvent être reçues, confirmées et traitées automatiquement 24h/24, même hors heures d’ouverture.',
+  },
+];
+
 export default function Home() {
   return (
-    <main className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-      {/* Navigation */}
-      <nav className="fixed top-0 w-full bg-white/80 backdrop-blur-md z-50 border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <span className="text-2xl font-bold bg-gradient-to-r from-primary-600 to-accent-600 bg-clip-text text-transparent">
+    <main className="min-h-screen text-slate-900">
+      <nav className="fixed inset-x-0 top-0 z-50 border-b border-amber-200/70 bg-[#fffaf3]/80 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-500 to-accent-600 text-lg font-black text-white shadow-lg shadow-amber-300/30">
+              D
+            </div>
+            <div>
+              <div className="text-2xl font-black tracking-tight text-slate-900">
                 DjiguiFlow
-              </span>
+              </div>
             </div>
-            <div className="hidden md:flex space-x-8">
-              <button onClick={() => scrollToSection('features')} className="text-gray-700 hover:text-primary-600 transition">Fonctionnalités</button>
-              <button onClick={() => scrollToSection('pricing')} className="text-gray-700 hover:text-primary-600 transition">Tarifs</button>
-              <button onClick={() => scrollToSection('faq')} className="text-gray-700 hover:text-primary-600 transition">FAQ</button>
-            </div>
-            <div className="flex space-x-4">
-              <button className="px-4 py-2 text-gray-700 hover:text-primary-600 transition">
-                Connexion
-              </button>
-              <button onClick={() => scrollToSection('pricing')} className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition shadow-lg hover:shadow-xl">
-                Essayer gratuitement
-              </button>
-            </div>
+          </div>
+
+          <div className="hidden items-center gap-8 md:flex">
+            <button onClick={() => scrollToSection('valeurs')} className="text-sm font-medium text-slate-700 transition hover:text-primary-700">Valeurs</button>
+            <button onClick={() => scrollToSection('features')} className="text-sm font-medium text-slate-700 transition hover:text-primary-700">Fonctionnalités</button>
+            <button onClick={() => scrollToSection('pricing')} className="text-sm font-medium text-slate-700 transition hover:text-primary-700">Tarifs</button>
+            <button onClick={() => scrollToSection('faq')} className="text-sm font-medium text-slate-700 transition hover:text-primary-700">FAQ</button>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <Link href="/login" className="hidden rounded-full border border-slate-200 bg-white/60 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-primary-300 hover:text-primary-700 sm:inline-flex">
+              Connexion
+            </Link>
+            <Link href="/register" className="inline-flex rounded-full bg-gradient-to-r from-primary-600 to-primary-500 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-primary-500/30 transition hover:scale-[1.02]">
+              Essayer gratuitement
+            </Link>
           </div>
         </div>
       </nav>
 
-      {/* Hero Section */}
-      <section className="pt-32 pb-20 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-            >
-              <h1 className="text-5xl lg:text-6xl font-bold text-gray-900 leading-tight">
-                Automatisez votre{' '}
-                <span className="bg-gradient-to-r from-primary-600 to-accent-600 bg-clip-text text-transparent">
-                  commerce en ligne
-                </span>
-              </h1>
-              <p className="mt-6 text-xl text-gray-600 leading-relaxed">
-                Le système qui prend les commandes, gère les livreurs et satisfait vos clients pendant que vous dormez.
-              </p>
-              <div className="mt-8 flex flex-col sm:flex-row gap-4">
-                <button onClick={() => scrollToSection('pricing')} className="px-8 py-4 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition shadow-lg hover:shadow-xl flex items-center justify-center gap-2">
-                  Commencer maintenant
-                <ArrowRight className="w-5 h-5" />
-                </button>
-                <button className="px-8 py-4 bg-white text-gray-700 rounded-lg hover:bg-gray-50 transition border-2 border-gray-200">
-                  Voir la démo
-                </button>
+      <section className="relative overflow-hidden pt-32 pb-20 sm:pt-36">
+        <div className="african-pattern absolute inset-0 opacity-70" />
+        <div className="absolute inset-x-0 top-24 mx-auto h-72 w-72 rounded-full bg-primary-200/40 blur-3xl" />
+        <div className="absolute right-10 top-28 h-64 w-64 rounded-full bg-accent-200/30 blur-3xl" />
+
+        <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-4 sm:px-6 lg:grid-cols-[1.1fr_0.9fr] lg:px-8">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
+            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-primary-200 bg-white/75 px-4 py-2 text-sm font-semibold text-primary-700 shadow-sm">
+              <Sparkles className="h-4 w-4" />
+              Commerce intelligent, pensé pour l’Afrique
+            </div>
+
+            <h1 className="max-w-xl text-balance text-5xl font-black tracking-tight text-slate-900 lg:text-6xl">
+              Faites grandir votre commerce avec la force de{' '}
+              <span className="bg-gradient-to-r from-primary-600 via-primary-500 to-accent-600 bg-clip-text text-transparent">
+                DjiguiFlow
+              </span>
+            </h1>
+
+            <p className="mt-6 max-w-xl text-lg leading-8 text-slate-600">
+              Une plateforme premium pour gérer les commandes, les livraisons et la relation client, avec une expérience moderne, chaleureuse et profondément inspirée de nos valeurs africaines.
+            </p>
+
+            <div className="mt-8 flex flex-col gap-4 sm:flex-row">
+              <Link href="/register" className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-primary-600 to-primary-500 px-8 py-4 text-base font-semibold text-white shadow-xl shadow-primary-500/25 transition hover:translate-y-[-1px]">
+                Commencer l’essai
+                <ArrowRight className="h-5 w-5" />
+              </Link>
+              <Link href="/login" className="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white/80 px-8 py-4 text-base font-semibold text-slate-700 transition hover:border-primary-300 hover:text-primary-700">
+                Voir la démo
+              </Link>
+            </div>
+
+            <div className="mt-8 flex flex-wrap items-center gap-4 text-sm text-slate-600">
+              <div className="inline-flex items-center gap-2">
+                <CheckCircle className="h-5 w-5 text-accent-600" />
+                <span>30 jours offerts</span>
               </div>
-              <div className="mt-8 flex items-center gap-2 text-sm text-gray-500">
-                <CheckCircle className="w-5 h-5 text-green-500" />
-                <span>30 jours d'essai gratuit</span>
-                <CheckCircle className="w-5 h-5 text-green-500 ml-4" />
+              <div className="inline-flex items-center gap-2">
+                <CheckCircle className="h-5 w-5 text-accent-600" />
                 <span>Sans carte bancaire</span>
               </div>
-            </motion.div>
+            </div>
+          </motion.div>
 
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="relative"
-            >
-              <div className="bg-white rounded-2xl shadow-2xl p-6 border border-gray-100">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-12 h-12 bg-gradient-to-br from-primary-500 to-primary-700 rounded-full flex items-center justify-center">
-                    <MessageSquare className="w-6 h-6 text-white" />
+          <motion.div initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.6, delay: 0.15 }} className="relative">
+            <div className="gold-ring relative overflow-hidden rounded-[2rem] border border-white/70 bg-white/70 p-5 shadow-2xl backdrop-blur-xl">
+              <div className="rounded-[1.5rem] bg-gradient-to-br from-[#fffaf2] via-white to-[#eefaf4] p-5">
+                <div className="mb-5 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-500 to-accent-600 text-white shadow-lg shadow-amber-300/20">
+                      <MessageSquare className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <p className="text-lg font-bold text-slate-900">DjiguiFlow Bot</p>
+                      <p className="text-xs text-slate-500">Système actif</p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900">DjiguiFlow Bot</h3>
-                    <p className="text-sm text-gray-500">En ligne</p>
+                  <div className="rounded-full bg-accent-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-accent-700">
+                    en ligne
                   </div>
                 </div>
+
                 <div className="space-y-3">
-                  <div className="bg-gray-100 rounded-lg p-3 max-w-[80%]">
-                    <p className="text-sm text-gray-700">Bonjour !  Votre boutique est prête à automatiser.</p>
-                  </div>
-                  <div className="bg-primary-100 rounded-lg p-3 max-w-[80%] ml-auto">
-                    <p className="text-sm text-primary-900">Je veux commander 2 pizzas margherita</p>
-                  </div>
-                  <div className="bg-gray-100 rounded-lg p-3 max-w-[80%]">
-                    <p className="text-sm text-gray-700">✅ Commande #DJ-7823 reçue → envoyée à Livreur Aminata</p>
-                  </div>
-                  <div className="bg-green-100 rounded-lg p-3 max-w-[80%]">
-                    <p className="text-sm text-green-900">✅ Livraison confirmée. Note client : 5/5 ⭐</p>
-                  </div>
+                  <div className="max-w-[82%] rounded-2xl bg-slate-100 px-4 py-3 text-sm text-slate-700">Bonjour ! Votre boutique est prête à recevoir les commandes.</div>
+                  <div className="ml-auto max-w-[82%] rounded-2xl bg-primary-100 px-4 py-3 text-sm text-primary-900">Je veux 2 pizzas margherita et 1 jus de bissap.</div>
+                  <div className="max-w-[88%] rounded-2xl bg-slate-100 px-4 py-3 text-sm text-slate-700">✅ Commande #DJ-7823 reçue. Livreur Aminata assignée en zone Cocody.</div>
+                  <div className="max-w-[86%] rounded-2xl bg-accent-100 px-4 py-3 text-sm text-accent-900">✅ Livraison confirmée. Note client : 5/5 ⭐</div>
                 </div>
-              </div>
-            </motion.div>
-          </div>
-        </div>
-      </section>
 
-      {/* Stats Section */}
-      <section className="py-16 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-3 gap-8">
-            {[
-              { value: '+30%', label: 'de commandes en plus', icon: TrendingUp },
-              { value: '-80%', label: 'de retards de livraison', icon: Clock },
-              { value: '2h', label: 'gagnées par jour', icon: Zap },
-            ].map((stat, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-                className="text-center"
-              >
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-100 rounded-full mb-4">
-                  <stat.icon className="w-8 h-8 text-primary-600" />
-                </div>
-                <div className="text-4xl font-bold text-gray-900">{stat.value}</div>
-                <div className="text-gray-600 mt-2">{stat.label}</div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-      {/* Comment ça marche Section */}
-      <section className="py-20 bg-gradient-to-br from-slate-50 to-blue-50 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900">
-              Comment ça{' '}
-              <span className="bg-gradient-to-r from-primary-600 to-accent-600 bg-clip-text text-transparent">
-                marche
-              </span>
-            </h2>
-            <p className="mt-4 text-xl text-gray-600">
-              3 étapes simples pour automatiser votre commerce
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            {[
-              {
-                step: '01',
-                icon: MessageSquare,
-                title: 'Le client commande',
-                description: 'Votre client envoie un message sur Telegram ou WhatsApp. Notre IA comprend sa demande et prend la commande automatiquement.',
-              },
-              {
-                step: '02',
-                icon: Users,
-                title: 'Le livreur est assigné',
-                description: 'La commande est envoyée au livreur disponible le plus proche. Vous et le client suivez la livraison en temps réel.',
-              },
-              {
-                step: '03',
-                icon: TrendingUp,
-                title: 'Vous encaissez et analysez',
-                description: 'Le paiement est confirmé, la note client enregistrée. Vous consultez vos performances sur votre dashboard.',
-              },
-            ].map((item, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-                className="relative bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition border border-gray-100"
-              >
-                <div className="absolute -top-4 -left-4 w-12 h-12 bg-gradient-to-br from-primary-600 to-accent-600 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg">
-                  {item.step}
-                </div>
-                <div className="w-16 h-16 bg-primary-100 rounded-xl flex items-center justify-center mb-6 mt-4">
-                  <item.icon className="w-8 h-8 text-primary-600" />
-                </div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-3">{item.title}</h3>
-                <p className="text-gray-600 leading-relaxed">{item.description}</p>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-      {/* Features Section */}
-      <section id="features" className="py-20 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900">
-              Tout ce qu'il faut pour{' '}
-              <span className="bg-gradient-to-r from-primary-600 to-accent-600 bg-clip-text text-transparent">
-                réussir
-              </span>
-            </h2>
-            <p className="mt-4 text-xl text-gray-600">
-              Une solution complète pour automatiser votre commerce
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {[
-              {
-                icon: MessageSquare,
-                title: 'Bot Intelligent 24/7',
-                description: 'Votre assistant IA prend les commandes automatiquement, même à 3h du matin.',
-              },
-              {
-                icon: Users,
-                title: 'Gestion des Livreurs',
-                description: 'Assignation automatique, suivi en temps réel, et notation des performances.',
-              },
-              {
-                icon: TrendingUp,
-                title: 'Dashboard Analytics',
-                description: 'Suivez vos ventes, vos clients et vos performances en temps réel.',
-              },
-              {
-                icon: Clock,
-                title: 'Alertes Intelligentes',
-                description: 'Notifications instantanées pour les retards, stocks faibles et avis clients.',
-              },
-              {
-                icon: Shield,
-                title: 'Paiement Sécurisé',
-                description: 'Intégration Mobile Money (Wave, Orange Money) et cartes bancaires.',
-              },
-              {
-                icon: Zap,
-                title: 'Installation Rapide',
-                description: 'Opérationnel en 24h. Formation incluse et support technique 7j/7.',
-              },
-            ].map((feature, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-                className="bg-white rounded-xl p-6 shadow-lg hover:shadow-xl transition border border-gray-100"
-              >
-                <div className="w-12 h-12 bg-gradient-to-br from-primary-500 to-primary-700 rounded-lg flex items-center justify-center mb-4">
-                  <feature.icon className="w-6 h-6 text-white" />
-                </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">{feature.title}</h3>
-                <p className="text-gray-600">{feature.description}</p>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-      {/* Témoignages Section */}
-      <section className="py-20 bg-gradient-to-br from-primary-50 to-accent-50 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900">
-              Ils nous font{' '}
-              <span className="bg-gradient-to-r from-primary-600 to-accent-600 bg-clip-text text-transparent">
-                confiance
-              </span>
-            </h2>
-            <p className="mt-4 text-xl text-gray-600">
-              Découvrez ce que nos clients disent de DjiguiFlow
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            {[
-              {
-                name: 'Moussa Koné',
-                role: 'Gérant, Restaurant Le Palmier',
-                avatar: '👨‍🍳',
-                text: 'Depuis qu\'on utilise DjiguiFlow, on a réduit nos retards de livraison de 80%. Le gérant peut enfin se concentrer sur la cuisine au lieu de gérer les appels.',
-                rating: 5,
-              },
-              {
-                name: 'Aminata Diallo',
-                role: 'Propriétaire, Boutique Mode Express',
-                avatar: '‍💼',
-                text: 'L\'IA prend les commandes même à 23h ! On a augmenté notre chiffre d\'affaires de 30% le premier mois. C\'est comme avoir un employé qui ne dort jamais.',
-                rating: 5,
-              },
-              {
-                name: 'Emma Yaba',
-                role: 'Propriétaire, Yaba resto',
-                avatar:  '👨‍🍳',
-                text: 'Le dashboard nous permet de suivre les performances en temps réel. On sait exactement quels produits se vendent le mieux. Un outil indispensable.',
-                rating: 5,
-              },
-            ].map((testimonial, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-                className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition border border-gray-100"
-              >
-                <div className="flex items-center gap-1 mb-4">
-                  {[...Array(testimonial.rating)].map((_, i) => (
-                    <Star key={i} className="w-5 h-5 fill-accent-500 text-accent-500" />
+                <div className="mt-6 grid grid-cols-3 gap-3">
+                  {[
+                    { label: 'Ventes', value: '1.2M', color: 'bg-primary-100 text-primary-700' },
+                    { label: 'Livraisons', value: '94%', color: 'bg-accent-100 text-accent-700' },
+                    { label: 'Clients', value: '8.4K', color: 'bg-amber-100 text-amber-700' },
+                  ].map((item) => (
+                    <div key={item.label} className={`rounded-2xl px-3 py-3 ${item.color}`}>
+                      <div className="text-lg font-black">{item.value}</div>
+                      <div className="text-[10px] uppercase tracking-wide opacity-75">{item.label}</div>
+                    </div>
                   ))}
                 </div>
-                <p className="text-gray-700 mb-6 leading-relaxed italic">
-                  "{testimonial.text}"
-                </p>
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-gradient-to-br from-primary-100 to-accent-100 rounded-full flex items-center justify-center text-2xl">
-                    {testimonial.avatar}
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      <section className="py-16">
+        <div className="mx-auto grid max-w-7xl gap-6 px-4 md:grid-cols-3 sm:px-6 lg:px-8">
+          {stats.map((stat, index) => {
+            const Icon = stat.icon;
+            return (
+              <motion.div key={index} initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.45, delay: index * 0.08 }} className="glass-panel rounded-[1.75rem] p-6 text-center">
+                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-100 to-primary-200 text-primary-700">
+                  <Icon className="h-7 w-7" />
+                </div>
+                <div className="text-4xl font-black text-slate-900">{stat.value}</div>
+                <div className="mt-2 text-slate-600">{stat.label}</div>
+              </motion.div>
+            );
+          })}
+        </div>
+      </section>
+
+      <section id="valeurs" className="relative py-20">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="mb-12 text-center">
+            <p className="mb-3 text-sm font-bold uppercase tracking-[0.22em] text-primary-700">Nos valeurs</p>
+            <h2 className="text-4xl font-black tracking-tight text-slate-900">Une vision qui reflète l’Afrique, moderne et humaine</h2>
+          </div>
+
+          <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+            {values.map((value, index) => {
+              const Icon = value.icon;
+              return (
+                <motion.div key={value.title} initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.45, delay: index * 0.08 }} className="rounded-[1.75rem] border border-amber-100 bg-white/80 p-6 shadow-lg shadow-amber-100/60">
+                  <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-100 to-accent-100 text-primary-700">
+                    <Icon className="h-7 w-7" />
                   </div>
+                  <h3 className="mb-3 text-2xl font-bold text-slate-900">{value.title}</h3>
+                  <p className="leading-7 text-slate-600">{value.text}</p>
+                </motion.div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      <section id="features" className="bg-white/60 py-20">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="mb-12 text-center">
+            <p className="mb-3 text-sm font-bold uppercase tracking-[0.22em] text-primary-700">Comment ça marche</p>
+            <h2 className="text-4xl font-black tracking-tight text-slate-900">Une expérience qui rend chaque commande plus fluide</h2>
+          </div>
+
+          <div className="grid gap-8 md:grid-cols-3">
+            {steps.map((item, index) => {
+              const Icon = item.icon;
+              return (
+                <motion.div key={item.step} initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.45, delay: index * 0.08 }} className="relative rounded-[2rem] border border-slate-100 bg-gradient-to-br from-white to-[#fffaf2] p-7 shadow-[0_20px_50px_rgba(49,35,20,0.08)]">
+                  <div className="absolute -left-4 -top-4 flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-primary-600 to-primary-500 text-lg font-black text-white shadow-lg shadow-primary-500/30">{item.step}</div>
+                  <div className="mb-6 mt-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary-100 text-primary-700">
+                    <Icon className="h-8 w-8" />
+                  </div>
+                  <h3 className="mb-3 text-2xl font-bold text-slate-900">{item.title}</h3>
+                  <p className="leading-7 text-slate-600">{item.description}</p>
+                </motion.div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      <section className="py-20">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="mb-12 text-center">
+            <p className="mb-3 text-sm font-bold uppercase tracking-[0.22em] text-primary-700">Tout ce qu’il faut</p>
+            <h2 className="text-4xl font-black tracking-tight text-slate-900">Des outils conçus pour la performance locale</h2>
+          </div>
+
+          <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+            {features.map((feature, index) => {
+              const Icon = feature.icon;
+              return (
+                <motion.div key={feature.title} initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.45, delay: index * 0.06 }} className="rounded-[1.75rem] border border-slate-100 bg-white/80 p-6 shadow-md shadow-slate-100">
+                  <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-100 to-accent-100 text-primary-700">
+                    <Icon className="h-7 w-7" />
+                  </div>
+                  <h3 className="mb-3 text-xl font-bold text-slate-900">{feature.title}</h3>
+                  <p className="leading-7 text-slate-600">{feature.description}</p>
+                </motion.div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-gradient-to-br from-[#fff8ee] via-[#fffaf4] to-[#edfaf3] py-20">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="mb-12 text-center">
+            <p className="mb-3 text-sm font-bold uppercase tracking-[0.22em] text-primary-700">Témoignages</p>
+            <h2 className="text-4xl font-black tracking-tight text-slate-900">Les commerçants parlent mieux que n’importe quel pitch</h2>
+          </div>
+
+          <div className="grid gap-6 lg:grid-cols-3">
+            {testimonials.map((testimonial, index) => (
+              <motion.div key={testimonial.name} initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.45, delay: index * 0.08 }} className="rounded-[1.75rem] border border-amber-100 bg-white/80 p-6 shadow-lg shadow-amber-100/50">
+                <div className="mb-4 flex gap-1 text-primary-500">
+                  {[...Array(testimonial.rating)].map((_, i) => (
+                    <Star key={i} className="h-5 w-5 fill-current" />
+                  ))}
+                </div>
+                <p className="mb-6 leading-8 text-slate-700">“{testimonial.text}”</p>
+                <div className="flex items-center gap-4">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-primary-100 to-accent-100 text-2xl">{testimonial.avatar}</div>
                   <div>
-                    <h4 className="font-semibold text-gray-900">{testimonial.name}</h4>
-                    <p className="text-sm text-gray-500">{testimonial.role}</p>
+                    <h4 className="font-bold text-slate-900">{testimonial.name}</h4>
+                    <p className="text-sm text-slate-500">{testimonial.role}</p>
                   </div>
                 </div>
               </motion.div>
@@ -337,85 +416,39 @@ export default function Home() {
           </div>
         </div>
       </section>
-      {/* Pricing Section */}
-      <section id="pricing" className="py-20 bg-white px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900">Tarifs simples et transparents</h2>
-            <p className="mt-4 text-xl text-gray-600">
-              Choisissez le plan qui correspond à votre business
-            </p>
+
+      <section id="pricing" className="py-20">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="mb-12 text-center">
+            <p className="mb-3 text-sm font-bold uppercase tracking-[0.22em] text-primary-700">Tarifs</p>
+            <h2 className="text-4xl font-black tracking-tight text-slate-900">Une offre claire pour chaque étape de croissance</h2>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
-            {[
-              {
-                name: 'Starter',
-                price: '25 000',
-                description: 'Pour les petits commerçants',
-                features: ['1 bot Telegram', 'Google Sheets', '3 workflows', 'Support email'],
-                popular: false,
-              },
-              {
-                name: 'Pro',
-                price: '50 000',
-                description: 'Pour les restaurants et boutiques',
-                features: ['4 bots Telegram', 'Dashboard complet', '7 workflows', 'Support prioritaire', 'Analytics avancés'],
-                popular: true,
-              },
-              {
-                name: 'Premium',
-                price: '100 000',
-                description: 'Pour les grosses structures',
-                features: ['Tout illimité', 'WhatsApp Business', 'Support 24/7', 'Formation sur site', 'Personnalisation complète'],
-                popular: false,
-              },
-            ].map((plan, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-                className={`rounded-2xl p-8 ${
-                  plan.popular
-                    ? 'bg-gradient-to-br from-primary-600 to-primary-800 text-white shadow-2xl scale-105'
-                    : 'bg-white border-2 border-gray-200'
-                }`}
-              >
+          <div className="grid gap-8 lg:grid-cols-3">
+            {plans.map((plan, index) => (
+              <motion.div key={plan.name} initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.45, delay: index * 0.08 }} className={`rounded-[2rem] border p-7 ${plan.popular ? 'border-primary-500 bg-gradient-to-br from-primary-600 to-primary-800 text-white shadow-2xl shadow-primary-500/20' : 'border-slate-200 bg-white shadow-lg shadow-slate-100'}`}>
                 {plan.popular && (
-                  <div className="inline-block px-3 py-1 bg-accent-500 text-white text-sm font-semibold rounded-full mb-4">
-                    Plus populaire
-                  </div>
+                  <div className="mb-5 inline-flex rounded-full bg-white/15 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.2em] text-white/90">Plus populaire</div>
                 )}
-                <h3 className={`text-2xl font-bold ${plan.popular ? 'text-white' : 'text-gray-900'}`}>
-                  {plan.name}
-                </h3>
-                <p className={`mt-2 ${plan.popular ? 'text-primary-100' : 'text-gray-600'}`}>
-                  {plan.description}
-                </p>
-                <div className="mt-6">
-                  <span className={`text-4xl font-bold ${plan.popular ? 'text-white' : 'text-gray-900'}`}>
-                    {plan.price}
-                  </span>
-                  <span className={`text-lg ${plan.popular ? 'text-primary-100' : 'text-gray-600'}`}>
-                    {' '}FCFA/mois
-                  </span>
+
+                <h3 className="text-2xl font-black">{plan.name}</h3>
+                <p className={`${plan.popular ? 'mt-2 text-primary-100' : 'mt-2 text-slate-600'}`}>{plan.description}</p>
+
+                <div className="mt-6 flex items-end gap-2">
+                  <span className="text-4xl font-black">{plan.price}</span>
+                  <span className={`${plan.popular ? 'text-primary-100' : 'text-slate-500'} pb-1`}>FCFA/mois</span>
                 </div>
+
                 <ul className="mt-8 space-y-3">
-                  {plan.features.map((feature, i) => (
-                    <li key={i} className="flex items-center gap-2">
-                      <CheckCircle className={`w-5 h-5 ${plan.popular ? 'text-accent-300' : 'text-green-500'}`} />
-                      <span className={plan.popular ? 'text-primary-50' : 'text-gray-700'}>{feature}</span>
+                  {plan.features.map((feature) => (
+                    <li key={feature} className="flex items-center gap-3">
+                      <CheckCircle className={`h-5 w-5 ${plan.popular ? 'text-amber-200' : 'text-accent-600'}`} />
+                      <span className={plan.popular ? 'text-white/90' : 'text-slate-700'}>{feature}</span>
                     </li>
                   ))}
                 </ul>
-                <button
-                  className={`mt-8 w-full py-3 rounded-lg font-semibold transition ${
-                    plan.popular
-                      ? 'bg-white text-primary-600 hover:bg-gray-100'
-                      : 'bg-primary-600 text-white hover:bg-primary-700'
-                  }`}
-                >
+
+                <button className={`mt-8 w-full rounded-full px-5 py-3 font-semibold transition ${plan.popular ? 'bg-white text-primary-700 hover:bg-primary-50' : 'bg-primary-600 text-white hover:bg-primary-700'}`}>
                   Commencer
                 </button>
               </motion.div>
@@ -423,123 +456,48 @@ export default function Home() {
           </div>
         </div>
       </section>
-      {/* FAQ Section */}
-      <section id="faq" className="py-20 bg-white px-4 sm:px-6 lg:px-8">
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900">
-              Questions{' '}
-              <span className="bg-gradient-to-r from-primary-600 to-accent-600 bg-clip-text text-transparent">
-                fréquentes
-              </span>
-            </h2>
-            <p className="mt-4 text-xl text-gray-600">
-              Tout ce que vous devez savoir sur DjiguiFlow
-            </p>
+
+      <section id="faq" className="bg-white/80 py-20">
+        <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+          <div className="mb-12 text-center">
+            <p className="mb-3 text-sm font-bold uppercase tracking-[0.22em] text-primary-700">FAQ</p>
+            <h2 className="text-4xl font-black tracking-tight text-slate-900">Questions fréquentes</h2>
           </div>
 
           <div className="space-y-4">
-            {[
-              {
-                question: 'Combien de temps prend l\'installation ?',
-                answer: 'L\'installation complète prend entre 24h et 48h. Nous configurons tout pour vous : les bots Telegram, le dashboard, et la formation de votre équipe est incluse.',
-              },
-              {
-                question: 'Mes clients doivent-ils télécharger une application ?',
-                answer: 'Non ! Vos clients utilisent simplement Telegram ou WhatsApp, qu\'ils ont déjà sur leur téléphone. Aucune application supplémentaire à installer.',
-              },
-              {
-                question: 'Puis-je utiliser DjiguiFlow pour mon type de commerce ?',
-                answer: 'Oui ! DjiguiFlow s\'adapte à tous les commerces : restaurants, boutiques, pharmacies, services à domicile. Notre IA s\'adapte à votre catalogue et votre métier.',
-              },
-              {
-                question: 'Que se passe-t-il si je ne suis pas satisfait ?',
-                answer: 'Nous offrons une garantie satisfait ou remboursé de 30 jours. Si le système ne vous convient pas, nous vous remboursons intégralement, sans question.',
-              },
-              {
-                question: 'Le système fonctionne-t-il 24h/24 ?',
-                answer: 'Oui ! Notre IA prend les commandes automatiquement, même la nuit et les jours fériés. Vous recevez les commandes le lendemain matin.',
-              },
-              {
-                question: 'Comment sont gérés les paiements ?',
-                answer: 'Nous intégrons les solutions Mobile Money (Wave, Orange Money, MTN) et les cartes bancaires. L\'argent arrive directement sur votre compte.',
-              },
-            ].map((faq, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: index * 0.05 }}
-                className="bg-gray-50 rounded-xl p-6 hover:bg-gray-100 transition border border-gray-200"
-              >
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  {faq.question}
-                </h3>
-                <p className="text-gray-600 leading-relaxed">
-                  {faq.answer}
-                </p>
+            {faqs.map((item, index) => (
+              <motion.div key={item.question} initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.4, delay: index * 0.04 }} className="rounded-[1.5rem] border border-slate-200 bg-[#fffdf9] p-6 shadow-sm">
+                <h3 className="mb-2 text-lg font-bold text-slate-900">{item.question}</h3>
+                <p className="leading-7 text-slate-600">{item.answer}</p>
               </motion.div>
             ))}
           </div>
         </div>
       </section>
-      {/* CTA Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-4xl font-bold text-gray-900">
-            Prêt à automatiser votre commerce ?
-          </h2>
-          <p className="mt-4 text-xl text-gray-600">
-            Rejoignez les commerçants qui ont déjà transformé leur business
-          </p>
-          <button className="mt-8 px-8 py-4 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition shadow-lg hover:shadow-xl text-lg">
-            Démarrer l'essai gratuit
-          </button>
-          <p className="mt-4 text-sm text-gray-500">
-            30 jours gratuits • Sans engagement • Support inclus
-          </p>
+
+      <section className="py-20">
+        <div className="mx-auto max-w-5xl rounded-[2.5rem] border border-primary-100 bg-gradient-to-r from-primary-600 via-primary-500 to-accent-600 px-6 py-14 text-center text-white shadow-2xl shadow-primary-500/20 sm:px-10">
+          <p className="mb-3 text-sm font-bold uppercase tracking-[0.22em] text-amber-100">Prêt à passer à l’étape supérieure ?</p>
+          <h2 className="text-4xl font-black tracking-tight">Automatisez votre commerce sans perdre votre âme.</h2>
+          <p className="mx-auto mt-4 max-w-2xl text-lg text-white/85">Des outils puissants, un design premium et une expérience conçue pour les réalités de l’Afrique moderne.</p>
+          <div className="mt-8 flex flex-col justify-center gap-4 sm:flex-row">
+            <Link href="/register" className="inline-flex items-center justify-center rounded-full bg-white px-7 py-3.5 text-base font-bold text-primary-700 transition hover:bg-primary-50">Démarrer gratuitement</Link>
+            <Link href="/login" className="inline-flex items-center justify-center rounded-full border border-white/40 bg-white/10 px-7 py-3.5 text-base font-bold text-white transition hover:bg-white/15">Connexion</Link>
+          </div>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="bg-gray-900 text-white py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid md:grid-cols-4 gap-8">
-            <div>
-              <h3 className="text-2xl font-bold bg-gradient-to-r from-primary-400 to-accent-400 bg-clip-text text-transparent">
-                DjiguiFlow
-              </h3>
-              <p className="mt-4 text-gray-400">
-                L'automatisation intelligente pour les commerçants africains.
-              </p>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-4">Produit</h4>
-              <ul className="space-y-2 text-gray-400">
-                <li><a href="#" className="hover:text-white transition">Fonctionnalités</a></li>
-                <li><a href="#" className="hover:text-white transition">Tarifs</a></li>
-                <li><a href="#" className="hover:text-white transition">Démo</a></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-4">Entreprise</h4>
-              <ul className="space-y-2 text-gray-400">
-                <li><a href="#" className="hover:text-white transition">À propos</a></li>
-                <li><a href="#" className="hover:text-white transition">Blog</a></li>
-                <li><a href="#" className="hover:text-white transition">Contact</a></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-4">Légal</h4>
-              <ul className="space-y-2 text-gray-400">
-                <li><a href="#" className="hover:text-white transition">CGU</a></li>
-                <li><a href="#" className="hover:text-white transition">Confidentialité</a></li>
-                <li><a href="#" className="hover:text-white transition">Mentions légales</a></li>
-              </ul>
-            </div>
+      <footer className="border-t border-slate-200 bg-slate-950 py-12 text-slate-300">
+        <div className="mx-auto flex max-w-7xl flex-col gap-8 px-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
+          <div>
+            <div className="text-2xl font-black text-white">DjiguiFlow</div>
+            <p className="mt-3 max-w-md text-sm text-slate-400">L’automatisation intelligente pour les commerçants africains.</p>
           </div>
-          <div className="mt-12 pt-8 border-t border-gray-800 text-center text-gray-400">
-            <p>© 2026 DjiguiFlow. Tous droits réservés.</p>
+
+          <div className="flex flex-wrap gap-6 text-sm text-slate-400">
+            <button onClick={() => scrollToSection('features')} className="transition hover:text-white">Fonctionnalités</button>
+            <button onClick={() => scrollToSection('pricing')} className="transition hover:text-white">Tarifs</button>
+            <button onClick={() => scrollToSection('faq')} className="transition hover:text-white">FAQ</button>
           </div>
         </div>
       </footer>
