@@ -6,16 +6,24 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
   ArrowLeft,
+  Bell,
   CheckCircle,
+  CheckCircle2,
   Clock,
   Edit,
+  Gauge,
+  LogOut,
   MapPin,
+  Package2,
   Phone,
   Plus,
   Search,
+  Settings,
+  ShoppingCart,
   Star,
   Trash2,
   Truck,
+  Users,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -91,21 +99,30 @@ const mockDrivers: Driver[] = [
 export default function DriversPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
-  const [drivers, setDrivers] = useState<Driver[]>(mockDrivers);
+  const [drivers] = useState<Driver[]>(mockDrivers);
   const [search, setSearch] = useState('');
 
   useEffect(() => {
-    checkAuth();
-  }, []);
+    let isMounted = true;
 
-  const checkAuth = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      router.push('/login');
-      return;
-    }
-    setLoading(false);
-  };
+    const checkAuth = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!isMounted) return;
+
+      if (!user) {
+        router.push('/login');
+        return;
+      }
+
+      setLoading(false);
+    };
+
+    void checkAuth();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [router]);
 
   const filteredDrivers = drivers.filter(
     (driver) =>

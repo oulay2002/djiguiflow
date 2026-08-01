@@ -1,121 +1,78 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
-import { 
-  ArrowLeft,
-  Search,
-  Users,
-  UserPlus,
-  Mail,
-  Phone,
-  ShoppingBag,
-  Star,
-  Calendar,
-  MapPin
-} from 'lucide-react';
 import Link from 'next/link';
+import { motion } from 'framer-motion';
+import {
+  ArrowRight,
+  Bell,
+  CheckCircle2,
+  Gauge,
+  LogOut,
+  MapPin,
+  Package2,
+  Phone,
+  Search,
+  Settings,
+  ShoppingCart,
+  Star,
+  Truck,
+  UserPlus,
+  Users,
+} from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 
-// Données de démonstration
 const mockCustomers = [
-  {
-    id: 1,
-    name: 'Maëlys Kouamé',
-    email: 'maelys.k@gmail.com',
-    phone: '0102918886',
-    address: 'Akuoedo SYNACASSCI RUE G11',
-    orders: 12,
-    totalSpent: 85000,
-    lastOrder: '2025-01-15',
-    rating: 5,
-    avatar: 'MK',
-  },
-  {
-    id: 2,
-    name: 'Aminata Diallo',
-    email: 'aminata.d@yahoo.fr',
-    phone: '0709123456',
-    address: 'Cocody Angré 8ème tranche',
-    orders: 8,
-    totalSpent: 42000,
-    lastOrder: '2025-01-15',
-    rating: 4,
-    avatar: 'AD',
-  },
-  {
-    id: 3,
-    name: 'Ibrahim Koné',
-    email: 'ibrahim.kone@hotmail.com',
-    phone: '0507123456',
-    address: 'Yopougon Siporex',
-    orders: 5,
-    totalSpent: 28000,
-    lastOrder: '2025-01-14',
-    rating: 5,
-    avatar: 'IK',
-  },
-  {
-    id: 4,
-    name: 'Sarah Yao',
-    email: 'sarah.yao@gmail.com',
-    phone: '0102345678',
-    address: 'Marcory Zone 4',
-    orders: 15,
-    totalSpent: 120000,
-    lastOrder: '2025-01-15',
-    rating: 5,
-    avatar: 'SY',
-  },
-  {
-    id: 5,
-    name: 'Moussa Traoré',
-    email: 'moussa.t@orange.ci',
-    phone: '0708123456',
-    address: 'Abobo Baoulé',
-    orders: 3,
-    totalSpent: 15000,
-    lastOrder: '2025-01-10',
-    rating: 3,
-    avatar: 'MT',
-  },
-  {
-    id: 6,
-    name: 'Fatou Bamba',
-    email: 'fatou.bamba@gmail.com',
-    phone: '0506123456',
-    address: 'Treichville Avenue 13',
-    orders: 20,
-    totalSpent: 180000,
-    lastOrder: '2025-01-13',
-    rating: 5,
-    avatar: 'FB',
-  },
+  { id: 1, name: 'Maëlys Kouamé', email: 'maelys.k@gmail.com', phone: '0102918886', address: 'Akuoedo SYNACASSCI RUE G11', orders: 12, totalSpent: 85000, lastOrder: '2025-01-15', rating: 5, avatar: 'MK' },
+  { id: 2, name: 'Aminata Diallo', email: 'aminata.d@yahoo.fr', phone: '0709123456', address: 'Cocody Angré 8ème tranche', orders: 8, totalSpent: 42000, lastOrder: '2025-01-15', rating: 4, avatar: 'AD' },
+  { id: 3, name: 'Ibrahim Koné', email: 'ibrahim.kone@hotmail.com', phone: '0507123456', address: 'Yopougon Siporex', orders: 5, totalSpent: 28000, lastOrder: '2025-01-14', rating: 5, avatar: 'IK' },
+  { id: 4, name: 'Sarah Yao', email: 'sarah.yao@gmail.com', phone: '0102345678', address: 'Marcory Zone 4', orders: 15, totalSpent: 120000, lastOrder: '2025-01-15', rating: 5, avatar: 'SY' },
+  { id: 5, name: 'Moussa Traoré', email: 'moussa.t@orange.ci', phone: '0708123456', address: 'Abobo Baoulé', orders: 3, totalSpent: 15000, lastOrder: '2025-01-10', rating: 3, avatar: 'MT' },
+  { id: 6, name: 'Fatou Bamba', email: 'fatou.bamba@gmail.com', phone: '0506123456', address: 'Treichville Avenue 13', orders: 20, totalSpent: 180000, lastOrder: '2025-01-13', rating: 5, avatar: 'FB' },
+];
+
+const sidebarItems = [
+  { label: 'Vue d’ensemble', href: '/dashboard', active: false, icon: Gauge },
+  { label: 'Commandes', href: '/dashboard/orders', active: false, icon: ShoppingCart },
+  { label: 'Clients', href: '/dashboard/customers', active: true, icon: Users },
+  { label: 'Produits', href: '/dashboard/products', active: false, icon: Package2 },
+  { label: 'Livreurs', href: '/dashboard/drivers', active: false, icon: Truck },
+  { label: 'Réglages', href: '#', active: false, icon: Settings },
 ];
 
 export default function CustomersPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
-  const [customers, setCustomers] = useState(mockCustomers);
+  const [customers] = useState(mockCustomers);
   const [search, setSearch] = useState('');
 
   useEffect(() => {
-    checkAuth();
-  }, []);
+    let isMounted = true;
 
-  const checkAuth = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      router.push('/login');
-      return;
-    }
-    setLoading(false);
-  };
+    const checkAuth = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!isMounted) return;
 
-  const filteredCustomers = customers.filter(customer =>
-    customer.name.toLowerCase().includes(search.toLowerCase()) ||
-    customer.email.toLowerCase().includes(search.toLowerCase())
+      if (!user) {
+        router.push('/login');
+        return;
+      }
+
+      setLoading(false);
+    };
+
+    void checkAuth();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [router]);
+
+  const filteredCustomers = customers.filter(
+    (customer) =>
+      customer.name.toLowerCase().includes(search.toLowerCase()) ||
+      customer.email.toLowerCase().includes(search.toLowerCase())
   );
 
   const totalRevenue = customers.reduce((acc, c) => acc + c.totalSpent, 0);
@@ -123,174 +80,167 @@ export default function CustomersPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+      <div className="flex min-h-screen items-center justify-center bg-[#f9f4ec]">
+        <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-primary-600" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6 lg:p-8">
-      {/* En-tête */}
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <Link href="/dashboard" className="inline-flex items-center gap-2 text-gray-600 hover:text-primary-600 transition mb-2">
-            <ArrowLeft className="w-5 h-5" />
-            <span>Retour au dashboard</span>
-          </Link>
-          <h1 className="text-3xl font-bold text-gray-900">Clients</h1>
-          <p className="text-gray-600 mt-1">Gérez votre base de clients</p>
-        </div>
-      </div>
-
-      {/* Statistiques rapides */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center">
-              <Users className="w-6 h-6 text-primary-600" />
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(219,149,52,0.15),transparent_25%),linear-gradient(180deg,#fffdf9_0%,#f7f0e7_100%)] p-4 lg:p-6">
+      <div className="mx-auto flex max-w-[1600px] gap-6">
+        <aside className="hidden w-72 shrink-0 rounded-[2rem] border border-white/70 bg-white/75 p-5 shadow-[0_20px_60px_rgba(49,35,20,0.08)] backdrop-blur-xl lg:block">
+          <div className="mb-8 flex items-center gap-3 px-2">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-500 to-accent-600 text-lg font-black text-white shadow-lg shadow-primary-500/20">
+              D
             </div>
             <div>
-              <p className="text-sm text-gray-600">Total clients</p>
-              <p className="text-2xl font-bold text-gray-900">{customers.length}</p>
+              <p className="text-lg font-black text-slate-900">DjiguiFlow</p>
+              <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Admin</p>
             </div>
           </div>
-        </div>
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-              <ShoppingBag className="w-6 h-6 text-green-600" />
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">Commandes moy.</p>
-              <p className="text-2xl font-bold text-green-600">{avgOrders}</p>
-            </div>
-          </div>
-        </div>
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-accent-100 rounded-lg flex items-center justify-center">
-              <Star className="w-6 h-6 text-accent-600" />
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">Revenu total</p>
-              <p className="text-2xl font-bold text-accent-600">{(totalRevenue / 1000).toFixed(0)}K FCFA</p>
-            </div>
-          </div>
-        </div>
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
-              <UserPlus className="w-6 h-6 text-yellow-600" />
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">Clients fidèles</p>
-              <p className="text-2xl font-bold text-yellow-600">
-                {customers.filter(c => c.orders >= 10).length}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
 
-      {/* Recherche */}
-      <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 mb-6">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Rechercher un client..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-          />
-        </div>
-      </div>
+          <nav className="space-y-2">
+            {sidebarItems.map(({ label, href, active, icon: Icon }) => (
+              <Link
+                key={label}
+                href={href}
+                className={`flex items-center gap-3 rounded-2xl px-3 py-3 text-sm font-semibold transition ${
+                  active ? 'bg-gradient-to-r from-primary-600 to-primary-500 text-white shadow-lg shadow-primary-500/20' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                }`}
+              >
+                <Icon className="h-4 w-4" />
+                {label}
+              </Link>
+            ))}
+          </nav>
 
-      {/* Liste des clients */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Client</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Contact</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Adresse</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Commandes</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Dépensé</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Dernière cmd</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Note</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {filteredCustomers.map((customer, index) => (
-                <motion.tr
-                  key={customer.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3, delay: index * 0.05 }}
-                  className="hover:bg-gray-50 transition"
-                >
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-primary-700 rounded-full flex items-center justify-center text-white font-bold text-sm">
-                        {customer.avatar}
-                      </div>
-                      <div>
-                        <p className="font-medium text-gray-900">{customer.name}</p>
-                        <p className="text-xs text-gray-500">{customer.email}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <Phone className="w-4 h-4 text-gray-400" />
-                      <span>{customer.phone}</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2 text-sm text-gray-600 max-w-xs">
-                      <MapPin className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                      <span className="truncate">{customer.address}</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="font-semibold text-gray-900">{customer.orders}</span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="font-semibold text-primary-600">{customer.totalSpent.toLocaleString()} FCFA</span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <Calendar className="w-4 h-4 text-gray-400" />
-                      <span>{customer.lastOrder}</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-1">
-                      {[...Array(5)].map((_, i) => (
-                        <Star
-                          key={i}
-                          className={`w-4 h-4 ${
-                            i < customer.rating
-                              ? 'fill-yellow-400 text-yellow-400'
-                              : 'text-gray-300'
-                          }`}
-                        />
-                      ))}
-                    </div>
-                  </td>
-                </motion.tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {filteredCustomers.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-gray-500">Aucun client trouvé</p>
+          <div className="mt-8 rounded-[1.5rem] bg-gradient-to-br from-primary-50 via-amber-50 to-white p-4">
+            <p className="text-sm text-slate-500">Base clients</p>
+            <p className="mt-2 text-2xl font-black text-slate-900">{customers.length}</p>
+            <p className="mt-2 flex items-center gap-2 text-xs font-semibold text-emerald-700">
+              <CheckCircle2 className="h-4 w-4" />
+              +12% sur 30 jours
+            </p>
           </div>
-        )}
+
+          <button className="mt-8 flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-100">
+            <LogOut className="h-4 w-4" />
+            Déconnexion
+          </button>
+        </aside>
+
+        <main className="flex-1">
+          <header className="mb-8 flex flex-col gap-4 rounded-[2rem] border border-white/70 bg-white/75 p-5 shadow-[0_20px_60px_rgba(49,35,20,0.08)] backdrop-blur-xl md:flex-row md:items-center md:justify-between">
+            <div>
+              <p className="text-sm font-medium uppercase tracking-[0.2em] text-slate-500">Clients</p>
+              <h1 className="mt-2 text-3xl font-black tracking-tight text-slate-900">Base clients</h1>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <div className="relative hidden sm:block">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Rechercher..."
+                  className="w-56 rounded-full border border-slate-200 bg-slate-50 py-2.5 pl-9 pr-4 text-sm text-slate-700 outline-none transition focus:border-primary-400 focus:ring-2 focus:ring-primary-100"
+                />
+              </div>
+              <button className="flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-slate-600 transition hover:border-primary-300 hover:text-primary-700">
+                <Bell className="h-5 w-5" />
+              </button>
+              <Link href="/dashboard/orders" className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-primary-600 to-primary-500 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-primary-500/30 transition hover:translate-y-[-1px]">
+                Commandes récentes
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
+          </header>
+
+          <section className="mb-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            {[
+              { label: 'Total clients', value: customers.length, icon: Users, accent: 'bg-primary-100 text-primary-700' },
+              { label: 'Commandes moy.', value: avgOrders, icon: ShoppingCart, accent: 'bg-emerald-100 text-emerald-700' },
+              { label: 'Revenu total', value: `${(totalRevenue / 1000).toFixed(0)}K FCFA`, icon: Star, accent: 'bg-amber-100 text-amber-600' },
+              { label: 'Clients fidèles', value: customers.filter((c) => c.orders >= 10).length, icon: UserPlus, accent: 'bg-sky-100 text-sky-700' },
+            ].map((stat, index) => {
+              const Icon = stat.icon;
+              return (
+                <motion.div key={stat.label} initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, delay: index * 0.06 }} className="glass-panel rounded-[1.5rem] p-5">
+                  <div className="flex items-center gap-4">
+                    <div className={`flex h-12 w-12 items-center justify-center rounded-2xl ${stat.accent}`}>
+                      <Icon className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-slate-600">{stat.label}</p>
+                      <p className="text-2xl font-black text-slate-900">{stat.value}</p>
+                    </div>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </section>
+
+          <div className="overflow-hidden rounded-[1.75rem] border border-slate-200 bg-white/75 shadow-[0_18px_45px_rgba(48,35,20,0.08)] backdrop-blur-sm">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-slate-50">
+                  <tr>
+                    <th className="px-6 py-4 text-left text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">Client</th>
+                    <th className="px-6 py-4 text-left text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">Contact</th>
+                    <th className="px-6 py-4 text-left text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">Adresse</th>
+                    <th className="px-6 py-4 text-left text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">Commandes</th>
+                    <th className="px-6 py-4 text-left text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">Dépensé</th>
+                    <th className="px-6 py-4 text-left text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">Dernière cmd</th>
+                    <th className="px-6 py-4 text-left text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">Note</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {filteredCustomers.map((customer, index) => (
+                    <motion.tr key={customer.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: index * 0.05 }} className="transition hover:bg-slate-50/80">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-500 to-primary-700 text-sm font-black text-white">
+                            {customer.avatar}
+                          </div>
+                          <div>
+                            <p className="font-bold text-slate-900">{customer.name}</p>
+                            <p className="text-xs text-slate-500">{customer.email}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2 text-sm text-slate-600">
+                          <Phone className="h-4 w-4 text-slate-400" />
+                          <span>{customer.phone}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex max-w-xs items-center gap-2 text-sm text-slate-600">
+                          <MapPin className="h-4 w-4 flex-shrink-0 text-slate-400" />
+                          <span className="truncate">{customer.address}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 font-bold text-slate-900">{customer.orders}</td>
+                      <td className="px-6 py-4 font-bold text-slate-900">{customer.totalSpent.toLocaleString()} FCFA</td>
+                      <td className="px-6 py-4 text-sm text-slate-600">{customer.lastOrder}</td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-1 text-amber-400">
+                          {[...Array(5)].map((_, i) => (
+                            <Star key={i} className={`h-4 w-4 ${i < customer.rating ? 'fill-current' : 'text-slate-300'}`} />
+                          ))}
+                        </div>
+                      </td>
+                    </motion.tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {filteredCustomers.length === 0 && <div className="py-12 text-center text-slate-500">Aucun client trouvé</div>}
+          </div>
+        </main>
       </div>
     </div>
   );

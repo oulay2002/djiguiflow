@@ -193,6 +193,7 @@ export default function Home() {
           </div>
 
           <div className="hidden items-center gap-8 md:flex">
+            <Link href="/boutiques" className="text-sm font-medium text-slate-700 transition hover:text-primary-700">Explorer les boutiques</Link>
             <button onClick={() => scrollToSection('valeurs')} className="text-sm font-medium text-slate-700 transition hover:text-primary-700">Valeurs</button>
             <button onClick={() => scrollToSection('features')} className="text-sm font-medium text-slate-700 transition hover:text-primary-700">Fonctionnalités</button>
             <button onClick={() => scrollToSection('pricing')} className="text-sm font-medium text-slate-700 transition hover:text-primary-700">Tarifs</button>

@@ -66,7 +66,6 @@ body {
 
 .glass-panel {
   background: var(--panel);
-  backdrop-filter: blur(14px);
   border: 1px solid rgba(123, 92, 63, 0.08);
   box-shadow: var(--shadow-soft);
 }
@@ -80,5 +79,5 @@ body {
 }
 
 .text-balance {
-  text-wrap: balance;
+  max-width: 60ch;
 }
