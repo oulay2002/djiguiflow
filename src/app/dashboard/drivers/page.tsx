@@ -211,8 +211,8 @@ export default function DriversPage() {
       {/* Liste des livreurs en cartes */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredDrivers.map((driver, index) => {
-          const config = statusConfig[driver.status];
-          return (
+          const config = statusConfig[driver.status as DriverStatus];
+           return (
             <motion.div
               key={driver.id}
               initial={{ opacity: 0, y: 20 }}
