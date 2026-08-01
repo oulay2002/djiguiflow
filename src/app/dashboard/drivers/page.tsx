@@ -42,6 +42,13 @@ const statusConfig: Record<DriverStatus, { label: string; color: string }> = {
   indisponible: { label: 'Indisponible', color: 'bg-red-100 text-red-700' },
 };
 
+// ✅ FONCTION HELPER AJOUTÉE (C'est ce qui manquait !)
+const getStatusConfig = (status: string) => {
+  if (status === 'disponible') return statusConfig.disponible;
+  if (status === 'en_livraison') return statusConfig.en_livraison;
+  return statusConfig.indisponible;
+};
+
 // Données de démonstration
 const mockDrivers: Driver[] = [
   {
@@ -211,8 +218,9 @@ export default function DriversPage() {
       {/* Liste des livreurs en cartes */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredDrivers.map((driver, index) => {
-          const config = statusConfig[driver.status as DriverStatus];
-           return (
+          // ✅ Utilise la fonction helper pour éviter l'erreur TypeScript
+          const config = getStatusConfig(driver.status);
+          return (
             <motion.div
               key={driver.id}
               initial={{ opacity: 0, y: 20 }}
