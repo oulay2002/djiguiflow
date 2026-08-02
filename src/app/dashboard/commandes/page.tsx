@@ -287,66 +287,65 @@ export default function CommandesPage() {
 
       {/* Vue Kanban */}
       {viewMode === 'kanban' ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {Object.entries(STATUS_CONFIG).map(([status, config]) => {
-            const statusCommandes = filteredCommandes.filter(c => c.statut === status);
-            return (
+  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    {Object.entries(STATUS_CONFIG).map(([status, config]) => {
+      const statusCommandes = filteredCommandes.filter(c => c.statut === status);
+      return (
+        <div
+          key={status}
+          onDragOver={handleDragOver}
+          onDrop={(e: React.DragEvent) => handleDrop(e, status as keyof typeof STATUS_CONFIG)}
+          className="bg-gray-100/50 rounded-xl p-4 min-h-[500px]"
+        >
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <config.icon className={`w-5 h-5 ${config.text}`} />
+              <h3 className="font-bold text-gray-900">{config.label}</h3>
+            </div>
+            <span className="px-2 py-1 bg-white rounded-full text-xs font-bold text-gray-700">
+              {statusCommandes.length}
+            </span>
+          </div>
+          
+          <div className="space-y-3">
+            {statusCommandes.map((commande) => (
               <div
-                key={status}
-                onDragOver={handleDragOver}
-                onDrop={(e) => handleDrop(e, status as keyof typeof STATUS_CONFIG)}
-                className="bg-gray-100/50 rounded-xl p-4 min-h-[500px]"
+                key={commande.id}
+                draggable
+                onDragStart={(e: React.DragEvent) => handleDragStart(e, commande.id)}
+                className="bg-white rounded-lg p-4 shadow-sm border border-gray-200 cursor-move hover:shadow-md transition hover:scale-[1.02]"
               >
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2">
-                    <config.icon className={`w-5 h-5 ${config.text}`} />
-                    <h3 className="font-bold text-gray-900">{config.label}</h3>
-                  </div>
-                  <span className="px-2 py-1 bg-white rounded-full text-xs font-bold text-gray-700">
-                    {statusCommandes.length}
+                <div className="flex items-start justify-between mb-2">
+                  <span className="font-bold text-amber-600 text-sm">
+                    #{commande.id.slice(0, 6).toUpperCase()}
+                  </span>
+                  <button
+                    onClick={() => {
+                      setSelectedCommande(commande);
+                      setShowModal(true);
+                    }}
+                    className="p-1 hover:bg-gray-100 rounded"
+                  >
+                    <Eye className="w-4 h-4 text-gray-400" />
+                  </button>
+                </div>
+                <p className="font-semibold text-gray-900 text-sm mb-1">{commande.client_nom}</p>
+                <p className="text-xs text-gray-500 mb-2">{commande.commande_items?.length || 0} articles</p>
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-gray-900">{commande.total.toLocaleString()} F</span>
+                  <span className="text-xs text-gray-500">
+                    {new Date(commande.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
                   </span>
                 </div>
-                
-                <div className="space-y-3">
-                  {statusCommandes.map((commande) => (
-                    <motion.div
-                      key={commande.id}
-                      draggable
-                      onDragStart={(e) => handleDragStart(e, commande.id)}
-                      whileHover={{ scale: 1.02 }}
-                      className="bg-white rounded-lg p-4 shadow-sm border border-gray-200 cursor-move hover:shadow-md transition"
-                    >
-                      <div className="flex items-start justify-between mb-2">
-                        <span className="font-bold text-amber-600 text-sm">
-                          #{commande.id.slice(0, 6).toUpperCase()}
-                        </span>
-                        <button
-                          onClick={() => {
-                            setSelectedCommande(commande);
-                            setShowModal(true);
-                          }}
-                          className="p-1 hover:bg-gray-100 rounded"
-                        >
-                          <Eye className="w-4 h-4 text-gray-400" />
-                        </button>
-                      </div>
-                      <p className="font-semibold text-gray-900 text-sm mb-1">{commande.client_nom}</p>
-                      <p className="text-xs text-gray-500 mb-2">{commande.commande_items?.length || 0} articles</p>
-                      <div className="flex items-center justify-between">
-                        <span className="font-bold text-gray-900">{commande.total.toLocaleString()} F</span>
-                        <span className="text-xs text-gray-500">
-                          {new Date(commande.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
-                        </span>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
               </div>
-            );
-          })}
+            ))}
+          </div>
         </div>
-      ) : (
-        /* Vue Liste */
+      );
+    })}
+  </div>
+) : (
+  /* Vue Liste - reste inchangée */
         <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-100">
