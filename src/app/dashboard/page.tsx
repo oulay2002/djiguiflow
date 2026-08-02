@@ -18,6 +18,7 @@ import {
   Settings,
   ShoppingCart,
   Store,
+  TrendingUp,
   Truck,
   UserRound,
   Users,
@@ -50,6 +51,7 @@ const sidebarItems = [
   { label: 'Commandes', href: '/dashboard/commandes', active: false, icon: ShoppingCart },
   { label: 'Clients', href: '/dashboard/customers', active: false, icon: Users },
   { label: 'Produits', href: '/dashboard/products', active: false, icon: Package2 }, // ← C'est ici !
+  { label: 'Analytics', href: '/dashboard/analytics', active: false, icon: TrendingUp },
   { label: 'Livreurs', href: '/dashboard/drivers', active: false, icon: Truck },
   { label: 'Paiements', href: '/dashboard/paiements', active: false, icon: CreditCard },
   { label: 'Réglages', href: '/dashboard/reglages', active: false, icon: Settings },

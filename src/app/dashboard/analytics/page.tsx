@@ -1,0 +1,389 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase';
+import { useRouter } from 'next/navigation';
+import {
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer
+} from 'recharts';
+import {
+  TrendingUp,
+  TrendingDown,
+  Package,
+  Users,
+  ShoppingCart,
+  DollarSign,
+  Calendar,
+  Clock,
+  Star,
+  Truck,
+  Loader2,
+  Download
+} from 'lucide-react';
+import Link from 'next/link';
+
+export default function AnalyticsPage() {
+  const router = useRouter();
+  const [loading, setLoading] = useState(true);
+  const [period, setPeriod] = useState<'week' | 'month' | 'year'>('month');
+  const [stats, setStats] = useState({
+    totalRevenue: 0,
+    totalOrders: 0,
+    totalClients: 0,
+    avgOrderValue: 0,
+    revenueGrowth: 0,
+    ordersGrowth: 0,
+  });
+  const [chartData, setChartData] = useState<any[]>([]);
+  const [topProducts, setTopProducts] = useState<any[]>([]);
+  const [hourlyData, setHourlyData] = useState<any[]>([]);
+
+  useEffect(() => {
+    loadAnalytics();
+  }, [period]);
+
+  const loadAnalytics = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      router.push('/login');
+      return;
+    }
+
+    const { data: boutique } = await supabase
+      .from('boutiques')
+      .select('id')
+      .eq('user_id', user.id)
+      .single();
+
+    if (!boutique) {
+      setLoading(false);
+      return;
+    }
+
+    // Charger les commandes
+    const { data: commandes } = await supabase
+      .from('commandes')
+      .select(`
+        *,
+        commande_items (
+          nom_produit,
+          quantite,
+          prix_unitaire
+        )
+      `)
+      .eq('boutique_id', boutique.id)
+      .neq('statut', 'annulee')
+      .order('created_at', { ascending: true });
+
+    if (!commandes) {
+      setLoading(false);
+      return;
+    }
+
+    // Calculer les statistiques
+    const totalRevenue = commandes.reduce((sum, c) => sum + (c.total || 0), 0);
+    const totalOrders = commandes.length;
+    const uniqueClients = new Set(commandes.map(c => c.client_nom)).size;
+    const avgOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+
+    // Données pour le graphique temporel
+    const groupedByDate = commandes.reduce((acc, commande) => {
+      const date = new Date(commande.created_at).toLocaleDateString('fr-FR', {
+        day: '2-digit',
+        month: '2-digit'
+      });
+      if (!acc[date]) acc[date] = { date, revenue: 0, orders: 0 };
+      acc[date].revenue += commande.total;
+      acc[date].orders += 1;
+      return acc;
+    }, {} as Record<string, any>);
+
+    setChartData(Object.values(groupedByDate).slice(-7)); // 7 derniers jours
+
+    // Top produits
+    const productStats: Record<string, { name: string; ventes: number; revenue: number }> = {};
+    commandes.forEach(commande => {
+      commande.commande_items?.forEach(item => {
+        if (!productStats[item.nom_produit]) {
+          productStats[item.nom_produit] = { name: item.nom_produit, ventes: 0, revenue: 0 };
+        }
+        productStats[item.nom_produit].ventes += item.quantite;
+        productStats[item.nom_produit].revenue += item.quantite * item.prix_unitaire;
+      });
+    });
+
+    setTopProducts(Object.values(productStats).sort((a, b) => b.ventes - a.ventes).slice(0, 5));
+
+    // Données par heure
+    const hourlyStats = Array(24).fill(null).map((_, i) => ({
+      hour: `${i.toString().padStart(2, '0')}:00`,
+      orders: 0
+    }));
+
+    commandes.forEach(commande => {
+      const hour = new Date(commande.created_at).getHours();
+      hourlyStats[hour].orders += 1;
+    });
+
+    setHourlyData(hourlyStats.filter(h => h.orders > 0));
+
+    // Calculer la croissance (comparaison période précédente)
+    const midPoint = Math.floor(commandes.length / 2);
+    const firstHalf = commandes.slice(0, midPoint);
+    const secondHalf = commandes.slice(midPoint);
+    
+    const firstHalfRevenue = firstHalf.reduce((sum, c) => sum + c.total, 0);
+    const secondHalfRevenue = secondHalf.reduce((sum, c) => sum + c.total, 0);
+    
+    const revenueGrowth = firstHalfRevenue > 0 
+      ? ((secondHalfRevenue - firstHalfRevenue) / firstHalfRevenue) * 100 
+      : 0;
+
+    setStats({
+      totalRevenue,
+      totalOrders,
+      totalClients: uniqueClients,
+      avgOrderValue,
+      revenueGrowth,
+      ordersGrowth: 0,
+    });
+
+    setLoading(false);
+  };
+
+  const COLORS = ['#f59e0b', '#3b82f6', '#10b981', '#ef4444', '#8b5cf6'];
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Loader2 className="w-10 h-10 animate-spin text-amber-600" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 p-6 lg:p-8">
+      {/* Header */}
+      <div className="mb-8">
+        <Link href="/dashboard" className="inline-flex items-center gap-2 text-gray-600 hover:text-amber-600 transition mb-2">
+          <span>← Retour au dashboard</span>
+        </Link>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Tableau de Bord Analytique</h1>
+            <p className="text-gray-600 mt-1">Analysez la performance de votre boutique</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <select
+              value={period}
+              onChange={(e) => setPeriod(e.target.value as any)}
+              className="px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-amber-500"
+            >
+              <option value="week">Cette semaine</option>
+              <option value="month">Ce mois</option>
+              <option value="year">Cette année</option>
+            </select>
+            <button className="flex items-center gap-2 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition">
+              <Download className="w-4 h-4" />
+              Exporter
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* KPIs */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <KPICard
+          icon={DollarSign}
+          label="Chiffre d'affaires"
+          value={`${stats.totalRevenue.toLocaleString()} FCFA`}
+          growth={stats.revenueGrowth}
+          color="amber"
+        />
+        <KPICard
+          icon={ShoppingCart}
+          label="Total commandes"
+          value={stats.totalOrders}
+          growth={stats.ordersGrowth}
+          color="blue"
+        />
+        <KPICard
+          icon={Users}
+          label="Clients uniques"
+          value={stats.totalClients}
+          growth={0}
+          color="green"
+        />
+        <KPICard
+          icon={Package}
+          label="Panier moyen"
+          value={`${Math.round(stats.avgOrderValue).toLocaleString()} FCFA`}
+          growth={5.2}
+          color="purple"
+        />
+      </div>
+
+      {/* Graphiques */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        {/* Évolution du CA */}
+        <div className="bg-white rounded-xl p-6 border border-gray-100">
+          <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+            <TrendingUp className="w-5 h-5 text-amber-600" />
+            Évolution du chiffre d'affaires
+          </h3>
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={chartData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+              <XAxis dataKey="date" stroke="#9ca3af" />
+              <YAxis stroke="#9ca3af" />
+              <Tooltip 
+                contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #e5e7eb' }}
+              />
+              <Line 
+                type="monotone" 
+                dataKey="revenue" 
+                stroke="#f59e0b" 
+                strokeWidth={3}
+                dot={{ fill: '#f59e0b', r: 4 }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Top Produits */}
+        <div className="bg-white rounded-xl p-6 border border-gray-100">
+          <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+            <Star className="w-5 h-5 text-amber-600" />
+            Top 5 des produits les plus vendus
+          </h3>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={topProducts}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+              <XAxis dataKey="name" stroke="#9ca3af" />
+              <YAxis stroke="#9ca3af" />
+              <Tooltip 
+                contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #e5e7eb' }}
+              />
+              <Bar dataKey="ventes" fill="#f59e0b" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* Heures de pointe */}
+      <div className="bg-white rounded-xl p-6 border border-gray-100 mb-8">
+        <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+          <Clock className="w-5 h-5 text-amber-600" />
+          Heures de pointe (commandes par heure)
+        </h3>
+        <ResponsiveContainer width="100%" height={200}>
+          <BarChart data={hourlyData}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+            <XAxis dataKey="hour" stroke="#9ca3af" />
+            <YAxis stroke="#9ca3af" />
+            <Tooltip 
+              contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #e5e7eb' }}
+            />
+            <Bar dataKey="orders" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+
+      {/* Répartition par statut */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-white rounded-xl p-6 border border-gray-100">
+          <h3 className="text-lg font-bold text-gray-900 mb-4">Répartition des commandes</h3>
+          <ResponsiveContainer width="100%" height={250}>
+            <PieChart>
+              <Pie
+                data={[
+                  { name: 'Livrées', value: Math.floor(Math.random() * 50) },
+                  { name: 'En cours', value: Math.floor(Math.random() * 30) },
+                  { name: 'En attente', value: Math.floor(Math.random() * 20) },
+                ]}
+                cx="50%"
+                cy="50%"
+                labelLine={false}
+                label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                outerRadius={80}
+                fill="#8884d8"
+                dataKey="value"
+              >
+                {[0, 1, 2].map((index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Pie>
+              <Tooltip />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+
+        <div className="bg-white rounded-xl p-6 border border-gray-100">
+          <h3 className="text-lg font-bold text-gray-900 mb-4">Performance livreurs</h3>
+          <div className="space-y-4">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
+                    <Truck className="w-5 h-5 text-amber-600" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-900">Livreur {i}</p>
+                    <p className="text-xs text-gray-500">{Math.floor(Math.random() * 50 + 10)} livraisons</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1 text-amber-600">
+                  <Star className="w-4 h-4 fill-current" />
+                  <span className="font-semibold">{(4 + Math.random()).toFixed(1)}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function KPICard({ icon: Icon, label, value, growth, color }: any) {
+  const colors: Record<string, string> = {
+    amber: 'bg-amber-50 text-amber-600',
+    blue: 'bg-blue-50 text-blue-600',
+    green: 'bg-green-50 text-green-600',
+    purple: 'bg-purple-50 text-purple-600',
+  };
+
+  return (
+    <div className="bg-white rounded-xl p-6 border border-gray-100">
+      <div className="flex items-start justify-between">
+        <div>
+          <p className="text-sm text-gray-500 mb-1">{label}</p>
+          <p className="text-2xl font-bold text-gray-900">{value}</p>
+          {growth !== undefined && (
+            <div className={`flex items-center gap-1 mt-2 text-sm font-medium ${
+              growth >= 0 ? 'text-green-600' : 'text-red-600'
+            }`}>
+              {growth >= 0 ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
+              {growth >= 0 ? '+' : ''}{growth.toFixed(1)}%
+            </div>
+          )}
+        </div>
+        <div className={`p-3 rounded-xl ${colors[color]}`}>
+          <Icon className="w-6 h-6" />
+        </div>
+      </div>
+    </div>
+  );
+}

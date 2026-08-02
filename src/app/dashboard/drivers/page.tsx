@@ -3,282 +3,519 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
-  ArrowLeft,
-  CheckCircle,
-  Clock,
-  Edit,
-  MapPin,
+  Truck,
+  User,
   Phone,
+  Mail,
+  MapPin,
+  Star,
+  Package,
+  TrendingUp,
   Plus,
   Search,
-  Star,
+  Filter,
+  MoreVertical,
+  Edit3,
   Trash2,
-  Truck,
+  CheckCircle,
+  XCircle,
+  Clock,
+  Loader2,
+  Bike,
+  Car,
+  Navigation,
+  DollarSign,
+  X
 } from 'lucide-react';
 import Link from 'next/link';
 
-type DriverStatus = 'disponible' | 'en_livraison' | 'indisponible';
-
-interface Driver {
-  id: number;
-  name: string;
-  phone: string;
-  vehicle: string;
-  status: DriverStatus;
-  deliveries: number;
-  rating: number;
-  zone: string;
-  avatar: string;
-}
-
-const statusConfig: Record<DriverStatus, { label: string; color: string }> = {
-  disponible: { label: 'Disponible', color: 'bg-emerald-100 text-emerald-700 border border-emerald-200' },
-  en_livraison: { label: 'En livraison', color: 'bg-sky-100 text-sky-700 border border-sky-200' },
-  indisponible: { label: 'Indisponible', color: 'bg-rose-100 text-rose-700 border border-rose-200' },
+const TYPE_CONFIG = {
+  interne: { label: 'Interne', color: 'bg-blue-100 text-blue-700 border-blue-200' },
+  independant: { label: 'Indépendant', color: 'bg-purple-100 text-purple-700 border-purple-200' },
 };
 
-const getStatusConfig = (status: DriverStatus) => statusConfig[status];
+const STATUT_CONFIG = {
+  disponible: { label: 'Disponible', color: 'bg-green-100 text-green-700', icon: CheckCircle },
+  en_livraison: { label: 'En livraison', color: 'bg-amber-100 text-amber-700', icon: Clock },
+  indisponible: { label: 'Indisponible', color: 'bg-gray-100 text-gray-700', icon: XCircle },
+};
 
-const mockDrivers: Driver[] = [
-  {
-    id: 1,
-    name: 'Jean Paul',
-    phone: '0709123456',
-    vehicle: 'Moto Yamaha 125',
-    status: 'disponible',
-    deliveries: 145,
-    rating: 4.8,
-    zone: 'Cocody - Plateau',
-    avatar: 'JP',
-  },
-  {
-    id: 2,
-    name: 'Koffi',
-    phone: '0507123456',
-    vehicle: 'Moto Honda 150',
-    status: 'en_livraison',
-    deliveries: 98,
-    rating: 4.6,
-    zone: 'Yopougon - Abobo',
-    avatar: 'KO',
-  },
-  {
-    id: 3,
-    name: 'Aminata',
-    phone: '0102345678',
-    vehicle: 'Vélo électrique',
-    status: 'disponible',
-    deliveries: 67,
-    rating: 4.9,
-    zone: 'Marcory - Treichville',
-    avatar: 'AM',
-  },
-  {
-    id: 4,
-    name: 'Moussa',
-    phone: '0708123456',
-    vehicle: 'Moto Bajaj',
-    status: 'indisponible',
-    deliveries: 34,
-    rating: 4.3,
-    zone: 'Riviera - Angré',
-    avatar: 'MO',
-  },
-];
+const VEHICULE_ICONS = {
+  moto: Bike,
+  voiture: Car,
+  velo: Bike,
+};
 
-export default function DriversPage() {
+type Livreur = {
+  id: string;
+  nom: string;
+  telephone: string;
+  email?: string;
+  type: 'interne' | 'independant';
+  statut: 'disponible' | 'en_livraison' | 'indisponible';
+  vehicule_type?: string;
+  vehicule_immatriculation?: string;
+  note_moyenne: number;
+  total_livraisons: number;
+  gain_total: number;
+  latitude?: number;
+  longitude?: number;
+};
+
+export default function LivreursPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
-  const [drivers] = useState<Driver[]>(mockDrivers);
+  const [livreurs, setLivreurs] = useState<Livreur[]>([]);
+  const [filter, setFilter] = useState<'tous' | 'interne' | 'independant'>('tous');
+  const [statutFilter, setStatutFilter] = useState<'tous' | 'disponible' | 'en_livraison' | 'indisponible'>('tous');
   const [search, setSearch] = useState('');
+  const [showModal, setShowModal] = useState(false);
+  const [selectedLivreur, setSelectedLivreur] = useState<Livreur | null>(null);
+  const [formData, setFormData] = useState({
+    nom: '',
+    telephone: '',
+    email: '',
+    type: 'interne' as 'interne' | 'independant',
+    vehicule_type: 'moto',
+    vehicule_immatriculation: '',
+  });
 
   useEffect(() => {
-    let isMounted = true;
+    loadLivreurs();
+  }, []);
 
-    const checkAuth = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!isMounted) return;
+  const loadLivreurs = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      router.push('/login');
+      return;
+    }
 
-      if (!user) {
-        router.push('/login');
-        return;
-      }
+    const { data: boutique } = await supabase
+      .from('boutiques')
+      .select('id')
+      .eq('user_id', user.id)
+      .single();
 
+    if (!boutique) {
       setLoading(false);
-    };
+      return;
+    }
 
-    void checkAuth();
+    const { data } = await supabase
+      .from('livreurs')
+      .select('*')
+      .eq('boutique_id', boutique.id)
+      .order('created_at', { ascending: false });
 
-    return () => {
-      isMounted = false;
-    };
-  }, [router]);
+    if (data) {
+      setLivreurs(data as Livreur[]);
+    }
+    setLoading(false);
+  };
 
-  const filteredDrivers = drivers.filter(
-    (driver) =>
-      driver.name.toLowerCase().includes(search.toLowerCase()) ||
-      driver.zone.toLowerCase().includes(search.toLowerCase())
-  );
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data: boutique } = await supabase
+      .from('boutiques')
+      .select('id')
+      .eq('user_id', user.id)
+      .single();
+
+    if (!boutique) return;
+
+    const { error } = await supabase
+      .from('livreurs')
+      .insert({
+        boutique_id: boutique.id,
+        ...formData,
+      });
+
+    if (!error) {
+      setShowModal(false);
+      setFormData({ nom: '', telephone: '', email: '', type: 'interne', vehicule_type: 'moto', vehicule_immatriculation: '' });
+      loadLivreurs();
+    }
+  };
+
+  const deleteLivreur = async (id: string) => {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer ce livreur ?')) return;
+    
+    await supabase.from('livreurs').delete().eq('id', id);
+    loadLivreurs();
+  };
+
+  const toggleStatut = async (livreur: Livreur) => {
+    const newStatut = livreur.statut === 'disponible' ? 'indisponible' : 'disponible';
+    await supabase.from('livreurs').update({ statut: newStatut }).eq('id', livreur.id);
+    loadLivreurs();
+  };
+
+  const filteredLivreurs = livreurs.filter(l => {
+    const matchType = filter === 'tous' || l.type === filter;
+    const matchStatut = statutFilter === 'tous' || l.statut === statutFilter;
+    const matchSearch = search === '' || 
+      l.nom.toLowerCase().includes(search.toLowerCase()) ||
+      l.telephone.includes(search);
+    return matchType && matchStatut && matchSearch;
+  });
+
+  const stats = {
+    total: livreurs.length,
+    disponibles: livreurs.filter(l => l.statut === 'disponible').length,
+    en_livraison: livreurs.filter(l => l.statut === 'en_livraison').length,
+    internes: livreurs.filter(l => l.type === 'interne').length,
+    independants: livreurs.filter(l => l.type === 'independant').length,
+  };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#f9f4ec] flex items-center justify-center">
-        <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-primary-600" />
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Loader2 className="w-10 h-10 animate-spin text-amber-600" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(219,149,52,0.15),transparent_25%),linear-gradient(180deg,#fffdf9_0%,#f7f0e7_100%)] p-6 lg:p-8">
-      <div className="mx-auto max-w-7xl">
-        <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+    <div className="min-h-screen bg-gray-50 p-6 lg:p-8">
+            {/* Header */}
+      <div className="mb-8">
+        <Link href="/dashboard" className="inline-flex items-center gap-2 text-gray-600 hover:text-amber-600 transition mb-2">
+          <span>← Retour au dashboard</span>
+        </Link>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <Link href="/dashboard" className="mb-3 inline-flex items-center gap-2 text-sm font-medium text-slate-600 transition hover:text-primary-700">
-              <ArrowLeft className="h-4 w-4" />
-              <span>Retour au dashboard</span>
-            </Link>
-            <h1 className="text-4xl font-black tracking-tight text-slate-900">Livreurs</h1>
-            <p className="mt-2 text-slate-600">Gérez votre équipe de livraison avec efficacité.</p>
+            <h1 className="text-3xl font-bold text-gray-900">Gestion des Livreurs</h1>
+            <p className="text-gray-600 mt-1">Gérez vos livreurs internes et indépendants</p>
           </div>
-
-          <button className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-primary-600 to-primary-500 px-6 py-3 font-semibold text-white shadow-lg shadow-primary-500/30 transition hover:translate-y-[-1px]">
-            <Plus className="h-5 w-5" />
+          
+          {/* BOUTON ASSIGNATIONS - AJOUTEZ CECI */}
+          <Link 
+            href="/dashboard/drivers/assignations"
+            className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm font-medium"
+          >
+            <Navigation className="w-4 h-4" />
+            Assignations
+          </Link>
+          
+          <button
+            onClick={() => setShowModal(true)}
+            className="flex items-center justify-center gap-2 px-6 py-3 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition shadow-lg font-medium"
+          >
+            <Plus className="w-5 h-5" />
             Ajouter un livreur
           </button>
         </div>
+      </div>
 
-        <div className="mb-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {[
-            {
-              label: 'Total livreurs',
-              value: drivers.length,
-              icon: Truck,
-              iconClass: 'bg-primary-100 text-primary-700',
-            },
-            {
-              label: 'Disponibles',
-              value: drivers.filter((d) => d.status === 'disponible').length,
-              icon: CheckCircle,
-              iconClass: 'bg-emerald-100 text-emerald-700',
-            },
-            {
-              label: 'En livraison',
-              value: drivers.filter((d) => d.status === 'en_livraison').length,
-              icon: Clock,
-              iconClass: 'bg-sky-100 text-sky-700',
-            },
-            {
-              label: 'Note moyenne',
-              value: `${(drivers.reduce((acc, d) => acc + d.rating, 0) / drivers.length).toFixed(1)}/5`,
-              icon: Star,
-              iconClass: 'bg-amber-100 text-amber-600',
-            },
-          ].map((stat) => {
-            const Icon = stat.icon;
-            return (
-              <div key={stat.label} className="glass-panel rounded-[1.5rem] p-5">
-                <div className="flex items-center gap-4">
-                  <div className={`flex h-12 w-12 items-center justify-center rounded-2xl ${stat.iconClass}`}>
-                    <Icon className="h-6 w-6" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-slate-600">{stat.label}</p>
-                    <p className="text-2xl font-black text-slate-900">{stat.value}</p>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+      {/* Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+        <StatCard icon={Truck} label="Total livreurs" value={stats.total} color="amber" />
+        <StatCard icon={CheckCircle} label="Disponibles" value={stats.disponibles} color="green" />
+        <StatCard icon={Clock} label="En livraison" value={stats.en_livraison} color="purple" />
+        <StatCard icon={User} label="Internes" value={stats.internes} color="blue" />
+        <StatCard icon={TrendingUp} label="Indépendants" value={stats.independants} color="purple" />
+      </div>
 
-        <div className="mb-8 rounded-[1.5rem] border border-slate-200 bg-white/80 p-4 shadow-sm backdrop-blur-sm">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+      {/* Filtres et recherche */}
+      <div className="bg-white rounded-xl border border-gray-100 p-4 mb-6">
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="flex-1 relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
               type="text"
-              placeholder="Rechercher un livreur..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pl-10 pr-4 text-slate-700 outline-none transition focus:border-primary-400 focus:ring-2 focus:ring-primary-100"
+              placeholder="Rechercher par nom ou téléphone..."
+              className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-amber-500"
             />
           </div>
+          <div className="flex flex-wrap gap-2">
+            {(['tous', 'interne', 'independant'] as const).map((type) => (
+              <button
+                key={type}
+                onClick={() => setFilter(type)}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
+                  filter === type ? 'bg-amber-600 text-white' : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                {type === 'tous' ? 'Tous' : type === 'interne' ? 'Internes' : 'Indépendants'}
+              </button>
+            ))}
+          </div>
         </div>
+      </div>
 
-        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-          {filteredDrivers.map((driver, index) => {
-            const config = getStatusConfig(driver.status);
-
+      {/* Liste des livreurs */}
+      {filteredLivreurs.length === 0 ? (
+        <div className="text-center py-16 bg-white rounded-xl border border-gray-100 border-dashed">
+          <Truck className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-gray-900">Aucun livreur</h3>
+          <p className="text-gray-500 mt-1">Commencez par ajouter votre premier livreur.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredLivreurs.map((livreur) => {
+            const typeConfig = TYPE_CONFIG[livreur.type];
+            const statutConfig = STATUT_CONFIG[livreur.statut];
+            const VehiculeIcon = VEHICULE_ICONS[livreur.vehicule_type as keyof typeof VEHICULE_ICONS] || Bike;
+            
             return (
               <motion.div
-                key={driver.id}
-                initial={{ opacity: 0, y: 18 }}
+                key={livreur.id}
+                initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: index * 0.08 }}
-                className="rounded-[1.75rem] border border-slate-200 bg-white/80 p-6 shadow-[0_18px_45px_rgba(48,35,20,0.08)] backdrop-blur-sm transition hover:-translate-y-1 hover:shadow-[0_22px_60px_rgba(48,35,20,0.12)]"
+                className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition"
               >
-                <div className="mb-5 flex items-start justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-500 to-primary-700 text-lg font-black text-white shadow-lg shadow-primary-500/20">
-                      {driver.avatar}
+                <div className="p-5">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-white font-bold text-lg">
+                        {livreur.nom.charAt(0).toUpperCase()}
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-gray-900">{livreur.nom}</h3>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-semibold border ${typeConfig}`}>
+                            {typeConfig.label}
+                          </span>
+                          <span className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${statutConfig.color}`}>
+                            <statutConfig.icon className="w-3 h-3" />
+                            {statutConfig.label}
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <h3 className="text-xl font-bold text-slate-900">{driver.name}</h3>
-                      <span className={`mt-1 inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${config.color}`}>
-                        {config.label}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="flex gap-2">
-                    <button className="rounded-xl bg-sky-50 p-2 text-sky-600 transition hover:bg-sky-100">
-                      <Edit className="h-4 w-4" />
+                    <button className="p-1 hover:bg-gray-100 rounded">
+                      <MoreVertical className="w-5 h-5 text-gray-400" />
                     </button>
-                    <button className="rounded-xl bg-rose-50 p-2 text-rose-600 transition hover:bg-rose-100">
-                      <Trash2 className="h-4 w-4" />
-                    </button>
                   </div>
-                </div>
 
-                <div className="space-y-3 pb-5">
-                  <div className="flex items-center gap-2 text-sm text-slate-600">
-                    <Phone className="h-4 w-4 text-slate-400" />
-                    <span>{driver.phone}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-slate-600">
-                    <Truck className="h-4 w-4 text-slate-400" />
-                    <span>{driver.vehicle}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-slate-600">
-                    <MapPin className="h-4 w-4 text-slate-400" />
-                    <span>{driver.zone}</span>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3 border-t border-slate-100 pt-4">
-                  <div className="rounded-2xl bg-slate-50 px-3 py-4 text-center">
-                    <p className="text-2xl font-black text-slate-900">{driver.deliveries}</p>
-                    <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-slate-500">Livraisons</p>
-                  </div>
-                  <div className="rounded-2xl bg-amber-50 px-3 py-4 text-center">
-                    <div className="flex items-center justify-center gap-1">
-                      <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
-                      <p className="text-2xl font-black text-slate-900">{driver.rating}</p>
+                  <div className="space-y-2 mb-4">
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <Phone className="w-4 h-4 text-gray-400" />
+                      {livreur.telephone}
                     </div>
-                    <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-slate-500">Note</p>
+                    {livreur.email && (
+                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                        <Mail className="w-4 h-4 text-gray-400" />
+                        {livreur.email}
+                      </div>
+                    )}
+                    {livreur.vehicule_type && (
+                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                        <VehiculeIcon className="w-4 h-4 text-gray-400" />
+                        {livreur.vehicule_type.charAt(0).toUpperCase() + livreur.vehicule_type.slice(1)}
+                        {livreur.vehicule_immatriculation && ` • ${livreur.vehicule_immatriculation}`}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-3 mb-4 pt-4 border-t border-gray-100">
+                    <div className="text-center">
+                      <div className="flex items-center justify-center gap-1 text-amber-600 font-bold">
+                        <Star className="w-4 h-4 fill-current" />
+                        {livreur.note_moyenne.toFixed(1)}
+                      </div>
+                      <p className="text-xs text-gray-500 mt-1">Note</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="font-bold text-gray-900">{livreur.total_livraisons}</p>
+                      <p className="text-xs text-gray-500 mt-1">Livraisons</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="font-bold text-gray-900">{livreur.gain_total.toLocaleString()}F</p>
+                      <p className="text-xs text-gray-500 mt-1">Gains</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-2">
+                    <button
+                      onClick={() => toggleStatut(livreur)}
+                      className={`flex-1 py-2 rounded-lg text-xs font-semibold transition ${
+                        livreur.statut === 'disponible'
+                          ? 'bg-amber-50 text-amber-700 hover:bg-amber-100'
+                          : 'bg-green-50 text-green-700 hover:bg-green-100'
+                      }`}
+                    >
+                      {livreur.statut === 'disponible' ? 'Rendre indisponible' : 'Rendre disponible'}
+                    </button>
+                    <button
+                      onClick={() => {
+                        setSelectedLivreur(livreur);
+                        // Ouvrir modal détails
+                      }}
+                      className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
+                    >
+                      <Edit3 className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => deleteLivreur(livreur.id)}
+                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </div>
                 </div>
               </motion.div>
             );
           })}
         </div>
+      )}
 
-        {filteredDrivers.length === 0 && (
-          <div className="mt-8 rounded-[1.5rem] border border-dashed border-slate-300 bg-white/70 py-12 text-center">
-            <p className="text-slate-500">Aucun livreur trouvé</p>
+      {/* Modal Ajout Livreur */}
+      <AnimatePresence>
+        {showModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl"
+            >
+              <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+                <h2 className="text-xl font-bold text-gray-900">Ajouter un livreur</h2>
+                <button onClick={() => setShowModal(false)} className="p-2 hover:bg-gray-100 rounded-lg">
+                  <X className="w-5 h-5 text-gray-500" />
+                </button>
+              </div>
+
+              <form onSubmit={handleSubmit} className="p-6 space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Type de livreur *</label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, type: 'interne' })}
+                      className={`py-3 rounded-lg border-2 font-semibold transition ${
+                        formData.type === 'interne'
+                          ? 'border-blue-500 bg-blue-50 text-blue-700'
+                          : 'border-gray-200 text-gray-700 hover:border-gray-300'
+                      }`}
+                    >
+                      Interne
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, type: 'independant' })}
+                      className={`py-3 rounded-lg border-2 font-semibold transition ${
+                        formData.type === 'independant'
+                          ? 'border-purple-500 bg-purple-50 text-purple-700'
+                          : 'border-gray-200 text-gray-700 hover:border-gray-300'
+                      }`}
+                    >
+                      Indépendant
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Nom complet *</label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.nom}
+                    onChange={(e) => setFormData({ ...formData, nom: e.target.value })}
+                    className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-amber-500"
+                    placeholder="Ex: Kouamé Jean"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Téléphone *</label>
+                  <input
+                    type="tel"
+                    required
+                    value={formData.telephone}
+                    onChange={(e) => setFormData({ ...formData, telephone: e.target.value })}
+                    className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-amber-500"
+                    placeholder="Ex: 0709123456"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                  <input
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-amber-500"
+                    placeholder="Ex: jean@example.com"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Type de véhicule *</label>
+                  <select
+                    value={formData.vehicule_type}
+                    onChange={(e) => setFormData({ ...formData, vehicule_type: e.target.value })}
+                    className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-amber-500"
+                  >
+                    <option value="moto">Moto</option>
+                    <option value="voiture">Voiture</option>
+                    <option value="velo">Vélo</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Immatriculation</label>
+                  <input
+                    type="text"
+                    value={formData.vehicule_immatriculation}
+                    onChange={(e) => setFormData({ ...formData, vehicule_immatriculation: e.target.value })}
+                    className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-amber-500"
+                    placeholder="Ex: AB-123-CD"
+                  />
+                </div>
+
+                <div className="pt-4 flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowModal(false)}
+                    className="flex-1 px-4 py-3 border border-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-50"
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 px-4 py-3 bg-amber-600 text-white rounded-lg font-medium hover:bg-amber-700"
+                  >
+                    Ajouter
+                  </button>
+                </div>
+              </form>
+            </motion.div>
           </div>
         )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+function StatCard({ icon: Icon, label, value, color }: { icon: any; label: string; value: string | number; color: string }) {
+  const colors: Record<string, string> = {
+    amber: 'bg-amber-50 text-amber-600',
+    green: 'bg-green-50 text-green-600',
+    blue: 'bg-blue-50 text-blue-600',
+    purple: 'bg-purple-50 text-purple-600',
+  };
+  
+  return (
+    <div className="bg-white rounded-xl p-4 border border-gray-100">
+      <div className="flex items-center gap-3">
+        <div className={`p-2 rounded-lg ${colors[color]}`}>
+          <Icon className="w-5 h-5" />
+        </div>
+        <div>
+          <p className="text-xs text-gray-500">{label}</p>
+          <p className="text-xl font-bold text-gray-900">{value}</p>
+        </div>
       </div>
     </div>
   );
