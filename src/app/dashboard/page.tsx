@@ -49,10 +49,10 @@ const sidebarItems = [
   { label: 'Ma Boutique', href: '/dashboard/ma-boutique', active: false, icon: Store },
   { label: 'Commandes', href: '/dashboard/orders', active: false, icon: ShoppingCart },
   { label: 'Clients', href: '/dashboard/customers', active: false, icon: Users },
-  { label: 'Produits', href: '/dashboard/products', active: false, icon: Package2 },
+  { label: 'Produits', href: '/dashboard/products', active: false, icon: Package2 }, // ← C'est ici !
   { label: 'Livreurs', href: '/dashboard/drivers', active: false, icon: Truck },
-  { label: 'Paiements', href: '#', active: false, icon: CreditCard },
-  { label: 'Réglages', href: '#', active: false, icon: Settings },
+  { label: 'Paiements', href: '/dashboard/paiements', active: false, icon: CreditCard },
+  { label: 'Réglages', href: '/dashboard/reglages', active: false, icon: Settings },
 ];
 
 export default function DashboardPage() {
@@ -154,8 +154,8 @@ export default function DashboardPage() {
               <button className="flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-slate-600 transition hover:border-primary-300 hover:text-primary-700">
                 <Bell className="h-5 w-5" />
               </button>
-              <Link href="/dashboard/customers" className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-primary-600 to-primary-500 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-primary-500/30 transition hover:translate-y-[-1px]">
-                Voir le commerce
+              <Link href="/dashboard/ma-boutique" className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-primary-600 to-primary-500 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-primary-500/30 transition hover:translate-y-[-1px]">
+                Voir ma boutique
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </div>

@@ -8,9 +8,7 @@ import {
   MapPin, 
   Star, 
   ShoppingBag, 
-  ArrowLeft, 
   Filter,
-  Phone,
   Clock
 } from 'lucide-react';
 
@@ -254,7 +252,7 @@ export default function MarketplacePage() {
       {/* Footer simple */}
       <footer className="bg-white border-t border-gray-100 py-8 mt-12">
         <div className="max-w-7xl mx-auto px-4 text-center text-gray-500 text-sm">
-          <p>© 2024 DjiguiFlow. Commerce intelligent, pensé pour l'Afrique.</p>
+          <p>© 2024 DjiguiFlow. Commerce intelligent, pensé pour l&apos;Afrique.</p>
         </div>
       </footer>
     </div>

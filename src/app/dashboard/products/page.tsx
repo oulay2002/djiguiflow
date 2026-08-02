@@ -36,7 +36,7 @@ const sidebarItems = [
   { label: 'Vue d’ensemble', href: '/dashboard', active: false, icon: Gauge },
   { label: 'Commandes', href: '/dashboard/orders', active: false, icon: ShoppingCart },
   { label: 'Clients', href: '/dashboard/customers', active: false, icon: Users },
-  { label: 'Produits', href: '/dashboard/products', active: true, icon: Package2 },
+  { label: 'Produits', href: '/dashboard/produits', active: true, icon: Package2 },
   { label: 'Livreurs', href: '/dashboard/drivers', active: false, icon: Truck },
   { label: 'Réglages', href: '#', active: false, icon: Settings },
 ];
@@ -148,10 +148,10 @@ export default function ProductsPage() {
               <button className="flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-slate-600 transition hover:border-primary-300 hover:text-primary-700">
                 <Bell className="h-5 w-5" />
               </button>
-              <button className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-primary-600 to-primary-500 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-primary-500/30 transition hover:translate-y-[-1px]">
+              <Link href="/dashboard/produits" className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-primary-600 to-primary-500 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-primary-500/30 transition hover:translate-y-[-1px]">
                 <Plus className="h-4 w-4" />
                 Nouveau produit
-              </button>
+              </Link>
             </div>
           </header>
 
