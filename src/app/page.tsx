@@ -18,12 +18,17 @@ import {
   Users,
   Zap,
 } from 'lucide-react';
+import AssistantChat from '@/components/AssistantChat';
 
 const scrollToSection = (sectionId: string) => {
   const element = document.getElementById(sectionId);
   if (element) {
     element.scrollIntoView({ behavior: 'smooth' });
   }
+};
+
+const openAssistant = () => {
+  window.dispatchEvent(new Event('djiguiflow:assistant-open'));
 };
 
 const stats = [
@@ -194,6 +199,7 @@ export default function Home() {
 
           <div className="hidden items-center gap-8 md:flex">
             <Link href="/boutiques" className="text-sm font-medium text-slate-700 transition hover:text-primary-700">Explorer les boutiques</Link>
+            <button onClick={openAssistant} className="text-sm font-medium text-slate-700 transition hover:text-primary-700">Assistant IA</button>
             <button onClick={() => scrollToSection('valeurs')} className="text-sm font-medium text-slate-700 transition hover:text-primary-700">Valeurs</button>
             <button onClick={() => scrollToSection('features')} className="text-sm font-medium text-slate-700 transition hover:text-primary-700">Fonctionnalités</button>
             <button onClick={() => scrollToSection('pricing')} className="text-sm font-medium text-slate-700 transition hover:text-primary-700">Tarifs</button>
@@ -315,6 +321,8 @@ export default function Home() {
           })}
         </div>
       </section>
+
+      <AssistantChat />
 
       <section id="valeurs" className="relative py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">

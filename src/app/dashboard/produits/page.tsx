@@ -283,9 +283,9 @@ export default function ProduitsPage() {
               key={produit.id}
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition"
+              className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_12px_28px_rgba(49,35,20,0.08)] transition hover:shadow-[0_16px_34px_rgba(49,35,20,0.12)]"
             >
-              <div className="h-48 bg-gray-100 relative">
+              <div className="relative aspect-[4/3] border-b border-slate-100 bg-slate-50 sm:aspect-[16/10]">
                 {produit.photo_url ? (
                   <Image
                     src={produit.photo_url}
@@ -293,11 +293,14 @@ export default function ProduitsPage() {
                     fill
                     unoptimized
                     sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                    className="object-cover"
+                    className="object-cover object-center"
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-gray-400">
-                    <ImageIcon className="w-12 h-12" />
+                  <div className="flex h-full w-full items-center justify-center text-slate-400">
+                    <div className="flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold shadow-sm">
+                      <ImageIcon className="h-4 w-4" />
+                      Image indisponible
+                    </div>
                   </div>
                 )}
                 <button
@@ -315,33 +318,33 @@ export default function ProduitsPage() {
               
               <div className="p-5">
                 <div className="flex justify-between items-start mb-2">
-                  <h3 className="font-bold text-lg text-gray-900">{produit.nom}</h3>
-                  <span className="text-amber-600 font-bold text-lg">{produit.prix} FCFA</span>
+                  <h3 className="text-lg font-extrabold text-slate-900">{produit.nom}</h3>
+                  <span className="text-lg font-black text-slate-900">{produit.prix} FCFA</span>
                 </div>
-                <p className="text-sm text-gray-500 mb-3 line-clamp-2">{produit.description || 'Aucune description'}</p>
+                <p className="mb-3 line-clamp-2 text-sm text-slate-600">{produit.description || 'Aucune description'}</p>
                 
                 <div className="flex items-center gap-2 mb-4 text-sm">
-                  <PackageCheck className="w-4 h-4 text-gray-400" />
-                  <span className={produit.stock === 0 ? 'text-red-600 font-semibold' : 'text-gray-600'}>
+                  <PackageCheck className="h-4 w-4 text-slate-400" />
+                  <span className={produit.stock === 0 ? 'font-semibold text-rose-700' : 'text-slate-600'}>
                     Stock: {produit.stock || 0} unités
                   </span>
                 </div>
                 
-                <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                  <span className="text-xs font-medium bg-gray-100 text-gray-600 px-2 py-1 rounded">
+                <div className="flex items-center justify-between border-t border-slate-100 pt-4">
+                  <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-700">
                     {produit.categorie}
                   </span>
                   <div className="flex items-center gap-2">
                     <button 
                       onClick={() => openEditModal(produit)}
-                      className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition"
+                      className="rounded-xl p-2 text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
                       title="Modifier"
                     >
                       <Edit3 className="w-4 h-4" />
                     </button>
                     <button 
                       onClick={() => handleDelete(produit.id)}
-                      className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition"
+                      className="rounded-xl p-2 text-rose-600 transition hover:bg-rose-50 hover:text-rose-700"
                       title="Supprimer"
                     >
                       <Trash2 className="w-4 h-4" />
