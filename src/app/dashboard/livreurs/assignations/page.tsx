@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -8,19 +8,15 @@ import {
   Package,
   User,
   MapPin,
-  Clock,
   CheckCircle,
   Truck,
-  Search,
-  Filter,
   Plus,
   X,
   Loader2,
-  Navigation,
   Phone,
   Star,
   AlertCircle,
-  ChevronRight
+  type LucideIcon
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -70,11 +66,7 @@ export default function AssignationsPage() {
   const [selectedLivreur, setSelectedLivreur] = useState<string>('');
   const [assigning, setAssigning] = useState(false);
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       router.push('/login');
@@ -144,7 +136,15 @@ export default function AssignationsPage() {
     if (livraisonsData) setLivraisons(livraisonsData as Livraison[]);
     
     setLoading(false);
-  };
+  }, [router]);
+
+  useEffect(() => {
+    const timerId = window.setTimeout(() => {
+      void loadData();
+    }, 0);
+
+    return () => window.clearTimeout(timerId);
+  }, [loadData]);
 
   const assignerLivreur = async () => {
     if (!selectedCommande || !selectedLivreur) return;
@@ -242,7 +242,7 @@ export default function AssignationsPage() {
         />
         <StatCard 
           icon={CheckCircle} 
-          label="Livrées aujourd'hui" 
+          label="Livrées aujourd&apos;hui" 
           value={livraisons.filter(l => l.statut === 'livree').length} 
           color="purple"
         />
@@ -250,13 +250,13 @@ export default function AssignationsPage() {
 
       {/* Filtres */}
       <div className="flex gap-2 mb-6">
-        {[
+        {([
           { key: 'non_assignees', label: 'À assigner', count: commandesNonAssignees.length },
           { key: 'en_cours', label: 'En cours', count: livraisons.length },
-        ].map(({ key, label, count }) => (
+        ] as const).map(({ key, label, count }) => (
           <button
             key={key}
-            onClick={() => setFilter(key as any)}
+            onClick={() => setFilter(key)}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
               filter === key ? 'bg-amber-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'
             }`}
@@ -408,7 +408,7 @@ export default function AssignationsPage() {
         </div>
       )}
 
-      {/* Modal d'assignation */}
+      {/* Modal d&apos;assignation */}
       <AnimatePresence>
         {showModal && selectedCommande && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
@@ -500,7 +500,7 @@ export default function AssignationsPage() {
                   ) : (
                     <>
                       <CheckCircle className="w-5 h-5" />
-                      Confirmer l'assignation
+                      Confirmer l&apos;assignation
                     </>
                   )}
                 </button>
@@ -513,7 +513,7 @@ export default function AssignationsPage() {
   );
 }
 
-function StatCard({ icon: Icon, label, value, color }: { icon: any; label: string; value: number; color: string }) {
+function StatCard({ icon: Icon, label, value, color }: { icon: LucideIcon; label: string; value: number; color: string }) {
   const colors: Record<string, string> = {
     amber: 'bg-amber-50 text-amber-600',
     blue: 'bg-blue-50 text-blue-600',

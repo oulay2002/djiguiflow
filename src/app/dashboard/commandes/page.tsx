@@ -1,29 +1,24 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutGrid,
   List,
-  Bell,
   Clock,
   ChefHat,
   Truck,
   CheckCircle,
   XCircle,
   Package,
-  User,
-  Phone,
-  MapPin,
   Eye,
   Loader2,
   TrendingUp,
   X,
   Search,
-  ArrowUpDown,
-  MoreVertical
+  type LucideIcon
 } from 'lucide-react';
 import Link from 'next/link';
 import NotificationToast from '@/components/NotificationToast';
@@ -92,6 +87,20 @@ type Commande = {
   }>;
 };
 
+type RealtimeCommandePayload = {
+  client_nom?: string;
+  total?: number;
+};
+
+type NotificationApi = {
+  addNotification?: (notification: {
+    id: string;
+    type: 'new-order';
+    title: string;
+    message: string;
+  }) => void;
+};
+
 export default function CommandesPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
@@ -102,34 +111,7 @@ export default function CommandesPage() {
   const [showModal, setShowModal] = useState(false);
   const [draggingId, setDraggingId] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadCommandes();
-    
-    const channel = supabase
-      .channel('commandes-realtime')
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'commandes',
-      }, (payload) => {
-        if ((window as any).addNotification) {
-          (window as any).addNotification({
-            id: `cmd-${Date.now()}`,
-            type: 'new-order',
-            title: ' Nouvelle commande !',
-            message: `${(payload.new as any).client_nom} - ${(payload.new as any).total?.toLocaleString()} FCFA`,
-          });
-        }
-        loadCommandes();
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, []);
-
-  const loadCommandes = async () => {
+  const loadCommandes = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       router.push('/login');
@@ -165,7 +147,40 @@ export default function CommandesPage() {
       setCommandes(data as Commande[]);
     }
     setLoading(false);
-  };
+  }, [router]);
+
+  useEffect(() => {
+    const timerId = window.setTimeout(() => {
+      void loadCommandes();
+    }, 0);
+    
+    const channel = supabase
+      .channel('commandes-realtime')
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'commandes',
+      }, (payload) => {
+        const notificationApi = window as Window & NotificationApi;
+        const newCommande = payload.new as RealtimeCommandePayload;
+
+        if (notificationApi.addNotification) {
+          notificationApi.addNotification({
+            id: `cmd-${Date.now()}`,
+            type: 'new-order',
+            title: ' Nouvelle commande !',
+            message: `${newCommande.client_nom ?? 'Client'} - ${(newCommande.total ?? 0).toLocaleString()} FCFA`,
+          });
+        }
+        loadCommandes();
+      })
+      .subscribe();
+
+    return () => {
+      window.clearTimeout(timerId);
+      supabase.removeChannel(channel);
+    };
+  }, [loadCommandes]);
 
   const updateStatus = async (commandeId: string, newStatus: keyof typeof STATUS_CONFIG) => {
     const { error } = await supabase
@@ -428,7 +443,7 @@ export default function CommandesPage() {
   );
 }
 
-function StatCard({ icon: Icon, label, value, color }: { icon: any; label: string; value: string | number; color: string }) {
+function StatCard({ icon: Icon, label, value, color }: { icon: LucideIcon; label: string; value: string | number; color: string }) {
   const colors: Record<string, string> = {
     amber: 'bg-amber-50 text-amber-600',
     blue: 'bg-blue-50 text-blue-600',

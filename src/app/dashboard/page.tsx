@@ -52,14 +52,20 @@ const sidebarItems = [
   { label: 'Clients', href: '/dashboard/customers', active: false, icon: Users },
   { label: 'Produits', href: '/dashboard/products', active: false, icon: Package2 }, // ← C'est ici !
   { label: 'Analytics', href: '/dashboard/analytics', active: false, icon: TrendingUp },
-  { label: 'Livreurs', href: '/dashboard/drivers', active: false, icon: Truck },
+  { label: 'Livreurs', href: '/dashboard/livreurs', active: false, icon: Truck },
   { label: 'Paiements', href: '/dashboard/paiements', active: false, icon: CreditCard },
+  { label: 'Notifications', href: '/dashboard/reglages/notifications', active: false, icon: Bell },
   { label: 'Réglages', href: '/dashboard/reglages', active: false, icon: Settings },
 ];
 
 export default function DashboardPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.push('/login');
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -131,7 +137,11 @@ export default function DashboardPage() {
             </p>
           </div>
 
-          <button className="mt-8 flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-100">
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="mt-8 flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-100"
+          >
             <LogOut className="h-4 w-4" />
             Déconnexion
           </button>

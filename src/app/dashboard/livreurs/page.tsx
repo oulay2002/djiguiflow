@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -9,13 +9,10 @@ import {
   User,
   Phone,
   Mail,
-  MapPin,
   Star,
-  Package,
   TrendingUp,
   Plus,
   Search,
-  Filter,
   MoreVertical,
   Edit3,
   Trash2,
@@ -26,7 +23,7 @@ import {
   Bike,
   Car,
   Navigation,
-  DollarSign,
+  type LucideIcon,
   X
 } from 'lucide-react';
 import Link from 'next/link';
@@ -69,10 +66,9 @@ export default function LivreursPage() {
   const [loading, setLoading] = useState(true);
   const [livreurs, setLivreurs] = useState<Livreur[]>([]);
   const [filter, setFilter] = useState<'tous' | 'interne' | 'independant'>('tous');
-  const [statutFilter, setStatutFilter] = useState<'tous' | 'disponible' | 'en_livraison' | 'indisponible'>('tous');
+  const [statutFilter] = useState<'tous' | 'disponible' | 'en_livraison' | 'indisponible'>('tous');
   const [search, setSearch] = useState('');
   const [showModal, setShowModal] = useState(false);
-  const [selectedLivreur, setSelectedLivreur] = useState<Livreur | null>(null);
   const [formData, setFormData] = useState({
     nom: '',
     telephone: '',
@@ -82,11 +78,7 @@ export default function LivreursPage() {
     vehicule_immatriculation: '',
   });
 
-  useEffect(() => {
-    loadLivreurs();
-  }, []);
-
-  const loadLivreurs = async () => {
+  const loadLivreurs = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       router.push('/login');
@@ -114,7 +106,15 @@ export default function LivreursPage() {
       setLivreurs(data as Livreur[]);
     }
     setLoading(false);
-  };
+  }, [router]);
+
+  useEffect(() => {
+    const timerId = window.setTimeout(() => {
+      void loadLivreurs();
+    }, 0);
+
+    return () => window.clearTimeout(timerId);
+  }, [loadLivreurs]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -197,7 +197,7 @@ export default function LivreursPage() {
           
           {/* BOUTON ASSIGNATIONS - AJOUTEZ CECI */}
           <Link 
-            href="/dashboard/drivers/assignations"
+            href="/dashboard/livreurs/assignations"
             className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm font-medium"
           >
             <Navigation className="w-4 h-4" />
@@ -347,10 +347,8 @@ export default function LivreursPage() {
                       {livreur.statut === 'disponible' ? 'Rendre indisponible' : 'Rendre disponible'}
                     </button>
                     <button
-                      onClick={() => {
-                        setSelectedLivreur(livreur);
-                        // Ouvrir modal détails
-                      }}
+                      onClick={() => {}}
+                      title="Édition bientôt disponible"
                       className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
                     >
                       <Edit3 className="w-4 h-4" />
@@ -498,7 +496,7 @@ export default function LivreursPage() {
   );
 }
 
-function StatCard({ icon: Icon, label, value, color }: { icon: any; label: string; value: string | number; color: string }) {
+function StatCard({ icon: Icon, label, value, color }: { icon: LucideIcon; label: string; value: string | number; color: string }) {
   const colors: Record<string, string> = {
     amber: 'bg-amber-50 text-amber-600',
     green: 'bg-green-50 text-green-600',
