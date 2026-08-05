@@ -26,7 +26,8 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
   if (!items.length) return Response.json({ error: 'Panier vide' }, { status: 400 });
 
   const total = items.reduce((s, it) => s + it.quantité * it.prix_unitaire, 0);
-  const phone = String(tel || '').replace(/\D/g, '');
+  let phone = String(tel || '').replace(/\D/g, '');
+  if (!phone.startsWith('225')) phone = '225' + phone;
   const order_id = `APP-${phone}-${Math.floor(Date.now() / 1000)}`;
 
   const payload: Record<string, string> = {
