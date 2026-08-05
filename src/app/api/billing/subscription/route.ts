@@ -1,0 +1,97 @@
+import { NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
+
+export const runtime = 'nodejs';
+
+function getBearerToken(request: Request): string | null {
+  const authHeader = request.headers.get('authorization');
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return null;
+  }
+  return authHeader.slice(7).trim() || null;
+}
+
+function buildSupabaseClient(accessToken: string) {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    return null;
+  }
+
+  return createClient(supabaseUrl, supabaseAnonKey, {
+    global: {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    },
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+    },
+  });
+}
+
+function buildSupabaseAdminClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !supabaseServiceKey) {
+    return null;
+  }
+
+  return createClient(supabaseUrl, supabaseServiceKey, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+    },
+  });
+}
+
+export async function GET(request: Request) {
+  const accessToken = getBearerToken(request);
+  if (!accessToken) {
+    return NextResponse.json({ error: 'Authentification requise.' }, { status: 401 });
+  }
+
+  const supabase = buildSupabaseClient(accessToken);
+  if (!supabase) {
+    return NextResponse.json({ error: 'Configuration Supabase manquante.' }, { status: 500 });
+  }
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.json({ error: 'Session invalide.' }, { status: 401 });
+  }
+
+  const admin = buildSupabaseAdminClient();
+  if (!admin) {
+    return NextResponse.json({ subscription: null, warning: 'SUPABASE_SERVICE_ROLE_KEY manquante.' });
+  }
+
+  const tableName = process.env.SUPABASE_SUBSCRIPTIONS_TABLE ?? 'subscriptions';
+
+  const { data, error } = await admin
+    .from(tableName)
+    .select(
+      'user_id,plan_key,status,stripe_customer_id,stripe_subscription_id,current_period_start,current_period_end,last_checkout_session_id,updated_at',
+    )
+    .eq('user_id', user.id)
+    .maybeSingle();
+
+  if (error) {
+    return NextResponse.json(
+      {
+        subscription: null,
+        warning: `Lecture impossible depuis ${tableName}.`,
+        details: error.message,
+      },
+      { status: 200 },
+    );
+  }
+
+  return NextResponse.json({ subscription: data ?? null });
+}
