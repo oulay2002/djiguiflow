@@ -46,4 +46,5 @@ next-env.d.ts
 
 # outillage agents : local a la machine, ou restaurable depuis skills-lock.json
 .claude/settings.local.json
+.claude/skills/
 .agents/
