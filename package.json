@@ -7,6 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "types:db": "supabase gen types typescript --project-id xshksvlnrgxijsznmkkj > src/lib/database.types.ts",
+    "prepare": "git config core.hooksPath .githooks",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:headed": "playwright test --headed",
@@ -15,11 +18,13 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.111.0",
     "framer-motion": "^12.43.0",
+    "google-auth-library": "^11.0.0",
     "lucide-react": "^1.28.0",
     "next": "16.2.12",
     "react": "19.2.4",
     "react-dom": "19.2.4",
-    "recharts": "^3.10.1"
+    "recharts": "^3.10.1",
+    "stripe": "^22.4.0"
   },
   "devDependencies": {
     "@playwright/test": "^1.62.1",

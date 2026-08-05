@@ -1,0 +1,4 @@
+# Les hooks git sont executes par sh : ils doivent rester en LF,
+# sinon "bad interpreter: no such file or directory" sur Linux/macOS.
+.githooks/* text eol=lf
+*.sh text eol=lf

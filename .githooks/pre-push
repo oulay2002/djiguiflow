@@ -1,0 +1,16 @@
+#!/bin/sh
+# Bloque le push si le type-check echoue.
+# Les builds Vercel ne cassent que sur cette etape : autant la faire avant de pousser.
+# Contournement ponctuel : git push --no-verify
+
+echo "pre-push: verification TypeScript..."
+
+if ! npx --no-install tsc --noEmit; then
+	echo ""
+	echo "pre-push: ECHEC du type-check — push annule."
+	echo "Corrige les erreurs ci-dessus, ou force avec: git push --no-verify"
+	exit 1
+fi
+
+echo "pre-push: OK"
+exit 0
