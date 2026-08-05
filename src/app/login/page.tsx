@@ -1,12 +1,14 @@
 'use client';
 
-import { useState } from 'react';
-import { supabase } from '@/lib/supabase';
+import { Suspense, useState } from 'react';
+import { isSupabaseConfigured, supabase } from '@/lib/supabase';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Eye, EyeOff, Lock, Mail } from 'lucide-react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 
-export default function LoginPage() {
+function LoginPageContent() {
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -20,14 +22,21 @@ export default function LoginPage() {
     setError('');
     setSuccess('');
 
+    if (!isSupabaseConfigured) {
+      setError('Configuration manquante: ajoutez NEXT_PUBLIC_SUPABASE_URL et NEXT_PUBLIC_SUPABASE_ANON_KEY dans .env.local.');
+      setLoading(false);
+      return;
+    }
+
     const { error } = await supabase.auth.signInWithPassword({ email, password });
 
     if (error) {
       setError(error.message);
     } else {
+      const nextTarget = searchParams.get('next') || '/dashboard';
       setSuccess('Connexion réussie ! Redirection...');
       setTimeout(() => {
-        window.location.href = '/dashboard';
+        window.location.href = nextTarget;
       }, 1500);
     }
 
@@ -86,5 +95,19 @@ export default function LoginPage() {
         </div>
       </motion.div>
     </main>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="flex min-h-screen items-center justify-center bg-[radial-gradient(circle_at_top_left,_rgba(219,149,52,0.18),transparent_25%),linear-gradient(180deg,#fffdf9_0%,#f5efe5_100%)] px-4 py-12">
+          <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-primary-600" />
+        </main>
+      }
+    >
+      <LoginPageContent />
+    </Suspense>
   );
 }

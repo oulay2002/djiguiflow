@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { supabase } from '@/lib/supabase';
+import { isSupabaseConfigured, supabase } from '@/lib/supabase';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Eye, EyeOff, Lock, Mail, Phone, Store, User } from 'lucide-react';
 import Link from 'next/link';
@@ -30,6 +30,12 @@ export default function RegisterPage() {
     setLoading(true);
     setError('');
     setSuccess('');
+
+    if (!isSupabaseConfigured) {
+      setError('Configuration manquante: ajoutez NEXT_PUBLIC_SUPABASE_URL et NEXT_PUBLIC_SUPABASE_ANON_KEY dans .env.local.');
+      setLoading(false);
+      return;
+    }
 
     if (formData.password !== formData.confirmPassword) {
       setError('Les mots de passe ne correspondent pas');
