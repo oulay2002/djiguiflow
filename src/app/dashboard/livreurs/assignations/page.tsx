@@ -51,7 +51,11 @@ type Livraison = {
   statut: 'assignee' | 'en_cours' | 'livree' | 'annulee';
   date_assignation: string;
   livreur?: Livreur;
-  commande?: Commande;
+  // Seules ces colonnes sont demandees par le select embarque ci-dessous.
+  commande?: Pick<
+    Commande,
+    'id' | 'client_nom' | 'client_telephone' | 'client_adresse' | 'total' | 'statut'
+  >;
 };
 
 export default function AssignationsPage() {
@@ -110,7 +114,7 @@ export default function AssignationsPage() {
       .from('livraisons')
       .select(`
         *,
-        livreur (
+        livreur:livreurs (
           id,
           nom,
           telephone,
@@ -119,7 +123,7 @@ export default function AssignationsPage() {
           note_moyenne,
           vehicule_type
         ),
-        commande (
+        commande:commandes!inner (
           id,
           client_nom,
           client_telephone,
