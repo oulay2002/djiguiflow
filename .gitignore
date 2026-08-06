@@ -48,3 +48,6 @@ next-env.d.ts
 .claude/settings.local.json
 .claude/skills/
 .agents/
+
+# graphify : graphe de connaissance regenerable via `graphify update .`
+/graphify-out/
