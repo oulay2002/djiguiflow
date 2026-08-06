@@ -78,7 +78,10 @@ export async function POST(req: Request) {
     try {
       await fetch(urlNotif, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-djiguiflow-secret': process.env.N8N_WEBHOOK_SECRET ?? '',
+        },
         body: JSON.stringify({
           boutique_id: m.id,
           phone,

@@ -62,7 +62,12 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     try {
       await fetch(n8nUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          // Authentifie l'appel aupres du webhook n8n. Meme secret que
+          // celui du Vault Supabase (triggers) et de la credential n8n.
+          'x-djiguiflow-secret': process.env.N8N_WEBHOOK_SECRET ?? '',
+        },
         body: JSON.stringify({
           boutique_id: m.id,
           boutique_nom: m.nom,

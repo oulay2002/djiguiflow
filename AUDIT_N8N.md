@@ -210,6 +210,9 @@ Telegram échoue, la commande disparaît sans trace.
 
 ## 3. Sécurité
 
+> **Mise à jour du 6 août 2026 — phase 1 faite, voir §6ter.** Tous les appelants envoient
+> désormais un secret ; il reste à activer la vérification côté n8n.
+
 - **Les 5 webhooks sont non authentifiés.** `commande-app`, `nouvelle-commande`,
   `nouvelle-livraison`, `statut-livraison`, `whatsapp-zahara` acceptent n'importe quel
   POST. Un tiers peut déclencher des envois WhatsApp vers des clients arbitraires.
@@ -354,6 +357,52 @@ pas, **le comportement actuel est strictement inchangé**. `Cerveau Zahara`, qui
 
 Coût : une lecture Sheets supplémentaire par callback livreur (quelques-unes par commande),
 à mettre en regard du quota déjà tendu — cf. B12.
+
+## 6ter. Sécurisation des webhooks — phase 1
+
+Les 5 webhooks acceptaient n'importe quel POST. Qui connaissait l'URL pouvait déclencher
+des envois WhatsApp vers des clients arbitraires, ou injecter de fausses commandes.
+
+**Qui appelle quoi** (établi, pas supposé) :
+
+| Webhook | Appelant | Secret envoyé |
+|---|---|---|
+| `whatsapp-zahara` | wasenderapi (externe) | **déjà** : `x-webhook-secret`, valeur stable vérifiée sur 2 exécutions à 2 jours d'écart |
+| `commande-app` | app Next.js (`N8N_COMMANDE_APP_URL`) | ajouté : `x-djiguiflow-secret` |
+| (notif client) | app Next.js (`N8N_NOTIF_CLIENT_URL`) | ajouté : `x-djiguiflow-secret` |
+| `nouvelle-commande` | trigger Postgres `notify_n8n_new_commande` | ajouté |
+| `nouvelle-livraison` | trigger Postgres `notify_n8n_new_livraison` | ajouté |
+| `statut-livraison` | trigger Postgres `notify_n8n_statut_livraison` | ajouté |
+
+Le secret est stocké dans **Supabase Vault** (`n8n_webhook_secret`), jamais en dur dans le
+code SQL ni applicatif.
+
+**Correction de robustesse au passage.** `notify_n8n_new_livraison` et
+`notify_n8n_statut_livraison` utilisaient l'extension `http` en **synchrone, sans aucune
+gestion d'erreur** : un n8n injoignable faisait échouer la transaction, donc bloquait
+l'assignation d'un livreur ou le changement de statut. Les trois fonctions utilisent
+maintenant `pg_net` (asynchrone) avec `exception when others`.
+
+Vérifié en conditions réelles : lecture du Vault depuis une fonction `SECURITY DEFINER` à
+`search_path` vide (43 caractères lus), puis `net.http_post` sortant avec l'en-tête et
+réponse HTTP reçue. Les 3 triggers sont actifs et pointent sur les nouvelles fonctions.
+
+**L'ordre compte.** Ajouter l'en-tête ne casse rien : n8n ignore les en-têtes inconnus.
+Activer la vérification avant que l'appelant n'envoie le secret coupe la production. D'où
+la séparation en deux phases.
+
+### Phase 2 — à faire (ne peut pas être automatisée depuis le MCP)
+
+Le serveur MCP n8n officiel n'expose que `list_credentials` : **impossible de créer une
+credential**, or l'auth par en-tête d'un nœud Webhook en exige une.
+
+1. Dans n8n, créer deux credentials **Header Auth** :
+   - `DjiguiFlow — appelants internes` : nom `x-djiguiflow-secret`, valeur = le secret du Vault
+   - `WasenderAPI` : nom `x-webhook-secret`, valeur = celle envoyée par wasenderapi
+2. Sur Vercel, définir `N8N_WEBHOOK_SECRET` (même valeur que le Vault) — **avant** l'étape 3,
+   sinon les commandes app partiront sans secret.
+3. Sur chaque nœud Webhook, passer `Authentication` sur *Header Auth* et sélectionner la
+   credential correspondante, puis **publier** (cf. la règle du brouillon, §6bis).
 
 ### Reste à faire
 
