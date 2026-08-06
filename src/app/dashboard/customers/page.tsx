@@ -7,19 +7,36 @@ import { motion } from 'framer-motion';
 import {
   ArrowRight,
   Bell,
+  Calendar,
   CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  CreditCard,
+  Crown,
+  Download,
+  Edit,
+  Eye,
+  Filter,
   Gauge,
   LogOut,
+  Mail,
   MapPin,
+  MoreHorizontal,
+  Package,
   Package2,
   Phone,
+  Plus,
   Search,
   Settings,
   ShoppingCart,
   Star,
+  Store,
+  Trash2,
+  TrendingUp,
   Truck,
   UserPlus,
   Users,
+  X,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
@@ -33,12 +50,16 @@ const mockCustomers = [
 ];
 
 const sidebarItems = [
-  { label: 'Vue d’ensemble', href: '/dashboard', active: false, icon: Gauge },
-  { label: 'Commandes', href: '/dashboard/orders', active: false, icon: ShoppingCart },
-  { label: 'Clients', href: '/dashboard/customers', active: true, icon: Users },
+  { label: 'Vue d\'ensemble', href: '/dashboard', active: true, icon: Gauge },
+  { label: 'Ma Boutique', href: '/dashboard/ma-boutique', active: false, icon: Store },
+  { label: 'Commandes', href: '/dashboard/commandes', active: false, icon: ShoppingCart },
+  { label: 'Clients', href: '/dashboard/customers', active: false, icon: Users },
   { label: 'Produits', href: '/dashboard/products', active: false, icon: Package2 },
+  { label: 'Analytics', href: '/dashboard/stats', active: false, icon: TrendingUp }, // ← CORRIGÉ
   { label: 'Livreurs', href: '/dashboard/livreurs', active: false, icon: Truck },
-  { label: 'Réglages', href: '#', active: false, icon: Settings },
+  { label: 'Paiements', href: '/dashboard/paiements', active: false, icon: CreditCard },
+  { label: 'Notifications', href: '/dashboard/reglages/notifications', active: false, icon: Bell },
+  { label: 'Réglages', href: '/dashboard/reglages', active: false, icon: Settings },
 ];
 
 export default function CustomersPage() {

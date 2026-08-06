@@ -40,3 +40,14 @@ export async function appendRow(range: string, row: string[], sheetId: string = 
   if (!res.ok) throw new Error(await res.text());
   return res.json();
 }
+export async function updateCells(range: string, values: string[][], sheetId: string = process.env.SHEET_ID!) {
+  const token = await auth.getAccessToken();
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${encodeURIComponent(range)}?valueInputOption=RAW`;
+  const res = await fetch(url, {
+    method: 'PUT',
+    headers: { Authorization: `Bearer ${token.token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ values }),
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
