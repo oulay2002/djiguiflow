@@ -5,6 +5,8 @@ import { usePathname, useRouter } from 'next/navigation';
 import { Loader2, LockKeyhole } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { isMockBillingMode } from '@/lib/billing/mode';
+import { BoutiqueProvider } from '@/lib/boutique';
+import SelecteurBoutique from '@/components/SelecteurBoutique';
 
 type SubscriptionState = {
   status: string;
@@ -118,5 +120,10 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     );
   }
 
-  return <>{children}</>;
+  return (
+    <BoutiqueProvider>
+      <SelecteurBoutique />
+      {children}
+    </BoutiqueProvider>
+  );
 }
