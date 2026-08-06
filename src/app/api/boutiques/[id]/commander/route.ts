@@ -1,6 +1,7 @@
-import { readSheet, readHeaders, appendRow } from '@/lib/googleSheets';
+import { readHeaders, appendRow } from '@/lib/googleSheets';
 import { getMarchand } from '@/lib/marchands';
 import { normaliserTelephone } from '@/lib/telephone';
+import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 
 export async function POST(req: Request, ctx: { params: Promise<{ id: string }> }) {
   const { id } = await ctx.params;
@@ -10,16 +11,32 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
   const body = await req.json();
   const { nom, tel, adresse, instructions, panier } = body;
 
-  // 1. Lire le menu DU MARCHAND
-  const menu = await readSheet(`${m.sheetMenu}!A:I`, m.sheetId);
-  const items = (panier as { id: string; quantite: number }[])
+  // 1. Le catalogue vient desormais de Supabase : c'est la lecture la plus
+  // frequente du parcours client, et celle qui pesait le plus sur le quota
+  // Google. Les prix restent lus cote serveur, jamais recus du navigateur.
+  const sb = getSupabaseAdmin();
+  if (!sb) return Response.json({ error: 'Commande impossible pour le moment' }, { status: 503 });
+
+  const lignesPanier = (panier ?? []) as { id: string; quantite: number }[];
+  const { data: catalogue, error: erreurMenu } = await sb
+    .from('produits')
+    .select('reference, nom, prix')
+    .eq('boutique_id', m.boutiqueId)
+    .eq('disponible', true);
+
+  if (erreurMenu) {
+    console.error(`Commander — lecture catalogue impossible (${m.id}) :`, erreurMenu);
+    return Response.json({ error: 'Commande impossible pour le moment' }, { status: 503 });
+  }
+
+  const items = lignesPanier
     .map(l => {
-      const p = menu.find(x => x.id === l.id);
+      const p = (catalogue ?? []).find(x => String(x.reference) === String(l.id));
       if (!p) return null;
       return {
-        plat: p.nom,
-        quantité: l.quantite,
-        prix_unitaire: Number(String(p.prix).replace(/\D/g, '')) || 0,
+        plat: String(p.nom ?? ''),
+        quantité: Number(l.quantite) || 1,
+        prix_unitaire: Number(p.prix) || 0,
       };
     })
     .filter(it => it !== null);
@@ -59,9 +76,57 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     canal: 'app',
   };
 
-  // 2. Écrire dans la feuille DU MARCHAND
-  const headers = await readHeaders(`${m.sheetCommandes}!A1:Z1`, m.sheetId);
-  await appendRow(`${m.sheetCommandes}!A:Z`, headers.map(h => payload[h] ?? ''), m.sheetId);
+  // 2. Écrire dans la feuille DU MARCHAND.
+  // Google Sheets reste la source de vérité tant que n8n y écrit : un échec
+  // ici doit faire échouer la commande, sinon le bot ne la verrait jamais.
+  try {
+    const headers = await readHeaders(`${m.sheetCommandes}!A1:Z1`, m.sheetId);
+    await appendRow(`${m.sheetCommandes}!A:Z`, headers.map(h => payload[h] ?? ''), m.sheetId);
+  } catch (e) {
+    console.error(`Commander — écriture Sheets impossible (${m.id}) :`, e);
+    return Response.json({ error: 'Commande impossible pour le moment, réessayez' }, { status: 503 });
+  }
+
+  // 2 bis. Copie Supabase, non bloquante : la feuille fait foi, et une copie
+  // manquante se rattrape par un rejeu. Casser une commande client pour un
+  // miroir serait disproportionné.
+  try {
+    const { data: cmd, error: eCmd } = await sb
+      .from('commandes')
+      .upsert(
+        {
+          boutique_id: m.boutiqueId,
+          reference: order_id,
+          chat_id: phone,
+          canal: 'app',
+          client_nom: String(nom || 'Client'),
+          client_telephone: phone,
+          client_adresse: String(adresse || ''),
+          instructions: String(instructions || ''),
+          total,
+          statut: 'en_attente',
+        },
+        { onConflict: 'boutique_id,reference' },
+      )
+      .select('id')
+      .single();
+    if (eCmd) throw eCmd;
+
+    if (cmd?.id) {
+      await sb.from('commande_items').delete().eq('commande_id', cmd.id);
+      const { error: eItems } = await sb.from('commande_items').insert(
+        items.map(it => ({
+          commande_id: cmd.id,
+          nom_produit: it.plat,
+          quantite: it.quantité,
+          prix_unitaire: it.prix_unitaire,
+        })),
+      );
+      if (eItems) throw eItems;
+    }
+  } catch (e) {
+    console.error(`Commander — copie Supabase échouée (${order_id}) :`, e);
+  }
 
   // 3. Webhook générique (envoie boutique_id pour qu'il sache quel marchand)
   const n8nUrl = process.env.N8N_COMMANDE_APP_URL;

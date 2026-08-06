@@ -1,10 +1,14 @@
-import { readSheet } from '@/lib/googleSheets';
+import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 
 export type Marchand = {
+  /** Slug lisible utilise dans les URL et les webhooks (ex. "zahara"). */
   id: string;
+  /** Identifiant technique en base, necessaire pour toute ecriture. */
+  boutiqueId: string;
   nom: string;
   secteur: string;
   emoji: string;
+  /** Config Google Sheets, conservee tant que la feuille reste la verite. */
   sheetId: string;
   sheetCommandes: string;
   sheetMenu: string;
@@ -13,61 +17,83 @@ export type Marchand = {
   whatsapp: string;
 };
 
-// Marchand servi quand aucun boutique_id n'est précisé (dashboard admin
-// mono-boutique aujourd'hui). Surchargeable sans redéploiement.
+// Marchand servi quand aucun boutique_id n'est precise (dashboard mono-boutique).
 export const MARCHAND_DEFAUT = process.env.MARCHAND_DEFAUT || 'zahara';
 
-// Repli utilisé UNIQUEMENT si le registre est injoignable ou vide, et
-// uniquement pour le marchand par défaut. Il reprend les noms de feuilles
-// historiques pour que le dashboard reste debout si l'onglet Marchands
-// n'est pas encore créé.
+// Noms de feuilles par defaut : le registre vit desormais dans Supabase, mais
+// n8n ecrit encore dans Google Sheets pendant la periode de double ecriture.
+const FEUILLES_PAR_DEFAUT = {
+  sheetCommandes: 'Commandes_Zahara',
+  sheetMenu: 'Menu',
+  sheetNotes: 'Notes',
+};
+
 const REPLI_HISTORIQUE: Marchand = {
   id: MARCHAND_DEFAUT,
+  boutiqueId: '11111111-1111-1111-1111-111111111111',
   nom: 'Zahara',
   secteur: 'Restaurant',
   emoji: '🏪',
   sheetId: process.env.SHEET_ID!,
-  sheetCommandes: 'Commandes_Zahara',
-  sheetMenu: 'Menu',
-  sheetNotes: 'Notes',
+  ...FEUILLES_PAR_DEFAUT,
   groupeLivreurs: '',
   whatsapp: '',
 };
 
-// Cache en mémoire (évite de relire la feuille à chaque requête)
 let cache: Record<string, Marchand> | null = null;
 let cacheTime = 0;
-const TTL = 30_000; // 30s
+const TTL = 30_000;
+
+type LigneBoutique = {
+  id: string;
+  slug: string | null;
+  nom: string | null;
+  categorie: string | null;
+  emoji: string | null;
+  telephone: string | null;
+  notification_settings: { whatsapp_numero: string | null; telegram_chat_id: string | null }[] | null;
+};
 
 async function chargerMarchands(): Promise<Record<string, Marchand>> {
   const now = Date.now();
   if (cache && now - cacheTime < TTL) return cache;
 
+  const sb = getSupabaseAdmin();
+  if (!sb) {
+    console.error('Registre marchands : configuration Supabase absente');
+    return {};
+  }
+
   try {
-    const rows = await readSheet('Marchands!A:Z', process.env.SHEET_ID!);
+    const { data, error } = await sb
+      .from('boutiques')
+      .select('id, slug, nom, categorie, emoji, telephone, notification_settings(whatsapp_numero, telegram_chat_id)')
+      .not('slug', 'is', null);
+
+    if (error) throw error;
+
     const dict: Record<string, Marchand> = {};
-    for (const r of rows) {
-      if (!r.id) continue;
-      dict[r.id] = {
-        id: r.id,
-        nom: r.nom || '',
-        secteur: r.secteur || '',
-        emoji: r.emoji || '🏪',
+    for (const b of (data ?? []) as unknown as LigneBoutique[]) {
+      if (!b.slug) continue;
+      const notif = b.notification_settings?.[0];
+      dict[b.slug] = {
+        id: b.slug,
+        boutiqueId: b.id,
+        nom: b.nom ?? '',
+        secteur: b.categorie ?? '',
+        emoji: b.emoji ?? '🏪',
         sheetId: process.env.SHEET_ID!,
-        sheetCommandes: r.sheetCommandes || 'Commandes',
-        sheetMenu: r.sheetMenu || 'Menu',
-        // Colonne optionnelle : le registre est lu dynamiquement, ajouter
-        // sheetNotes dans la feuille suffit, sans toucher au code.
-        sheetNotes: r.sheetNotes || 'Notes',
-        groupeLivreurs: r.groupeLivreurs || '',
-        whatsapp: r.whatsapp || '',
+        ...FEUILLES_PAR_DEFAUT,
+        groupeLivreurs: notif?.telegram_chat_id ?? '',
+        whatsapp: notif?.whatsapp_numero ?? b.telephone ?? '',
       };
     }
+
     cache = dict;
     cacheTime = now;
     return dict;
   } catch (e) {
-    console.error('Erreur lecture Marchands:', e);
+    console.error('Registre marchands : lecture Supabase impossible :', e);
     return {};
   }
 }
@@ -77,7 +103,6 @@ export async function getMarchand(id: string): Promise<Marchand | null> {
   return dict[id] || null;
 }
 
-/** Infos publiques des boutiques du registre, pour le sélecteur du dashboard. */
 export type MarchandPublic = Pick<Marchand, 'id' | 'nom' | 'secteur' | 'emoji'>;
 
 export async function listerMarchands(): Promise<MarchandPublic[]> {
@@ -88,13 +113,13 @@ export async function listerMarchands(): Promise<MarchandPublic[]> {
 }
 
 /**
- * Résout le marchand ciblé par une route dashboard / suivi.
+ * Resout le marchand cible par une route.
  *
- * - `boutique_id` fourni et inconnu  -> null (la route doit répondre 404).
- *   On ne retombe JAMAIS sur le marchand par défaut : ce serait servir les
- *   données d'un autre tenant.
- * - `boutique_id` absent             -> marchand par défaut, avec repli
- *   historique si le registre n'est pas encore en place.
+ * - `boutique_id` fourni et inconnu -> null (la route repond 404). On ne
+ *   retombe JAMAIS sur le marchand par defaut : ce serait servir les donnees
+ *   d'un autre tenant.
+ * - `boutique_id` absent -> marchand par defaut, avec repli si le registre
+ *   n'est pas joignable.
  */
 export async function resoudreMarchand(boutiqueId?: string | null): Promise<Marchand | null> {
   const cle = (boutiqueId || '').trim();
@@ -105,4 +130,4 @@ export async function resoudreMarchand(boutiqueId?: string | null): Promise<Marc
 }
 
 // NOTE : ne jamais importer ce module depuis un composant client.
-// Il dépend de googleSheets.ts, qui charge google-auth-library (Node only).
+// Il depend de supabaseAdmin, qui porte la cle service_role.
