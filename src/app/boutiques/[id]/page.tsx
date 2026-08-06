@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
+import { normaliserTelephone, formaterTelephone } from '@/lib/telephone';
 
 type Produit = {
   id: string;
@@ -94,6 +95,13 @@ export default function Page() {
       if (q <= 0) delete n[pid]; else n[pid] = q;
       return n;
     });
+
+  // Le controle du telephone partage sa regle avec l'API : meme module.
+  const telNormalise = normaliserTelephone(tel);
+  const telOk = telNormalise.ok;
+  // On n'affiche l'erreur qu'une fois la saisie commencee, pour ne pas
+  // accueillir le client avec un message rouge sur un champ vide.
+  const erreurTel = tel.trim() && !telNormalise.ok ? telNormalise.erreur : '';
 
   const lignes = Object.entries(panier)
     .map(([pid, q]) => { const prod = produits.find(x => x.id === pid); return prod ? { prod, q } : null; })
@@ -199,11 +207,26 @@ export default function Page() {
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
               <input className="border rounded-lg p-2" placeholder="Votre nom complet" value={nom} onChange={e => setNom(e.target.value)} />
-              <input className="border rounded-lg p-2" placeholder="Votre téléphone" value={tel} onChange={e => setTel(e.target.value)} />
+              <div>
+                <input
+                  type="tel"
+                  inputMode="numeric"
+                  autoComplete="tel"
+                  aria-invalid={!!erreurTel}
+                  aria-describedby={erreurTel ? 'erreur-tel' : undefined}
+                  className={`w-full rounded-lg border p-2 ${erreurTel ? 'border-red-500 bg-red-50' : ''}`}
+                  placeholder="Téléphone (ex. 01 02 03 04 05)"
+                  value={tel}
+                  onChange={e => setTel(formaterTelephone(e.target.value))}
+                />
+                {erreurTel && (
+                  <p id="erreur-tel" role="alert" className="mt-1 text-sm text-red-600">{erreurTel}</p>
+                )}
+              </div>
             </div>
             <input className="border rounded-lg p-2 w-full" placeholder="Adresse de livraison" value={adresse} onChange={e => setAdresse(e.target.value)} />
             <input className="border rounded-lg p-2 w-full" placeholder="Instructions (facultatif)" value={instructions} onChange={e => setInstructions(e.target.value)} />
-            <button onClick={commander} disabled={envoi || !nom || !tel || !adresse}
+            <button onClick={commander} disabled={envoi || !nom || !telOk || !adresse}
               className="w-full rounded-lg bg-orange-700 py-3 text-white font-bold disabled:opacity-40">
               {envoi ? 'Envoi…' : estMarchandSheets ? '✅ Commander' : '📲 Commander via WhatsApp'}
             </button>

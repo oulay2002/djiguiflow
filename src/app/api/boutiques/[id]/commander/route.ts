@@ -1,5 +1,6 @@
 import { readSheet, readHeaders, appendRow } from '@/lib/googleSheets';
 import { getMarchand } from '@/lib/marchands';
+import { normaliserTelephone } from '@/lib/telephone';
 
 export async function POST(req: Request, ctx: { params: Promise<{ id: string }> }) {
   const { id } = await ctx.params;
@@ -26,8 +27,14 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
   if (!items.length) return Response.json({ error: 'Panier vide' }, { status: 400 });
 
   const total = items.reduce((s, it) => s + it.quantité * it.prix_unitaire, 0);
-  let phone = String(tel || '').replace(/\D/g, '');
-  if (!phone.startsWith('225')) phone = '225' + phone;
+
+  // Meme regle que le formulaire, mais appliquee ici aussi : l'API est
+  // appelable directement, et l'ancienne normalisation acceptait n'importe
+  // quelle longueur — un numero trop court partait vers un tiers.
+  const numero = normaliserTelephone(tel);
+  if (!numero.ok) return Response.json({ error: numero.erreur }, { status: 400 });
+  const phone = numero.international;
+
   const order_id = `APP-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
 
   const payload: Record<string, string> = {
