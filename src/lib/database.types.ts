@@ -21,9 +21,11 @@ export type Database = {
         Row: {
           categorie: string | null
           description: string | null
+          emoji: string | null
           id: string
           logo_url: string | null
           nom: string | null
+          slug: string | null
           telephone: string | null
           user_id: string
           zone: string | null
@@ -31,9 +33,11 @@ export type Database = {
         Insert: {
           categorie?: string | null
           description?: string | null
+          emoji?: string | null
           id?: string
           logo_url?: string | null
           nom?: string | null
+          slug?: string | null
           telephone?: string | null
           user_id?: string
           zone?: string | null
@@ -41,9 +45,11 @@ export type Database = {
         Update: {
           categorie?: string | null
           description?: string | null
+          emoji?: string | null
           id?: string
           logo_url?: string | null
           nom?: string | null
+          slug?: string | null
           telephone?: string | null
           user_id?: string
           zone?: string | null
@@ -95,32 +101,62 @@ export type Database = {
       commandes: {
         Row: {
           boutique_id: string
+          canal: string | null
+          chat_id: string | null
           client_adresse: string
           client_nom: string
           client_telephone: string
           created_at: string | null
+          heure_livraison: string | null
+          heure_prise_en_charge: string | null
           id: string
+          instructions: string | null
+          nom_livreur: string | null
+          note_client: number | null
+          position_livreur: string | null
+          reference: string | null
           statut: string | null
+          statut_livraison: string | null
           total: number
         }
         Insert: {
           boutique_id: string
+          canal?: string | null
+          chat_id?: string | null
           client_adresse: string
           client_nom: string
           client_telephone: string
           created_at?: string | null
+          heure_livraison?: string | null
+          heure_prise_en_charge?: string | null
           id?: string
+          instructions?: string | null
+          nom_livreur?: string | null
+          note_client?: number | null
+          position_livreur?: string | null
+          reference?: string | null
           statut?: string | null
+          statut_livraison?: string | null
           total: number
         }
         Update: {
           boutique_id?: string
+          canal?: string | null
+          chat_id?: string | null
           client_adresse?: string
           client_nom?: string
           client_telephone?: string
           created_at?: string | null
+          heure_livraison?: string | null
+          heure_prise_en_charge?: string | null
           id?: string
+          instructions?: string | null
+          nom_livreur?: string | null
+          note_client?: number | null
+          position_livreur?: string | null
+          reference?: string | null
           statut?: string | null
+          statut_livraison?: string | null
           total?: number
         }
         Relationships: [
@@ -325,10 +361,14 @@ export type Database = {
           description: string | null
           disponible: boolean | null
           id: string
+          menu_du_jour: boolean
           nom: string | null
           photo_url: string | null
           prix: number | null
+          reference: string | null
+          seuil_alerte: number | null
           stock: number | null
+          stock_initial: number | null
         }
         Insert: {
           boutique_id?: string
@@ -337,10 +377,14 @@ export type Database = {
           description?: string | null
           disponible?: boolean | null
           id?: string
+          menu_du_jour?: boolean
           nom?: string | null
           photo_url?: string | null
           prix?: number | null
+          reference?: string | null
+          seuil_alerte?: number | null
           stock?: number | null
+          stock_initial?: number | null
         }
         Update: {
           boutique_id?: string
@@ -349,10 +393,14 @@ export type Database = {
           description?: string | null
           disponible?: boolean | null
           id?: string
+          menu_du_jour?: boolean
           nom?: string | null
           photo_url?: string | null
           prix?: number | null
+          reference?: string | null
+          seuil_alerte?: number | null
           stock?: number | null
+          stock_initial?: number | null
         }
         Relationships: []
       }

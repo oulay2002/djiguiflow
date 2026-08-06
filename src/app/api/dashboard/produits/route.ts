@@ -1,36 +1,40 @@
-import { readSheet, readHeaders, appendRow } from '@/lib/googleSheets';
+import { readHeaders, appendRow } from '@/lib/googleSheets';
 import { resoudreMarchand } from '@/lib/marchands';
+import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 
 export const dynamic = 'force-dynamic';
-
-// Valeurs héritées signifiant « indisponible ». Un filtre strict sur 'TRUE'
-// masquait tous les produits saisis avant l'uniformisation.
-const INDISPONIBLE = new Set(['non', 'no', 'false', '0', 'épuisé', 'epuise', '']);
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const m = await resoudreMarchand(searchParams.get('boutique_id'));
   if (!m) return Response.json({ error: 'Marchand introuvable' }, { status: 404 });
 
-  let rows: Record<string, string>[];
-  try {
-    rows = await readSheet(`${m.sheetMenu}!A:Z`, m.sheetId);
-  } catch (e) {
-    console.error(`Produits — lecture ${m.sheetMenu} impossible :`, e);
+  const sb = getSupabaseAdmin();
+  if (!sb) return Response.json({ error: 'Menu temporairement indisponible' }, { status: 503 });
+
+  const { data, error } = await sb
+    .from('produits')
+    .select('reference, id, nom, categorie, prix, description, disponible, photo_url, stock_initial, seuil_alerte, menu_du_jour')
+    .eq('boutique_id', m.boutiqueId)
+    .order('nom', { ascending: true });
+
+  if (error) {
+    console.error(`Produits — lecture Supabase impossible (${m.id}) :`, error);
     return Response.json({ error: 'Menu temporairement indisponible' }, { status: 503 });
   }
 
-  const produits = rows
-    .filter(r => r.nom)
-    .map(r => ({
-      id: String(r.id || ''),
-      nom: String(r.nom || ''),
-      categorie: String(r.categorie || 'Divers'),
-      prix: Number(String(r.prix ?? '').replace(/\D/g, '')) || 0,
-      description: String(r.description || ''),
-      disponible: !INDISPONIBLE.has(String(r.disponible ?? '').trim().toLowerCase()),
-      image: String(r.image || ''),
-    }));
+  const produits = (data ?? []).map(p => ({
+    id: String(p.reference ?? p.id),
+    nom: String(p.nom ?? ''),
+    categorie: String(p.categorie ?? 'Divers'),
+    prix: Number(p.prix ?? 0),
+    description: String(p.description ?? ''),
+    disponible: p.disponible !== false,
+    image: String(p.photo_url ?? ''),
+    stock_initial: p.stock_initial ?? null,
+    seuil_alerte: p.seuil_alerte ?? null,
+    menu_du_jour: p.menu_du_jour === true,
+  }));
 
   return Response.json({ boutique_id: m.id, produits });
 }
@@ -42,25 +46,47 @@ export async function POST(req: Request) {
   const m = await resoudreMarchand(boutique_id);
   if (!m) return Response.json({ error: 'Marchand introuvable' }, { status: 404 });
 
-  const payload: Record<string, string> = {
-    id: `P${Date.now()}`,
-    nom: String(nom),
-    categorie: String(categorie || 'Divers'),
-    prix: String(prix ?? ''),
-    description: String(description || ''),
-    // TRUE/FALSE et pas oui/non : c'est la convention lue par la page
-    // boutique et par les workflows n8n (Alerte Stock, Cerveau Zahara).
-    // Avec « oui », le produit n'apparaissait jamais côté client.
-    disponible: disponible ? 'TRUE' : 'FALSE',
-    image: String(image || ''),
-  };
+  const reference = `P${Date.now()}`;
 
+  // Double ecriture : Google Sheets reste la source de verite tant que n8n
+  // n'ecrit pas dans Supabase. L'echec de la feuille est donc bloquant,
+  // celui de Supabase ne l'est pas.
   try {
+    const payload: Record<string, string> = {
+      id: reference,
+      nom: String(nom),
+      categorie: String(categorie || 'Divers'),
+      prix: String(prix ?? ''),
+      description: String(description || ''),
+      // TRUE/FALSE et pas oui/non : convention lue par la page boutique et
+      // par les workflows n8n (Alerte Stock, Cerveau Zahara).
+      disponible: disponible ? 'TRUE' : 'FALSE',
+      image: String(image || ''),
+    };
     const headers = await readHeaders(`${m.sheetMenu}!A1:Z1`, m.sheetId);
     await appendRow(`${m.sheetMenu}!A:Z`, headers.map(h => payload[h] ?? ''), m.sheetId);
   } catch (e) {
-    console.error(`Produits — écriture ${m.sheetMenu} impossible :`, e);
+    console.error(`Produits — écriture Sheets impossible (${m.id}) :`, e);
     return Response.json({ error: 'Enregistrement impossible, réessayez' }, { status: 503 });
+  }
+
+  const sb = getSupabaseAdmin();
+  if (sb) {
+    const { error } = await sb.from('produits').upsert(
+      {
+        boutique_id: m.boutiqueId,
+        reference,
+        nom: String(nom),
+        categorie: String(categorie || 'Divers'),
+        prix: Number(prix) || 0,
+        description: String(description || ''),
+        disponible: Boolean(disponible),
+        photo_url: String(image || '') || null,
+      },
+      { onConflict: 'boutique_id,reference' },
+    );
+    // Non bloquant : la feuille fait foi, la copie Supabase peut etre rejouee.
+    if (error) console.error(`Produits — copie Supabase echouee (${m.id}) :`, error);
   }
 
   return Response.json({ ok: true, boutique_id: m.id });

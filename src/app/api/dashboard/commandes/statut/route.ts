@@ -1,5 +1,6 @@
 import { readSheet, readHeaders, updateCells } from '@/lib/googleSheets';
 import { resoudreMarchand } from '@/lib/marchands';
+import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 
 export async function POST(req: Request) {
   const { order_id, action, boutique_id } = await req.json();
@@ -62,6 +63,26 @@ export async function POST(req: Request) {
     // plutôt que de renvoyer ok:true sur une commande non mise à jour.
     console.error(`Statut — écriture ${m.sheetCommandes} impossible :`, e);
     return Response.json({ error: 'Mise à jour impossible, réessayez' }, { status: 503 });
+  }
+
+  // Copie Supabase, non bloquante : la feuille fait foi pendant la double
+  // ecriture. On y reporte aussi le statut metier, que le dashboard lit.
+  const sb = getSupabaseAdmin();
+  if (sb) {
+    const statutMetier =
+      action === 'livree' ? 'livree' : action === 'route' ? 'en_livraison' : 'en_preparation';
+    const maintenant = new Date().toISOString();
+    const { error } = await sb
+      .from('commandes')
+      .update({
+        statut: statutMetier,
+        statut_livraison: statut,
+        ...(action === 'acceptee' ? { heure_prise_en_charge: maintenant } : {}),
+        ...(action === 'livree' ? { heure_livraison: maintenant } : {}),
+      })
+      .eq('boutique_id', m.boutiqueId)
+      .eq('reference', String(order_id).trim());
+    if (error) console.error(`Statut — copie Supabase échouée (${order_id}) :`, error);
   }
 
   // v9.1 — notifier le client sur WhatsApp via n8n (sans jamais casser le flux)

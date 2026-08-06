@@ -491,9 +491,44 @@ vendus **42 = 42**.
 **La production n'a pas bougé** : l'application lit toujours Google Sheets, qui reste la
 source de vérité. Supabase est pour l'instant une copie fidèle et vérifiée.
 
+## 7bis. Migration Supabase — étape 2 (lectures basculées, double écriture)
+
+**Toutes les lectures de l'application viennent désormais de Supabase.** Google Sheets
+n'est plus lu que par n8n. C'est ce qui retire la pression sur le quota (B12) : le parcours
+client et le dashboard ne consomment plus un seul appel à l'API Google.
+
+| Route | Avant | Après |
+|---|---|---|
+| `/api/marchands` | onglet `Marchands` | `boutiques` + `notification_settings` |
+| `/api/boutiques/[id]` | onglet `Marchands` | `boutiques` |
+| `/api/boutiques/[id]/menu` | onglet `Menu` | `produits` |
+| `/api/dashboard/produits` (GET) | onglet `Menu` | `produits` |
+| `/api/dashboard/commandes` | `Commandes_Zahara` | `commandes` + `commande_items` |
+| `/api/dashboard/stats` | 2 onglets lus entiers | une requête filtrée |
+| `/api/suivi` | feuille entière lue | une ligne, par `reference` |
+
+L'onglet `Marchands` créé à l'étape précédente est donc déjà remplacé : le registre vit
+maintenant dans `boutiques` (colonnes `slug` et `emoji` ajoutées) et
+`notification_settings` (groupe livreurs, numéro WhatsApp).
+
+**Écritures : Sheets d'abord, Supabase ensuite.** Tant que n8n lit la feuille, elle reste la
+vérité. Un échec Sheets fait donc échouer la requête ; un échec Supabase est seulement
+journalisé — casser une commande client pour un miroir serait disproportionné, et la copie
+se rattrape par un rejeu.
+
+Un client Supabase à privilèges élevés (`src/lib/supabaseAdmin.ts`) est nécessaire : les
+tables sont protégées par RLS via `auth.uid()`, et une route serveur n'a pas de session
+utilisateur — avec la clé anonyme elle ne verrait aucune commande.
+
+**Vérifié en conditions réelles :** CA `86 000 = 86 000` avec la feuille, une référence
+inconnue et un `boutique_id` inconnu répondent 404, et surtout l'isolation inter-tenant
+tient — `rosemonde` renvoie ses 6 commandes / 41 500 F, `zahara` ses 20 / 86 000 F.
+
+Effet de bord attendu : le sélecteur de boutique apparaît au dashboard, `rosemonde` ayant
+désormais un slug.
+
 ### Étapes suivantes
 
-2. L'app **lit** Supabase (fin des 429 côté dashboard) et **écrit dans les deux**.
 3. n8n écrit dans Supabase — **bloqué** : le nœud Postgres exige une credential, que le
    serveur MCP ne permet pas de créer. Connexion à récupérer dans Supabase → Database.
 4. Sheets en lecture seule, puis retrait.
