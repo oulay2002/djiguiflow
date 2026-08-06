@@ -434,6 +434,70 @@ préfixe ivoirien connu (01/05/07/21/25/27).
 Vérifié en écrivant `0102030405` via n8n après correctif : la cellule reste du
 texte et conserve son zéro.
 
+## 7. Migration vers Supabase — étape 1 (schéma + données)
+
+**Découverte préalable.** Supabase n'était pas une base vierge : le projet contenait déjà un
+schéma relationnel complet (`boutiques`, `produits`, `commandes`, `commande_items`,
+`livreurs`, `livraisons`, `notification_settings`), RLS activé — mais **figé depuis le
+2 août**. Pendant ce temps `Commandes_Zahara` recevait des commandes tous les jours.
+
+Le système n'avait donc pas un problème de stockage : il avait **deux bases parallèles**,
+dont une abandonnée. « Migrer » signifie déplacer le système vivant vers le schéma dormant.
+
+`Restaurant Zahara` existait dans `boutiques` (`1111…`) avec **0 produit, 0 commande** ; les
+6 commandes présentes appartenaient à `ROSE MONDE`, le tenant de test du dossier v10.3.
+
+### Ce que le schéma ignorait
+
+Conçu pour un flux « app », il n'avait aucun des concepts du bot. Ajoutés :
+`reference`, `chat_id`, `canal`, `instructions`, `nom_livreur`, `statut_livraison`,
+`position_livreur`, `heure_prise_en_charge`, `heure_livraison`, `note_client` sur
+`commandes` ; `reference`, `stock_initial`, `seuil_alerte`, `menu_du_jour` sur `produits`.
+La contrainte `statut` a été élargie avec `panier` (panier en collecte par l'agent).
+
+**Deux défauts corrigés au passage**, signalés par les bonnes pratiques Postgres :
+aucun index n'existait sur 4 clés étrangères (`commandes.boutique_id`,
+`commande_items.commande_id`, `commande_items.produit_id`, `produits.boutique_id`).
+
+### Données migrées
+
+| | Résultat |
+|---|---|
+| Produits | 4 |
+| Commandes | 20 |
+| Lignes d'articles | 24 (22 rattachées au catalogue) |
+| Registre marchand | `notification_settings` peuplé |
+
+**Réconciliation avec Sheets :** CA total **86 000 = 86 000**, livrées **8 = 8**, articles
+vendus **42 = 42**.
+
+### Écarts, tous expliqués
+
+- **21 commandes côté Sheets, 20 côté Supabase.** Une ligne n'a pas d'`order_id` : ce n'est
+  pas une commande. Le rapport Sheets la comptait à tort.
+- **Références en collision.** `ZH-1724402569-1724402569` désignait **deux commandes
+  distinctes** (Fiedi Ferdinand et Maëlys) — le générateur de l'agent avait répété le
+  `chat_id` au lieu du timestamp. Les deux sont conservées, la seconde suffixée `#2` :
+  perdre une vraie commande aurait été pire.
+- **1 note migrée sur 22.** 12 notes portent une référence `ORDER_<chat_id>_<timestamp>`,
+  le repli généré quand le callback n'apportait pas d'`order_id` — conséquence directe des
+  boutons `note_5__` vides. 6 n'ont aucune référence. Sur les 4 rattachables, une seule
+  avait une valeur entre 1 et 5, les autres portant les valeurs aberrantes des callbacks
+  livreur. **18 notes sur 22 sont définitivement inattribuables.** Les correctifs étant en
+  place, les notes futures s'attacheront.
+- **`canal` figé.** Les commandes `APP-` portaient `whatsapp` (canal de *notification*) ;
+  le rapport Sheets le corrigeait à la volée via le préfixe. La valeur juste est écrite.
+
+**La production n'a pas bougé** : l'application lit toujours Google Sheets, qui reste la
+source de vérité. Supabase est pour l'instant une copie fidèle et vérifiée.
+
+### Étapes suivantes
+
+2. L'app **lit** Supabase (fin des 429 côté dashboard) et **écrit dans les deux**.
+3. n8n écrit dans Supabase — **bloqué** : le nœud Postgres exige une credential, que le
+   serveur MCP ne permet pas de créer. Connexion à récupérer dans Supabase → Database.
+4. Sheets en lecture seule, puis retrait.
+
 ### Reste à faire
 
 - **B12 quota Sheets 429** — structurel. `Dashboard Gérant` lit 4 feuilles à chaque commande.
