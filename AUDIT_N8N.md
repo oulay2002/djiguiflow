@@ -404,6 +404,36 @@ credential**, or l'auth par en-tête d'un nœud Webhook en exige une.
 3. Sur chaque nœud Webhook, passer `Authentication` sur *Header Auth* et sélectionner la
    credential correspondante, puis **publier** (cf. la règle du brouillon, §6bis).
 
+## 6quater. Zéro initial des numéros ivoiriens
+
+Diagnostic par inspection du type effectif de chaque cellule :
+
+| Écrivain | `order_id` | Stockage | Résultat |
+|---|---|---|---|
+| n8n | `ZH-…` | **NOMBRE** | `0102918886` → `102918886` |
+| App Next.js | `APP-…` | texte | correct |
+
+Le nœud Google Sheets de n8n écrit en `USER_ENTERED` par défaut : Sheets
+interprète la chaîne comme un nombre et supprime le zéro de tête. L'app utilise
+déjà `valueInputOption=RAW`, d'où l'asymétrie.
+
+**Deux barrières posées :**
+
+1. `cellFormat: RAW` sur les trois nœuds n8n qui écrivent `phone` —
+   `Enregistrer commande`, `Mettre_a_jour_commande`, `recommander_commande`.
+2. Colonne `phone` (C) passée au format **TEXTE** dans la feuille : couvre aussi
+   la saisie manuelle et tout futur nœud mal configuré.
+
+**Données réparées :** 6 cellules à 9 chiffres restaurées (`101010418` →
+`0101010418`), uniquement celles dont la version corrigée commence par un
+préfixe ivoirien connu (01/05/07/21/25/27).
+
+**Deux valeurs laissées intactes**, non récupérables par inférence :
+`1373738` (7 chiffres, saisie invalide) et `22890123383` (indicatif 228, Togo).
+
+Vérifié en écrivant `0102030405` via n8n après correctif : la cellule reste du
+texte et conserve son zéro.
+
 ### Reste à faire
 
 - **B12 quota Sheets 429** — structurel. `Dashboard Gérant` lit 4 feuilles à chaque commande.
