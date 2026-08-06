@@ -391,7 +391,38 @@ réponse HTTP reçue. Les 3 triggers sont actifs et pointent sur les nouvelles f
 Activer la vérification avant que l'appelant n'envoie le secret coupe la production. D'où
 la séparation en deux phases.
 
-### Phase 2 — à faire (ne peut pas être automatisée depuis le MCP)
+### Phase 2 — faite à 3 webhooks sur 5
+
+La credential `Header Auth account 2` (en-tête `x-djiguiflow-secret`) a été créée dans l'UI.
+Avant toute publication, son nom d'en-tête a été **lu en brouillon** via `triggerInfo` : la
+version active restait sans authentification pendant la vérification, la production ne
+pouvait donc pas tomber.
+
+| Webhook | État | Appelant |
+|---|---|---|
+| `statut-livraison` | **protégé** | trigger Postgres |
+| `nouvelle-commande` | **protégé** | trigger Postgres |
+| `nouvelle-livraison` | **protégé** | trigger Postgres |
+| `commande-app` | ouvert | app Next.js |
+| `whatsapp-zahara` | ouvert | wasenderapi |
+
+**Preuve de bout en bout.** Un appel `net.http_post` émis depuis Supabase, lisant le secret
+dans le Vault exactement comme le fait `notify_n8n_statut_livraison`, a reçu **HTTP 200**.
+Sans en-tête ou avec un mauvais secret : **403**. La chaîne Vault → trigger → n8n est donc
+vérifiée, pas supposée.
+
+**Pourquoi les deux derniers restent ouverts** — dans les deux cas, activer maintenant
+couperait la production :
+
+- `commande-app` est appelé par l'application, qui envoie
+  `process.env.N8N_WEBHOOK_SECRET ?? ''`. Si cette variable n'est pas définie sur Vercel,
+  l'app enverrait une chaîne vide et **toutes les commandes seraient rejetées en 403**.
+  À activer une fois la variable confirmée en *Production* et *Preview*.
+- `whatsapp-zahara` attend un en-tête **différent** (`x-webhook-secret`, celui que
+  wasenderapi envoie déjà). Il lui faut donc une **seconde** credential ; une seule a été
+  créée.
+
+### Phase 2 — reste à faire (ne peut pas être automatisée depuis le MCP)
 
 Le serveur MCP n8n officiel n'expose que `list_credentials` : **impossible de créer une
 credential**, or l'auth par en-tête d'un nœud Webhook en exige une.
