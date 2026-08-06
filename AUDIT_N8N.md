@@ -391,7 +391,39 @@ réponse HTTP reçue. Les 3 triggers sont actifs et pointent sur les nouvelles f
 Activer la vérification avant que l'appelant n'envoie le secret coupe la production. D'où
 la séparation en deux phases.
 
-### Phase 2 — faite à 3 webhooks sur 5
+### Phase 2 — 4 webhooks sur 5 protégés
+
+| Webhook | État | Mécanisme |
+|---|---|---|
+| `statut-livraison` | **protégé** | credential Header Auth |
+| `nouvelle-commande` | **protégé** | credential Header Auth |
+| `nouvelle-livraison` | **protégé** | credential Header Auth |
+| `whatsapp-zahara` | **protégé** | contrôle dans le workflow (voir plus bas) |
+| `commande-app` | ouvert | à activer après vérification |
+
+**`whatsapp-zahara` : contrôle dans le workflow, faute de credential utilisable.**
+Le champ `Name` de la credential dédiée conservait un espace initial (`" x-webhook-secret"`)
+malgré plusieurs corrections — n8n semble mettre en cache les métadonnées d'une credential
+existante, si bien qu'une édition ne se reflète pas. Un nœud Filter
+`Secret wasender valide ?` a donc été intercalé entre le Webhook et le `Normalisateur WA`.
+Il accepte `x-webhook-secret` **ou** `x-webhook-signature`, wasenderapi envoyant les deux
+avec la même valeur.
+
+*Compromis assumé* : le secret figure en clair dans le JSON du workflow. C'est contraire à
+la règle — les secrets vont dans le système de credentials. Mais l'alternative était de
+laisser ouvert le point d'entrée public du bot, où n'importe qui peut injecter de faux
+messages clients. À remplacer par une credential dès qu'une saisie propre est possible.
+
+Vérifié par les exécutions, le code HTTP ne prouvant rien ici (`responseMode: immediate`
+répond avant d'exécuter le workflow) : secret valide → `Normalisateur WA` s'exécute ;
+sans secret → arrêt au Filter, sortie conservée vide.
+
+**Leçon opérationnelle.** Sonder un webhook avec un corps vide n'est pas anodin : sur
+`commande-app`, qui n'a aucun garde-fou en tête de chaîne, chaque sonde a exécuté tout le
+workflow — écriture en feuille et **alerte Telegram aux livreurs**. Vérifier qu'un workflow
+filtre les charges incomplètes avant de le sonder, ou viser un chemin inexistant.
+
+### Phase 2 — historique (3 webhooks sur 5)
 
 La credential `Header Auth account 2` (en-tête `x-djiguiflow-secret`) a été créée dans l'UI.
 Avant toute publication, son nom d'en-tête a été **lu en brouillon** via `triggerInfo` : la
@@ -421,6 +453,24 @@ couperait la production :
 - `whatsapp-zahara` attend un en-tête **différent** (`x-webhook-secret`, celui que
   wasenderapi envoie déjà). Il lui faut donc une **seconde** credential ; une seule a été
   créée.
+
+### Activer `commande-app` — procédure
+
+Le seul webhook encore ouvert. Son appelant est l'application, qui envoie
+`process.env.N8N_WEBHOOK_SECRET ?? ''` : si la variable manque sur Vercel, activer
+rejetterait **toutes les commandes clients** en 403.
+
+À faire aux heures creuses, dans cet ordre :
+
+1. Passer une commande de test depuis `/boutiques/zahara` (nom explicitement « TEST »).
+2. Ouvrir l'exécution de `Commande App` et lire les en-têtes reçus par le nœud Webhook :
+   `x-djiguiflow-secret` doit porter la valeur du Vault, pas une chaîne vide.
+3. Seulement ensuite, passer `authentication` sur `headerAuth` avec la credential
+   `x-djiguiflow-secret`, puis **publier**.
+4. Supprimer la ligne de test des deux bases.
+
+Ne pas sonder ce webhook avec un corps vide : il n'a pas de garde-fou et déclenche
+l'alerte livreurs.
 
 ### Phase 2 — reste à faire (ne peut pas être automatisée depuis le MCP)
 
