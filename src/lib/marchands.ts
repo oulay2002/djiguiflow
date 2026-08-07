@@ -58,12 +58,13 @@ async function chargerMarchands(): Promise<Record<string, Marchand>> {
   }
 }
 
-export async function getMarchand(id: string): Promise<Marchand | null> {
+export async function getMarchand(id: string | null | undefined): Promise<Marchand | null> {
+  if (!id) return null;
   const dict = await chargerMarchands();
   return dict[id] || null;
 }
 
-export async function resoudreMarchand(id: string): Promise<Marchand | null> {
+export async function resoudreMarchand(id: string | null | undefined): Promise<Marchand | null> {
   return getMarchand(id);
 }
 
