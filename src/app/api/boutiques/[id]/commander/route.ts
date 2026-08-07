@@ -77,5 +77,24 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     }
   }
 
+  // Demande de confirmation au client (anti-retours)
+  const confUrl = process.env.N8N_CONFIRMATION_URL;
+  if (confUrl) {
+    try {
+      await fetch(confUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'demande',
+          reference: order_id,
+          phone,
+          nom: String(nom || 'Client'),
+          total: String(total),
+          boutique_id: m.boutiqueId,
+        }),
+      });
+    } catch { /* non bloquant */ }
+  }
+
   return Response.json({ ok: true, order_id });
 }
