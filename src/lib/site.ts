@@ -39,6 +39,20 @@ export const CHEMINS_PRIVES = [
   '/register',
 ];
 
+/**
+ * Endpoints publics a laisser explorables malgre le blocage de `/api/`.
+ *
+ * La fiche boutique charge son contenu en JavaScript depuis ces routes. Or le
+ * moteur de rendu de Google respecte le robots.txt pour les requetes que la
+ * page emet : bloquer `/api/` sans exception lui ferait rendre une page vide,
+ * et donc indexer une coquille. Une regle plus specifique l'emporte sur une
+ * regle plus large, ces `Allow` priment donc sur `Disallow: /api/`.
+ *
+ * Ces deux routes n'exposent que du public — ni sheetId, ni groupe de
+ * livreurs, ni numero WhatsApp.
+ */
+export const CHEMINS_API_PUBLICS = ['/api/marchands', '/api/boutiques/'];
+
 /** Construit une URL absolue a partir d’un chemin interne. */
 export function urlAbsolue(chemin: string): string {
   return `${SITE_URL}${chemin.startsWith('/') ? chemin : `/${chemin}`}`;
