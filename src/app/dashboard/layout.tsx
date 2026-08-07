@@ -39,9 +39,20 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           data: { user },
         } = await supabase.auth.getUser();
 
-        if (!user) {
+                if (!user) {
           const loginNext = encodeURIComponent(pathname || '/dashboard');
           router.replace(`/login?next=${loginNext}`);
+          return;
+        }
+
+        // 🔑 Le propriétaire n'est JAMAIS bloqué par son propre paywall
+        const OWNER_EMAILS = new Set([
+          'ton-email@exemple.com', // ← REMPLACE par ton email de connexion
+        ]);
+        if (OWNER_EMAILS.has((user.email ?? '').toLowerCase())) {
+          if (isMounted) {
+            setAllowed(true);
+          }
           return;
         }
 
