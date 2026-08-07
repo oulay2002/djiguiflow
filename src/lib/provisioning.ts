@@ -232,7 +232,7 @@ export async function provisionnerMarchand(d: DemandeProvisioning): Promise<Resu
     console.error('Ajout au registre Marchands impossible :', e);
   }
 
-  // 6. Essai de 30 jours offert : le marchand entre immediatement dans son
+    // 6. Essai de 30 jours offert : le marchand entre immediatement dans son
   //    dashboard (statut « trialing »). A echeance, le paywall reprend la
   //    main : c'est la que commence ton abonnement payant.
   const { error: erreurEssai } = await sb.from('subscriptions').upsert(
@@ -243,6 +243,7 @@ export async function provisionnerMarchand(d: DemandeProvisioning): Promise<Resu
       current_period_start: new Date().toISOString(),
       current_period_end: new Date(Date.now() + 30 * 24 * 3600 * 1000).toISOString(),
       updated_at: new Date().toISOString(),
+      last_checkout_session_id: '', // ← Ajouté : obligatoire mais vide pour un essai
     },
     { onConflict: 'user_id' },
   );
