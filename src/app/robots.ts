@@ -1,5 +1,5 @@
 import type { MetadataRoute } from 'next';
-import { CHEMINS_PRIVES, SITE_URL } from '@/lib/site';
+import { CHEMINS_API_PUBLICS, CHEMINS_PRIVES, SITE_URL } from '@/lib/site';
 
 // Sert /robots.txt. Le fichier est genere, pas ecrit a la main : la liste des
 // chemins prives et l'URL du site restent ainsi partagees avec le sitemap.
@@ -7,7 +7,7 @@ export default function robots(): MetadataRoute.Robots {
   return {
     rules: {
       userAgent: '*',
-      allow: '/',
+      allow: ['/', ...CHEMINS_API_PUBLICS],
       disallow: CHEMINS_PRIVES,
     },
     sitemap: `${SITE_URL}/sitemap.xml`,
