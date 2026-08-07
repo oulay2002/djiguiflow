@@ -43,7 +43,8 @@ export default function Page() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [s, setS] = useState<Stats | null>(null);
-  const { boutiqueId, pret } = useBoutique();
+  const { boutiqueId, boutiques, pret } = useBoutique();
+  const nomBoutique = boutiques.find(b => b.id === boutiqueId)?.nom ?? 'DjiguiFlow';
 
   useEffect(() => {
     if (!pret) return;
@@ -128,7 +129,7 @@ export default function Page() {
           <header className="flex flex-col gap-4 rounded-[2rem] border border-white/70 bg-white/75 p-5 shadow-[0_20px_60px_rgba(49,35,20,0.08)] backdrop-blur-xl md:flex-row md:items-center md:justify-between">
             <div>
               <p className="text-sm uppercase tracking-[0.2em] text-slate-500">Tableau de bord · données réelles</p>
-              <h1 className="mt-2 text-3xl font-black">Bonjour, DjiguiFlow 👋</h1>
+              <h1 className="mt-2 text-3xl font-black">Bonjour, {nomBoutique} 👋</h1>
             </div>
             <div className="flex items-center gap-3">
               <button className="flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-slate-600 hover:text-primary-700">
