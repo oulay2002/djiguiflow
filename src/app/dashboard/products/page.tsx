@@ -4,10 +4,13 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useBoutique, avecBoutique } from '@/lib/boutique';
 import {
-  Bell, CreditCard, Gauge, Loader2, LogOut, Package2, Plus, RefreshCw,
+  Bell, CreditCard, Gauge, LogOut, Package2, Plus, RefreshCw,
   Settings, ShoppingCart, Store, TrendingUp, Truck, Users, UtensilsCrossed, X,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { BUCKET_IMAGES, dossierMarchand, nomFichierSain } from '@/lib/storage';
+import { fetchDashboard } from '@/lib/apiClient';
+import { Bouton } from '@/components/ui/Bouton';
 
 type Prod = { id: string; nom: string; categorie: string; prix: number; description: string; disponible: boolean; image: string };
 
@@ -46,7 +49,7 @@ export default function Page() {
   const charger = async () => {
     setRefreshing(true);
     try {
-      const r = await fetch(avecBoutique('/api/dashboard/produits', boutiqueId));
+      const r = await fetchDashboard(avecBoutique('/api/dashboard/produits', boutiqueId));
       const d = await r.json();
       if (!r.ok) throw new Error(d?.error || `HTTP ${r.status}`);
       setProds(d.produits || []);
@@ -63,12 +66,17 @@ export default function Page() {
     try {
       let image = fUrl.trim();
       if (fFile) {
-        const path = `produits/${Date.now()}-${fFile.name.replace(/\s+/g, '-')}`;
-        const { error } = await supabase.storage.from('produits').upload(path, fFile);
-        if (error) throw new Error('Upload échoué — vérifie le bucket "produits" (public) dans Supabase Storage.');
-        image = supabase.storage.from('produits').getPublicUrl(path).data.publicUrl;
+        const dossier = await dossierMarchand(boutiqueId);
+        const path = `${dossier}/produits/${Date.now()}-${nomFichierSain(fFile.name)}`;
+        const { error } = await supabase.storage.from(BUCKET_IMAGES).upload(path, fFile, {
+          cacheControl: '3600',
+          contentType: fFile.type || 'application/octet-stream',
+          upsert: false,
+        });
+        if (error) throw new Error(`Upload échoué — ${error.message}`);
+        image = supabase.storage.from(BUCKET_IMAGES).getPublicUrl(path).data.publicUrl;
       }
-      const res = await fetch(avecBoutique('/api/dashboard/produits', boutiqueId), {
+      const res = await fetchDashboard(avecBoutique('/api/dashboard/produits', boutiqueId), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ nom: fNom, categorie: fCat, prix: Number(fPrix) || 0, description: fDesc, disponible: fDispo, image }),
@@ -109,10 +117,13 @@ export default function Page() {
               </Link>
             ))}
           </nav>
-          <button onClick={async () => { await supabase.auth.signOut(); location.href = '/login'; }}
-            className="mt-8 flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold hover:bg-slate-100">
+          <Bouton
+            variante="calme"
+            className="mt-8 w-full"
+            onClick={async () => { await supabase.auth.signOut(); location.href = '/login'; }}
+          >
             <LogOut className="h-4 w-4" />Déconnexion
-          </button>
+          </Bouton>
         </aside>
 
         <main className="flex-1 space-y-6">
@@ -124,14 +135,12 @@ export default function Page() {
                 <p className="mt-1 text-xs text-amber-100">{prods.length} produits · {prods.filter(p => p.disponible).length} disponibles · maj {maj}</p>
               </div>
               <div className="flex gap-2">
-                <button onClick={() => setOuvert(true)}
-                  className="flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-bold text-orange-700 shadow hover:bg-amber-50">
+                <Bouton variante="contraste" onClick={() => setOuvert(true)}>
                   <Plus className="h-4 w-4" /> Ajouter un produit
-                </button>
-                <button onClick={charger} disabled={refreshing}
-                  className="flex items-center gap-2 rounded-full bg-white/15 px-4 py-2 text-sm font-semibold hover:bg-white/25 disabled:opacity-60">
+                </Bouton>
+                <Bouton variante="voile" onClick={charger} disabled={refreshing}>
                   <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} /> Actualiser
-                </button>
+                </Bouton>
               </div>
             </div>
           </header>
@@ -215,11 +224,10 @@ export default function Page() {
 
             {msg && <p className="rounded-lg bg-rose-50 p-3 text-sm text-rose-700">{msg}</p>}
 
-            <button onClick={ajouter} disabled={envoi}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-orange-700 py-3 font-bold text-white hover:bg-orange-800 disabled:opacity-50">
-              {envoi ? <Loader2 className="h-5 w-5 animate-spin" /> : <Plus className="h-5 w-5" />}
+            <Bouton onClick={ajouter} chargement={envoi} className="w-full">
+              {!envoi && <Plus className="h-5 w-5" />}
               {envoi ? 'Ajout en cours…' : 'Ajouter au menu'}
-            </button>
+            </Bouton>
           </div>
         </div>
       )}

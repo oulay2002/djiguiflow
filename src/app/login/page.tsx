@@ -1,9 +1,10 @@
 'use client';
 
 import { Suspense, useState } from 'react';
+import { LienRetour } from '@/components/ui/Bouton';
 import { isSupabaseConfigured, supabase } from '@/lib/supabase';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Eye, EyeOff, Lock, Mail } from 'lucide-react';
+import { Eye, EyeOff, Lock, Mail } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 
@@ -47,10 +48,9 @@ function LoginPageContent() {
     <main className="flex min-h-screen items-center justify-center bg-[radial-gradient(circle_at_top_left,_rgba(219,149,52,0.18),transparent_25%),linear-gradient(180deg,#fffdf9_0%,#f5efe5_100%)] px-4 py-12">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="w-full max-w-md">
         <div className="mb-8">
-          <Link href="/" className="mb-6 inline-flex items-center gap-2 text-sm font-medium text-slate-600 transition hover:text-primary-700">
-            <ArrowLeft className="h-4 w-4" />
-            <span>Retour à l&apos;accueil</span>
-          </Link>
+          <div className="mb-6">
+            <LienRetour href="/">Retour à l&apos;accueil</LienRetour>
+          </div>
 
           <div className="text-center">
             <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-500 to-accent-600 text-xl font-black text-white shadow-lg shadow-primary-500/20">D</div>

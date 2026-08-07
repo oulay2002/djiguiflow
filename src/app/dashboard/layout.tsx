@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase';
 import { isMockBillingMode } from '@/lib/billing/mode';
 import { BoutiqueProvider } from '@/lib/boutique';
 import SelecteurBoutique from '@/components/SelecteurBoutique';
+import AjouterMarchand from '@/components/AjouterMarchand';
 
 type SubscriptionState = {
   status: string;
@@ -123,6 +124,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   return (
     <BoutiqueProvider>
       <SelecteurBoutique />
+      <AjouterMarchand />
       {children}
     </BoutiqueProvider>
   );

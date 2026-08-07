@@ -1,10 +1,10 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { LienRetour, classesBouton } from '@/components/ui/Bouton';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import Link from 'next/link';
 import {
   Bell,
   Phone,
@@ -115,22 +115,20 @@ export default function NotificationsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Loader2 className="w-10 h-10 animate-spin text-amber-600" />
+      <div className="min-h-screen bg-[var(--background)] flex items-center justify-center">
+        <Loader2 className="w-10 h-10 animate-spin text-nuit-400" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6 lg:p-8">
+    <div className="min-h-screen bg-[var(--background)] p-6 lg:p-8">
       {/* Header */}
       <div className="mb-8">
-        <Link href="/dashboard" className="inline-flex items-center gap-2 text-gray-600 hover:text-amber-600 transition mb-2">
-          <span>← Retour au dashboard</span>
-        </Link>
+        <LienRetour href="/dashboard">Retour au dashboard</LienRetour>
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Paramètres de Notification</h1>
-          <p className="text-gray-600 mt-1">Configurez vos préférences de notification</p>
+          <h1 className="text-3xl font-bold text-nuit-900">Paramètres de Notification</h1>
+          <p className="text-chaux-600 mt-1">Configurez vos préférences de notification</p>
         </div>
       </div>
 
@@ -139,16 +137,16 @@ export default function NotificationsPage() {
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-white rounded-xl p-6 border border-gray-100"
+          className="bg-white rounded-xl p-6 border border-chaux-200"
         >
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
-              <div className="p-3 bg-green-50 rounded-lg">
-                <MessageCircle className="w-6 h-6 text-green-600" />
+              <div className="p-3 bg-accent-50 rounded-lg">
+                <MessageCircle className="w-6 h-6 text-accent-600" />
               </div>
               <div>
-                <h2 className="text-xl font-bold text-gray-900">WhatsApp</h2>
-                <p className="text-sm text-gray-500">Recevez les notifications sur WhatsApp</p>
+                <h2 className="text-xl font-bold text-nuit-900">WhatsApp</h2>
+                <p className="text-sm text-chaux-500">Recevez les notifications sur WhatsApp</p>
               </div>
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
@@ -158,14 +156,14 @@ export default function NotificationsPage() {
                 onChange={() => toggleNotification('whatsapp_actif')}
                 className="sr-only peer"
               />
-              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+              <div className="w-11 h-6 bg-chaux-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-chaux-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-accent-500"></div>
             </label>
           </div>
 
           {settings.whatsapp_actif && (
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-nuit-700 mb-2">
                   Numéro WhatsApp
                 </label>
                 <input
@@ -173,9 +171,9 @@ export default function NotificationsPage() {
                   value={settings.whatsapp_numero}
                   onChange={(e) => setSettings({ ...settings, whatsapp_numero: e.target.value })}
                   placeholder="Ex: 0759486701"
-                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-amber-500"
+                  className="w-full px-4 py-3 border border-chaux-200 rounded-lg focus:ring-2 focus:ring-nuit-200"
                 />
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-chaux-500 mt-1">
                   Format : numéro local (ex: 0759486701)
                 </p>
               </div>
@@ -187,16 +185,16 @@ export default function NotificationsPage() {
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-white rounded-xl p-6 border border-gray-100"
+          className="bg-white rounded-xl p-6 border border-chaux-200"
         >
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
-              <div className="p-3 bg-blue-50 rounded-lg">
-                <Phone className="w-6 h-6 text-blue-600" />
+              <div className="p-3 bg-nuit-50 rounded-lg">
+                <Phone className="w-6 h-6 text-nuit-600" />
               </div>
               <div>
-                <h2 className="text-xl font-bold text-gray-900">Telegram</h2>
-                <p className="text-sm text-gray-500">Recevez les notifications sur Telegram</p>
+                <h2 className="text-xl font-bold text-nuit-900">Telegram</h2>
+                <p className="text-sm text-chaux-500">Recevez les notifications sur Telegram</p>
               </div>
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
@@ -206,14 +204,14 @@ export default function NotificationsPage() {
                 onChange={() => toggleNotification('telegram_actif')}
                 className="sr-only peer"
               />
-              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+              <div className="w-11 h-6 bg-chaux-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-chaux-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-accent-500"></div>
             </label>
           </div>
 
           {settings.telegram_actif && (
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-nuit-700 mb-2">
                   Chat ID Telegram
                 </label>
                 <input
@@ -221,9 +219,9 @@ export default function NotificationsPage() {
                   value={settings.telegram_chat_id}
                   onChange={(e) => setSettings({ ...settings, telegram_chat_id: e.target.value })}
                   placeholder="Ex: 123456789"
-                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-amber-500"
+                  className="w-full px-4 py-3 border border-chaux-200 rounded-lg focus:ring-2 focus:ring-nuit-200"
                 />
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-chaux-500 mt-1">
                   Obtenez votre Chat ID via @userinfobot sur Telegram
                 </p>
               </div>
@@ -235,10 +233,10 @@ export default function NotificationsPage() {
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-white rounded-xl p-6 border border-gray-100"
+          className="bg-white rounded-xl p-6 border border-chaux-200"
         >
-          <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-            <Bell className="w-6 h-6 text-amber-600" />
+          <h2 className="text-xl font-bold text-nuit-900 mb-6 flex items-center gap-2">
+            <Bell className="w-6 h-6 text-mangue-500" />
             Types de notifications
           </h2>
 
@@ -284,7 +282,7 @@ export default function NotificationsPage() {
         {/* Bouton Sauvegarder */}
         <div className="flex items-center justify-between">
           {success && (
-            <div className="flex items-center gap-2 text-green-600">
+            <div className="flex items-center gap-2 text-accent-600">
               <CheckCircle className="w-5 h-5" />
               <span className="font-medium">Paramètres sauvegardés !</span>
             </div>
@@ -292,7 +290,7 @@ export default function NotificationsPage() {
           <button
             onClick={saveSettings}
             disabled={saving}
-            className="ml-auto flex items-center gap-2 px-6 py-3 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition font-medium disabled:opacity-50"
+            className={`${classesBouton('action')} ml-auto px-6`}
           >
             {saving ? (
               <>
@@ -322,12 +320,12 @@ type NotificationToggleProps = {
 
 function NotificationToggle({ icon: Icon, label, description, checked, onChange }: NotificationToggleProps) {
   return (
-    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+    <div className="flex items-center justify-between p-4 bg-chaux-50 rounded-lg hover:bg-chaux-100 transition">
       <div className="flex items-center gap-3">
-        <Icon className="w-5 h-5 text-gray-600" />
+        <Icon className="w-5 h-5 text-chaux-600" />
         <div>
-          <p className="font-medium text-gray-900">{label}</p>
-          <p className="text-sm text-gray-500">{description}</p>
+          <p className="font-medium text-nuit-900">{label}</p>
+          <p className="text-sm text-chaux-500">{description}</p>
         </div>
       </div>
       <label className="relative inline-flex items-center cursor-pointer">
@@ -337,7 +335,7 @@ function NotificationToggle({ icon: Icon, label, description, checked, onChange 
           onChange={onChange}
           className="sr-only peer"
         />
-        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-600"></div>
+        <div className="w-11 h-6 bg-chaux-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-chaux-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-accent-500"></div>
       </label>
     </div>
   );

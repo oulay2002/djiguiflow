@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useBoutique, avecBoutique } from '@/lib/boutique';
+import { fetchDashboard } from '@/lib/apiClient';
 import Link from 'next/link';
 import {
   Bell, CheckCircle2, Clock, CreditCard, Gauge, LogOut,
@@ -51,7 +52,7 @@ export default function Page() {
 
   const charger = async () => {
     try {
-      const r = await fetch(avecBoutique('/api/dashboard/commandes', boutiqueId));
+      const r = await fetchDashboard(avecBoutique('/api/dashboard/commandes', boutiqueId));
       const d = await r.json();
       // Sans ce garde-fou, une 503 (quota Sheets) vidait la liste
       // silencieusement : le gérant croyait n'avoir aucune commande.
@@ -72,7 +73,7 @@ export default function Page() {
   const agir = async (order_id: string, action: 'acceptee' | 'route' | 'livree') => {
     setBusy(order_id + action);
     try {
-      await fetch(avecBoutique('/api/dashboard/commandes/statut', boutiqueId), {
+      await fetchDashboard(avecBoutique('/api/dashboard/commandes/statut', boutiqueId), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ order_id, action }),

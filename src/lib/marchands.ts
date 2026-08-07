@@ -8,6 +8,10 @@ export type Marchand = {
   nom: string;
   secteur: string;
   emoji: string;
+  /** Zone de livraison, affichee sur les surfaces publiques. */
+  zone: string;
+  /** Logo de la boutique, vide si le marchand n'en a pas encore depose. */
+  logo: string;
   /** Config Google Sheets, conservee tant que la feuille reste la verite. */
   sheetId: string;
   sheetCommandes: string;
@@ -34,6 +38,8 @@ const REPLI_HISTORIQUE: Marchand = {
   nom: 'Zahara',
   secteur: 'Restaurant',
   emoji: '🏪',
+  zone: '',
+  logo: '',
   sheetId: process.env.SHEET_ID!,
   ...FEUILLES_PAR_DEFAUT,
   groupeLivreurs: '',
@@ -63,6 +69,8 @@ type LigneBoutique = {
   categorie: string | null;
   emoji: string | null;
   telephone: string | null;
+  zone: string | null;
+  logo_url: string | null;
   sheet_commandes: string | null;
   sheet_menu: string | null;
   groupe_livreurs: string | null;
@@ -93,7 +101,8 @@ async function chargerMarchands(): Promise<Record<string, Marchand>> {
     const { data, error } = await sb
       .from('boutiques')
       .select(
-        'id, slug, nom, categorie, emoji, telephone, sheet_commandes, sheet_menu, groupe_livreurs,' +
+        'id, slug, nom, categorie, emoji, telephone, zone, logo_url,' +
+        ' sheet_commandes, sheet_menu, groupe_livreurs,' +
         ' notification_settings(whatsapp_numero, telegram_chat_id)',
       )
       .not('slug', 'is', null);
@@ -110,6 +119,8 @@ async function chargerMarchands(): Promise<Record<string, Marchand>> {
         nom: b.nom ?? '',
         secteur: b.categorie ?? '',
         emoji: b.emoji ?? '🏪',
+        zone: b.zone ?? '',
+        logo: b.logo_url ?? '',
         sheetId: process.env.SHEET_ID!,
         // La config par marchand prime ; le repli garde le comportement des
         // boutiques provisionnees avant l'arrivee de ces colonnes.
@@ -135,12 +146,15 @@ export async function getMarchand(id: string): Promise<Marchand | null> {
   return dict[id] || null;
 }
 
-export type MarchandPublic = Pick<Marchand, 'id' | 'nom' | 'secteur' | 'emoji'>;
+export type MarchandPublic = Pick<
+  Marchand,
+  'id' | 'nom' | 'secteur' | 'emoji' | 'zone' | 'logo'
+>;
 
 export async function listerMarchands(): Promise<MarchandPublic[]> {
   const dict = await chargerMarchands();
   return Object.values(dict)
-    .map(({ id, nom, secteur, emoji }) => ({ id, nom, secteur, emoji }))
+    .map(({ id, nom, secteur, emoji, zone, logo }) => ({ id, nom, secteur, emoji, zone, logo }))
     .sort((a, b) => a.nom.localeCompare(b.nom, 'fr'));
 }
 

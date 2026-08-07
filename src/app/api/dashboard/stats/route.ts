@@ -1,4 +1,4 @@
-import { resoudreMarchand } from '@/lib/marchands';
+import { exigerAccesMarchand } from '@/lib/dashboardAuth';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 
 export const dynamic = 'force-dynamic';
@@ -15,8 +15,9 @@ type Ligne = {
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
-  const m = await resoudreMarchand(searchParams.get('boutique_id'));
-  if (!m) return Response.json({ error: 'Marchand introuvable' }, { status: 404 });
+  const acces = await exigerAccesMarchand(req, searchParams.get('boutique_id'));
+  if (!acces.ok) return Response.json({ error: acces.message }, { status: acces.statut });
+  const m = acces.marchand;
 
   const sb = getSupabaseAdmin();
   if (!sb) return Response.json({ error: 'Statistiques temporairement indisponibles' }, { status: 503 });

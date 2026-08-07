@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { LienRetour } from '@/components/ui/Bouton';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -21,7 +22,6 @@ import {
   TrendingUp,
   X
 } from 'lucide-react';
-import Link from 'next/link';
 import NotificationToast from '@/components/NotificationToast';
 
 const STATUS_CONFIG = {
@@ -271,9 +271,7 @@ export default function OrdersPage() {
       <NotificationToast />
       {/* En-tête */}
       <div className="mb-8">
-        <Link href="/dashboard" className="inline-flex items-center gap-2 text-gray-600 hover:text-amber-600 transition mb-2">
-          <span>← Retour au dashboard</span>
-        </Link>
+        <LienRetour href="/dashboard">Retour au dashboard</LienRetour>
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Gestion des Commandes</h1>

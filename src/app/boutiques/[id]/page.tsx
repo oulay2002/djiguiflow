@@ -1,10 +1,12 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import { MapPin, Minus, Plus, ShoppingBag } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { normaliserTelephone, formaterTelephone } from '@/lib/telephone';
+import { LienRetour, classesBouton } from '@/components/ui/Bouton';
 
 type Produit = {
   id: string;
@@ -13,7 +15,57 @@ type Produit = {
   prix: number;
   description: string;
   image?: string;
+  duJour?: boolean;
 };
+
+const fcfa = (n: number) => n.toLocaleString('fr-FR');
+
+/** Fond de la page : sert aux encoches du ticket, qui doivent être des trous. */
+const FOND_PAGE = '#eeece5';
+
+/**
+ * Visuel d'un plat.
+ *
+ * La plupart des plats n'ont pas de photo — c'est le cas majoritaire, pas
+ * l'exception. Plutôt qu'un cadre vide, on compose une plaque typographique :
+ * l'initiale du plat en très grand, très basse intensité, sur un lavis chaux
+ * vers mangue. Une absence assumée vaut mieux qu'un trou.
+ */
+function Visuel({ p }: { p: Produit }) {
+  if (p.image) {
+    return (
+      <div className="relative aspect-[4/3] overflow-hidden bg-chaux-100">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={p.image}
+          alt={p.nom}
+          className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.04]"
+        />
+      </div>
+    );
+  }
+
+  const initiale = p.nom.trim().charAt(0).toUpperCase() || '·';
+
+  // Bande courte, et non un bloc au format photo : sans image, un grand
+  // cadre vide ne fait que reduire le nombre de plats visibles a l'ecran —
+  // sur telephone, il n'en laissait plus qu'un seul.
+  return (
+    <div className="relative flex h-24 items-end overflow-hidden bg-gradient-to-br from-chaux-100 to-mangue-100 px-4 pb-2.5">
+      <span
+        aria-hidden
+        className="pointer-events-none absolute -top-4 left-2 select-none font-display text-[5.5rem] font-black leading-none text-nuit-900/[0.07]"
+      >
+        {initiale}
+      </span>
+      {p.categorie && (
+        <span className="relative font-mono text-[10px] uppercase tracking-[0.2em] text-nuit-900/45">
+          {p.categorie}
+        </span>
+      )}
+    </div>
+  );
+}
 
 export default function Page() {
   const { id } = useParams();
@@ -21,13 +73,15 @@ export default function Page() {
   const commandeRef = useRef<HTMLDivElement>(null);
 
   // Résolu côté serveur via /api/boutiques/[id] : le registre Marchands
-  // vit dans Google Sheets et ne doit jamais être lu depuis le navigateur.
+  // vit dans Supabase et ne doit jamais être lu depuis le navigateur.
   const [estMarchandSheets, setEstMarchandSheets] = useState(false);
 
   const [header, setHeader] = useState({ nom: 'Boutique', secteur: 'Commerce', emoji: '🏪' });
+  const [zone, setZone] = useState('');
   const [produits, setProduits] = useState<Produit[]>([]);
   const [chargement, setChargement] = useState(true);
   const [panier, setPanier] = useState<Record<string, number>>({});
+  const [categorie, setCategorie] = useState('tout');
   const [nom, setNom] = useState('');
   const [tel, setTel] = useState('');
   const [adresse, setAdresse] = useState('');
@@ -60,21 +114,39 @@ export default function Page() {
         }
 
         // 2. Sinon, boutique Supabase (commande via lien WhatsApp).
-        const { data: b } = await supabase.from('boutiques').select('*').eq('id', slug).single();
+        // Colonnes explicites : le rôle anon n'a plus le droit de lire la
+        // config interne du registre (onglets Sheets, groupe livreurs).
+        const { data: b } = await supabase
+          .from('boutiques')
+          .select('id, nom, categorie, telephone, description, logo_url, zone, emoji, slug')
+          .eq('id', slug)
+          .single();
         if (annule || !b) return;
 
-        setHeader({ nom: b.nom ?? 'Boutique', secteur: b.categorie ?? 'Commerce', emoji: '🏪' });
+        setHeader({
+          nom: b.nom ?? 'Boutique',
+          secteur: b.categorie ?? 'Commerce',
+          emoji: b.emoji || '🏪',
+        });
+        setZone(String(b.zone ?? ''));
         setTelBoutique(String(b.telephone ?? ''));
 
-        const { data: ps } = await supabase.from('produits').select('*').eq('boutique_id', slug);
+        // Ni stock, ni seuil d'alerte : ces chiffres n'ont rien à faire
+        // sur une vitrine publique.
+        const { data: ps } = await supabase
+          .from('produits')
+          .select('id, nom, categorie, prix, description, photo_url, disponible, menu_du_jour')
+          .eq('boutique_id', slug)
+          .eq('disponible', true);
         if (annule) return;
         setProduits((ps ?? []).map((p: Record<string, unknown>) => ({
           id: String(p.id),
-          nom: String(p.nom ?? p.name ?? 'Produit'),
+          nom: String(p.nom ?? 'Produit'),
           categorie: String(p.categorie ?? ''),
-          prix: Number(p.prix ?? p.price ?? 0),
+          prix: Number(p.prix ?? 0),
           description: String(p.description ?? ''),
-          image: String(p.image_url ?? p.image ?? ''),
+          image: String(p.photo_url ?? ''),
+          duJour: Boolean(p.menu_du_jour),
         })));
       } catch (e) {
         // Règle d'or : ne jamais casser l'écran client.
@@ -96,10 +168,10 @@ export default function Page() {
       return n;
     });
 
-  // Le controle du telephone partage sa regle avec l'API : meme module.
+  // Le contrôle du téléphone partage sa règle avec l'API : même module.
   const telNormalise = normaliserTelephone(tel);
   const telOk = telNormalise.ok;
-  // On n'affiche l'erreur qu'une fois la saisie commencee, pour ne pas
+  // On n'affiche l'erreur qu'une fois la saisie commencée, pour ne pas
   // accueillir le client avec un message rouge sur un champ vide.
   const erreurTel = tel.trim() && !telNormalise.ok ? telNormalise.erreur : '';
 
@@ -107,6 +179,19 @@ export default function Page() {
     .map(([pid, q]) => { const prod = produits.find(x => x.id === pid); return prod ? { prod, q } : null; })
     .filter(Boolean) as { prod: Produit; q: number }[];
   const total = lignes.reduce((s, l) => s + l.prod.prix * l.q, 0);
+  const articles = lignes.reduce((s, l) => s + l.q, 0);
+
+  const categories = useMemo(
+    () => Array.from(new Set(produits.map(p => p.categorie).filter(Boolean))),
+    [produits],
+  );
+
+  const visibles = categorie === 'tout' ? produits : produits.filter(p => p.categorie === categorie);
+  const duJour = visibles.filter(p => p.duJour);
+  const carte = visibles.filter(p => !p.duJour);
+  // Deux sections n'ont de sens que si les deux existent : sinon le titre
+  // « À la carte » chapeauterait la totalité du menu, ce qui n'apprend rien.
+  const sectionne = duJour.length > 0 && carte.length > 0;
 
   const commander = async () => {
     if (estMarchandSheets) {
@@ -127,120 +212,299 @@ export default function Page() {
         }
       } finally { setEnvoi(false); }
     } else {
-      const lignesTexte = lignes.map(l => `- ${l.q}x ${l.prod.nom} (${(l.q * l.prod.prix).toLocaleString('fr-FR')} FCFA)`).join('\n');
-      const msg = `Bonjour ${header.nom}, je souhaite commander :\n${lignesTexte}\nTotal : ${total.toLocaleString('fr-FR')} FCFA\nNom : ${nom}\nAdresse : ${adresse}${instructions ? `\nInstructions : ${instructions}` : ''}`;
+      const lignesTexte = lignes.map(l => `- ${l.q}x ${l.prod.nom} (${fcfa(l.q * l.prod.prix)} FCFA)`).join('\n');
+      const msg = `Bonjour ${header.nom}, je souhaite commander :\n${lignesTexte}\nTotal : ${fcfa(total)} FCFA\nNom : ${nom}\nAdresse : ${adresse}${instructions ? `\nInstructions : ${instructions}` : ''}`;
       const digits = telBoutique.replace(/\D/g, '');
       const full = digits.startsWith('225') ? digits : `225${digits}`;
       window.open(`https://wa.me/${full}?text=${encodeURIComponent(msg)}`, '_blank');
     }
   };
 
-  return (
-    <div className="min-h-screen bg-stone-50 pb-24">
-      <header className="bg-gradient-to-r from-amber-600 to-orange-700 text-white p-8">
-        <Link
-          href="/boutiques"
-          className="mb-3 inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-1.5 text-sm font-semibold hover:bg-white/25"
+  const grille = (liste: Produit[]) => (
+    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      {liste.map(p => (
+        <article
+          key={p.id}
+          className="group flex flex-col overflow-hidden rounded-2xl border border-[var(--hairline)] bg-white transition duration-200 soft-shadow hover:-translate-y-0.5"
         >
-          ← Retour aux boutiques
-        </Link>
-        <h1 className="text-3xl font-bold">{header.emoji} {header.nom}</h1>
-        <p className="mt-2 text-amber-100">{header.secteur} — commandez, on s&apos;occupe du reste</p>
-        <Link
-          href="/suivi"
-          className="mt-3 inline-block rounded-full bg-white/20 px-4 py-1.5 text-sm hover:bg-white/30"
-        >
-          📍 Suivre ma commande
-        </Link>
-      </header>
+          <Visuel p={p} />
 
-      <main className="p-6 max-w-5xl mx-auto space-y-8">
-        {confirmation && (
-          <div className="rounded-xl bg-green-100 border border-green-300 p-4 text-green-800">
-            ✅ Commande reçue ! Référence : <b>{confirmation}</b>.{' '}
-            <Link href={`/suivi?ref=${encodeURIComponent(confirmation)}&boutique=${encodeURIComponent(slug)}`} className="underline font-bold">
-              Suivre ma commande →
+          <div className="flex flex-1 flex-col p-4">
+            <h3 className="font-display text-lg font-bold leading-tight text-nuit-900">{p.nom}</h3>
+            {p.description && (
+              <p className="mt-1.5 text-sm leading-snug text-chaux-600">{p.description}</p>
+            )}
+
+            <div className="mt-4 flex items-center justify-between gap-3 pt-1">
+              {/* Le prix est une donnée : en mono, il s'aligne d'une carte
+                  à l'autre et se compare d'un coup d'œil. */}
+              <p className="font-mono text-lg font-bold leading-none text-bissap-600">
+                {fcfa(p.prix)}
+                <span className="ml-1 text-[11px] font-semibold text-chaux-500">FCFA</span>
+              </p>
+
+              {panier[p.id] ? (
+                <div className="flex items-center gap-1 rounded-full border border-[var(--hairline)] bg-chaux-50 p-1">
+                  <button
+                    onClick={() => retirer(p.id)}
+                    aria-label={`Retirer un ${p.nom}`}
+                    className="flex h-8 w-8 items-center justify-center rounded-full text-nuit-700 transition hover:bg-white"
+                  >
+                    <Minus className="h-4 w-4" />
+                  </button>
+                  <span className="w-6 text-center font-mono text-sm font-bold text-nuit-900">
+                    {panier[p.id]}
+                  </span>
+                  <button
+                    onClick={() => ajouter(p.id)}
+                    aria-label={`Ajouter un ${p.nom}`}
+                    className="flex h-8 w-8 items-center justify-center rounded-full bg-bissap-500 text-white transition hover:bg-bissap-600"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </button>
+                </div>
+              ) : (
+                <button onClick={() => ajouter(p.id)} className={classesBouton('action', 'sm')}>
+                  <Plus className="h-4 w-4" /> Ajouter
+                </button>
+              )}
+            </div>
+          </div>
+        </article>
+      ))}
+    </div>
+  );
+
+  return (
+    <div className="min-h-screen bg-[var(--background)] pb-28 lg:pb-10">
+      {/* Bandeau resserre sur telephone : c'est le menu qui doit occuper
+          l'ecran, pas l'enseigne. */}
+      <header className="indigo-weave relative bg-nuit-900 px-5 pb-7 pt-5 text-white sm:px-8 sm:pb-10 sm:pt-6">
+        <div className="mx-auto max-w-6xl">
+          <LienRetour href="/boutiques">Retour aux boutiques</LienRetour>
+
+          <div className="mt-4 flex flex-wrap items-end justify-between gap-4 sm:mt-6 sm:gap-5">
+            <div>
+              <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-mangue-300 sm:text-[11px]">
+                {header.secteur}
+                {zone && ` · ${zone}`}
+              </p>
+              <h1 className="mt-1.5 font-display text-3xl font-black leading-[1.05] sm:mt-2 sm:text-5xl">
+                <span aria-hidden className="mr-2">{header.emoji}</span>
+                {header.nom}
+              </h1>
+              <p className="mt-2 max-w-md text-sm text-chaux-300 sm:mt-3">
+                Composez votre commande, elle part directement au commerçant.
+              </p>
+            </div>
+
+            <Link
+              href="/suivi"
+              className="inline-flex min-h-10 items-center gap-2 rounded-full border border-white/25 bg-white/10 px-4 text-sm font-semibold transition hover:bg-white/20"
+            >
+              <MapPin className="h-4 w-4" /> Suivre ma commande
             </Link>
           </div>
+        </div>
+
+        {/* La couture entre l'enseigne et le menu. */}
+        <div className="perf-line absolute inset-x-0 bottom-0 text-white" />
+      </header>
+
+      <main className="mx-auto max-w-6xl px-5 py-8 sm:px-8">
+        {confirmation && (
+          <div className="mb-8 flex flex-wrap items-center gap-4 rounded-2xl border border-accent-200 bg-accent-50 p-5">
+            <span className="stamp font-mono text-xs font-bold text-accent-700">REÇUE</span>
+            <p className="text-sm text-accent-800">
+              Commande <b className="font-mono">{confirmation}</b> transmise au commerçant.{' '}
+              <Link
+                href={`/suivi?ref=${encodeURIComponent(confirmation)}&boutique=${encodeURIComponent(slug)}`}
+                className="font-bold underline underline-offset-2"
+              >
+                Suivre ma commande
+              </Link>
+            </p>
+          </div>
         )}
 
-        {chargement ? <p>Chargement…</p> : (
-          <div className="grid gap-4 sm:grid-cols-2">
-            {produits.map(p => (
-              <div key={p.id} className="rounded-xl border bg-white p-5 shadow-sm">
-                {p.image && (
-                  <img src={p.image} alt={p.nom} className="mb-3 h-36 w-full rounded-lg object-cover" />
-                )}
-                <div className="flex justify-between">
-                  <h2 className="font-bold">{p.nom}</h2>
-                  <span className="text-xs bg-amber-100 text-amber-800 rounded-full px-2 py-1">{p.categorie}</span>
-                </div>
-                <p className="text-sm text-stone-500 mt-1">{p.description}</p>
-                <div className="mt-3 flex items-center justify-between">
-                  <p className="font-semibold text-orange-700">{p.prix.toLocaleString('fr-FR')} FCFA</p>
-                  {panier[p.id] ? (
-                    <div className="flex items-center gap-2">
-                      <button onClick={() => retirer(p.id)} className="px-2 rounded bg-stone-200">−</button>
-                      <span>{panier[p.id]}</span>
-                      <button onClick={() => ajouter(p.id)} className="px-2 rounded bg-amber-500 text-white">+</button>
+        {categories.length > 1 && (
+          // Une seule ligne qui defile : sur telephone, les pastilles
+          // passaient a la ligne et repoussaient le menu hors de l'ecran.
+          <div className="-mx-5 mb-6 flex gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:px-0 [&::-webkit-scrollbar]:hidden">
+            {['tout', ...categories].map(c => (
+              <button
+                key={c}
+                onClick={() => setCategorie(c)}
+                className={`min-h-9 shrink-0 rounded-full px-4 text-sm font-semibold transition ${
+                  categorie === c
+                    ? 'bg-nuit-800 text-white'
+                    : 'border border-[var(--hairline)] bg-white/70 text-nuit-700 hover:bg-white'
+                }`}
+              >
+                {c === 'tout' ? 'Tout le menu' : c}
+              </button>
+            ))}
+          </div>
+        )}
+
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_340px]">
+          <div className="space-y-10">
+            {chargement ? (
+              <p className="font-mono text-sm text-chaux-500">Chargement du menu…</p>
+            ) : visibles.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-chaux-300 bg-white/60 p-10 text-center">
+                <p className="font-display text-lg font-bold text-nuit-800">Le menu arrive</p>
+                <p className="mt-1 text-sm text-chaux-600">
+                  Ce commerçant n&apos;a pas encore publié de plat.
+                </p>
+              </div>
+            ) : sectionne ? (
+              <>
+                <section>
+                  <h2 className="mb-4 flex items-center gap-3 font-mono text-xs font-bold uppercase tracking-[0.24em] text-mangue-600">
+                    Menu du jour
+                    <span className="h-px flex-1 bg-mangue-200" />
+                  </h2>
+                  {grille(duJour)}
+                </section>
+                <section>
+                  <h2 className="mb-4 flex items-center gap-3 font-mono text-xs font-bold uppercase tracking-[0.24em] text-chaux-500">
+                    À la carte
+                    <span className="h-px flex-1 bg-chaux-200" />
+                  </h2>
+                  {grille(carte)}
+                </section>
+              </>
+            ) : (
+              grille(visibles)
+            )}
+          </div>
+
+          {/* Le ticket : bon de commande qui se remplit à mesure. */}
+          <aside className="lg:sticky lg:top-6 lg:self-start">
+            <div
+              ref={commandeRef}
+              className="relative scroll-mt-6 rounded-2xl bg-white p-5 soft-shadow"
+              style={{ ['--tear-bg' as string]: FOND_PAGE }}
+            >
+              {/* Le talon du bon, au-dessus de la perforation. Les encoches
+                  mordent les bords du ticket : placées dans les angles
+                  arrondis, elles ne se voyaient pas. */}
+              <p className="font-mono text-[10px] font-bold uppercase tracking-[0.28em] text-chaux-500">
+                Bon de commande
+              </p>
+              <div className="tear absolute inset-x-0 top-11" />
+
+              <h2 className="flex items-center gap-2 pt-8 font-display text-lg font-bold text-nuit-900">
+                <ShoppingBag className="h-5 w-5 text-bissap-500" />
+                Votre commande
+              </h2>
+
+              {lignes.length === 0 ? (
+                <p className="mt-3 text-sm text-chaux-600">
+                  Ajoutez un plat, il s&apos;inscrit ici.
+                </p>
+              ) : (
+                <>
+                  <ul className="mt-4 space-y-2">
+                    {lignes.map(l => (
+                      <li key={l.prod.id} className="flex items-baseline justify-between gap-3 text-sm">
+                        <span className="truncate text-nuit-800">
+                          <span className="font-mono font-bold text-chaux-500">{l.q}×</span>{' '}
+                          {l.prod.nom}
+                        </span>
+                        <span className="shrink-0 font-mono text-nuit-900">
+                          {fcfa(l.q * l.prod.prix)}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+
+                  <div className="perf-line my-4 text-nuit-900" />
+
+                  <div className="flex items-baseline justify-between">
+                    <span className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-chaux-500">
+                      Total
+                    </span>
+                    <span className="font-mono text-2xl font-black text-bissap-600">
+                      {fcfa(total)}
+                      <span className="ml-1 text-xs font-semibold text-chaux-500">FCFA</span>
+                    </span>
+                  </div>
+
+                  <div className="mt-5 space-y-3">
+                    <input
+                      className="w-full rounded-xl border border-chaux-200 bg-chaux-50 px-3 py-2.5 text-sm outline-none transition focus:border-nuit-300 focus:bg-white"
+                      placeholder="Votre nom complet"
+                      value={nom}
+                      onChange={e => setNom(e.target.value)}
+                    />
+                    <div>
+                      <input
+                        type="tel"
+                        inputMode="numeric"
+                        autoComplete="tel"
+                        aria-invalid={!!erreurTel}
+                        aria-describedby={erreurTel ? 'erreur-tel' : undefined}
+                        className={`w-full rounded-xl border bg-chaux-50 px-3 py-2.5 text-sm outline-none transition focus:bg-white ${
+                          erreurTel
+                            ? 'border-bissap-400 bg-bissap-50'
+                            : 'border-chaux-200 focus:border-nuit-300'
+                        }`}
+                        placeholder="Téléphone (ex. 01 02 03 04 05)"
+                        value={tel}
+                        onChange={e => setTel(formaterTelephone(e.target.value))}
+                      />
+                      {erreurTel && (
+                        <p id="erreur-tel" role="alert" className="mt-1 text-xs text-bissap-600">
+                          {erreurTel}
+                        </p>
+                      )}
                     </div>
-                  ) : (
-                    <button onClick={() => ajouter(p.id)} className="rounded-lg bg-amber-600 px-3 py-1 text-white text-sm">+ Ajouter</button>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+                    <input
+                      className="w-full rounded-xl border border-chaux-200 bg-chaux-50 px-3 py-2.5 text-sm outline-none transition focus:border-nuit-300 focus:bg-white"
+                      placeholder="Adresse de livraison"
+                      value={adresse}
+                      onChange={e => setAdresse(e.target.value)}
+                    />
+                    <input
+                      className="w-full rounded-xl border border-chaux-200 bg-chaux-50 px-3 py-2.5 text-sm outline-none transition focus:border-nuit-300 focus:bg-white"
+                      placeholder="Instructions (facultatif)"
+                      value={instructions}
+                      onChange={e => setInstructions(e.target.value)}
+                    />
 
-        {lignes.length > 0 && (
-          <div ref={commandeRef} className="rounded-xl border bg-white p-6 shadow-sm space-y-4">
-            <h2 className="text-lg font-bold">🛒 Votre commande</h2>
-            {lignes.map(l => (
-              <div key={l.prod.id} className="flex justify-between text-sm">
-                <span>{l.q}× {l.prod.nom}</span>
-                <span>{(l.q * l.prod.prix).toLocaleString('fr-FR')} FCFA</span>
-              </div>
-            ))}
-            <div className="flex justify-between font-bold border-t pt-2">
-              <span>Total</span><span>{total.toLocaleString('fr-FR')} FCFA</span>
+                    <button
+                      onClick={commander}
+                      disabled={envoi || !nom || !telOk || !adresse}
+                      className={`${classesBouton('action')} w-full`}
+                    >
+                      {envoi
+                        ? 'Envoi…'
+                        : estMarchandSheets
+                          ? 'Envoyer la commande'
+                          : 'Commander sur WhatsApp'}
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <input className="border rounded-lg p-2" placeholder="Votre nom complet" value={nom} onChange={e => setNom(e.target.value)} />
-              <div>
-                <input
-                  type="tel"
-                  inputMode="numeric"
-                  autoComplete="tel"
-                  aria-invalid={!!erreurTel}
-                  aria-describedby={erreurTel ? 'erreur-tel' : undefined}
-                  className={`w-full rounded-lg border p-2 ${erreurTel ? 'border-red-500 bg-red-50' : ''}`}
-                  placeholder="Téléphone (ex. 01 02 03 04 05)"
-                  value={tel}
-                  onChange={e => setTel(formaterTelephone(e.target.value))}
-                />
-                {erreurTel && (
-                  <p id="erreur-tel" role="alert" className="mt-1 text-sm text-red-600">{erreurTel}</p>
-                )}
-              </div>
-            </div>
-            <input className="border rounded-lg p-2 w-full" placeholder="Adresse de livraison" value={adresse} onChange={e => setAdresse(e.target.value)} />
-            <input className="border rounded-lg p-2 w-full" placeholder="Instructions (facultatif)" value={instructions} onChange={e => setInstructions(e.target.value)} />
-            <button onClick={commander} disabled={envoi || !nom || !telOk || !adresse}
-              className="w-full rounded-lg bg-orange-700 py-3 text-white font-bold disabled:opacity-40">
-              {envoi ? 'Envoi…' : estMarchandSheets ? '✅ Commander' : '📲 Commander via WhatsApp'}
-            </button>
-          </div>
-        )}
+          </aside>
+        </div>
       </main>
 
-      {lignes.length > 0 && (
-        <div className="fixed bottom-5 left-1/2 z-50 -translate-x-1/2">
+      {/* Barre mobile : le ticket est hors écran, le total doit rester visible. */}
+      {articles > 0 && (
+        <div className="fixed inset-x-0 bottom-0 z-50 border-t border-[var(--hairline)] bg-white/95 p-3 backdrop-blur lg:hidden">
           <button
             onClick={() => commandeRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-            className="rounded-full bg-orange-700 px-6 py-3 font-bold text-white shadow-2xl hover:bg-orange-800"
+            className={`${classesBouton('action')} w-full justify-between`}
           >
-            🛒 Poursuivre la commande · {total.toLocaleString('fr-FR')} FCFA
+            <span className="flex items-center gap-2">
+              <ShoppingBag className="h-4 w-4" />
+              {articles} article{articles > 1 ? 's' : ''}
+            </span>
+            <span className="font-mono font-bold">{fcfa(total)} FCFA</span>
           </button>
         </div>
       )}

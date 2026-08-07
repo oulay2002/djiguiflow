@@ -1,6 +1,7 @@
 'use client';
 
 import { User, Store, Shield, ChevronRight } from 'lucide-react';
+import { LienRetour } from '@/components/ui/Bouton';
 import Link from 'next/link';
 
 export default function ReglagesPage() {
@@ -32,9 +33,7 @@ export default function ReglagesPage() {
     <div className="min-h-screen bg-gray-50 p-6 lg:p-8">
       {/* Header */}
       <div className="mb-8">
-        <Link href="/dashboard" className="inline-flex items-center gap-2 text-gray-600 hover:text-amber-600 transition mb-2">
-          <span>← Retour au dashboard</span>
-        </Link>
+        <LienRetour href="/dashboard">Retour au dashboard</LienRetour>
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Réglages</h1>
           <p className="text-gray-600 mt-1">Gérez les paramètres de votre compte</p>

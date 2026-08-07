@@ -11,7 +11,10 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }
 
   const { data, error } = await sb
     .from('produits')
-    .select('reference, id, nom, categorie, prix, description')
+    // photo_url et menu_du_jour manquaient : les photos televersees par le
+    // marchand n'atteignaient jamais la vitrine, et le menu du jour qu'il
+    // compose restait invisible.
+    .select('reference, id, nom, categorie, prix, description, photo_url, menu_du_jour')
     .eq('boutique_id', m.boutiqueId)
     .eq('disponible', true)
     .order('categorie', { ascending: true })
@@ -30,6 +33,8 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }
     categorie: String(p.categorie ?? ''),
     prix: Number(p.prix ?? 0),
     description: String(p.description ?? ''),
+    image: String(p.photo_url ?? ''),
+    duJour: Boolean(p.menu_du_jour),
   }));
 
   return Response.json(produits);

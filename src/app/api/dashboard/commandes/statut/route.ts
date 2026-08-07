@@ -1,13 +1,14 @@
 import { readSheet, readHeaders, updateCells } from '@/lib/googleSheets';
-import { resoudreMarchand } from '@/lib/marchands';
+import { exigerAccesMarchand } from '@/lib/dashboardAuth';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 
 export async function POST(req: Request) {
   const { order_id, action, boutique_id } = await req.json();
   if (!order_id || !action) return Response.json({ error: 'Params manquants' }, { status: 400 });
 
-  const m = await resoudreMarchand(boutique_id);
-  if (!m) return Response.json({ error: 'Marchand introuvable' }, { status: 404 });
+  const acces = await exigerAccesMarchand(req, boutique_id);
+  if (!acces.ok) return Response.json({ error: acces.message }, { status: acces.statut });
+  const m = acces.marchand;
 
   // A, B, … Z, AA, AB… : String.fromCharCode(65 + idx) produisait « [ » puis
   // « \ » dès la 27e colonne et écrivait dans une plage invalide.

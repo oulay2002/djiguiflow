@@ -1,0 +1,101 @@
+'use client';
+
+import Link from 'next/link';
+import { ArrowLeft, Loader2 } from 'lucide-react';
+import type { ButtonHTMLAttributes, ReactNode } from 'react';
+
+/**
+ * Jeu de boutons « indigo & ticket ».
+ *
+ * Chaque variante porte un role du systeme, pas une nuance decorative :
+ *  - action    : bissap, la couleur du prix et de l'urgence. Un seul par ecran.
+ *  - calme     : surface chaux sur filet, pour les gestes secondaires.
+ *  - fantome   : sans surface, pour les gestes de service (fermer, annuler).
+ *  - contraste : action posee sur une surface teintee (bandeau de page).
+ *  - voile     : secondaire sur surface teintee.
+ *
+ * Les deux dernieres existent parce qu'un bouton bissap jurerait sur un
+ * bandeau colore : c'est la surface qui decide, pas le geste.
+ */
+export type VarianteBouton = 'action' | 'calme' | 'fantome' | 'contraste' | 'voile';
+export type TailleBouton = 'sm' | 'md';
+
+const SOCLE =
+  'inline-flex items-center justify-center gap-2 rounded-full font-semibold ' +
+  'transition duration-150 active:translate-y-px ' +
+  // 45 % et pas 55 : au-dessus, le bissap reste trop vif pour se lire
+  // comme un bouton inactif.
+  'disabled:pointer-events-none disabled:opacity-45 disabled:shadow-none';
+
+const VARIANTES: Record<VarianteBouton, string> = {
+  // L'ombre teintee imite l'encre qui bave sous un tampon appuye.
+  action:
+    'bg-bissap-500 text-white shadow-[0_8px_20px_-8px_rgba(196,18,63,0.8)] ' +
+    'hover:bg-bissap-600 hover:shadow-[0_10px_24px_-8px_rgba(196,18,63,0.9)]',
+  calme: 'border border-[var(--hairline)] bg-white/75 text-nuit-700 hover:bg-white',
+  fantome: 'text-nuit-600 hover:bg-nuit-50 hover:text-nuit-900',
+  contraste: 'bg-white text-nuit-800 shadow-[0_8px_20px_-8px_rgba(12,18,41,0.55)] hover:bg-chaux-50',
+  voile: 'border border-white/25 bg-white/15 text-white hover:bg-white/25',
+};
+
+const TAILLES: Record<TailleBouton, string> = {
+  sm: 'min-h-9 px-3.5 text-xs',
+  // 44 px de haut : le marchand pilote depuis son telephone, la cible doit
+  // se toucher au pouce sans viser.
+  md: 'min-h-11 px-5 text-sm',
+};
+
+export function classesBouton(
+  variante: VarianteBouton = 'action',
+  taille: TailleBouton = 'md',
+): string {
+  return `${SOCLE} ${VARIANTES[variante]} ${TAILLES[taille]}`;
+}
+
+type ProprietesBouton = ButtonHTMLAttributes<HTMLButtonElement> & {
+  variante?: VarianteBouton;
+  taille?: TailleBouton;
+  /** Affiche le rouet et neutralise le bouton pendant l'envoi. */
+  chargement?: boolean;
+};
+
+export function Bouton({
+  variante = 'action',
+  taille = 'md',
+  chargement = false,
+  className = '',
+  disabled,
+  children,
+  ...reste
+}: ProprietesBouton) {
+  return (
+    <button
+      {...reste}
+      disabled={disabled || chargement}
+      aria-busy={chargement || undefined}
+      className={`${classesBouton(variante, taille)} ${className}`}
+    >
+      {chargement && <Loader2 className="h-4 w-4 animate-spin" />}
+      {children}
+    </button>
+  );
+}
+
+/**
+ * Le talon detachable : bouton de retour.
+ *
+ * Dans le monde du bon de commande, on ne « revient » pas — on arrache le
+ * talon. D'ou la silhouette : bord gauche plat et perfore (classe `.stub`),
+ * bord droit arrondi, et le decollement au survol.
+ */
+export function LienRetour({ href, children }: { href: string; children: ReactNode }) {
+  return (
+    <Link
+      href={href}
+      className="stub group inline-flex min-h-10 items-center gap-2 rounded-r-full bg-white/80 py-2 pl-4 pr-5 text-sm font-semibold text-nuit-600 hover:bg-white hover:text-nuit-900"
+    >
+      <ArrowLeft className="h-4 w-4 transition-transform duration-150 group-hover:-translate-x-0.5" />
+      {children}
+    </Link>
+  );
+}

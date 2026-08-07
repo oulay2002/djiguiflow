@@ -40,6 +40,46 @@ export async function appendRow(range: string, row: string[], sheetId: string = 
   if (!res.ok) throw new Error(await res.text());
   return res.json();
 }
+/** Titres des onglets presents dans le classeur. */
+export async function listerOnglets(sheetId: string = process.env.SHEET_ID!): Promise<string[]> {
+  const token = await auth.getAccessToken();
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}?fields=sheets.properties.title`;
+  const res = await fetch(url, { headers: { Authorization: `Bearer ${token.token}` } });
+  if (!res.ok) throw new Error(await res.text());
+  const data = await res.json();
+  return (data.sheets ?? []).map((s: { properties?: { title?: string } }) => s.properties?.title ?? '');
+}
+
+/**
+ * Cree un onglet et y ecrit sa ligne d'en-tetes.
+ *
+ * Idempotent : si l'onglet existe deja, il est laisse intact (on ne reecrit
+ * pas les en-tetes, ce qui ecraserait une feuille en production).
+ *
+ * @returns true si l'onglet a ete cree, false s'il existait deja.
+ */
+export async function creerOnglet(
+  titre: string,
+  entetes: string[],
+  sheetId: string = process.env.SHEET_ID!,
+): Promise<boolean> {
+  if ((await listerOnglets(sheetId)).includes(titre)) return false;
+
+  const token = await auth.getAccessToken();
+  const res = await fetch(
+    `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}:batchUpdate`,
+    {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token.token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ requests: [{ addSheet: { properties: { title: titre } } }] }),
+    },
+  );
+  if (!res.ok) throw new Error(await res.text());
+
+  if (entetes.length) await updateCells(`${titre}!A1`, [entetes], sheetId);
+  return true;
+}
+
 export async function updateCells(range: string, values: string[][], sheetId: string = process.env.SHEET_ID!) {
   const token = await auth.getAccessToken();
   const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${encodeURIComponent(range)}?valueInputOption=RAW`;

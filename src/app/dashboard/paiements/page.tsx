@@ -288,9 +288,9 @@ export default function PaiementsPage() {
           <div>
             <Link
               href="/dashboard"
-              className="mb-3 inline-flex items-center gap-2 text-sm font-medium text-slate-600 transition hover:text-primary-700"
+              className="stub group mb-3 inline-flex min-h-9 items-center gap-2 rounded-r-full bg-chaux-50/70 py-1.5 pl-3.5 pr-5 text-sm font-semibold text-nuit-600 hover:bg-chaux-50 hover:text-nuit-900"
             >
-              <ArrowLeft className="h-4 w-4" />
+              <ArrowLeft className="h-4 w-4 transition-transform duration-150 group-hover:-translate-x-0.5" />
               Retour au dashboard
             </Link>
             <h1 className="text-3xl font-black tracking-tight text-slate-900">Abonnements et facturation</h1>

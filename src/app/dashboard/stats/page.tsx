@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type ComponentType } from 'react';
 import { useBoutique, avecBoutique } from '@/lib/boutique';
+import { fetchDashboard } from '@/lib/apiClient';
 import Link from 'next/link';
 import {
   Bell, Bike, CalendarDays, CreditCard, Gauge, Globe2, LogOut,
@@ -43,7 +44,7 @@ export default function Page() {
 
   const charger = async () => {
     try {
-      const r = await fetch(avecBoutique('/api/dashboard/stats', boutiqueId));
+      const r = await fetchDashboard(avecBoutique('/api/dashboard/stats', boutiqueId));
       const d = await r.json();
       if (!r.ok) throw new Error(d?.error || `HTTP ${r.status}`);
       setS(d);

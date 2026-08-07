@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type ComponentType } from 'react';
 import { useBoutique, avecBoutique } from '@/lib/boutique';
+import { fetchDashboard } from '@/lib/apiClient';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
@@ -52,7 +53,7 @@ export default function Page() {
       if (!isMounted) return;
       if (!user) { router.push('/login'); return; }
       try {
-        const r = await fetch(avecBoutique('/api/dashboard/stats', boutiqueId));
+        const r = await fetchDashboard(avecBoutique('/api/dashboard/stats', boutiqueId));
         const d = await r.json();
         if (!r.ok) throw new Error(d?.error || `HTTP ${r.status}`);
         if (isMounted) setS(d);

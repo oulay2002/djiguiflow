@@ -3,6 +3,7 @@
 import type { CSSProperties, ReactNode } from 'react';
 import Link from 'next/link';
 import AssistantChat from '@/components/AssistantChat';
+import BoutiquesEnLigne from '@/components/BoutiquesEnLigne';
 import { BILLING_PLANS } from '@/lib/billing/plans';
 
 const NUIT = '#131c3d';
@@ -12,10 +13,13 @@ const openAssistant = () => {
   window.dispatchEvent(new Event('djiguiflow:assistant-open'));
 };
 
+// Des faits sur le mécanisme, pas des moyennes mesurées : la plateforme
+// ouvre, elle n'a pas encore l'historique qui permettrait d'annoncer un
+// gain constaté. Une preuve inventée coûte plus cher qu'une preuve modeste.
 const stats = [
-  { value: '+30 %', label: 'de commandes en plus' },
-  { value: '−80 %', label: 'de retards de livraison' },
-  { value: '2 h', label: 'rendues à votre journée' },
+  { value: '24 h/24', label: 'l’assistant répond, même boutique fermée' },
+  { value: '0', label: 'carnet à recompter le soir' },
+  { value: '1', label: 'endroit pour les commandes, le stock et les livreurs' },
 ];
 
 const releves = [
@@ -64,30 +68,6 @@ const releve = [
 const encaisse = [
   { poste: 'mobile money', valeur: '248 000' },
   { poste: 'espèces livreur', valeur: '64 500' },
-];
-
-const temoignages = [
-  {
-    texte:
-      'On perdait les commandes du soir dans la conversation. Maintenant chaque message devient un ticket, et le livreur est déjà en route quand je regarde.',
-    nom: 'Moussa Koné',
-    role: 'Restaurant Le Palmier',
-    ville: 'Abidjan',
-  },
-  {
-    texte:
-      "Je n'ai pas changé mes habitudes : mes clientes écrivent toujours sur WhatsApp. C'est derrière que tout a changé.",
-    nom: 'Aminata Diallo',
-    role: 'Mode Express',
-    ville: 'Bamako',
-  },
-  {
-    texte:
-      'Le soir, je ferme la caisse en deux minutes. Avant, je recomptais les carnets jusqu’à minuit.',
-    nom: 'Yacouba Diakité',
-    role: 'Fresh Market',
-    ville: 'Dakar',
-  },
 ];
 
 const questions = [
@@ -333,7 +313,7 @@ export default function Home() {
         <div className="mx-auto mt-16 max-w-6xl px-4 sm:px-6 lg:mt-20">
           <div className="border-t border-white/12 pt-8">
             <Eyebrow className="text-nuit-300">
-              moyenne constatée chez nos commerçants après 90 jours
+              ce que DjiguiFlow prend en charge, dès la première commande
             </Eyebrow>
             <dl className="mt-6 grid gap-8 sm:grid-cols-3">
               {stats.map((stat) => (
@@ -453,24 +433,8 @@ export default function Home() {
         </div>
       </section>
 
-      {/* -------------------------------------------------------- témoignages */}
-      <section className="py-20 lg:py-24">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6">
-          <Eyebrow className="text-chaux-600">ils l’utilisent tous les jours</Eyebrow>
-          <div className="mt-12 grid gap-10 md:grid-cols-3">
-            {temoignages.map((item) => (
-              <figure key={item.nom} className="border-t border-nuit-900/15 pt-6">
-                <blockquote className="font-display text-xl leading-snug text-nuit-800">
-                  « {item.texte} »
-                </blockquote>
-                <figcaption className="mt-5 font-mono text-[11px] uppercase tracking-[0.16em] text-chaux-600">
-                  <span className="text-nuit-700">{item.nom}</span> · {item.role} · {item.ville}
-                </figcaption>
-              </figure>
-            ))}
-          </div>
-        </div>
-      </section>
+      {/* --------------------------------------------- les boutiques en ligne */}
+      <BoutiquesEnLigne />
 
       <div className="perf-line mx-auto max-w-6xl px-4 text-nuit-900 sm:px-6" />
 

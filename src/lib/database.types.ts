@@ -22,9 +22,12 @@ export type Database = {
           categorie: string | null
           description: string | null
           emoji: string | null
+          groupe_livreurs: string | null
           id: string
           logo_url: string | null
           nom: string | null
+          sheet_commandes: string | null
+          sheet_menu: string | null
           slug: string | null
           telephone: string | null
           user_id: string
@@ -34,9 +37,12 @@ export type Database = {
           categorie?: string | null
           description?: string | null
           emoji?: string | null
+          groupe_livreurs?: string | null
           id?: string
           logo_url?: string | null
           nom?: string | null
+          sheet_commandes?: string | null
+          sheet_menu?: string | null
           slug?: string | null
           telephone?: string | null
           user_id?: string
@@ -46,9 +52,12 @@ export type Database = {
           categorie?: string | null
           description?: string | null
           emoji?: string | null
+          groupe_livreurs?: string | null
           id?: string
           logo_url?: string | null
           nom?: string | null
+          sheet_commandes?: string | null
+          sheet_menu?: string | null
           slug?: string | null
           telephone?: string | null
           user_id?: string

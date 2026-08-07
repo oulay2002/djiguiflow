@@ -1,7 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { LienRetour, classesBouton } from '@/components/ui/Bouton';
 import { supabase } from '@/lib/supabase';
+import { BUCKET_IMAGES, dossierMarchand, nomFichierSain } from '@/lib/storage';
+import { useBoutique } from '@/lib/boutique';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { 
@@ -15,7 +18,6 @@ import {
   CheckCircle,
   AlertCircle
 } from 'lucide-react';
-import Link from 'next/link';
 
 export default function MaBoutiquePage() {
   const router = useRouter();
@@ -23,6 +25,14 @@ export default function MaBoutiquePage() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
+
+  // Boutique effectivement editee. Un compte peut en posseder plusieurs :
+  // sans cet identifiant, la sauvegarde ecrirait dans toutes a la fois.
+  const [boutiqueEditee, setBoutiqueEditee] = useState<string | null>(null);
+  const [nbBoutiques, setNbBoutiques] = useState(0);
+
+  // Slug choisi dans le selecteur du dashboard.
+  const { boutiqueId: slugSelectionne, pret } = useBoutique();
 
   const [formData, setFormData] = useState({
     nom: '',
@@ -44,13 +54,25 @@ export default function MaBoutiquePage() {
       }
       setUserId(user.id);
 
-      const { data } = await supabase
+      // .single() levait une erreur des que le compte possedait plus d'une
+      // boutique, ce qui laissait la page vide. On lit la liste, puis on
+      // retient celle du selecteur (a defaut, la premiere).
+      const { data: boutiques } = await supabase
         .from('boutiques')
         .select('*')
         .eq('user_id', user.id)
-        .single();
+        .order('nom', { ascending: true });
+
+      const possedees = boutiques ?? [];
+      setNbBoutiques(possedees.length);
+
+      const data =
+        (slugSelectionne ? possedees.find(b => b.slug === slugSelectionne) : null) ??
+        possedees[0] ??
+        null;
 
       if (data) {
+        setBoutiqueEditee(data.id);
         setFormData({
           nom: data.nom || '',
           description: data.description || '',
@@ -60,12 +82,19 @@ export default function MaBoutiquePage() {
           logo_url: data.logo_url || ''
         });
         setLogoPreview(data.logo_url || '');
+      } else {
+        // Aucune boutique : formulaire vierge de creation.
+        setBoutiqueEditee(null);
+        setFormData({ nom: '', description: '', zone: '', categorie: 'Restaurant', telephone: '', logo_url: '' });
+        setLogoPreview('');
       }
       setLoading(false);
     };
 
-    checkAuthAndLoadBoutique();
-  }, [router]);
+    // Attendre le registre : sans lui, slugSelectionne est encore vide et on
+    // chargerait la mauvaise boutique avant de la recharger aussitot.
+    if (pret) checkAuthAndLoadBoutique();
+  }, [router, pret, slugSelectionne]);
 
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -90,22 +119,28 @@ export default function MaBoutiquePage() {
 
     if (logoFile) {
       try {
-        const fileExt = logoFile.name.split('.').pop();
-        const fileName = `${userId}-${Date.now()}.${fileExt}`;
-        const filePath = `boutiques/logos/${fileName}`;
+        // Dossier impose par les policies Storage : la boutique EDITEE si
+        // elle existe deja, sinon le user_id (premiere creation, aucune
+        // boutique en base).
+        const dossier = boutiqueEditee ?? (await dossierMarchand());
+        const filePath = `${dossier}/logos/${Date.now()}-${nomFichierSain(logoFile.name)}`;
 
         const { error: uploadError } = await supabase.storage
-          .from('images')
-          .upload(filePath, logoFile);
+          .from(BUCKET_IMAGES)
+          .upload(filePath, logoFile, {
+            cacheControl: '3600',
+            contentType: logoFile.type || 'application/octet-stream',
+            upsert: false,
+          });
 
         if (uploadError) {
-          setMessage({ type: 'error', text: 'Erreur upload logo' });
+          setMessage({ type: 'error', text: `Erreur upload logo — ${uploadError.message}` });
           setSaving(false);
           return;
         }
 
         const { data: { publicUrl } } = supabase.storage
-          .from('images')
+          .from(BUCKET_IMAGES)
           .getPublicUrl(filePath);
         
         finalLogoUrl = publicUrl;
@@ -116,42 +151,39 @@ export default function MaBoutiquePage() {
       }
     }
 
-    const { data: existingBoutique } = await supabase
-      .from('boutiques')
-      .select('id')
-      .eq('user_id', userId)
-      .single();
+    const champs = {
+      nom: formData.nom,
+      description: formData.description,
+      zone: formData.zone,
+      categorie: formData.categorie,
+      telephone: formData.telephone,
+      logo_url: finalLogoUrl,
+    };
 
     let error;
 
-    if (existingBoutique) {
+    if (boutiqueEditee) {
+      // Cible l'id, pas le user_id : filtrer sur user_id ecrasait d'un coup
+      // TOUTES les boutiques du compte avec les memes valeurs.
       const { error: updateError } = await supabase
         .from('boutiques')
-        .update({
-          nom: formData.nom,
-          description: formData.description,
-          zone: formData.zone,
-          categorie: formData.categorie,
-          telephone: formData.telephone,
-          logo_url: finalLogoUrl
-        })
-        .eq('user_id', userId);
-      
+        .update(champs)
+        .eq('id', boutiqueEditee);
+
       error = updateError;
     } else {
-      const { error: insertError } = await supabase
+      const { data: creee, error: insertError } = await supabase
         .from('boutiques')
-        .insert({
-          user_id: userId,
-          nom: formData.nom,
-          description: formData.description,
-          zone: formData.zone,
-          categorie: formData.categorie,
-          telephone: formData.telephone,
-          logo_url: finalLogoUrl
-        });
-      
+        .insert({ user_id: userId, ...champs })
+        .select('id')
+        .single();
+
       error = insertError;
+      // Sans cela, un second enregistrement creerait une boutique de plus.
+      if (creee) {
+        setBoutiqueEditee(creee.id);
+        setNbBoutiques(n => n + 1);
+      }
     }
 
     if (error) {
@@ -165,20 +197,27 @@ export default function MaBoutiquePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600"></div>
+      <div className="min-h-screen bg-[var(--background)] flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-nuit-400"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6 lg:p-8">
+    <div className="min-h-screen bg-[var(--background)] p-6 lg:p-8">
       <div className="mb-8">
-        <Link href="/dashboard" className="inline-flex items-center gap-2 text-gray-600 hover:text-amber-600 transition mb-2">
-          <span>← Retour au dashboard</span>
-        </Link>
-        <h1 className="text-3xl font-bold text-gray-900">Ma Boutique</h1>
-        <p className="text-gray-600 mt-1">Configurez les informations de votre commerce</p>
+        <LienRetour href="/dashboard">Retour au dashboard</LienRetour>
+        <h1 className="text-3xl font-bold text-nuit-900">Ma Boutique</h1>
+        <p className="text-chaux-600 mt-1">Configurez les informations de votre commerce</p>
+
+        {nbBoutiques > 1 && (
+          <p className="mt-3 inline-flex items-center gap-2 rounded-xl border border-mangue-200 bg-mangue-50 px-3 py-2 text-sm text-mangue-700">
+            <Store className="h-4 w-4 shrink-0" />
+            Vous gérez {nbBoutiques} boutiques. Vous modifiez{' '}
+            <span className="font-bold">{formData.nom || 'sans nom'}</span> — changez de boutique
+            avec le sélecteur en haut de page.
+          </p>
+        )}
       </div>
 
       {message && (
@@ -186,7 +225,9 @@ export default function MaBoutiquePage() {
           initial={{ opacity: 0, y: -10 }} 
           animate={{ opacity: 1, y: 0 }}
           className={`mb-6 p-4 rounded-lg flex items-center gap-3 ${
-            message.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'
+            message.type === 'success'
+              ? 'bg-accent-50 text-accent-700 border border-accent-200'
+              : 'bg-bissap-50 text-bissap-700 border border-bissap-200'
           }`}
         >
           {message.type === 'success' ? <CheckCircle className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
@@ -197,23 +238,23 @@ export default function MaBoutiquePage() {
       <form onSubmit={handleSubmit} className="max-w-4xl">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 sticky top-6">
-              <h2 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
-                <Upload className="w-5 h-5 text-amber-600" />
+            <div className="bg-white rounded-xl p-6 shadow-sm border border-chaux-200 sticky top-6">
+              <h2 className="font-bold text-nuit-900 mb-4 flex items-center gap-2">
+                <Upload className="w-5 h-5 text-nuit-500" />
                 Logo de la boutique
               </h2>
               
               <div className="flex flex-col items-center">
-                <div className="w-32 h-32 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden border-4 border-white shadow-md mb-4">
+                <div className="w-32 h-32 rounded-full bg-chaux-100 flex items-center justify-center overflow-hidden border-4 border-white shadow-md mb-4">
                   {logoPreview ? (
                     // eslint-disable-next-line @next/next/no-img-element -- aperçu data-URL / URL Supabase, next/image non configuré pour ces domaines
                     <img src={logoPreview} alt="Logo" className="w-full h-full object-cover" />
                   ) : (
-                    <Store className="w-12 h-12 text-gray-400" />
+                    <Store className="w-12 h-12 text-chaux-400" />
                   )}
                 </div>
                 
-                <label className="cursor-pointer px-4 py-2 bg-amber-50 text-amber-700 rounded-lg font-medium text-sm hover:bg-amber-100 transition flex items-center gap-2">
+                <label className={`${classesBouton('calme', 'sm')} cursor-pointer`}>
                   <Upload className="w-4 h-4" />
                   Choisir une image
                   <input 
@@ -223,65 +264,65 @@ export default function MaBoutiquePage() {
                     className="hidden" 
                   />
                 </label>
-                <p className="text-xs text-gray-500 mt-2 text-center">PNG, JPG ou GIF (max 2MB)</p>
+                <p className="text-xs text-chaux-500 mt-2 text-center">PNG, JPG ou GIF (max 2MB)</p>
               </div>
             </div>
           </div>
 
           <div className="lg:col-span-2 space-y-6">
-            <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-              <h2 className="font-bold text-gray-900 mb-6 flex items-center gap-2">
-                <FileText className="w-5 h-5 text-amber-600" />
+            <div className="bg-white rounded-xl p-6 shadow-sm border border-chaux-200">
+              <h2 className="font-bold text-nuit-900 mb-6 flex items-center gap-2">
+                <FileText className="w-5 h-5 text-nuit-500" />
                 Informations générales
               </h2>
               
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Nom de la boutique *</label>
+                  <label className="block text-sm font-medium text-nuit-700 mb-1">Nom de la boutique *</label>
                   <input
                     type="text"
                     required
                     value={formData.nom}
                     onChange={(e) => setFormData({...formData, nom: e.target.value})}
-                    className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                    className="w-full px-4 py-2.5 border border-chaux-200 rounded-lg focus:ring-2 focus:ring-nuit-200 focus:border-nuit-300"
                     placeholder="Ex: Chez Aminata"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                  <label className="block text-sm font-medium text-nuit-700 mb-1">Description</label>
                   <textarea
                     rows={3}
                     value={formData.description}
                     onChange={(e) => setFormData({...formData, description: e.target.value})}
-                    className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                    className="w-full px-4 py-2.5 border border-chaux-200 rounded-lg focus:ring-2 focus:ring-nuit-200 focus:border-nuit-300"
                     placeholder="Décrivez votre boutique..."
                   />
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
-                      <MapPin className="w-4 h-4 text-gray-400" /> Zone de livraison *
+                    <label className="block text-sm font-medium text-nuit-700 mb-1 flex items-center gap-2">
+                      <MapPin className="w-4 h-4 text-chaux-400" /> Zone de livraison *
                     </label>
                     <input
                       type="text"
                       required
                       value={formData.zone}
                       onChange={(e) => setFormData({...formData, zone: e.target.value})}
-                      className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                      className="w-full px-4 py-2.5 border border-chaux-200 rounded-lg focus:ring-2 focus:ring-nuit-200 focus:border-nuit-300"
                       placeholder="Ex: Cocody - Angré"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
-                      <Tag className="w-4 h-4 text-gray-400" /> Catégorie *
+                    <label className="block text-sm font-medium text-nuit-700 mb-1 flex items-center gap-2">
+                      <Tag className="w-4 h-4 text-chaux-400" /> Catégorie *
                     </label>
                     <select
                       value={formData.categorie}
                       onChange={(e) => setFormData({...formData, categorie: e.target.value})}
-                      className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent bg-white"
+                      className="w-full px-4 py-2.5 border border-chaux-200 rounded-lg focus:ring-2 focus:ring-nuit-200 focus:border-nuit-300 bg-white"
                     >
                       <option value="Restaurant">Restaurant</option>
                       <option value="Maquis">Maquis</option>
@@ -294,15 +335,15 @@ export default function MaBoutiquePage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
-                    <Phone className="w-4 h-4 text-gray-400" /> Téléphone / WhatsApp *
+                  <label className="block text-sm font-medium text-nuit-700 mb-1 flex items-center gap-2">
+                    <Phone className="w-4 h-4 text-chaux-400" /> Téléphone / WhatsApp *
                   </label>
                   <input
                     type="tel"
                     required
                     value={formData.telephone}
                     onChange={(e) => setFormData({...formData, telephone: e.target.value})}
-                    className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                    className="w-full px-4 py-2.5 border border-chaux-200 rounded-lg focus:ring-2 focus:ring-nuit-200 focus:border-nuit-300"
                     placeholder="Ex: 0709123456"
                   />
                 </div>
@@ -312,7 +353,7 @@ export default function MaBoutiquePage() {
             <button
               type="submit"
               disabled={saving}
-              className="w-full md:w-auto flex items-center justify-center gap-2 px-8 py-3 bg-amber-600 text-white rounded-lg font-semibold hover:bg-amber-700 transition shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              className={`${classesBouton('action')} w-full md:w-auto px-8`}
             >
               {saving ? (
                 <>

@@ -1,13 +1,14 @@
 import { readHeaders, appendRow } from '@/lib/googleSheets';
-import { resoudreMarchand } from '@/lib/marchands';
+import { exigerAccesMarchand } from '@/lib/dashboardAuth';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
-  const m = await resoudreMarchand(searchParams.get('boutique_id'));
-  if (!m) return Response.json({ error: 'Marchand introuvable' }, { status: 404 });
+  const acces = await exigerAccesMarchand(req, searchParams.get('boutique_id'));
+  if (!acces.ok) return Response.json({ error: acces.message }, { status: acces.statut });
+  const m = acces.marchand;
 
   const sb = getSupabaseAdmin();
   if (!sb) return Response.json({ error: 'Menu temporairement indisponible' }, { status: 503 });
@@ -43,8 +44,9 @@ export async function POST(req: Request) {
   const { nom, categorie, prix, description, disponible, image, boutique_id } = await req.json();
   if (!nom) return Response.json({ error: 'Nom requis' }, { status: 400 });
 
-  const m = await resoudreMarchand(boutique_id);
-  if (!m) return Response.json({ error: 'Marchand introuvable' }, { status: 404 });
+  const acces = await exigerAccesMarchand(req, boutique_id);
+  if (!acces.ok) return Response.json({ error: acces.message }, { status: acces.statut });
+  const m = acces.marchand;
 
   const reference = `P${Date.now()}`;
 

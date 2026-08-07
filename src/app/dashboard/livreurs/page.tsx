@@ -1,6 +1,8 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { LienRetour, classesBouton } from '@/components/ui/Bouton';
+import { TuileStat } from '@/components/ui/Etat';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -29,14 +31,14 @@ import {
 import Link from 'next/link';
 
 const TYPE_CONFIG = {
-  interne: { label: 'Interne', color: 'bg-blue-100 text-blue-700 border-blue-200' },
-  independant: { label: 'Indépendant', color: 'bg-purple-100 text-purple-700 border-purple-200' },
+  interne: { label: 'Interne', color: 'bg-nuit-100 text-nuit-700 border-nuit-200' },
+  independant: { label: 'Indépendant', color: 'bg-chaux-100 text-chaux-600 border-chaux-200' },
 };
 
 const STATUT_CONFIG = {
-  disponible: { label: 'Disponible', color: 'bg-green-100 text-green-700', icon: CheckCircle },
-  en_livraison: { label: 'En livraison', color: 'bg-amber-100 text-amber-700', icon: Clock },
-  indisponible: { label: 'Indisponible', color: 'bg-gray-100 text-gray-700', icon: XCircle },
+  disponible: { label: 'Disponible', color: 'bg-accent-100 text-accent-700', icon: CheckCircle },
+  en_livraison: { label: 'En livraison', color: 'bg-mangue-100 text-mangue-700', icon: Clock },
+  indisponible: { label: 'Indisponible', color: 'bg-chaux-100 text-nuit-700', icon: XCircle },
 };
 
 const VEHICULE_ICONS = {
@@ -176,29 +178,27 @@ export default function LivreursPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Loader2 className="w-10 h-10 animate-spin text-amber-600" />
+      <div className="min-h-screen bg-[var(--background)] flex items-center justify-center">
+        <Loader2 className="w-10 h-10 animate-spin text-nuit-400" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6 lg:p-8">
+    <div className="min-h-screen bg-[var(--background)] p-6 lg:p-8">
             {/* Header */}
       <div className="mb-8">
-        <Link href="/dashboard" className="inline-flex items-center gap-2 text-gray-600 hover:text-amber-600 transition mb-2">
-          <span>← Retour au dashboard</span>
-        </Link>
+        <LienRetour href="/dashboard">Retour au dashboard</LienRetour>
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Gestion des Livreurs</h1>
-            <p className="text-gray-600 mt-1">Gérez vos livreurs internes et indépendants</p>
+            <h1 className="text-3xl font-bold text-nuit-900">Gestion des Livreurs</h1>
+            <p className="text-chaux-600 mt-1">Gérez vos livreurs internes et indépendants</p>
           </div>
           
           {/* BOUTON ASSIGNATIONS - AJOUTEZ CECI */}
           <Link 
             href="/dashboard/livreurs/assignations"
-            className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm font-medium"
+            className={classesBouton('calme')}
           >
             <Navigation className="w-4 h-4" />
             Assignations
@@ -206,7 +206,7 @@ export default function LivreursPage() {
           
           <button
             onClick={() => setShowModal(true)}
-            className="flex items-center justify-center gap-2 px-6 py-3 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition shadow-lg font-medium"
+            className={classesBouton('action')}
           >
             <Plus className="w-5 h-5" />
             Ajouter un livreur
@@ -216,24 +216,26 @@ export default function LivreursPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
-        <StatCard icon={Truck} label="Total livreurs" value={stats.total} color="amber" />
-        <StatCard icon={CheckCircle} label="Disponibles" value={stats.disponibles} color="green" />
-        <StatCard icon={Clock} label="En livraison" value={stats.en_livraison} color="purple" />
-        <StatCard icon={User} label="Internes" value={stats.internes} color="blue" />
-        <StatCard icon={TrendingUp} label="Indépendants" value={stats.independants} color="purple" />
+        {/* Total et répartition sont neutres : ce sont des comptages, pas
+            des états. Seuls « Disponibles » et « En livraison » en portent un. */}
+        <TuileStat icone={Truck} intitule="Total livreurs" valeur={stats.total} ton="neutre" />
+        <TuileStat icone={CheckCircle} intitule="Disponibles" valeur={stats.disponibles} ton="fait" />
+        <TuileStat icone={Clock} intitule="En livraison" valeur={stats.en_livraison} ton="encours" />
+        <TuileStat icone={User} intitule="Internes" valeur={stats.internes} ton="neutre" />
+        <TuileStat icone={TrendingUp} intitule="Indépendants" valeur={stats.independants} ton="eteint" />
       </div>
 
       {/* Filtres et recherche */}
-      <div className="bg-white rounded-xl border border-gray-100 p-4 mb-6">
+      <div className="bg-white rounded-xl border border-chaux-200 p-4 mb-6">
         <div className="flex flex-col md:flex-row gap-4">
           <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-chaux-400" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Rechercher par nom ou téléphone..."
-              className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-amber-500"
+              className="w-full pl-10 pr-4 py-2.5 border border-chaux-200 rounded-lg focus:ring-2 focus:ring-nuit-200"
             />
           </div>
           <div className="flex flex-wrap gap-2">
@@ -242,7 +244,7 @@ export default function LivreursPage() {
                 key={type}
                 onClick={() => setFilter(type)}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
-                  filter === type ? 'bg-amber-600 text-white' : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
+                  filter === type ? 'bg-nuit-700 text-white' : 'bg-chaux-50 text-nuit-700 hover:bg-chaux-100'
                 }`}
               >
                 {type === 'tous' ? 'Tous' : type === 'interne' ? 'Internes' : 'Indépendants'}
@@ -254,10 +256,10 @@ export default function LivreursPage() {
 
       {/* Liste des livreurs */}
       {filteredLivreurs.length === 0 ? (
-        <div className="text-center py-16 bg-white rounded-xl border border-gray-100 border-dashed">
-          <Truck className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-900">Aucun livreur</h3>
-          <p className="text-gray-500 mt-1">Commencez par ajouter votre premier livreur.</p>
+        <div className="text-center py-16 bg-white rounded-xl border border-chaux-200 border-dashed">
+          <Truck className="w-16 h-16 text-chaux-300 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-nuit-900">Aucun livreur</h3>
+          <p className="text-chaux-500 mt-1">Commencez par ajouter votre premier livreur.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -271,16 +273,16 @@ export default function LivreursPage() {
                 key={livreur.id}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition"
+                className="bg-white rounded-xl shadow-sm border border-chaux-200 overflow-hidden hover:shadow-md transition"
               >
                 <div className="p-5">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-white font-bold text-lg">
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-nuit-500 to-nuit-700 flex items-center justify-center text-white font-bold text-lg">
                         {livreur.nom.charAt(0).toUpperCase()}
                       </div>
                       <div>
-                        <h3 className="font-bold text-gray-900">{livreur.nom}</h3>
+                        <h3 className="font-bold text-nuit-900">{livreur.nom}</h3>
                         <div className="flex items-center gap-2 mt-1">
                           <span className={`px-2 py-0.5 rounded-full text-xs font-semibold border ${typeConfig}`}>
                             {typeConfig.label}
@@ -292,46 +294,46 @@ export default function LivreursPage() {
                         </div>
                       </div>
                     </div>
-                    <button className="p-1 hover:bg-gray-100 rounded">
-                      <MoreVertical className="w-5 h-5 text-gray-400" />
+                    <button className="p-1 hover:bg-chaux-100 rounded">
+                      <MoreVertical className="w-5 h-5 text-chaux-400" />
                     </button>
                   </div>
 
                   <div className="space-y-2 mb-4">
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <Phone className="w-4 h-4 text-gray-400" />
+                    <div className="flex items-center gap-2 text-sm text-chaux-600">
+                      <Phone className="w-4 h-4 text-chaux-400" />
                       {livreur.telephone}
                     </div>
                     {livreur.email && (
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
-                        <Mail className="w-4 h-4 text-gray-400" />
+                      <div className="flex items-center gap-2 text-sm text-chaux-600">
+                        <Mail className="w-4 h-4 text-chaux-400" />
                         {livreur.email}
                       </div>
                     )}
                     {livreur.vehicule_type && (
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
-                        <VehiculeIcon className="w-4 h-4 text-gray-400" />
+                      <div className="flex items-center gap-2 text-sm text-chaux-600">
+                        <VehiculeIcon className="w-4 h-4 text-chaux-400" />
                         {livreur.vehicule_type.charAt(0).toUpperCase() + livreur.vehicule_type.slice(1)}
                         {livreur.vehicule_immatriculation && ` • ${livreur.vehicule_immatriculation}`}
                       </div>
                     )}
                   </div>
 
-                  <div className="grid grid-cols-3 gap-3 mb-4 pt-4 border-t border-gray-100">
+                  <div className="grid grid-cols-3 gap-3 mb-4 pt-4 border-t border-chaux-200">
                     <div className="text-center">
-                      <div className="flex items-center justify-center gap-1 text-amber-600 font-bold">
+                      <div className="flex items-center justify-center gap-1 text-mangue-600 font-bold">
                         <Star className="w-4 h-4 fill-current" />
                         {livreur.note_moyenne.toFixed(1)}
                       </div>
-                      <p className="text-xs text-gray-500 mt-1">Note</p>
+                      <p className="text-xs text-chaux-500 mt-1">Note</p>
                     </div>
                     <div className="text-center">
-                      <p className="font-bold text-gray-900">{livreur.total_livraisons}</p>
-                      <p className="text-xs text-gray-500 mt-1">Livraisons</p>
+                      <p className="font-bold text-nuit-900">{livreur.total_livraisons}</p>
+                      <p className="text-xs text-chaux-500 mt-1">Livraisons</p>
                     </div>
                     <div className="text-center">
-                      <p className="font-bold text-gray-900">{livreur.gain_total.toLocaleString()}F</p>
-                      <p className="text-xs text-gray-500 mt-1">Gains</p>
+                      <p className="font-bold text-nuit-900">{livreur.gain_total.toLocaleString()}F</p>
+                      <p className="text-xs text-chaux-500 mt-1">Gains</p>
                     </div>
                   </div>
 
@@ -340,8 +342,8 @@ export default function LivreursPage() {
                       onClick={() => toggleStatut(livreur)}
                       className={`flex-1 py-2 rounded-lg text-xs font-semibold transition ${
                         livreur.statut === 'disponible'
-                          ? 'bg-amber-50 text-amber-700 hover:bg-amber-100'
-                          : 'bg-green-50 text-green-700 hover:bg-green-100'
+                          ? 'bg-mangue-50 text-mangue-700 hover:bg-mangue-100'
+                          : 'bg-accent-50 text-accent-700 hover:bg-accent-100'
                       }`}
                     >
                       {livreur.statut === 'disponible' ? 'Rendre indisponible' : 'Rendre disponible'}
@@ -349,13 +351,13 @@ export default function LivreursPage() {
                     <button
                       onClick={() => {}}
                       title="Édition bientôt disponible"
-                      className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
+                      className="p-2 text-nuit-600 hover:bg-nuit-50 rounded-lg transition"
                     >
                       <Edit3 className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => deleteLivreur(livreur.id)}
-                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
+                      className="p-2 text-bissap-600 hover:bg-bissap-50 rounded-lg transition"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -377,24 +379,24 @@ export default function LivreursPage() {
               exit={{ opacity: 0, scale: 0.95 }}
               className="bg-white rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl"
             >
-              <div className="p-6 border-b border-gray-100 flex justify-between items-center">
-                <h2 className="text-xl font-bold text-gray-900">Ajouter un livreur</h2>
-                <button onClick={() => setShowModal(false)} className="p-2 hover:bg-gray-100 rounded-lg">
-                  <X className="w-5 h-5 text-gray-500" />
+              <div className="p-6 border-b border-chaux-200 flex justify-between items-center">
+                <h2 className="text-xl font-bold text-nuit-900">Ajouter un livreur</h2>
+                <button onClick={() => setShowModal(false)} className="p-2 hover:bg-chaux-100 rounded-lg">
+                  <X className="w-5 h-5 text-chaux-500" />
                 </button>
               </div>
 
               <form onSubmit={handleSubmit} className="p-6 space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Type de livreur *</label>
+                  <label className="block text-sm font-medium text-nuit-700 mb-1">Type de livreur *</label>
                   <div className="grid grid-cols-2 gap-3">
                     <button
                       type="button"
                       onClick={() => setFormData({ ...formData, type: 'interne' })}
                       className={`py-3 rounded-lg border-2 font-semibold transition ${
                         formData.type === 'interne'
-                          ? 'border-blue-500 bg-blue-50 text-blue-700'
-                          : 'border-gray-200 text-gray-700 hover:border-gray-300'
+                          ? 'border-nuit-500 bg-nuit-50 text-nuit-700'
+                          : 'border-chaux-200 text-nuit-700 hover:border-chaux-300'
                       }`}
                     >
                       Interne
@@ -404,8 +406,8 @@ export default function LivreursPage() {
                       onClick={() => setFormData({ ...formData, type: 'independant' })}
                       className={`py-3 rounded-lg border-2 font-semibold transition ${
                         formData.type === 'independant'
-                          ? 'border-purple-500 bg-purple-50 text-purple-700'
-                          : 'border-gray-200 text-gray-700 hover:border-gray-300'
+                          ? 'border-nuit-500 bg-nuit-50 text-nuit-700'
+                          : 'border-chaux-200 text-nuit-700 hover:border-chaux-300'
                       }`}
                     >
                       Indépendant
@@ -414,46 +416,46 @@ export default function LivreursPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Nom complet *</label>
+                  <label className="block text-sm font-medium text-nuit-700 mb-1">Nom complet *</label>
                   <input
                     type="text"
                     required
                     value={formData.nom}
                     onChange={(e) => setFormData({ ...formData, nom: e.target.value })}
-                    className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-amber-500"
+                    className="w-full px-4 py-2.5 border border-chaux-200 rounded-lg focus:ring-2 focus:ring-nuit-200"
                     placeholder="Ex: Kouamé Jean"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Téléphone *</label>
+                  <label className="block text-sm font-medium text-nuit-700 mb-1">Téléphone *</label>
                   <input
                     type="tel"
                     required
                     value={formData.telephone}
                     onChange={(e) => setFormData({ ...formData, telephone: e.target.value })}
-                    className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-amber-500"
+                    className="w-full px-4 py-2.5 border border-chaux-200 rounded-lg focus:ring-2 focus:ring-nuit-200"
                     placeholder="Ex: 0709123456"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                  <label className="block text-sm font-medium text-nuit-700 mb-1">Email</label>
                   <input
                     type="email"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-amber-500"
+                    className="w-full px-4 py-2.5 border border-chaux-200 rounded-lg focus:ring-2 focus:ring-nuit-200"
                     placeholder="Ex: jean@example.com"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Type de véhicule *</label>
+                  <label className="block text-sm font-medium text-nuit-700 mb-1">Type de véhicule *</label>
                   <select
                     value={formData.vehicule_type}
                     onChange={(e) => setFormData({ ...formData, vehicule_type: e.target.value })}
-                    className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-amber-500"
+                    className="w-full px-4 py-2.5 border border-chaux-200 rounded-lg focus:ring-2 focus:ring-nuit-200"
                   >
                     <option value="moto">Moto</option>
                     <option value="voiture">Voiture</option>
@@ -462,12 +464,12 @@ export default function LivreursPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Immatriculation</label>
+                  <label className="block text-sm font-medium text-nuit-700 mb-1">Immatriculation</label>
                   <input
                     type="text"
                     value={formData.vehicule_immatriculation}
                     onChange={(e) => setFormData({ ...formData, vehicule_immatriculation: e.target.value })}
-                    className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-amber-500"
+                    className="w-full px-4 py-2.5 border border-chaux-200 rounded-lg focus:ring-2 focus:ring-nuit-200"
                     placeholder="Ex: AB-123-CD"
                   />
                 </div>
@@ -476,13 +478,13 @@ export default function LivreursPage() {
                   <button
                     type="button"
                     onClick={() => setShowModal(false)}
-                    className="flex-1 px-4 py-3 border border-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-50"
+                    className="flex-1 px-4 py-3 border border-chaux-200 text-nuit-700 rounded-lg font-medium hover:bg-chaux-50"
                   >
                     Annuler
                   </button>
                   <button
                     type="submit"
-                    className="flex-1 px-4 py-3 bg-amber-600 text-white rounded-lg font-medium hover:bg-amber-700"
+                    className={`${classesBouton('action')} flex-1`}
                   >
                     Ajouter
                   </button>
@@ -496,25 +498,3 @@ export default function LivreursPage() {
   );
 }
 
-function StatCard({ icon: Icon, label, value, color }: { icon: LucideIcon; label: string; value: string | number; color: string }) {
-  const colors: Record<string, string> = {
-    amber: 'bg-amber-50 text-amber-600',
-    green: 'bg-green-50 text-green-600',
-    blue: 'bg-blue-50 text-blue-600',
-    purple: 'bg-purple-50 text-purple-600',
-  };
-  
-  return (
-    <div className="bg-white rounded-xl p-4 border border-gray-100">
-      <div className="flex items-center gap-3">
-        <div className={`p-2 rounded-lg ${colors[color]}`}>
-          <Icon className="w-5 h-5" />
-        </div>
-        <div>
-          <p className="text-xs text-gray-500">{label}</p>
-          <p className="text-xl font-bold text-gray-900">{value}</p>
-        </div>
-      </div>
-    </div>
-  );
-}
