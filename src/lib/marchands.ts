@@ -31,7 +31,7 @@ async function chargerMarchands(): Promise<Record<string, Marchand>> {
       
       const marchand: Marchand = {
         id: r.id,
-        boutiqueId: r.id, // Alias
+        boutiqueId: r.boutiqueId || r.id, // UUID Supabase si fourni, sinon slug
         nom: r.nom || '',
         secteur: r.secteur || '',
         emoji: r.emoji || '🏪',
