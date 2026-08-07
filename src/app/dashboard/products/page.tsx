@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useBoutique, avecBoutique } from '@/lib/boutique';
 import {
-  Bell, CreditCard, Gauge, LogOut, Package2, Plus, RefreshCw,
+  AlertTriangle, Bell, CreditCard, Gauge, LogOut, Package2, Plus, RefreshCw,
   Settings, ShoppingCart, Store, TrendingUp, Truck, Users, UtensilsCrossed, X,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
@@ -12,7 +12,11 @@ import { BUCKET_IMAGES, dossierMarchand, nomFichierSain } from '@/lib/storage';
 import { fetchDashboard } from '@/lib/apiClient';
 import { Bouton } from '@/components/ui/Bouton';
 
-type Prod = { id: string; nom: string; categorie: string; prix: number; description: string; disponible: boolean; image: string };
+type Prod = {
+  id: string; nom: string; categorie: string; prix: number;
+  description: string; disponible: boolean; image: string;
+  stock: number | null; seuil_alerte: number | null;
+};
 
 const sidebarItems = [
   { label: "Vue d'ensemble", href: '/dashboard', icon: Gauge },
@@ -41,10 +45,21 @@ export default function Page() {
   const [fDispo, setFDispo] = useState(true);
   const [fUrl, setFUrl] = useState('');
   const [fFile, setFFile] = useState<File | null>(null);
+  const [fStock, setFStock] = useState('');
+  const [fSeuil, setFSeuil] = useState('5');
   const [envoi, setEnvoi] = useState(false);
   const [msg, setMsg] = useState('');
 
-  const { boutiqueId, pret } = useBoutique();
+  // Modal de gestion de stock
+  const [editProd, setEditProd] = useState<Prod | null>(null);
+  const [eStock, setEStock] = useState('');
+  const [eSeuil, setESeuil] = useState('');
+  const [eDispo, setEDispo] = useState(true);
+  const [eMsg, setEMsg] = useState('');
+  const [eEnvoi, setEEnvoi] = useState(false);
+
+  const { boutiqueId, boutiques, pret } = useBoutique();
+  const nomBoutique = boutiques.find(b => b.id === boutiqueId)?.nom ?? 'Ma boutique';
 
   const charger = async () => {
     setRefreshing(true);
@@ -79,17 +94,64 @@ export default function Page() {
       const res = await fetchDashboard(avecBoutique('/api/dashboard/produits', boutiqueId), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nom: fNom, categorie: fCat, prix: Number(fPrix) || 0, description: fDesc, disponible: fDispo, image }),
+        body: JSON.stringify({
+          nom: fNom, categorie: fCat, prix: Number(fPrix) || 0,
+          description: fDesc, disponible: fDispo, image,
+          stock: fStock === '' ? null : Number(fStock),
+          seuil_alerte: fSeuil === '' ? null : Number(fSeuil),
+        }),
       });
       const d = await res.json();
       if (!d.ok) throw new Error(d.error || 'Erreur serveur');
       setOuvert(false);
-      setFNom(''); setFCat(''); setFPrix(''); setFDesc(''); setFUrl(''); setFFile(null); setFDispo(true);
+      setFNom(''); setFCat(''); setFPrix(''); setFDesc(''); setFUrl('');
+      setFFile(null); setFDispo(true); setFStock(''); setFSeuil('5');
       await charger();
     } catch (e) {
       setMsg('❌ ' + (e instanceof Error ? e.message : 'Erreur inconnue'));
     } finally { setEnvoi(false); }
   };
+
+  const ouvrirStock = (p: Prod) => {
+    setEditProd(p);
+    setEStock(p.stock === null ? '' : String(p.stock));
+    setESeuil(p.seuil_alerte === null ? '' : String(p.seuil_alerte));
+    setEDispo(p.disponible);
+    setEMsg('');
+  };
+
+  const sauvegarderStock = async () => {
+    if (!editProd) return;
+    setEEnvoi(true); setEMsg('');
+    try {
+      const res = await fetchDashboard(avecBoutique('/api/dashboard/produits', boutiqueId), {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          reference: editProd.id,
+          stock: eStock === '' ? null : Number(eStock),
+          seuil_alerte: eSeuil === '' ? null : Number(eSeuil),
+          disponible: eDispo,
+        }),
+      });
+      const d = await res.json();
+      if (!d.ok) throw new Error(d.error || 'Erreur serveur');
+      setEditProd(null);
+      await charger();
+    } catch (e) {
+      setEMsg('❌ ' + (e instanceof Error ? e.message : 'Erreur inconnue'));
+    } finally { setEEnvoi(false); }
+  };
+
+  // Analyse des stocks pour les badges et alertes
+  const statutStock = (p: Prod) => {
+    if (p.stock === null) return { type: 'na', label: 'Sans suivi', color: 'bg-slate-100 text-slate-600' };
+    if (p.stock === 0) return { type: 'rupture', label: '🔴 Rupture', color: 'bg-rose-100 text-rose-700' };
+    if (p.seuil_alerte !== null && p.stock <= p.seuil_alerte) return { type: 'bas', label: `🟠 Bas · ${p.stock}`, color: 'bg-amber-100 text-amber-700' };
+    return { type: 'ok', label: `🟢 Stock · ${p.stock}`, color: 'bg-emerald-100 text-emerald-700' };
+  };
+
+  const alertes = prods.filter(p => p.stock !== null && ((p.seuil_alerte !== null && p.stock <= p.seuil_alerte) || p.stock === 0));
 
   const cats = ['toutes', ...Array.from(new Set(prods.map(p => p.categorie).filter(Boolean)))];
   const filtrés = cat === 'toutes' ? prods : prods.filter(p => p.categorie === cat);
@@ -131,8 +193,10 @@ export default function Page() {
             <div className="relative z-10 flex flex-wrap items-center justify-between gap-4">
               <div>
                 <p className="text-sm uppercase tracking-[0.2em] text-amber-100">Menu réel · feuille Google</p>
-                <h1 className="mt-2 text-3xl font-black">🍽️ Produits Zahara</h1>
-                <p className="mt-1 text-xs text-amber-100">{prods.length} produits · {prods.filter(p => p.disponible).length} disponibles · maj {maj}</p>
+                <h1 className="mt-2 text-3xl font-black">🍽️ Produits {nomBoutique}</h1>
+                <p className="mt-1 text-xs text-amber-100">
+                  {prods.length} produits · {prods.filter(p => p.disponible).length} disponibles · maj {maj}
+                </p>
               </div>
               <div className="flex gap-2">
                 <Bouton variante="contraste" onClick={() => setOuvert(true)}>
@@ -144,6 +208,21 @@ export default function Page() {
               </div>
             </div>
           </header>
+
+          {alertes.length > 0 && (
+            <div className="flex items-start gap-3 rounded-2xl border border-amber-300 bg-amber-50 p-4">
+              <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-700" />
+              <div className="flex-1">
+                <p className="font-bold text-amber-900">
+                  ⚠️ {alertes.length} produit{alertes.length > 1 ? 's' : ''} sous le seuil d'alerte
+                </p>
+                <p className="mt-1 text-sm text-amber-800">
+                  {alertes.slice(0, 3).map(p => p.nom).join(', ')}
+                  {alertes.length > 3 && ` et ${alertes.length - 3} autre${alertes.length - 3 > 1 ? 's' : ''}`}
+                </p>
+              </div>
+            </div>
+          )}
 
           <div className="flex flex-wrap gap-2">
             {cats.map(c => (
@@ -157,30 +236,44 @@ export default function Page() {
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            {filtrés.map(p => (
-              <div key={p.id || p.nom} className={`overflow-hidden rounded-[1.5rem] border bg-white/90 shadow-sm backdrop-blur-sm ${p.disponible ? 'border-slate-200' : 'border-rose-200 opacity-70'}`}>
-                {p.image ? (
-                  <img src={p.image} alt={p.nom} className="h-40 w-full object-cover" />
-                ) : (
-                  <div className="flex h-40 w-full items-center justify-center bg-gradient-to-br from-amber-100 to-orange-100">
-                    <UtensilsCrossed className="h-10 w-10 text-orange-400" />
-                  </div>
-                )}
-                <div className="space-y-2 p-5">
-                  <div className="flex items-start justify-between gap-2">
-                    <h2 className="font-bold text-slate-900">{p.nom}</h2>
-                    <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${p.disponible ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
-                      {p.disponible ? 'Disponible' : 'Épuisé'}
-                    </span>
-                  </div>
-                  <p className="text-xs text-slate-500">{p.description}</p>
-                  <div className="flex items-center justify-between pt-1">
-                    <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-800">{p.categorie}</span>
-                    <p className="font-black text-orange-700">{p.prix.toLocaleString('fr-FR')} F</p>
+            {filtrés.map(p => {
+              const st = statutStock(p);
+              return (
+                <div key={p.id || p.nom} className={`overflow-hidden rounded-[1.5rem] border bg-white/90 shadow-sm backdrop-blur-sm ${p.disponible ? 'border-slate-200' : 'border-rose-200 opacity-70'}`}>
+                  {p.image ? (
+                    <img src={p.image} alt={p.nom} className="h-40 w-full object-cover" />
+                  ) : (
+                    <div className="flex h-40 w-full items-center justify-center bg-gradient-to-br from-amber-100 to-orange-100">
+                      <UtensilsCrossed className="h-10 w-10 text-orange-400" />
+                    </div>
+                  )}
+                  <div className="space-y-2 p-5">
+                    <div className="flex items-start justify-between gap-2">
+                      <h2 className="font-bold text-slate-900">{p.nom}</h2>
+                      <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${p.disponible ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
+                        {p.disponible ? 'Disponible' : 'Épuisé'}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-500">{p.description}</p>
+                    <div className="flex items-center justify-between pt-1">
+                      <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-800">{p.categorie}</span>
+                      <p className="font-black text-orange-700">{p.prix.toLocaleString('fr-FR')} F</p>
+                    </div>
+                    <div className="flex items-center justify-between gap-2 border-t pt-2">
+                      <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${st.color}`}>
+                        {st.label}
+                      </span>
+                      <button
+                        onClick={() => ouvrirStock(p)}
+                        className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700 transition hover:bg-slate-200"
+                      >
+                        📦 Gérer le stock
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {filtrés.length === 0 && (
@@ -191,6 +284,7 @@ export default function Page() {
         </main>
       </div>
 
+      {/* Modal d'ajout */}
       {ouvert && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="max-h-[90vh] w-full max-w-lg space-y-4 overflow-y-auto rounded-[1.5rem] bg-white p-6 shadow-2xl">
@@ -204,6 +298,17 @@ export default function Page() {
               <input className="rounded-lg border p-2" placeholder="Catégorie (ex : Burger)" value={fCat} onChange={e => setFCat(e.target.value)} />
               <input className="rounded-lg border p-2" placeholder="Prix (FCFA) *" type="number" value={fPrix} onChange={e => setFPrix(e.target.value)} />
               <input className="rounded-lg border p-2" placeholder="Description" value={fDesc} onChange={e => setFDesc(e.target.value)} />
+            </div>
+
+            <div className="grid gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-3 sm:grid-cols-2">
+              <div>
+                <label className="mb-1 block text-xs font-semibold text-amber-800">📦 Stock actuel</label>
+                <input type="number" min="0" placeholder="ex : 12 (laisser vide = sans suivi)" value={fStock} onChange={e => setFStock(e.target.value)} className="w-full rounded-lg border border-amber-300 bg-white p-2 text-sm" />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-semibold text-amber-800">🔔 Alerte à</label>
+                <input type="number" min="0" placeholder="ex : 5" value={fSeuil} onChange={e => setFSeuil(e.target.value)} className="w-full rounded-lg border border-amber-300 bg-white p-2 text-sm" />
+              </div>
             </div>
 
             <div>
@@ -228,6 +333,48 @@ export default function Page() {
               {!envoi && <Plus className="h-5 w-5" />}
               {envoi ? 'Ajout en cours…' : 'Ajouter au menu'}
             </Bouton>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de gestion de stock */}
+      {editProd && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-md space-y-4 rounded-[1.5rem] bg-white p-6 shadow-2xl">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-black text-slate-900">📦 Gérer le stock</h2>
+                <p className="text-sm text-slate-500">{editProd.nom}</p>
+              </div>
+              <button onClick={() => setEditProd(null)} className="rounded-full p-2 hover:bg-slate-100"><X className="h-5 w-5" /></button>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div>
+                <label className="mb-1 block text-sm font-semibold text-slate-700">Stock actuel</label>
+                <input type="number" min="0" placeholder="ex : 12" value={eStock} onChange={x => setEStock(x.target.value)} className="w-full rounded-lg border p-2" />
+                <p className="mt-1 text-xs text-slate-400">Vide = pas de suivi</p>
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-semibold text-slate-700">Seuil d'alerte</label>
+                <input type="number" min="0" placeholder="ex : 5" value={eSeuil} onChange={x => setESeuil(x.target.value)} className="w-full rounded-lg border p-2" />
+                <p className="mt-1 text-xs text-slate-400">Alerte quand stock ≤ ce nombre</p>
+              </div>
+            </div>
+
+            <label className="flex items-center gap-2 text-sm font-semibold text-slate-700">
+              <input type="checkbox" checked={eDispo} onChange={x => setEDispo(x.target.checked)} className="h-4 w-4 accent-emerald-600" />
+              Disponible à la vente
+            </label>
+
+            {eMsg && <p className="rounded-lg bg-rose-50 p-3 text-sm text-rose-700">{eMsg}</p>}
+
+            <div className="flex gap-2">
+              <Bouton variante="calme" onClick={() => setEditProd(null)} className="flex-1">Annuler</Bouton>
+              <Bouton onClick={sauvegarderStock} chargement={eEnvoi} className="flex-1">
+                {eEnvoi ? 'Sauvegarde…' : '💾 Sauvegarder'}
+              </Bouton>
+            </div>
           </div>
         </div>
       )}
