@@ -46,9 +46,10 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         }
 
         // 🔑 Le propriétaire n'est JAMAIS bloqué par son propre paywall
-        const OWNER_EMAILS = new Set([
-          'ton-email@exemple.com', // ← REMPLACE par ton email de connexion
+                const OWNER_EMAILS = new Set([
+          'oulay2002@gmail.com',
         ]);
+
         if (OWNER_EMAILS.has((user.email ?? '').toLowerCase())) {
           if (isMounted) {
             setAllowed(true);
