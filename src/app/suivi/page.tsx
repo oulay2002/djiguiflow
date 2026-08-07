@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase';
 
 type Suivi = {
   order_id: string; customer_name: string; address: string; total_price: string;
@@ -18,8 +19,6 @@ export default function Page() {
     setChargement(true); setErreur('');
     try {
       const qs = new URLSearchParams({ ref: r });
-      // Sans boutique_id, l'API cherche chez le marchand par défaut :
-      // un client d'une autre boutique ne retrouverait jamais sa commande.
       if (b) qs.set('boutique_id', b);
       const res = await fetch(`/api/suivi?${qs.toString()}`);
       if (!res.ok) { setSuivi(null); setErreur('Commande introuvable. Vérifie la référence.'); }
@@ -28,8 +27,7 @@ export default function Page() {
     finally { setChargement(false); }
   };
 
-  // Le lien « Suivre ma commande » porte ?ref= et ?boutique= : sans cette
-  // lecture, la référence était ignorée et le client devait la retaper.
+  // Lecture des params URL
   useEffect(() => {
     const p = new URLSearchParams(window.location.search);
     const r = (p.get('ref') || '').trim();
@@ -38,6 +36,48 @@ export default function Page() {
     if (r) { setRef(r); charger(r, b); }
   }, []);
 
+  // ⚡ REALTIME : écoute les changements en direct
+  useEffect(() => {
+    if (!suivi?.order_id || !boutique) return;
+
+    const channel = supabase
+      .channel(`suivi-${boutique}-${suivi.order_id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'commandes',
+          filter: `reference=eq.${suivi.order_id}`,
+        },
+        (payload) => {
+          const nouveau = payload.new as {
+            reference: string;
+            client_nom: string | null;
+            client_adresse: string | null;
+            total: number | null;
+            nom_livreur: string | null;
+            statut_livraison: string | null;
+            heure_livraison: string | null;
+          };
+
+          // Mettre à jour le state avec les nouvelles valeurs
+          setSuivi(prev => prev ? {
+            ...prev,
+            nom_livreur: nouveau.nom_livreur ?? '',
+            statut_livraison: nouveau.statut_livraison ?? '',
+            heure_livraison: nouveau.heure_livraison ?? '',
+          } : prev);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [suivi?.order_id, boutique]);
+
+  // 🔄 FALLBACK : polling toutes les 15s (si le websocket tombe)
   useEffect(() => {
     if (!suivi) return;
     const t = setInterval(() => charger(suivi.order_id, boutique), 15000);
@@ -103,7 +143,7 @@ export default function Page() {
               ))}
             </div>
 
-            <p className="pt-2 text-xs text-stone-400">Mise à jour automatique toutes les 15 s.</p>
+            <p className="pt-2 text-xs text-stone-400">⚡ Mise à jour en temps réel (+ fallback toutes les 15 s).</p>
           </div>
         )}
       </main>
