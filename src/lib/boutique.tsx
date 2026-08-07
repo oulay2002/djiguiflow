@@ -1,5 +1,6 @@
 'use client';
 
+import { supabase } from '@/lib/supabase';
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 
 export type BoutiqueOption = { id: string; nom: string; secteur: string; emoji: string };
@@ -39,7 +40,11 @@ export function BoutiqueProvider({ children }: { children: ReactNode }) {
 
     (async () => {
       try {
-        const r = await fetch('/api/marchands');
+        const { data: sessionData } = await supabase.auth.getSession();
+        const token = sessionData?.session?.access_token ?? '';
+        const r = await fetch('/api/dashboard/mes-boutiques', {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
         const d = await r.json();
         if (annule) return;
 
