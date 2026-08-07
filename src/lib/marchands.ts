@@ -44,6 +44,18 @@ let cache: Record<string, Marchand> | null = null;
 let cacheTime = 0;
 const TTL = 30_000;
 
+/**
+ * Vide le cache du registre.
+ *
+ * A appeler apres avoir provisionne un marchand : sans cela, le nouveau
+ * marchand resterait invisible jusqu'a 30 s, et le dashboard repondrait 404
+ * sur sa toute premiere requete.
+ */
+export function invaliderCacheMarchands(): void {
+  cache = null;
+  cacheTime = 0;
+}
+
 type LigneBoutique = {
   id: string;
   slug: string | null;
@@ -51,8 +63,21 @@ type LigneBoutique = {
   categorie: string | null;
   emoji: string | null;
   telephone: string | null;
-  notification_settings: { whatsapp_numero: string | null; telegram_chat_id: string | null }[] | null;
+  sheet_commandes: string | null;
+  sheet_menu: string | null;
+  groupe_livreurs: string | null;
+  // La contrainte d'unicité sur notification_settings.boutique_id rend la
+  // relation un-à-un : PostgREST renvoie alors un OBJET, pas un tableau.
+  // Les deux formes sont acceptées pour ne pas dépendre de ce détail.
+  notification_settings: Notif | Notif[] | null;
 };
+
+type Notif = { whatsapp_numero: string | null; telegram_chat_id: string | null };
+
+function premierNotif(v: Notif | Notif[] | null | undefined): Notif | null {
+  if (!v) return null;
+  return Array.isArray(v) ? (v[0] ?? null) : v;
+}
 
 async function chargerMarchands(): Promise<Record<string, Marchand>> {
   const now = Date.now();
@@ -67,7 +92,10 @@ async function chargerMarchands(): Promise<Record<string, Marchand>> {
   try {
     const { data, error } = await sb
       .from('boutiques')
-      .select('id, slug, nom, categorie, emoji, telephone, notification_settings(whatsapp_numero, telegram_chat_id)')
+      .select(
+        'id, slug, nom, categorie, emoji, telephone, sheet_commandes, sheet_menu, groupe_livreurs,' +
+        ' notification_settings(whatsapp_numero, telegram_chat_id)',
+      )
       .not('slug', 'is', null);
 
     if (error) throw error;
@@ -75,7 +103,7 @@ async function chargerMarchands(): Promise<Record<string, Marchand>> {
     const dict: Record<string, Marchand> = {};
     for (const b of (data ?? []) as unknown as LigneBoutique[]) {
       if (!b.slug) continue;
-      const notif = b.notification_settings?.[0];
+      const notif = premierNotif(b.notification_settings);
       dict[b.slug] = {
         id: b.slug,
         boutiqueId: b.id,
@@ -83,8 +111,12 @@ async function chargerMarchands(): Promise<Record<string, Marchand>> {
         secteur: b.categorie ?? '',
         emoji: b.emoji ?? '🏪',
         sheetId: process.env.SHEET_ID!,
-        ...FEUILLES_PAR_DEFAUT,
-        groupeLivreurs: notif?.telegram_chat_id ?? '',
+        // La config par marchand prime ; le repli garde le comportement des
+        // boutiques provisionnees avant l'arrivee de ces colonnes.
+        sheetCommandes: b.sheet_commandes || FEUILLES_PAR_DEFAUT.sheetCommandes,
+        sheetMenu: b.sheet_menu || FEUILLES_PAR_DEFAUT.sheetMenu,
+        sheetNotes: FEUILLES_PAR_DEFAUT.sheetNotes,
+        groupeLivreurs: b.groupe_livreurs || notif?.telegram_chat_id || '',
         whatsapp: notif?.whatsapp_numero ?? b.telephone ?? '',
       };
     }
