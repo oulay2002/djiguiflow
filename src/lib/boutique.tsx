@@ -48,9 +48,15 @@ export function BoutiqueProvider({ children }: { children: ReactNode }) {
 
         // Une boutique mémorisée qui a disparu du registre doit être oubliée,
         // sinon toutes les requêtes partiraient en 404.
-        const memorise = localStorage.getItem(CLE_STOCKAGE) || '';
-        if (memorise && liste.some(b => b.id === memorise)) setBoutiqueIdState(memorise);
-        else if (memorise) localStorage.removeItem(CLE_STOCKAGE);
+                const memorise = localStorage.getItem(CLE_STOCKAGE) || '';
+        if (memorise && liste.some(b => b.id === memorise)) {
+          setBoutiqueIdState(memorise);
+        } else {
+          if (memorise) localStorage.removeItem(CLE_STOCKAGE);
+          // Premier visite : on sélectionne automatiquement la première boutique du registre
+          if (liste.length > 0) setBoutiqueIdState(liste[0].id);
+        }
+
       } catch (e) {
         console.error('Chargement du registre boutiques :', e);
       } finally {
