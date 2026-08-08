@@ -37,7 +37,7 @@ export async function POST(req: Request) {
   if (data) {
     const { error } = await sb
       .from('commandes')
-      .update(payload as never)
+      .update({ ...payload, confirmation_statut: null } as never)
       .eq('reference', reference);
     if (error) return Response.json({ error: 'UPDATE: ' + error.message }, { status: 500 });
   } else {
