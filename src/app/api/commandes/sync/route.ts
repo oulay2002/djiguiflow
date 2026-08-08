@@ -37,7 +37,7 @@ export async function POST(req: Request) {
   if (data) {
     await sb.from('commandes').update(payload).eq('reference', reference);
   } else {
-    await sb.from('commandes').insert({ ...payload, reference, boutique_id } as never);
+    await sb.from('commandes').insert({ reference, boutique_id, client_nom: (payload as any).client_nom, client_telephone: (payload as any).client_telephone, chat_id: (payload as any).chat_id, client_adresse: (payload as any).client_adresse, total: (payload as any).total, canal: (payload as any).canal, statut: (payload as any).statut } as never);
   }
 
   return Response.json({ ok: true });
