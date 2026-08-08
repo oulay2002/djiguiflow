@@ -2,20 +2,30 @@
 
 import { Suspense, useState } from 'react';
 import { LienRetour } from '@/components/ui/Bouton';
+import BoutonGoogle from '@/components/ui/BoutonGoogle';
 import { isSupabaseConfigured, supabase } from '@/lib/supabase';
+import { cheminInterneSur } from '@/lib/redirection';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff, Lock, Mail } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 
+const MESSAGES_OAUTH: Record<string, string> = {
+  oauth: "La connexion Google n'a pas abouti. Réessayez ou utilisez votre mot de passe.",
+  oauth_refuse: 'Connexion Google annulée.',
+};
+
 function LoginPageContent() {
   const searchParams = useSearchParams();
+  const suite = cheminInterneSur(searchParams.get('next'));
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+
+  const erreurOAuth = MESSAGES_OAUTH[searchParams.get('erreur') ?? ''] ?? '';
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,10 +44,11 @@ function LoginPageContent() {
     if (error) {
       setError(error.message);
     } else {
-      const nextTarget = searchParams.get('next') || '/dashboard';
+      // `suite` est deja filtre : le `?next=` brut permettait d'expedier le
+      // marchand sur un domaine tiers juste apres une connexion reussie.
       setSuccess('Connexion réussie ! Redirection...');
       setTimeout(() => {
-        window.location.href = nextTarget;
+        window.location.href = suite;
       }, 1500);
     }
 
@@ -60,6 +71,20 @@ function LoginPageContent() {
         </div>
 
         <div className="rounded-[2rem] border border-white/70 bg-white/75 p-8 shadow-[0_20px_60px_rgba(49,35,20,0.12)] backdrop-blur-xl">
+          {erreurOAuth && (
+            <div className="mb-5 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+              {erreurOAuth}
+            </div>
+          )}
+
+          <BoutonGoogle suite={suite} libelle="Se connecter avec Google" />
+
+          <div className="my-6 flex items-center gap-3">
+            <span className="h-px flex-1 bg-slate-200" />
+            <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">ou</span>
+            <span className="h-px flex-1 bg-slate-200" />
+          </div>
+
           <form onSubmit={handleLogin} className="space-y-5">
             <div>
               <label htmlFor="email" className="mb-2 block text-sm font-semibold text-slate-700">Email</label>

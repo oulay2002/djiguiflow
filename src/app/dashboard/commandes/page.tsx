@@ -7,7 +7,7 @@ import Link from 'next/link';
 import {
   Bell, CheckCircle2, Clock, CreditCard, Gauge, LogOut,
   Package2, Phone, Settings, ShoppingCart, Store, TrendingUp,
-  Truck, Users, MapPin, Handshake, Bike, Check,
+  Truck, Users, MapPin, Handshake, Bike, Check, RefreshCw,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
@@ -16,6 +16,8 @@ type Cmd = {
   items: string; total_price: number; timestamp: string; canal: string;
   nom_livreur: string; statut_livraison: string;
   heure_prise_en_charge: string; heure_livraison: string;
+  confirmation_statut: string | null;
+  confirmation_heure: string | null;
 };
 
 const sidebarItems = [
@@ -48,14 +50,13 @@ export default function Page() {
   const [filtre, setFiltre] = useState('tous');
   const [busy, setBusy] = useState<string | null>(null);
 
-  const { boutiqueId, pret } = useBoutique();
+  const { boutiqueId, boutiques, pret } = useBoutique();
+  const nomBoutique = boutiques.find(b => b.id === boutiqueId)?.nom ?? 'Ma boutique';
 
   const charger = async () => {
     try {
       const r = await fetchDashboard(avecBoutique('/api/dashboard/commandes', boutiqueId));
       const d = await r.json();
-      // Sans ce garde-fou, une 503 (quota Sheets) vidait la liste
-      // silencieusement : le gérant croyait n'avoir aucune commande.
       if (!r.ok) throw new Error(d?.error || `HTTP ${r.status}`);
       setCmds(d.commandes || []);
     } catch (e) {
@@ -82,12 +83,32 @@ export default function Page() {
     } finally { setBusy(null); }
   };
 
-  const filtrées = cmds.filter(c =>
-    filtre === 'tous' ? true :
-    filtre === 'attente' ? !c.nom_livreur && !/livr|route/i.test(c.statut_livraison) :
-    filtre === 'route' ? /route|part|cours/i.test(c.statut_livraison) && !!c.nom_livreur :
-    filtre === 'livree' ? /livr/i.test(c.statut_livraison) || !!c.heure_livraison : true
-  );
+  const relancer = async (order_id: string) => {
+    setBusy(order_id + 'relance');
+    try {
+      const r = await fetchDashboard(avecBoutique('/api/dashboard/commandes', boutiqueId), {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reference: order_id, action: 'relancer' }),
+      });
+      if (!r.ok) throw new Error('Relance impossible');
+      await charger();
+    } catch (e) {
+      console.error('Relance échouée :', e);
+    } finally { setBusy(null); }
+  };
+
+  // Filtres classiques (livraison) + filtres confirmation
+  const filtrées = cmds.filter(c => {
+    if (filtre === 'tous') return true;
+    if (filtre === 'attente') return !c.nom_livreur && !/livr|route/i.test(c.statut_livraison);
+    if (filtre === 'route') return /route|part|cours/i.test(c.statut_livraison) && !!c.nom_livreur;
+    if (filtre === 'livree') return /livr/i.test(c.statut_livraison) || !!c.heure_livraison;
+    if (filtre === 'aconfirmer') return c.confirmation_statut === null || c.confirmation_statut === undefined;
+    if (filtre === 'confirmees') return c.confirmation_statut === 'confirmee';
+    if (filtre === 'refusees') return c.confirmation_statut === 'refusee';
+    return true;
+  });
 
   const canalIcon = (c: string) =>
     c === 'app' ? '🌐' : c === 'whatsapp' ? '📲' : c === 'telegram' ? '✈️' : '❓';
@@ -103,6 +124,34 @@ export default function Page() {
     /route|part|cours/i.test(c.statut_livraison) ? 'En route' :
     c.nom_livreur ? `Prise par ${c.nom_livreur}` :
     'En attente';
+
+  // Badge de confirmation client
+  const badgeConfirmation = (c: Cmd) => {
+    if (c.confirmation_statut === 'confirmee') {
+      return (
+        <span className="rounded-full bg-emerald-50 border border-emerald-200 px-2.5 py-1 text-xs font-semibold text-emerald-700">
+          ✅ Confirmée
+        </span>
+      );
+    }
+    if (c.confirmation_statut === 'refusee') {
+      return (
+        <span className="rounded-full bg-rose-50 border border-rose-200 px-2.5 py-1 text-xs font-semibold text-rose-700">
+          ❌ Refusée
+        </span>
+      );
+    }
+    // Pas encore répondu (ou ancienne commande sans suivi)
+    return (
+      <span className="rounded-full bg-amber-50 border border-amber-200 px-2.5 py-1 text-xs font-semibold text-amber-700">
+        🟡 À confirmer
+      </span>
+    );
+  };
+
+  const nbAConfirmer = cmds.filter(c => !c.confirmation_statut).length;
+  const nbConfirmees = cmds.filter(c => c.confirmation_statut === 'confirmee').length;
+  const nbRefusees = cmds.filter(c => c.confirmation_statut === 'refusee').length;
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(219,149,52,0.15),transparent_25%),linear-gradient(180deg,#fffdf9_0%,#f7f0e7_100%)] p-4 lg:p-6">
@@ -137,7 +186,7 @@ export default function Page() {
           <header className="flex flex-col gap-4 rounded-[2rem] border border-white/70 bg-white/75 p-5 shadow-[0_20px_60px_rgba(49,35,20,0.08)] backdrop-blur-xl md:flex-row md:items-center md:justify-between">
             <div>
               <p className="text-sm uppercase tracking-[0.2em] text-slate-500">Gestion</p>
-              <h1 className="mt-2 text-3xl font-black">🛒 Commandes Zahara</h1>
+              <h1 className="mt-2 text-3xl font-black">🛒 Commandes {nomBoutique}</h1>
               <p className="mt-1 text-sm text-slate-500">{cmds.length} commandes · {filtrées.length} affichées · refresh 10s</p>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -157,6 +206,35 @@ export default function Page() {
             </div>
           </header>
 
+          {/* Bannière confirmation anti-retours */}
+          {(nbAConfirmer > 0 || nbRefusees > 0) && (
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-gradient-to-r from-amber-50 to-orange-50 p-4">
+              <div className="flex flex-wrap items-center gap-3 text-sm">
+                <span className="font-semibold text-amber-900">🛡️ Anti-retours</span>
+                {nbAConfirmer > 0 && (
+                  <button onClick={() => setFiltre('aconfirmer')} className="rounded-full bg-amber-100 px-3 py-1 font-semibold text-amber-800 hover:bg-amber-200">
+                    🟡 {nbAConfirmer} à confirmer
+                  </button>
+                )}
+                {nbConfirmees > 0 && (
+                  <button onClick={() => setFiltre('confirmees')} className="rounded-full bg-emerald-100 px-3 py-1 font-semibold text-emerald-800 hover:bg-emerald-200">
+                    ✅ {nbConfirmees} confirmées
+                  </button>
+                )}
+                {nbRefusees > 0 && (
+                  <button onClick={() => setFiltre('refusees')} className="rounded-full bg-rose-100 px-3 py-1 font-semibold text-rose-800 hover:bg-rose-200">
+                    ❌ {nbRefusees} refusées
+                  </button>
+                )}
+              </div>
+              {filtre !== 'tous' && (
+                <button onClick={() => setFiltre('tous')} className="text-xs font-semibold text-slate-500 hover:text-slate-700">
+                  ← Voir tout
+                </button>
+              )}
+            </div>
+          )}
+
           <div className="space-y-3">
             {filtrées.length === 0 && (
               <div className="rounded-[1.5rem] border border-dashed bg-white/60 p-10 text-center text-slate-500">
@@ -164,12 +242,17 @@ export default function Page() {
               </div>
             )}
             {filtrées.map((c, i) => (
-              <div key={i + '-' + c.order_id} className="rounded-[1.5rem] border border-slate-200 bg-white/90 p-5 shadow-sm backdrop-blur-sm">
+              <div key={i + '-' + c.order_id} className={`rounded-[1.5rem] border bg-white/90 p-5 shadow-sm backdrop-blur-sm ${
+                c.confirmation_statut === 'refusee' ? 'border-rose-200 opacity-60' :
+                c.confirmation_statut === 'confirmee' ? 'border-emerald-200' :
+                'border-slate-200'
+              }`}>
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div className="flex-1 space-y-2">
                     <div className="flex flex-wrap items-center gap-3">
                       <span className="font-mono text-sm font-bold text-orange-700">{c.order_id}</span>
                       <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${badgeColor(c)}`}>{statutLabel(c)}</span>
+                      {badgeConfirmation(c)}
                       <span className="text-xs text-slate-500">{canalIcon(c.canal)} {c.canal}</span>
                       <span className="text-xs text-slate-500"><Clock className="inline h-3 w-3" /> {c.timestamp ? new Date(c.timestamp).toLocaleString('fr-FR') : '—'}</span>
                     </div>
@@ -197,19 +280,43 @@ export default function Page() {
                 </div>
 
                 <div className="mt-4 flex flex-wrap gap-2 border-t pt-4">
-                  {!c.nom_livreur && !/livr/i.test(c.statut_livraison) && (
+                  {/* Bouton Relancer uniquement pour les commandes en attente de confirmation */}
+                  {!c.confirmation_statut && !/livr/i.test(c.statut_livraison) && (
+                    <button
+                      onClick={() => relancer(c.order_id)}
+                      disabled={busy === c.order_id + 'relance'}
+                      className="flex items-center gap-2 rounded-full bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700 disabled:opacity-50"
+                    >
+                      {busy === c.order_id + 'relance' ? (
+                        <RefreshCw className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <RefreshCw className="h-4 w-4" />
+                      )}
+                      Relancer le client
+                    </button>
+                  )}
+
+                  {/* Refusée : verrouiller les actions de livraison */}
+                  {c.confirmation_statut === 'refusee' && (
+                    <span className="flex items-center gap-2 rounded-full bg-rose-100 px-4 py-2 text-sm font-semibold text-rose-700">
+                      ❌ Ne pas préparer
+                    </span>
+                  )}
+
+                  {/* Actions classiques (uniquement si confirmée ou sans suivi) */}
+                  {c.confirmation_statut !== 'refusee' && !c.nom_livreur && !/livr/i.test(c.statut_livraison) && (
                     <button onClick={() => agir(c.order_id, 'acceptee')} disabled={busy === c.order_id + 'acceptee'}
                       className="flex items-center gap-2 rounded-full bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-700 disabled:opacity-50">
                       <Handshake className="h-4 w-4" />Accepter
                     </button>
                   )}
-                  {c.nom_livreur && !/route|part|cours|livr/i.test(c.statut_livraison) && (
+                  {c.confirmation_statut !== 'refusee' && c.nom_livreur && !/route|part|cours|livr/i.test(c.statut_livraison) && (
                     <button onClick={() => agir(c.order_id, 'route')} disabled={busy === c.order_id + 'route'}
                       className="flex items-center gap-2 rounded-full bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-700 disabled:opacity-50">
                       <Bike className="h-4 w-4" />En route
                     </button>
                   )}
-                  {!/livr/i.test(c.statut_livraison) && (
+                  {c.confirmation_statut !== 'refusee' && !/livr/i.test(c.statut_livraison) && (
                     <button onClick={() => agir(c.order_id, 'livree')} disabled={busy === c.order_id + 'livree'}
                       className="flex items-center gap-2 rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50">
                       <Check className="h-4 w-4" />Livrée

@@ -2,10 +2,19 @@ import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 
 export const dynamic = 'force-dynamic';
 
+type LigneItem = { nom_produit: string | null; quantite: number | null };
+
 type Ligne = {
   reference: string;
   confirmation_statut: string | null;
   boutique_id: string;
+  client_nom: string | null;
+  client_telephone: string | null;
+  chat_id: string | null;
+  client_adresse: string | null;
+  total: number | null;
+  canal: string | null;
+  commande_items: LigneItem[] | null;
 };
 
 function pageHtml(emoji: string, titre: string, detail: string): string {
@@ -26,7 +35,10 @@ export async function GET(req: Request) {
 
   const { data, error } = await sb
     .from('commandes')
-    .select('reference, confirmation_statut, boutique_id')
+    .select(
+      'reference, confirmation_statut, boutique_id, client_nom, client_telephone, chat_id,' +
+        ' client_adresse, total, canal, commande_items(nom_produit, quantite)',
+    )
     .ilike('reference', ref)
     .maybeSingle();
 
@@ -48,10 +60,23 @@ export async function GET(req: Request) {
   const n8n = process.env.N8N_CONFIRMATION_URL;
   if (n8n) {
     try {
+      const telClient = ligne.client_telephone || ligne.chat_id || '';
       await fetch(n8n, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: statut, reference: ligne.reference, boutique_id: ligne.boutique_id }),
+        body: JSON.stringify({
+          type: statut,
+          reference: ligne.reference,
+          boutique_id: ligne.boutique_id,
+          customer_name: ligne.client_nom ?? 'Client',
+          phone: telClient,
+          address: ligne.client_adresse ?? '',
+          items: (ligne.commande_items ?? []).map(i => `${i.quantite ?? 1}× ${i.nom_produit ?? 'Article'}`),
+          total_price: Number(ligne.total ?? 0),
+          canal: String(ligne.canal ?? 'whatsapp').toLowerCase(),
+          chat_id: ligne.chat_id || telClient,
+          destinataire: telClient,
+        }),
       });
     } catch { /* non bloquant */ }
   }

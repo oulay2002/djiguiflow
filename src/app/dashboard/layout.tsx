@@ -45,17 +45,10 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           return;
         }
 
-        // 🔑 Le propriétaire n'est JAMAIS bloqué par son propre paywall
-                const OWNER_EMAILS = new Set([
-          'oulay2002@gmail.com',
-        ]);
-
-        if (OWNER_EMAILS.has((user.email ?? '').toLowerCase())) {
-          if (isMounted) {
-            setAllowed(true);
-          }
-          return;
-        }
+        // L'exemption « equipe DjiguiFlow » ne se decide plus ici : la liste
+        // d'emails partait dans le bundle public. C'est desormais
+        // /api/billing/subscription qui la tranche a partir d'ADMIN_EMAILS et
+        // renvoie un statut actif.
 
         if (isMockBillingMode()) {
           if (isMounted) {

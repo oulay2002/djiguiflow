@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { estAdmin } from '@/lib/adminAuth';
 
 export const runtime = 'nodejs';
 
@@ -65,6 +66,17 @@ export async function GET(request: Request) {
 
   if (!user) {
     return NextResponse.json({ error: 'Session invalide.' }, { status: 401 });
+  }
+
+  // L'equipe DjiguiFlow n'est pas soumise a son propre paywall. Cette
+  // exception vivait auparavant dans le layout client, sous forme d'une liste
+  // d'emails en dur : elle partait donc dans le bundle JavaScript public.
+  // Ici, la liste reste sur le serveur (ADMIN_EMAILS) et le navigateur ne
+  // recoit qu'un statut.
+  if (estAdmin(user.email)) {
+    return NextResponse.json({
+      subscription: { user_id: user.id, plan_key: 'interne', status: 'active' },
+    });
   }
 
   const admin = buildSupabaseAdminClient();

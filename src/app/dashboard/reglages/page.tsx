@@ -1,6 +1,6 @@
 'use client';
 
-import { User, Store, Shield, ChevronRight } from 'lucide-react';
+import { User, Store, Shield, Bell, ChevronRight } from 'lucide-react';
 import { LienRetour } from '@/components/ui/Bouton';
 import Link from 'next/link';
 
@@ -11,32 +11,42 @@ export default function ReglagesPage() {
       description: 'Modifiez vos informations personnelles',
       icon: User,
       href: '/dashboard/reglages/profil',
-      color: 'bg-blue-50 text-blue-600'
+      color: 'bg-nuit-50 text-nuit-600'
     },
     {
+      // Pas de page dediee sous /reglages : la fiche boutique existe deja et
+      // gere le cas multi-boutiques. Un doublon divergerait a la premiere
+      // evolution du formulaire.
       title: 'Boutique',
       description: 'Paramètres de votre boutique',
       icon: Store,
-      href: '/dashboard/reglages/boutique',
-      color: 'bg-green-50 text-green-600'
+      href: '/dashboard/ma-boutique',
+      color: 'bg-accent-50 text-accent-600'
+    },
+    {
+      title: 'Notifications',
+      description: 'WhatsApp, Telegram et alertes',
+      icon: Bell,
+      href: '/dashboard/reglages/notifications',
+      color: 'bg-mangue-50 text-mangue-600'
     },
     {
       title: 'Sécurité',
       description: 'Gérez votre mot de passe et authentification',
       icon: Shield,
       href: '/dashboard/reglages/securite',
-      color: 'bg-red-50 text-red-600'
+      color: 'bg-bissap-50 text-bissap-600'
     }
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6 lg:p-8">
+    <div className="min-h-screen bg-[var(--background)] p-6 lg:p-8">
       {/* Header */}
       <div className="mb-8">
         <LienRetour href="/dashboard">Retour au dashboard</LienRetour>
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Réglages</h1>
-          <p className="text-gray-600 mt-1">Gérez les paramètres de votre compte</p>
+          <h1 className="text-3xl font-bold text-nuit-900">Réglages</h1>
+          <p className="text-chaux-600 mt-1">Gérez les paramètres de votre compte</p>
         </div>
       </div>
 
@@ -46,7 +56,7 @@ export default function ReglagesPage() {
           <Link
             key={item.href}
             href={item.href}
-            className="block bg-white rounded-xl p-6 border border-gray-100 hover:shadow-lg transition"
+            className="block bg-white rounded-xl p-6 border border-chaux-200 hover:shadow-lg transition"
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
@@ -54,11 +64,11 @@ export default function ReglagesPage() {
                   <item.icon className="w-6 h-6" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-gray-900">{item.title}</h3>
-                  <p className="text-sm text-gray-500">{item.description}</p>
+                  <h3 className="text-lg font-bold text-nuit-900">{item.title}</h3>
+                  <p className="text-sm text-chaux-500">{item.description}</p>
                 </div>
               </div>
-              <ChevronRight className="w-5 h-5 text-gray-400" />
+              <ChevronRight className="w-5 h-5 text-chaux-400" />
             </div>
           </Link>
         ))}

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { LienRetour } from '@/components/ui/Bouton';
+import BoutonGoogle from '@/components/ui/BoutonGoogle';
 import { isSupabaseConfigured, supabase } from '@/lib/supabase';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff, Lock, Mail, Phone, Store, User } from 'lucide-react';
@@ -88,6 +89,18 @@ export default function RegisterPage() {
         </div>
 
         <div className="rounded-[2rem] border border-white/70 bg-white/75 p-8 shadow-[0_20px_60px_rgba(49,35,20,0.12)] backdrop-blur-xl">
+          <BoutonGoogle libelle="S'inscrire avec Google" />
+
+          <p className="mt-3 text-center text-xs text-slate-500">
+            Vous renseignerez votre boutique juste après, dans Réglages → Boutique.
+          </p>
+
+          <div className="my-6 flex items-center gap-3">
+            <span className="h-px flex-1 bg-slate-200" />
+            <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">ou</span>
+            <span className="h-px flex-1 bg-slate-200" />
+          </div>
+
           <form onSubmit={handleRegister} className="space-y-4">
             <div>
               <label htmlFor="fullName" className="mb-1 block text-sm font-semibold text-slate-700">Nom complet</label>
