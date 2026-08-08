@@ -25,7 +25,7 @@ export async function POST(req: Request) {
     client_adresse: String(b.address || ''),
     total: Number(b.total_price ?? b.total ?? 0) || 0,
     canal: String(b.canal || 'whatsapp'),
-    statut: 'validee',
+    statut: 'en_attente',
   };
 
   const { data } = await sb
