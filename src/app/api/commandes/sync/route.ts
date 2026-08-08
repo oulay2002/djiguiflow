@@ -26,7 +26,7 @@ export async function POST(req: Request) {
     total: Number(b.total_price ?? b.total ?? 0) || 0,
     canal: String(b.canal || 'whatsapp'),
     statut: 'validee',
-  } as never;
+  };
 
   const { data } = await sb
     .from('commandes')
@@ -35,10 +35,17 @@ export async function POST(req: Request) {
     .maybeSingle();
 
   if (data) {
-    await sb.from('commandes').update(payload).eq('reference', reference);
+    const { error } = await sb
+      .from('commandes')
+      .update(payload as never)
+      .eq('reference', reference);
+    if (error) return Response.json({ error: 'UPDATE: ' + error.message }, { status: 500 });
   } else {
-    await sb.from('commandes').insert({ reference, boutique_id, client_nom: (payload as any).client_nom, client_telephone: (payload as any).client_telephone, chat_id: (payload as any).chat_id, client_adresse: (payload as any).client_adresse, total: (payload as any).total, canal: (payload as any).canal, statut: (payload as any).statut } as never);
+    const { error } = await sb
+      .from('commandes')
+      .insert({ ...payload, reference, boutique_id } as never);
+    if (error) return Response.json({ error: 'INSERT: ' + error.message }, { status: 500 });
   }
 
-  return Response.json({ ok: true });
+  return Response.json({ ok: true, reference });
 }
