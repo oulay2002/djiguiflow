@@ -5,7 +5,6 @@ import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 
 export const dynamic = 'force-dynamic';
 
-/** Retrouve la boutique du compte connecté (possédée, ou défaut si admin). */
 async function ficheDuConnecte(req: Request) {
   const sb = getSupabaseAdmin();
   if (!sb) return { sb: null as never, erreur: 'Base indisponible', statut: 503 };
@@ -26,7 +25,7 @@ async function ficheDuConnecte(req: Request) {
     .maybeSingle();
   if (possedee) return { sb, boutique: possedee, admin: estAdmin(utilisateur.email) };
 
-   // 2) Admin sans boutique propre → boutique par défaut, sinon la 1ère
+  // 2) Admin sans boutique propre → boutique par défaut, sinon la 1ère
   if (estAdmin(utilisateur.email)) {
     let def: { id: string } | null = null;
 
@@ -54,6 +53,7 @@ async function ficheDuConnecte(req: Request) {
       const r3 = await sb.from('boutiques').select('*').eq('id', def.id).maybeSingle();
       if (r3.data) return { sb, boutique: r3.data, admin: true };
     }
+  }
 
   return { sb, erreur: 'Aucune boutique liee a ce compte.', statut: 404 };
 }
