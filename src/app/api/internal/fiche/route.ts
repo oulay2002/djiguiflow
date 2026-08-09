@@ -3,6 +3,8 @@ import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 
 export const dynamic = 'force-dynamic';
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export async function GET(req: Request) {
   const secret = req.headers.get('x-sync-secret');
   if (!process.env.SYNC_SECRET || secret !== process.env.SYNC_SECRET) {
@@ -16,14 +18,30 @@ export async function GET(req: Request) {
   const sb = getSupabaseAdmin();
   if (!sb) return NextResponse.json({ error: 'Base indisponible' }, { status: 503 });
 
-  const { data, error } = await sb
-    .from('boutiques')
-    .select('*')
-    .or(`slug.eq.${slug},id.eq.${slug},nom.ilike.${slug}`)
-    .maybeSingle();
+  let data: unknown = null;
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  // 1) par ID uuid (si le slug en est un)
+  if (UUID_RE.test(slug)) {
+    const r = await sb.from('boutiques').select('*').eq('id', slug).maybeSingle();
+    data = r.data;
+  }
+
+  // 2) par slug exact
+  if (!data) {
+    const r = await sb.from('boutiques').select('*').eq('slug', slug).maybeSingle();
+    data = r.data;
+  }
+
+  // 3) par nom (contient)
+  if (!data) {
+    const r = await sb
+      .from('boutiques')
+      .select('*')
+      .ilike('nom', `%${slug}%`)
+      .maybeSingle();
+    data = r.data;
+  }
+
   if (!data) return NextResponse.json({ error: 'Boutique introuvable' }, { status: 404 });
-
   return NextResponse.json(data);
 }
