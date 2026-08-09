@@ -252,6 +252,11 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
           items: JSON.stringify(articlesFeuille),
           total_price: String(total),
           sheetCommandes: m.sheetCommandes,
+          // Sans ce champ, le workflow n8n retombait sur le groupe de
+          // livreurs de Zahara : une commande passee chez un autre marchand
+          // alertait les livreurs de Zahara et n'atteignait jamais les siens.
+          // Le repli a ete supprime cote n8n, ce champ est donc obligatoire.
+          groupeLivreurs: m.groupeLivreurs,
         }),
       });
     } catch {
