@@ -8,7 +8,7 @@ import { useRouter } from 'next/navigation';
 import {
   ArrowRight, Bell, CreditCard, Gauge, Globe2, LogOut, Package2, Search,
   Send, Settings, ShoppingCart, Smartphone, Star, Store, TrendingUp, Trophy,
-  Truck, Users, Wallet,
+  Truck, Users, Wallet, Rocket,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
@@ -24,6 +24,7 @@ const sidebarItems = [
   { label: "Vue d'ensemble", href: '/dashboard', icon: Gauge },
   { label: 'Ma Boutique', href: '/dashboard/ma-boutique', icon: Store },
   { label: 'Commandes', href: '/dashboard/commandes', icon: ShoppingCart },
+  { label: 'Onboarding', href: '/onboarding', icon: Rocket },    
   { label: 'Clients', href: '/dashboard/customers', icon: Users },
   { label: 'Produits', href: '/dashboard/products', icon: Package2 },
   { label: 'Analytics', href: '/dashboard/stats', icon: TrendingUp },
