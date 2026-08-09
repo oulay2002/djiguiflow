@@ -55,18 +55,60 @@ export async function POST(req: Request) {
     .maybeSingle();
   if (!cmd) return Response.json({ error: 'commande introuvable après upsert' }, { status: 500 });
 
-  // ---- articles : tableau ou texte "2 x Soupe, Pizza"
-  const raw = b.items;
-  const list: string[] = Array.isArray(raw)
-    ? raw.map((x: unknown) => String(x).trim()).filter(Boolean)
-    : String(raw || '').split(',').map((s) => s.trim()).filter(Boolean);
+  // ---- articles : tableau d'objets, chaine JSON, ou texte « 2 x Soupe, Pizza »
+  //
+  // Le decoupage sur les virgules etait applique sans distinction. Une chaine
+  // JSON comme [{"name":"Pizza","price":1500,"quantity":1}] se retrouvait donc
+  // hachee en fragments — « "price": 1500 » — qui atterrissaient tels quels
+  // dans nom_produit. Le bot WhatsApp envoyant ses articles sous cette forme,
+  // tous les rapports par plat en etaient fausses.
+  type Article = { nom: string; qte: number };
 
-  const parsed = list
-    .map((s) => {
-      const m = s.match(/^(\d+)\s*[x×]\s*(.+)$/i);
-      return { qte: m ? Math.max(1, parseInt(m[1], 10)) : 1, nom: (m ? m[2] : s).trim() };
-    })
-    .filter((p) => p.nom);
+  const depuisObjet = (o: Record<string, unknown>): Article | null => {
+    const nom = String(o.nom ?? o.name ?? o.plat ?? '').trim();
+    if (!nom) return null;
+    const q = Number(o.quantite ?? o.quantity ?? o['quantité'] ?? 1);
+    return { nom, qte: Math.max(1, Number.isFinite(q) ? q : 1) };
+  };
+
+  const depuisTexte = (s: string): Article => {
+    const m = s.match(/^(\d+)\s*[x×]\s*(.+)$/i);
+    return { qte: m ? Math.max(1, parseInt(m[1], 10)) : 1, nom: (m ? m[2] : s).trim() };
+  };
+
+  const extraireArticles = (raw: unknown): Article[] => {
+    if (Array.isArray(raw)) {
+      return raw
+        .map((x) =>
+          x && typeof x === 'object'
+            ? depuisObjet(x as Record<string, unknown>)
+            : depuisTexte(String(x)),
+        )
+        .filter((a): a is Article => Boolean(a?.nom));
+    }
+
+    const s = String(raw ?? '').trim();
+    if (!s) return [];
+
+    // Une chaine JSON se parse, elle ne se decoupe pas.
+    if (s.startsWith('[') || s.startsWith('{')) {
+      try {
+        const j: unknown = JSON.parse(s);
+        const articles = (Array.isArray(j) ? j : [j])
+          .map((x) =>
+            x && typeof x === 'object' ? depuisObjet(x as Record<string, unknown>) : null,
+          )
+          .filter((a): a is Article => Boolean(a));
+        if (articles.length) return articles;
+      } catch {
+        // Pas du JSON valide : on retombe sur la lecture en texte.
+      }
+    }
+
+    return s.split(',').map((x) => depuisTexte(x.trim())).filter((a) => a.nom);
+  };
+
+  const parsed = extraireArticles(b.items);
 
   if (parsed.length) {
     // prix connus si possible (jamais bloquant)
