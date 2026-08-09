@@ -1,56 +1,74 @@
 import { NextResponse } from 'next/server';
-import { exigerAccesMarchand } from '@/lib/dashboardAuth';
+import { estAdmin } from '@/lib/adminAuth';
+import { resoudreMarchand } from '@/lib/marchands';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 
 export const dynamic = 'force-dynamic';
 
-// GET : renvoyer la fiche actuel du marchand connecté
-export async function GET(req: Request) {
-  const acces = await exigerAccesMarchand(req);
-  if (!acces.ok) return NextResponse.json({ error: acces.message }, { status: acces.statut });
-
+/** Retrouve la boutique du compte connecté (possédée, ou défaut si admin). */
+async function ficheDuConnecte(req: Request) {
   const sb = getSupabaseAdmin();
-  if (!sb) return NextResponse.json({ error: 'Base indisponible' }, { status: 503 });
+  if (!sb) return { sb: null as never, erreur: 'Base indisponible', statut: 503 };
 
-  const { data, error } = await sb
+  const entete = req.headers.get('authorization') ?? '';
+  const token = entete.toLowerCase().startsWith('bearer ') ? entete.slice(7).trim() : '';
+  if (!token) return { sb, erreur: 'Authentification requise.', statut: 401 };
+
+  const { data, error } = await sb.auth.getUser(token);
+  const utilisateur = data?.user;
+  if (error || !utilisateur) return { sb, erreur: 'Session invalide ou expiree.', statut: 401 };
+
+  // 1) La boutique POSSEDÉE par ce compte
+  const { data: possedee } = await sb
     .from('boutiques')
     .select('*')
-    .eq('id', acces.marchand.boutiqueId)
-    .single();
+    .eq('user_id', utilisateur.id)
+    .maybeSingle();
+  if (possedee) return { sb, boutique: possedee, admin: estAdmin(utilisateur.email) };
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(data);
-}
-
-// PATCH : mettre à jour la fiche (WhatsApp, Telegram, groupe, sheets)
-export async function PATCH(req: Request) {
-  const acces = await exigerAccesMarchand(req);
-  if (!acces.ok) return NextResponse.json({ error: acces.message }, { status: acces.statut });
-
-  const body = await req.json();
-  const sb = getSupabaseAdmin();
-  if (!sb) return NextResponse.json({ error: 'Base indisponible' }, { status: 503 });
-
-  // Whitelist des champs modifiables
-  const autorises = [
-    'telephone', 'telegram_marchand', 'groupe_livreurs',
-    'sheet_commandes', 'sheet_menu', 'sheet_notes'
-  ];
-  const updates: Record<string, unknown> = {};
-  for (const k of autorises) {
-    if (k in body && typeof body[k] === 'string') {
-      updates[k] = body[k].trim();
+  // 2) Admin sans boutique propre → boutique par défaut
+  if (estAdmin(utilisateur.email)) {
+    const marchand = await resoudreMarchand(null);
+    if (marchand) {
+      const { data: def } = await sb
+        .from('boutiques')
+        .select('*')
+        .eq('id', marchand.boutiqueId)
+        .maybeSingle();
+      if (def) return { sb, boutique: def, admin: true };
     }
   }
 
-  if (Object.keys(updates).length === 0) {
-    return NextResponse.json({ error: 'Rien à mettre à jour' }, { status: 400 });
+  return { sb, erreur: 'Aucune boutique liee a ce compte.', statut: 404 };
+}
+
+export async function GET(req: Request) {
+  const r = await ficheDuConnecte(req);
+  if ('erreur' in r) return NextResponse.json({ error: r.erreur }, { status: r.statut });
+  return NextResponse.json(r.boutique);
+}
+
+export async function PATCH(req: Request) {
+  const r = await ficheDuConnecte(req);
+  if ('erreur' in r) return NextResponse.json({ error: r.erreur }, { status: r.statut });
+
+  const body = await req.json();
+  const autorises = [
+    'telephone', 'telegram_marchand', 'groupe_livreurs',
+    'sheet_commandes', 'sheet_menu', 'sheet_notes',
+  ];
+  const updates: Record<string, unknown> = {};
+  for (const k of autorises) {
+    if (k in body && typeof body[k] === 'string') updates[k] = body[k].trim();
+  }
+  if (!Object.keys(updates).length) {
+    return NextResponse.json({ error: 'Rien a mettre a jour.' }, { status: 400 });
   }
 
-  const { data, error } = await sb
+  const { data, error } = await r.sb
     .from('boutiques')
     .update(updates as never)
-    .eq('id', acces.marchand.boutiqueId)
+    .eq('id', r.boutique.id)
     .select()
     .single();
 

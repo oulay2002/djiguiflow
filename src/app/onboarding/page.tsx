@@ -33,10 +33,15 @@ export default function OnboardingPage() {
         return;
       }
 
-      const r = await fetch('/api/onboarding', {
+        const r = await fetch('/api/onboarding', {
         headers: { authorization: `Bearer ${session.access_token}` },
       });
-      if (r.ok) setBoutique(await r.json());
+      if (r.ok) {
+        setBoutique(await r.json());
+      } else {
+        const j = await r.json().catch(() => null);
+        setMessage('❌ ' + (j?.error || `HTTP ${r.status}`));
+      }
       setLoading(false);
     })();
   }, []);
