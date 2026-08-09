@@ -21,10 +21,12 @@ export default function manifest(): MetadataRoute.Manifest {
     lang: 'fr',
     dir: 'ltr',
 
-    // Le marchand installe l'app pour son tableau de bord, pas pour la page
-    // d'accueil commerciale. S'il n'a pas de session, le proxy le renvoie
-    // vers /login — c'est le comportement voulu.
-    start_url: '/dashboard',
+    // L'application s'ouvre sur la page d'accueil, pas sur le tableau de
+    // bord : elle est aussi installable par un visiteur qui n'est pas
+    // marchand, et le renvoyer vers /login des le lancement serait une porte
+    // fermee. Le marchand deja connecte, lui, atteint son tableau de bord
+    // depuis l'accueil sans friction.
+    start_url: '/',
     scope: '/',
 
     display: 'standalone',
