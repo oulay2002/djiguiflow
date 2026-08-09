@@ -72,8 +72,43 @@ export async function POST(req: Request) {
       return Response.json({ type, periode, boutiques, plats, total: boutiques.length });
     }
 
+    if (type === 'clients') {
+      const lignes = await appeler(sb, 'rapport_clients', { p_periode: periode });
+      return Response.json({ type, periode, lignes, total: lignes.length });
+    }
+
+    // Le tableau de bord Telegram du gerant repond a huit commandes qui
+    // piochent chacune dans un jeu different. Un seul aller-retour les sert
+    // toutes : la commande est manuelle et rare, la latence importe moins que
+    // la simplicite du cablage.
+    if (type === 'dashboard') {
+      const [jour, semaine, tout, platsJour, platsTout, clients, retards, stocks] =
+        await Promise.all([
+          appeler(sb, 'rapport_activite', { p_periode: 'jour' }),
+          appeler(sb, 'rapport_activite', { p_periode: 'semaine' }),
+          appeler(sb, 'rapport_activite', { p_periode: 'tout' }),
+          appeler(sb, 'rapport_top_plats', { p_periode: 'jour' }),
+          appeler(sb, 'rapport_top_plats', { p_periode: 'tout' }),
+          appeler(sb, 'rapport_clients', { p_periode: 'tout' }),
+          appeler(sb, 'rapport_retards'),
+          appeler<{ niveau: string }>(sb, 'rapport_stocks'),
+        ]);
+
+      return Response.json({
+        type,
+        jour,
+        semaine,
+        tout,
+        plats_jour: platsJour,
+        plats_tout: platsTout,
+        clients,
+        retards,
+        stocks: stocks.filter((p) => p.niveau !== 'ok'),
+      });
+    }
+
     return Response.json(
-      { error: "type doit valoir 'retards', 'stocks' ou 'activite'" },
+      { error: "type doit valoir 'retards', 'stocks', 'activite', 'clients' ou 'dashboard'" },
       { status: 400 },
     );
   } catch (e) {
