@@ -26,18 +26,34 @@ async function ficheDuConnecte(req: Request) {
     .maybeSingle();
   if (possedee) return { sb, boutique: possedee, admin: estAdmin(utilisateur.email) };
 
-  // 2) Admin sans boutique propre → boutique par défaut
+   // 2) Admin sans boutique propre → boutique par défaut, sinon la 1ère
   if (estAdmin(utilisateur.email)) {
+    let def: { id: string } | null = null;
+
     const marchand = await resoudreMarchand(null);
     if (marchand) {
-      const { data: def } = await sb
+      const r1 = await sb
         .from('boutiques')
-        .select('*')
+        .select('id')
         .eq('id', marchand.boutiqueId)
         .maybeSingle();
-      if (def) return { sb, boutique: def, admin: true };
+      def = r1.data;
     }
-  }
+
+    if (!def) {
+      const r2 = await sb
+        .from('boutiques')
+        .select('id')
+        .order('nom')
+        .limit(1)
+        .maybeSingle();
+      def = r2.data;
+    }
+
+    if (def) {
+      const r3 = await sb.from('boutiques').select('*').eq('id', def.id).maybeSingle();
+      if (r3.data) return { sb, boutique: r3.data, admin: true };
+    }
 
   return { sb, erreur: 'Aucune boutique liee a ce compte.', statut: 404 };
 }
