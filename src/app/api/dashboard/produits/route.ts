@@ -54,6 +54,39 @@ export async function POST(req: Request) {
   const stockNum = stock === null || stock === undefined || stock === '' ? null : Number(stock);
   const seuilNum = seuil_alerte === null || seuil_alerte === undefined || seuil_alerte === '' ? null : Number(seuil_alerte);
 
+  // ---- 1. Supabase fait foi.
+  // La vitrine (route menu) et le tableau de bord (GET ci-dessus) lisent tous
+  // deux `produits` : un plat ecrit seulement dans la feuille n'existe pour
+  // personne. L'ordre etait inverse jusqu'ici — la feuille bloquait
+  // l'enregistrement, et l'echec de la copie Supabase n'etait que journalise.
+  const sb = getSupabaseAdmin();
+  if (!sb) {
+    return Response.json({ error: 'Enregistrement impossible, reessayez' }, { status: 503 });
+  }
+
+  const { error: errSupabase } = await sb.from('produits').upsert(
+    {
+      boutique_id: m.boutiqueId,
+      reference,
+      nom: String(nom),
+      categorie: String(categorie || 'Divers'),
+      prix: Number(prix) || 0,
+      description: String(description || ''),
+      disponible: Boolean(disponible),
+      photo_url: String(image || '') || null,
+      stock: stockNum,
+      stock_initial: stockNum,
+      seuil_alerte: seuilNum,
+    },
+    { onConflict: 'boutique_id,reference' },
+  );
+
+  if (errSupabase) {
+    console.error(`Produits — enregistrement Supabase refuse (${m.id}) :`, errSupabase);
+    return Response.json({ error: 'Enregistrement impossible, reessayez' }, { status: 503 });
+  }
+
+  // ---- 2. Miroir feuille, jamais bloquant.
   try {
     const payload: Record<string, string> = {
       id: reference,
@@ -70,32 +103,11 @@ export async function POST(req: Request) {
     const headers = await readHeaders(`${m.sheetMenu}!A1:Z1`, m.sheetId);
     await appendRow(`${m.sheetMenu}!A:Z`, headers.map(h => payload[h] ?? ''), m.sheetId);
   } catch (e) {
-    console.error(`Produits — écriture Sheets impossible (${m.id}) :`, e);
-    return Response.json({ error: 'Enregistrement impossible, réessayez' }, { status: 503 });
+    // Le produit est en base : le marchand le voit, la vitrine le vend.
+    console.error(`Produits — miroir ${m.sheetMenu} impossible (${m.id}) :`, e);
   }
 
-  const sb = getSupabaseAdmin();
-  if (sb) {
-    const { error } = await sb.from('produits').upsert(
-      {
-        boutique_id: m.boutiqueId,
-        reference,
-        nom: String(nom),
-        categorie: String(categorie || 'Divers'),
-        prix: Number(prix) || 0,
-        description: String(description || ''),
-        disponible: Boolean(disponible),
-        photo_url: String(image || '') || null,
-        stock: stockNum,
-        stock_initial: stockNum,
-        seuil_alerte: seuilNum,
-      },
-      { onConflict: 'boutique_id,reference' },
-    );
-    if (error) console.error(`Produits — copie Supabase echouee (${m.id}) :`, error);
-  }
-
-  return Response.json({ ok: true, boutique_id: m.id });
+  return Response.json({ ok: true, boutique_id: m.id, reference });
 }
 
 /** Mise a jour stock / seuil / disponibilite d'un produit existant. */

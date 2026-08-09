@@ -1,5 +1,120 @@
 import { readSheet, readHeaders, appendRow } from '@/lib/googleSheets';
-import { getMarchand } from '@/lib/marchands';
+import { getMarchand, type Marchand } from '@/lib/marchands';
+import { resoudreBoutiqueUuid } from '@/lib/boutiques';
+import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
+
+/**
+ * Prise de commande depuis la boutique en ligne.
+ *
+ * Supabase fait foi. C'est l'inverse de ce que faisait cette route jusqu'ici :
+ * elle ecrivait dans Google Sheets puis esperait que n8n reporte la commande
+ * dans Supabase, en avalant l'erreur si n8n ne repondait pas. Or le tableau de
+ * bord, les statistiques et le suivi client lisent tous Supabase — une
+ * commande restee en feuille etait donc encaissee mais invisible du marchand.
+ *
+ * Desormais : si l'ecriture Supabase echoue, la commande est refusee. Un
+ * client qui voit une erreur et recommence coute moins cher qu'un client qui
+ * croit avoir commande et que personne ne livre.
+ *
+ * La feuille reste ecrite, en miroir et sans pouvoir bloquer : les workflows
+ * n8n la lisent encore.
+ */
+
+type LigneCommande = {
+  produitId: string | null;
+  plat: string;
+  quantite: number;
+  prixUnitaire: number;
+};
+
+type Admin = NonNullable<ReturnType<typeof getSupabaseAdmin>>;
+
+/**
+ * Donne un prix et un nom a chaque ligne du panier.
+ *
+ * Supabase d'abord, la feuille en repli pour ce qui n'y est pas encore : la
+ * table `produits` n'est pas garantie complete pour tous les marchands tant
+ * que la migration n'est pas finie, et un plat introuvable disparaitrait
+ * silencieusement du panier.
+ */
+async function tariferPanier(
+  m: Marchand,
+  panier: unknown,
+  sb: Admin | null,
+  boutiqueUuid: string | null,
+): Promise<LigneCommande[]> {
+  const demandes = (Array.isArray(panier) ? panier : [])
+    .map((l) => ({
+      id: String((l as { id?: unknown })?.id ?? '').trim(),
+      quantite: Math.max(1, Number((l as { quantite?: unknown })?.quantite) || 1),
+    }))
+    .filter((l) => l.id);
+
+  if (!demandes.length) return [];
+
+  const resolues = new Map<string, LigneCommande>();
+
+  if (sb && boutiqueUuid) {
+    const { data, error } = await sb
+      .from('produits')
+      .select('id, nom, prix, reference')
+      .eq('boutique_id', boutiqueUuid);
+
+    if (error) {
+      console.error('Panier — lecture produits Supabase impossible :', error);
+    }
+
+    // La vitrine publie `reference ?? id` comme identifiant public (voir la
+    // route menu). Un marchand dont les produits n'ont pas encore de
+    // reference envoie donc des uuid : accepter les deux cles est ce qui
+    // permet a Rose MonDE de commander, ce que la correspondance par
+    // reference seule ne permettait pas.
+    const parCle = new Map<string, NonNullable<typeof data>[number]>();
+    for (const p of data ?? []) {
+      const ref = String(p.reference ?? '').trim();
+      if (ref) parCle.set(ref, p);
+      parCle.set(String(p.id), p);
+    }
+
+    for (const demande of demandes) {
+      const p = parCle.get(demande.id);
+      if (!p) continue;
+
+      resolues.set(demande.id, {
+        produitId: p.id,
+        plat: String(p.nom ?? ''),
+        quantite: demande.quantite,
+        prixUnitaire: Number(p.prix) || 0,
+      });
+    }
+  }
+
+  const manquants = demandes.filter((d) => !resolues.has(d.id));
+  if (manquants.length) {
+    try {
+      const menu = await readSheet(`${m.sheetMenu}!A:I`, m.sheetId);
+      for (const d of manquants) {
+        const p = menu.find((x) => x.id === d.id);
+        if (!p) continue;
+        resolues.set(d.id, {
+          produitId: null,
+          plat: String(p.nom ?? ''),
+          quantite: d.quantite,
+          // La feuille ecrit les prix en « 2 500 FCFA » : on ne garde que les
+          // chiffres.
+          prixUnitaire: Number(String(p.prix).replace(/\D/g, '')) || 0,
+        });
+      }
+    } catch (e) {
+      console.error(`Panier — repli menu ${m.sheetMenu} impossible :`, e);
+    }
+  }
+
+  // L'ordre du panier du client est conserve.
+  return demandes
+    .map((d) => resolues.get(d.id))
+    .filter((l): l is LigneCommande => Boolean(l));
+}
 
 export async function POST(req: Request, ctx: { params: Promise<{ id: string }> }) {
   const { id } = await ctx.params;
@@ -9,26 +124,88 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
   const body = await req.json();
   const { nom, tel, adresse, instructions, panier } = body;
 
-  // 1. Menu DU MARCHAND
-  const menu = await readSheet(`${m.sheetMenu}!A:I`, m.sheetId);
-  const items = (panier as { id: string; quantite: number }[])
-    .map(l => {
-      const p = menu.find(x => x.id === l.id);
-      if (!p) return null;
-      return {
-        plat: p.nom,
-        quantité: l.quantite,
-        prix_unitaire: Number(String(p.prix).replace(/\D/g, '')) || 0,
-      };
-    })
-    .filter(it => it !== null);
+  const sb = getSupabaseAdmin();
+  const boutiqueUuid = sb ? await resoudreBoutiqueUuid(sb, m) : null;
 
-  if (!items.length) return Response.json({ error: 'Panier vide' }, { status: 400 });
+  const lignes = await tariferPanier(m, panier, sb, boutiqueUuid);
+  if (!lignes.length) return Response.json({ error: 'Panier vide' }, { status: 400 });
 
-  const total = items.reduce((s, it) => s + it.quantité * it.prix_unitaire, 0);
+  const total = lignes.reduce((s, l) => s + l.quantite * l.prixUnitaire, 0);
+
   let phone = String(tel || '').replace(/\D/g, '');
   if (!phone.startsWith('225')) phone = '225' + phone;
   const order_id = `APP-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
+
+  // ---- 1. Supabase : c'est ici que la commande existe ou n'existe pas.
+  if (sb) {
+    if (!boutiqueUuid) {
+      console.error(`Commande ${order_id} — boutique ${m.id} absente de Supabase`);
+      return Response.json(
+        { error: 'Cette boutique ne peut pas recevoir de commande pour le moment' },
+        { status: 503 },
+      );
+    }
+
+    const { data: creee, error } = await sb
+      .from('commandes')
+      .insert({
+        boutique_id: boutiqueUuid,
+        reference: order_id,
+        client_nom: String(nom || 'Client'),
+        client_telephone: phone,
+        client_adresse: String(adresse || ''),
+        instructions: String(instructions || ''),
+        chat_id: phone,
+        total,
+        canal: 'app',
+        statut: 'en_attente',
+      } as never)
+      .select('id')
+      .single();
+
+    if (error || !creee) {
+      console.error(`Commande ${order_id} — insertion Supabase refusee :`, error);
+      return Response.json(
+        { error: 'Commande non enregistree, merci de reessayer' },
+        { status: 503 },
+      );
+    }
+
+    const { error: errArticles } = await sb.from('commande_items').insert(
+      lignes.map((l) => ({
+        commande_id: creee.id,
+        produit_id: l.produitId,
+        nom_produit: l.plat,
+        quantite: l.quantite,
+        prix_unitaire: l.prixUnitaire,
+      })) as never,
+    );
+
+    if (errArticles) {
+      // Une commande sans article afficherait un total sans contenu et
+      // enverrait le livreur sans savoir quoi livrer. On la retire plutot que
+      // de laisser cette incoherence en base.
+      console.error(`Commande ${order_id} — articles refuses, annulation :`, errArticles);
+      await sb.from('commandes').delete().eq('id', creee.id);
+      return Response.json(
+        { error: 'Commande non enregistree, merci de reessayer' },
+        { status: 503 },
+      );
+    }
+  } else {
+    // Environnement sans cle service_role (preview, local). On n'echoue pas :
+    // c'est une configuration absente, pas une ecriture qui rate.
+    console.warn(
+      `Commande ${order_id} — Supabase non configure, ecriture en feuille seule`,
+    );
+  }
+
+  // ---- 2. Miroir Google Sheets, jamais bloquant.
+  const articlesFeuille = lignes.map((l) => ({
+    plat: l.plat,
+    quantité: l.quantite,
+    prix_unitaire: l.prixUnitaire,
+  }));
 
   const payload: Record<string, string> = {
     chat_id: phone,
@@ -36,7 +213,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     phone,
     address: String(adresse || ''),
     instruction: String(instructions || ''),
-    items: JSON.stringify(items),
+    items: JSON.stringify(articlesFeuille),
     total_price: String(total),
     status: 'validee',
     order_id,
@@ -49,11 +226,16 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     canal: 'app',
   };
 
-  // 2. Écriture dans la feuille DU MARCHAND
-  const headers = await readHeaders(`${m.sheetCommandes}!A1:Z1`, m.sheetId);
-  await appendRow(`${m.sheetCommandes}!A:Z`, headers.map(h => payload[h] ?? ''), m.sheetId);
+  try {
+    const headers = await readHeaders(`${m.sheetCommandes}!A1:Z1`, m.sheetId);
+    await appendRow(`${m.sheetCommandes}!A:Z`, headers.map((h) => payload[h] ?? ''), m.sheetId);
+  } catch (e) {
+    // La commande est deja en base : le miroir peut echouer sans consequence
+    // pour le marchand, qui la voit dans son tableau de bord.
+    console.error(`Commande ${order_id} — miroir ${m.sheetCommandes} impossible :`, e);
+  }
 
-  // 3. Webhook générique (avec boutique_id pour n8n)
+  // ---- 3. Webhook generique (avec boutique_id pour n8n)
   const n8nUrl = process.env.N8N_COMMANDE_APP_URL;
   if (n8nUrl) {
     try {
@@ -67,17 +249,17 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
           customer_name: String(nom || 'Client'),
           phone,
           address: String(adresse || ''),
-          items: JSON.stringify(items),
+          items: JSON.stringify(articlesFeuille),
           total_price: String(total),
           sheetCommandes: m.sheetCommandes,
         }),
       });
     } catch {
-      // n8n injoignable : la commande reste en feuille, on ne casse rien
+      // n8n injoignable : la commande est en base, le marchand la voit.
     }
   }
 
-  // Demande de confirmation au client (anti-retours)
+  // ---- 4. Demande de confirmation au client (anti-retours)
   const confUrl = process.env.N8N_CONFIRMATION_URL;
   if (confUrl) {
     try {

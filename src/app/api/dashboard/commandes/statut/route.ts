@@ -1,6 +1,89 @@
 import { readSheet, readHeaders, updateCells } from '@/lib/googleSheets';
 import { exigerAccesMarchand } from '@/lib/dashboardAuth';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
+import type { Marchand } from '@/lib/marchands';
+
+/**
+ * Avancement d'une commande par le marchand.
+ *
+ * Supabase fait foi. Cette route lisait auparavant la feuille entiere avant
+ * toute chose et renvoyait 503 des que Google Sheets refusait — un quota
+ * sature empechait donc le marchand de passer une commande en « livree »
+ * alors que son tableau de bord, qui lit Supabase, fonctionnait parfaitement.
+ * La feuille est desormais mise a jour apres coup, en miroir, sans pouvoir
+ * bloquer l'action.
+ */
+
+type Admin = NonNullable<ReturnType<typeof getSupabaseAdmin>>;
+
+const STATUTS_LIVRAISON: Record<string, string> = {
+  acceptee: 'acceptée',
+  route: 'en route',
+  livree: 'livrée',
+};
+
+const STATUTS_METIER: Record<string, string> = {
+  acceptee: 'en_preparation',
+  route: 'en_livraison',
+  livree: 'livree',
+};
+
+/** A, B, … Z, AA, AB… */
+function lettreColonne(idx: number): string {
+  let n = idx + 1;
+  let s = '';
+  while (n > 0) {
+    const r = (n - 1) % 26;
+    s = String.fromCharCode(65 + r) + s;
+    n = Math.floor((n - 1) / 26);
+  }
+  return s;
+}
+
+/**
+ * Reporte le statut dans la feuille du marchand.
+ *
+ * Ne leve jamais : les workflows n8n lisent encore la feuille, mais le
+ * marchand, lui, lit Supabase. Un echec ici ne doit pas lui refuser l'action.
+ */
+async function refleterDansFeuille(
+  m: Marchand,
+  orderId: string,
+  statutLivraison: string,
+  action: string,
+  maintenant: string,
+): Promise<'ok' | 'absente' | 'echec'> {
+  try {
+    const entetes = await readHeaders(`${m.sheetCommandes}!A1:Z1`, m.sheetId);
+    const lignes = await readSheet(`${m.sheetCommandes}!A:Z`, m.sheetId);
+
+    const i = lignes.findIndex((r) => String(r.order_id || '').trim() === orderId);
+    if (i === -1) return 'absente';
+
+    const numeroLigne = i + 2; // +1 en-tete, +1 index 1-based
+    const colonne = (nom: string) => {
+      const idx = entetes.indexOf(nom);
+      return idx >= 0 ? lettreColonne(idx) : null;
+    };
+
+    const cStatut = colonne('statut_livraison');
+    if (cStatut) {
+      await updateCells(`${m.sheetCommandes}!${cStatut}${numeroLigne}`, [[statutLivraison]], m.sheetId);
+    }
+    if (action === 'acceptee') {
+      const c = colonne('heure_prise_en_charge');
+      if (c) await updateCells(`${m.sheetCommandes}!${c}${numeroLigne}`, [[maintenant]], m.sheetId);
+    }
+    if (action === 'livree') {
+      const c = colonne('heure_livraison');
+      if (c) await updateCells(`${m.sheetCommandes}!${c}${numeroLigne}`, [[maintenant]], m.sheetId);
+    }
+    return 'ok';
+  } catch (e) {
+    console.error(`Statut ${orderId} — miroir ${m.sheetCommandes} impossible :`, e);
+    return 'echec';
+  }
+}
 
 export async function POST(req: Request) {
   const { order_id, action, boutique_id } = await req.json();
@@ -10,92 +93,60 @@ export async function POST(req: Request) {
   if (!acces.ok) return Response.json({ error: acces.message }, { status: acces.statut });
   const m = acces.marchand;
 
-  // A, B, … Z, AA, AB… : String.fromCharCode(65 + idx) produisait « [ » puis
-  // « \ » dès la 27e colonne et écrivait dans une plage invalide.
-  const lettreColonne = (idx: number) => {
-    let n = idx + 1;
-    let s = '';
-    while (n > 0) {
-      const r = (n - 1) % 26;
-      s = String.fromCharCode(65 + r) + s;
-      n = Math.floor((n - 1) / 26);
-    }
-    return s;
-  };
+  const reference = String(order_id).trim();
+  const statutLivraison = STATUTS_LIVRAISON[action] || action;
+  const statutMetier = STATUTS_METIER[action];
+  const maintenant = new Date().toISOString();
 
-  let headers: string[];
-  let rows: Record<string, string>[];
-  try {
-    headers = await readHeaders(`${m.sheetCommandes}!A1:Z1`, m.sheetId);
-    rows = await readSheet(`${m.sheetCommandes}!A:Z`, m.sheetId);
-  } catch (e) {
-    console.error(`Statut — lecture ${m.sheetCommandes} impossible :`, e);
+  const sb: Admin | null = getSupabaseAdmin();
+  if (!sb) return Response.json({ error: 'Service indisponible' }, { status: 503 });
+
+  // ---- 1. Supabase : la commande avance ici, ou nulle part.
+  const { data: commande, error: errLecture } = await sb
+    .from('commandes')
+    .select('id, client_nom, client_telephone, client_adresse, chat_id')
+    .eq('boutique_id', m.boutiqueId)
+    .eq('reference', reference)
+    .maybeSingle();
+
+  if (errLecture) {
+    console.error(`Statut ${reference} — lecture Supabase impossible :`, errLecture);
     return Response.json({ error: 'Base temporairement indisponible' }, { status: 503 });
   }
+  if (!commande) return Response.json({ error: 'Commande introuvable' }, { status: 404 });
 
-  const i = rows.findIndex(r => String(r.order_id || '').trim() === String(order_id).trim());
-  if (i === -1) return Response.json({ error: 'Commande introuvable' }, { status: 404 });
+  const { error: errEcriture } = await sb
+    .from('commandes')
+    .update({
+      ...(statutMetier ? { statut: statutMetier } : {}),
+      statut_livraison: statutLivraison,
+      ...(action === 'acceptee' ? { heure_prise_en_charge: maintenant } : {}),
+      ...(action === 'livree' ? { heure_livraison: maintenant } : {}),
+    } as never)
+    .eq('id', commande.id);
 
-  const row = rows[i];
-  const rowNum = i + 2;
-  const col = (name: string) => {
-    const idx = headers.indexOf(name);
-    return idx >= 0 ? lettreColonne(idx) : null;
-  };
-
-  const statuts: Record<string, string> = { acceptee: 'acceptée', route: 'en route', livree: 'livrée' };
-  const statut = statuts[action] || action;
-
-  try {
-    const cStatut = col('statut_livraison');
-    if (cStatut) await updateCells(`${m.sheetCommandes}!${cStatut}${rowNum}`, [[statut]], m.sheetId);
-
-    const maintenant = new Date().toISOString();
-    if (action === 'acceptee') {
-      const c = col('heure_prise_en_charge');
-      if (c) await updateCells(`${m.sheetCommandes}!${c}${rowNum}`, [[maintenant]], m.sheetId);
-    }
-    if (action === 'livree') {
-      const c = col('heure_livraison');
-      if (c) await updateCells(`${m.sheetCommandes}!${c}${rowNum}`, [[maintenant]], m.sheetId);
-    }
-  } catch (e) {
-    // Écriture refusée (429 le plus souvent) : on le dit franchement
-    // plutôt que de renvoyer ok:true sur une commande non mise à jour.
-    console.error(`Statut — écriture ${m.sheetCommandes} impossible :`, e);
-    return Response.json({ error: 'Mise à jour impossible, réessayez' }, { status: 503 });
+  if (errEcriture) {
+    console.error(`Statut ${reference} — mise a jour refusee :`, errEcriture);
+    return Response.json({ error: 'Mise a jour impossible, reessayez' }, { status: 503 });
   }
 
-  // Copie Supabase, non bloquante : la feuille fait foi pendant la double
-  // ecriture. On y reporte aussi le statut metier, que le dashboard lit.
-  const sb = getSupabaseAdmin();
-  if (sb) {
-    const statutMetier =
-      action === 'livree' ? 'livree' : action === 'route' ? 'en_livraison' : 'en_preparation';
-    const maintenant = new Date().toISOString();
-    const { error } = await sb
-      .from('commandes')
-      .update({
-        statut: statutMetier,
-        statut_livraison: statut,
-        ...(action === 'acceptee' ? { heure_prise_en_charge: maintenant } : {}),
-        ...(action === 'livree' ? { heure_livraison: maintenant } : {}),
-      })
-      .eq('boutique_id', m.boutiqueId)
-      .eq('reference', String(order_id).trim());
-    if (error) console.error(`Statut — copie Supabase échouée (${order_id}) :`, error);
-  }
+  // ---- 2. Miroir feuille, jamais bloquant.
+  const miroir = await refleterDansFeuille(m, reference, statutLivraison, action, maintenant);
 
-  // v9.1 — notifier le client sur WhatsApp via n8n (sans jamais casser le flux)
+  // ---- 3. Notification WhatsApp au client, via n8n.
+  // Les coordonnees viennent de Supabase et non plus de la ligne de feuille :
+  // la notification part meme quand le miroir a echoue.
   let notif = 'none';
   const urlNotif = process.env.N8N_NOTIF_CLIENT_URL;
-  const phone = String(row.phone || row.chat_id || '');
+  const phone = String(commande.client_telephone || commande.chat_id || '');
+
   if (urlNotif && phone) {
-    const nom = row.customer_name || 'cher client';
+    const nom = commande.client_nom || 'cher client';
+    const adresse = commande.client_adresse || 'votre adresse';
     const messages: Record<string, string> = {
-      acceptee: `✅ ${nom}, votre commande ${order_id} est acceptée par le restaurant. Nous cherchons un livreur pour vous. 🍽️`,
-      route: `🛵 ${nom}, bonne nouvelle : votre commande ${order_id} est en route vers ${row.address || 'votre adresse'}.`,
-      livree: `🎉 ${nom}, votre commande ${order_id} a été livrée ! Merci pour votre confiance. Répondez par un chiffre de 1 à 5 pour noter le service. ⭐`,
+      acceptee: `✅ ${nom}, votre commande ${reference} est acceptée par le restaurant. Nous cherchons un livreur pour vous. 🍽️`,
+      route: `🛵 ${nom}, bonne nouvelle : votre commande ${reference} est en route vers ${adresse}.`,
+      livree: `🎉 ${nom}, votre commande ${reference} a été livrée ! Merci pour votre confiance. Répondez par un chiffre de 1 à 5 pour noter le service. ⭐`,
     };
     try {
       await fetch(urlNotif, {
@@ -107,13 +158,15 @@ export async function POST(req: Request) {
         body: JSON.stringify({
           boutique_id: m.id,
           phone,
-          message: messages[action] || `Votre commande ${order_id} avance bien.`,
-          order_id,
+          message: messages[action] || `Votre commande ${reference} avance bien.`,
+          order_id: reference,
         }),
       });
       notif = 'sent';
-    } catch { notif = 'failed'; }
+    } catch {
+      notif = 'failed';
+    }
   }
 
-  return Response.json({ ok: true, boutique_id: m.id, statut, notif });
+  return Response.json({ ok: true, boutique_id: m.id, statut: statutLivraison, miroir, notif });
 }
