@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="DjiguiFlow">
+
+  <g transform="translate(-16 0)">
+    <defs>
+      <clipPath id="di-a-haut"><rect x="0" y="0" width="512" height="240"/></clipPath>
+      <clipPath id="di-a-bas"><rect x="0" y="272" width="512" height="240"/></clipPath>
+    </defs>
+    <g fill-rule="evenodd">
+      <g clip-path="url(#di-a-haut)"><path d="M140 116 H268 C346 116 404 178 404 256 C404 334 346 396 268 396 H140 Z M204 176 V336 H268 C312 336 340 300 340 256 C340 212 312 176 268 176 Z" fill="#f8f7f3"/></g>
+      <g clip-path="url(#di-a-bas)"><path d="M140 116 H268 C346 116 404 178 404 256 C404 334 346 396 268 396 H140 Z M204 176 V336 H268 C312 336 340 300 340 256 C340 212 312 176 268 176 Z" fill="#c4123f"/></g>
+    </g>
+  </g>
+</svg>

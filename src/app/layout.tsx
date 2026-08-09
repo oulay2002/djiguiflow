@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Bricolage_Grotesque, IBM_Plex_Mono, Instrument_Sans } from "next/font/google";
 import "./globals.css";
 import {
@@ -27,6 +27,18 @@ const plexMono = IBM_Plex_Mono({
   weight: ["400", "500", "600"],
   display: "swap",
 });
+
+/**
+ * Teinte la barre systeme du navigateur mobile en indigo.
+ *
+ * Le manifeste porte deja `theme_color`, mais il ne s'applique qu'une fois
+ * l'application installee. Ici, la couleur vaut des la premiere visite —
+ * c'est-a-dire pour la quasi-totalite des marchands, qui arrivent par un
+ * lien WhatsApp sans jamais installer quoi que ce soit.
+ */
+export const viewport: Viewport = {
+  themeColor: "#131c3d",
+};
 
 export const metadata: Metadata = {
   // Rend absolues toutes les URL relatives des metadonnees ci-dessous et de
