@@ -44,11 +44,23 @@ export async function POST(req: Request) {
     return Response.json({ error: 'destinataire requis' }, { status: 400 });
   }
 
+  // Le clavier arrive parfois serialise : n8n compose souvent son corps en
+  // texte, et un JSON.stringify de trop ne doit pas couter les boutons.
+  let clavier: unknown = corps.reply_markup ?? corps.clavier ?? undefined;
+  if (typeof clavier === 'string' && clavier.trim()) {
+    try {
+      clavier = JSON.parse(clavier);
+    } catch {
+      return Response.json({ error: 'reply_markup illisible' }, { status: 400 });
+    }
+  }
+
   const resultat = await envoyerMessage({
     boutique,
     canal: canalBrut as Canal,
     destinataire,
     message,
+    clavier,
   });
 
   if (!resultat.ok) {

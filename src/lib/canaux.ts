@@ -111,16 +111,27 @@ async function envoyerTelegram(
   jeton: string,
   destinataire: string,
   message: string,
+  clavier?: unknown,
 ): Promise<{ ok: boolean; raison?: string; statut: number }> {
   // Un groupe de livreurs porte un identifiant negatif : pas de
   // normalisation telephonique ici, c'est un chat_id, pas un numero.
   const chatId = String(destinataire ?? '').trim();
   if (!chatId) return { ok: false, raison: 'destinataire vide', statut: 400 };
 
+  // Le clavier inline n'est pas un ornement : c'est par lui que le livreur
+  // repond « accepte », « parti », « livre ». Sans lui, le suivi de livraison
+  // n'a plus de moyen d'entree.
+  const corps: Record<string, unknown> = {
+    chat_id: chatId,
+    text: message,
+    parse_mode: 'HTML',
+  };
+  if (clavier && typeof clavier === 'object') corps.reply_markup = clavier;
+
   const res = await fetch(`https://api.telegram.org/bot${jeton}/sendMessage`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ chat_id: chatId, text: message, parse_mode: 'HTML' }),
+    body: JSON.stringify(corps),
   });
 
   if (!res.ok) {
@@ -135,8 +146,10 @@ export async function envoyerMessage(params: {
   canal: Canal;
   destinataire: string;
   message: string;
+  /** Clavier inline Telegram, ignore sur WhatsApp. */
+  clavier?: unknown;
 }): Promise<ResultatEnvoi> {
-  const { boutique, canal, destinataire, message } = params;
+  const { boutique, canal, destinataire, message, clavier } = params;
 
   if (!message?.trim()) {
     return { ok: false, canal, raison: 'message vide', statut: 400 };
@@ -158,7 +171,7 @@ export async function envoyerMessage(params: {
     const envoi =
       canal === 'whatsapp'
         ? await envoyerWhatsApp(jeton.jeton, destinataire, message)
-        : await envoyerTelegram(jeton.jeton, destinataire, message);
+        : await envoyerTelegram(jeton.jeton, destinataire, message, clavier);
 
     if (!envoi.ok) {
       console.error(`Canaux — envoi ${canal} refuse (${boutique}) :`, envoi.raison);
