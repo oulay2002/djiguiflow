@@ -4,11 +4,21 @@ import { ErreurProvisioning, provisionnerMarchand } from '@/lib/provisioning';
 
 export const dynamic = 'force-dynamic';
 
-// Alimente le sélecteur de boutique du dashboard.
-// N'expose que le public : ni sheetId, ni groupeLivreurs, ni whatsapp.
+// Alimente la vitrine publique et le sélecteur de boutique du dashboard.
+// La projection ci-dessous n'est pas cosmétique : cette route est ouverte à
+// tous (CHEMINS_API_PUBLICS), et `Marchand` porte l'ID du classeur Google, le
+// groupe Telegram des livreurs et le numéro WhatsApp du marchand. Les
+// automatisations qui ont besoin de ces champs passent par
+// GET /api/internal/boutiques, protégé par SYNC_SECRET.
 export async function GET() {
   try {
-    return Response.json({ marchands: await listerMarchands() });
+    const marchands = (await listerMarchands()).map(m => ({
+      id: m.id,
+      nom: m.nom,
+      secteur: m.secteur,
+      emoji: m.emoji,
+    }));
+    return Response.json({ marchands });
   } catch (e) {
     console.error('Registre marchands — lecture impossible :', e);
     // Liste vide : le dashboard retombe sur le marchand par défaut

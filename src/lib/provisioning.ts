@@ -175,6 +175,11 @@ export async function provisionnerMarchand(d: DemandeProvisioning): Promise<Resu
       zone: d.zone?.trim() || null,
       telephone: d.telephone?.trim() || null,
       emoji: d.emoji?.trim() || '🏪',
+      // Les onglets viennent d'etre crees dans CE classeur : la fiche doit le
+      // dire. n8n lit `sheet_document_id` sur la fiche pour construire chacun
+      // de ses appels Google Sheets — le laisser vide donne un documentId vide,
+      // donc un 404 sur le premier message recu par le marchand.
+      sheet_document_id: process.env.SHEET_ID ?? null,
       sheet_commandes: sheetCommandes,
       sheet_menu: sheetMenu,
       groupe_livreurs: d.groupeLivreurs?.trim() || null,

@@ -19,6 +19,7 @@ export type Database = {
     Tables: {
       boutiques: {
         Row: {
+          actif: boolean
           categorie: string | null
           description: string | null
           emoji: string | null
@@ -27,13 +28,20 @@ export type Database = {
           logo_url: string | null
           nom: string | null
           sheet_commandes: string | null
+          sheet_document_id: string | null
           sheet_menu: string | null
+          sheet_notes: string | null
           slug: string | null
+          telegram_marchand: string | null
+          telegram_secret_id: string | null
           telephone: string | null
           user_id: string
+          wasender_secret_id: string | null
+          wasender_session_hash: string | null
           zone: string | null
         }
         Insert: {
+          actif?: boolean
           categorie?: string | null
           description?: string | null
           emoji?: string | null
@@ -42,13 +50,20 @@ export type Database = {
           logo_url?: string | null
           nom?: string | null
           sheet_commandes?: string | null
+          sheet_document_id?: string | null
           sheet_menu?: string | null
+          sheet_notes?: string | null
           slug?: string | null
+          telegram_marchand?: string | null
+          telegram_secret_id?: string | null
           telephone?: string | null
           user_id?: string
+          wasender_secret_id?: string | null
+          wasender_session_hash?: string | null
           zone?: string | null
         }
         Update: {
+          actif?: boolean
           categorie?: string | null
           description?: string | null
           emoji?: string | null
@@ -57,10 +72,16 @@ export type Database = {
           logo_url?: string | null
           nom?: string | null
           sheet_commandes?: string | null
+          sheet_document_id?: string | null
           sheet_menu?: string | null
+          sheet_notes?: string | null
           slug?: string | null
+          telegram_marchand?: string | null
+          telegram_secret_id?: string | null
           telephone?: string | null
           user_id?: string
+          wasender_secret_id?: string | null
+          wasender_session_hash?: string | null
           zone?: string | null
         }
         Relationships: []
