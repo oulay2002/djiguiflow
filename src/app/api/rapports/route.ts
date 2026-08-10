@@ -47,19 +47,34 @@ export async function POST(req: Request) {
   const type = String(corps.type ?? '').trim();
   const periode: Periode = corps.periode === 'semaine' ? 'semaine' : 'jour';
 
+  /**
+   * Restriction a une boutique.
+   *
+   * Les fonctions de rapport calculent sur toute la plateforme et marquent
+   * chaque ligne de son `slug` : sans filtre, le tableau de bord Telegram d'un
+   * marchand lui montrait le chiffre d'affaires, les meilleurs clients et les
+   * telephones de tous les autres. Les rapports globaux (resume quotidien,
+   * hebdo) continuent d'appeler sans `boutique` et voient tout.
+   */
+  const boutique = String(corps.boutique ?? corps.slug ?? '').trim();
+  const restreindre = <T>(lignes: T[]): T[] =>
+    boutique
+      ? lignes.filter((l) => String((l as { slug?: unknown }).slug ?? '').trim() === boutique)
+      : lignes;
+
   const sb = getSupabaseAdmin();
   if (!sb) return Response.json({ error: 'Service indisponible' }, { status: 503 });
 
   try {
     if (type === 'retards') {
-      const lignes = await appeler(sb, 'rapport_retards');
+      const lignes = restreindre(await appeler(sb, 'rapport_retards'));
       return Response.json({ type, lignes, total: lignes.length });
     }
 
     if (type === 'stocks') {
       // Seuls les produits sous seuil interessent une alerte : renvoyer le
       // catalogue entier obligerait n8n a le filtrer pour rien.
-      const tout = await appeler<{ niveau: string }>(sb, 'rapport_stocks');
+      const tout = restreindre(await appeler<{ niveau: string }>(sb, 'rapport_stocks'));
       const lignes = tout.filter((p) => p.niveau !== 'ok');
       return Response.json({ type, lignes, total: lignes.length });
     }
@@ -69,11 +84,12 @@ export async function POST(req: Request) {
         appeler(sb, 'rapport_activite', { p_periode: periode }),
         appeler(sb, 'rapport_top_plats', { p_periode: periode }),
       ]);
-      return Response.json({ type, periode, boutiques, plats, total: boutiques.length });
+      const vues = restreindre(boutiques);
+      return Response.json({ type, periode, boutiques: vues, plats: restreindre(plats), total: vues.length });
     }
 
     if (type === 'clients') {
-      const lignes = await appeler(sb, 'rapport_clients', { p_periode: periode });
+      const lignes = restreindre(await appeler(sb, 'rapport_clients', { p_periode: periode }));
       return Response.json({ type, periode, lignes, total: lignes.length });
     }
 
@@ -96,14 +112,15 @@ export async function POST(req: Request) {
 
       return Response.json({
         type,
-        jour,
-        semaine,
-        tout,
-        plats_jour: platsJour,
-        plats_tout: platsTout,
-        clients,
-        retards,
-        stocks: stocks.filter((p) => p.niveau !== 'ok'),
+        boutique: boutique || null,
+        jour: restreindre(jour),
+        semaine: restreindre(semaine),
+        tout: restreindre(tout),
+        plats_jour: restreindre(platsJour),
+        plats_tout: restreindre(platsTout),
+        clients: restreindre(clients),
+        retards: restreindre(retards),
+        stocks: restreindre(stocks).filter((p) => p.niveau !== 'ok'),
       });
     }
 
