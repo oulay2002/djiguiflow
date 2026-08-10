@@ -104,9 +104,19 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: 'Secret webhook requis' }, { status: 401 });
   }
 
-  // Les empreintes ne ressortent jamais : n8n n'a aucune raison de les connaitre.
-  const publique = { ...fiche };
-  delete publique.webhook_secret_hash;
-  delete publique.telegram_webhook_secret_hash;
+  // n8n conserve ses donnees d'execution : tout ce qui touche aux secrets
+  // resterait lisible dans ses journaux longtemps apres l'appel. Il n'a besoin
+  // que de l'identite du marchand et de ses reglages — pas des empreintes, pas
+  // des pointeurs de coffre.
+  const publique: Record<string, unknown> = { ...fiche };
+  for (const cle of [
+    'webhook_secret_hash',
+    'telegram_webhook_secret_hash',
+    'wasender_session_hash',
+    'wasender_secret_id',
+    'telegram_secret_id',
+  ]) {
+    delete publique[cle];
+  }
   return NextResponse.json(publique);
 }
