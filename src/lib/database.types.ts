@@ -34,6 +34,7 @@ export type Database = {
           slug: string | null
           telegram_marchand: string | null
           telegram_secret_id: string | null
+          telegram_webhook_secret_hash: string | null
           telephone: string | null
           user_id: string
           wasender_secret_id: string | null
@@ -57,6 +58,7 @@ export type Database = {
           slug?: string | null
           telegram_marchand?: string | null
           telegram_secret_id?: string | null
+          telegram_webhook_secret_hash?: string | null
           telephone?: string | null
           user_id?: string
           wasender_secret_id?: string | null
@@ -80,6 +82,7 @@ export type Database = {
           slug?: string | null
           telegram_marchand?: string | null
           telegram_secret_id?: string | null
+          telegram_webhook_secret_hash?: string | null
           telephone?: string | null
           user_id?: string
           wasender_secret_id?: string | null

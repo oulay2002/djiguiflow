@@ -69,14 +69,44 @@ export async function GET(req: Request) {
 
   if (!data) return NextResponse.json({ error: 'Boutique introuvable' }, { status: 404 });
 
-  const fiche = data as { webhook_secret_hash?: string | null };
-  if (!secretWebhookValide(req.headers.get('x-webhook-secret'), fiche.webhook_secret_hash)) {
-    console.warn(`Fiche — secret webhook invalide pour « ${slug} »`);
-    return NextResponse.json({ error: 'Secret webhook invalide' }, { status: 401 });
+  const fiche = data as {
+    webhook_secret_hash?: string | null;
+    telegram_webhook_secret_hash?: string | null;
+  };
+
+  // Chaque canal a son secret et son en-tete : wasender signe avec le sien,
+  // Telegram renvoie le `secret_token` pose au setWebhook. On verifie celui du
+  // canal dont l'appel provient, pas les deux.
+  const canaux = [
+    { entete: 'x-webhook-secret', empreinte: fiche.webhook_secret_hash },
+    {
+      entete: 'x-telegram-bot-api-secret-token',
+      empreinte: fiche.telegram_webhook_secret_hash,
+    },
+  ] as const;
+
+  let secretPresente = false;
+  for (const { entete, empreinte } of canaux) {
+    const recu = req.headers.get(entete);
+    if (recu === null) continue;
+    secretPresente = true;
+    if (!secretWebhookValide(recu, empreinte)) {
+      console.warn(`Fiche — secret ${entete} invalide pour « ${slug} »`);
+      return NextResponse.json({ error: 'Secret webhook invalide' }, { status: 401 });
+    }
   }
 
-  // L'empreinte ne ressort jamais : n8n n'a aucune raison de la connaitre.
+  // Un marchand qui a au moins un secret pose ne doit pas pouvoir etre lu en
+  // omettant simplement l'en-tete : l'absence totale de preuve vaut refus.
+  const aUnSecret = canaux.some(({ empreinte }) => String(empreinte ?? '').trim());
+  if (aUnSecret && !secretPresente) {
+    console.warn(`Fiche — aucun secret presente pour « ${slug} »`);
+    return NextResponse.json({ error: 'Secret webhook requis' }, { status: 401 });
+  }
+
+  // Les empreintes ne ressortent jamais : n8n n'a aucune raison de les connaitre.
   const publique = { ...fiche };
   delete publique.webhook_secret_hash;
+  delete publique.telegram_webhook_secret_hash;
   return NextResponse.json(publique);
 }
