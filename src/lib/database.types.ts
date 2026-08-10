@@ -38,6 +38,7 @@ export type Database = {
           user_id: string
           wasender_secret_id: string | null
           wasender_session_hash: string | null
+          webhook_secret_hash: string | null
           zone: string | null
         }
         Insert: {
@@ -60,6 +61,7 @@ export type Database = {
           user_id?: string
           wasender_secret_id?: string | null
           wasender_session_hash?: string | null
+          webhook_secret_hash?: string | null
           zone?: string | null
         }
         Update: {
@@ -82,6 +84,7 @@ export type Database = {
           user_id?: string
           wasender_secret_id?: string | null
           wasender_session_hash?: string | null
+          webhook_secret_hash?: string | null
           zone?: string | null
         }
         Relationships: []
