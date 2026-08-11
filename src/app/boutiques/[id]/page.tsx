@@ -46,13 +46,23 @@ type ProduitRow = {
  * Les fonctions `vitrine_*` viennent d'etre ajoutees en base et n'existent pas
  * encore dans les types generes. On les appelle a travers ce passe-plat plutot
  * que de regenerer tout le schema.
+ *
+ * `rpc()` rend un PostgrestBuilder, qui n'implemente que `then` : lui enchainer
+ * un `.catch` leve un TypeError avant meme la requete. D'ou le `try`, qui
+ * couvre aussi la coupure reseau.
  */
-function appelerVitrine<T>(nom: string, ref: string): Promise<{ data: T[] | null }> {
-  const rpc = supabase.rpc as unknown as (
-    n: string,
-    args: Record<string, string>,
-  ) => Promise<{ data: T[] | null }>;
-  return rpc(nom, { p_ref: ref }).catch(() => ({ data: null }));
+async function appelerVitrine<T>(nom: string, ref: string): Promise<T[]> {
+  try {
+    const { data, error } = await (supabase.rpc as unknown as (
+      n: string,
+      args: Record<string, string>,
+    ) => PromiseLike<{ data: T[] | null; error: unknown }>)(nom, { p_ref: ref });
+    if (error) throw error;
+    return data ?? [];
+  } catch (e) {
+    console.error(`Vitrine — ${nom}(${ref})`, e);
+    return [];
+  }
 }
 
 /**
@@ -157,7 +167,7 @@ export default function Page() {
           appelerVitrine<FicheRow>('vitrine_boutique', slug),
           appelerVitrine<ProduitRow>('vitrine_produits', slug),
         ]);
-        const b = fiche.data?.[0];
+        const b = fiche[0];
         if (annule || !b) return;
 
         setHeader({
@@ -168,7 +178,7 @@ export default function Page() {
         setZone(String(b.zone ?? ''));
         setTelBoutique(String(b.telephone ?? ''));
 
-        setProduits((catalogue.data ?? []).map((p) => ({
+        setProduits(catalogue.map((p) => ({
           id: String(p.id),
           nom: String(p.nom ?? 'Produit'),
           categorie: String(p.categorie ?? ''),

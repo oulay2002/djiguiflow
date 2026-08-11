@@ -36,12 +36,6 @@ type VitrineRow = {
   commandes_livrees: number | null;
 };
 
-/**
- * `vitrine_boutiques()` vient d'etre ajoutee en base et n'existe pas encore
- * dans les types generes. On la declare ici plutot que de regenerer le schema.
- */
-type AppelVitrine = () => Promise<{ data: VitrineRow[] | null; error: unknown }>;
-
 type Boutique = {
   id: string;
   lien: string;
@@ -88,19 +82,25 @@ export default function VitrinePage() {
       // Une seule porte, et elle ne depend pas du role du visiteur : lire
       // `boutiques` directement ne rendait que ses propres enseignes des qu'on
       // etait connecte, et la place de marche se vidait.
-      const appelerVitrine = (() =>
-        (supabase.rpc as unknown as (nom: string) => ReturnType<AppelVitrine>)(
-          'vitrine_boutiques',
-        )) as AppelVitrine;
-
-      const { data, error } = await appelerVitrine().catch(() => ({
-        data: null,
-        error: true,
-      }));
+      //
+      // `rpc()` rend un PostgrestBuilder, qui n'implemente que `then` : lui
+      // enchainer un `.catch` leve un TypeError avant meme la requete, et
+      // l'ecran restait sur son squelette pour toujours. On attend donc dans
+      // un `try`, seule forme qui couvre aussi une coupure reseau.
+      let data: VitrineRow[] | null = null;
+      try {
+        const reponse = await (supabase.rpc as unknown as (
+          nom: string,
+        ) => PromiseLike<{ data: VitrineRow[] | null; error: unknown }>)('vitrine_boutiques');
+        if (reponse.error) throw reponse.error;
+        data = reponse.data;
+      } catch (e) {
+        console.error('Vitrine — chargement des boutiques', e);
+      }
 
       if (!vivant) return;
 
-      if (error || !data) {
+      if (!data) {
         setErreur("Les boutiques n'ont pas pu être chargées. Réessayez dans un instant.");
         setChargement(false);
         return;
