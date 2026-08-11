@@ -145,10 +145,10 @@ export default function Page() {
 
   // Analyse des stocks pour les badges et alertes
   const statutStock = (p: Prod) => {
-    if (p.stock === null) return { type: 'na', label: 'Sans suivi', color: 'bg-slate-100 text-slate-600' };
-    if (p.stock === 0) return { type: 'rupture', label: '🔴 Rupture', color: 'bg-rose-100 text-rose-700' };
-    if (p.seuil_alerte !== null && p.stock <= p.seuil_alerte) return { type: 'bas', label: `🟠 Bas · ${p.stock}`, color: 'bg-amber-100 text-amber-700' };
-    return { type: 'ok', label: `🟢 Stock · ${p.stock}`, color: 'bg-emerald-100 text-emerald-700' };
+    if (p.stock === null) return { type: 'na', label: 'Sans suivi', color: 'bg-chaux-100 text-chaux-600' };
+    if (p.stock === 0) return { type: 'rupture', label: '🔴 Rupture', color: 'bg-bissap-100 text-bissap-700' };
+    if (p.seuil_alerte !== null && p.stock <= p.seuil_alerte) return { type: 'bas', label: `🟠 Bas · ${p.stock}`, color: 'bg-mangue-100 text-mangue-700' };
+    return { type: 'ok', label: `🟢 Stock · ${p.stock}`, color: 'bg-accent-100 text-accent-700' };
   };
 
   const alertes = prods.filter(p => p.stock !== null && ((p.seuil_alerte !== null && p.stock <= p.seuil_alerte) || p.stock === 0));
@@ -164,7 +164,7 @@ export default function Page() {
             <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-500 to-accent-600 text-lg font-black text-white">D</div>
             <div>
               <p className="text-lg font-black">DjiguiFlow</p>
-              <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Admin</p>
+              <p className="text-xs uppercase tracking-[0.2em] text-chaux-600">Admin</p>
             </div>
           </div>
           <nav className="space-y-2">
@@ -173,7 +173,7 @@ export default function Page() {
                 className={`flex items-center gap-3 rounded-2xl px-3 py-3 text-sm font-semibold transition ${
                   href === '/dashboard/products'
                     ? 'bg-gradient-to-r from-primary-600 to-primary-500 text-white shadow-lg'
-                    : 'text-slate-600 hover:bg-slate-100'
+                    : 'text-chaux-600 hover:bg-chaux-100'
                 }`}>
                 <Icon className="h-4 w-4" />{label}
               </Link>
@@ -189,12 +189,12 @@ export default function Page() {
         </aside>
 
         <main className="flex-1 space-y-6">
-          <header className="relative overflow-hidden rounded-[2rem] bg-gradient-to-r from-orange-700 via-amber-600 to-orange-500 p-6 text-white shadow-xl">
+          <header className="relative overflow-hidden rounded-[2rem] bg-gradient-to-r from-mangue-700 via-mangue-600 to-mangue-500 p-6 text-white shadow-xl">
             <div className="relative z-10 flex flex-wrap items-center justify-between gap-4">
               <div>
-                <p className="text-sm uppercase tracking-[0.2em] text-amber-100">Menu réel · feuille Google</p>
+                <p className="text-sm uppercase tracking-[0.2em] text-mangue-100">Menu réel · feuille Google</p>
                 <h1 className="mt-2 text-3xl font-black">🍽️ Produits {nomBoutique}</h1>
-                <p className="mt-1 text-xs text-amber-100">
+                <p className="mt-1 text-xs text-mangue-100">
                   {prods.length} produits · {prods.filter(p => p.disponible).length} disponibles · maj {maj}
                 </p>
               </div>
@@ -210,13 +210,13 @@ export default function Page() {
           </header>
 
           {alertes.length > 0 && (
-            <div className="flex items-start gap-3 rounded-2xl border border-amber-300 bg-amber-50 p-4">
-              <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-700" />
+            <div className="flex items-start gap-3 rounded-2xl border border-mangue-300 bg-mangue-50 p-4">
+              <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-mangue-700" />
               <div className="flex-1">
-                <p className="font-bold text-amber-900">
+                <p className="font-bold text-mangue-700">
                   ⚠️ {alertes.length} produit{alertes.length > 1 ? 's' : ''} sous le seuil d'alerte
                 </p>
-                <p className="mt-1 text-sm text-amber-800">
+                <p className="mt-1 text-sm text-mangue-700">
                   {alertes.slice(0, 3).map(p => p.nom).join(', ')}
                   {alertes.length > 3 && ` et ${alertes.length - 3} autre${alertes.length - 3 > 1 ? 's' : ''}`}
                 </p>
@@ -228,7 +228,7 @@ export default function Page() {
             {cats.map(c => (
               <button key={c} onClick={() => setCat(c)}
                 className={`rounded-full px-4 py-2 text-sm font-semibold capitalize transition ${
-                  cat === c ? 'bg-orange-700 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                  cat === c ? 'bg-mangue-700 text-white' : 'bg-chaux-100 text-nuit-700 hover:bg-chaux-200'
                 }`}>
                 {c}
               </button>
@@ -239,25 +239,25 @@ export default function Page() {
             {filtrés.map(p => {
               const st = statutStock(p);
               return (
-                <div key={p.id || p.nom} className={`overflow-hidden rounded-[1.5rem] border bg-white/90 shadow-sm backdrop-blur-sm ${p.disponible ? 'border-slate-200' : 'border-rose-200 opacity-70'}`}>
+                <div key={p.id || p.nom} className={`overflow-hidden rounded-[1.5rem] border bg-white/90 shadow-sm backdrop-blur-sm ${p.disponible ? 'border-[var(--hairline)]' : 'border-bissap-200 opacity-70'}`}>
                   {p.image ? (
                     <img src={p.image} alt={p.nom} className="h-40 w-full object-cover" />
                   ) : (
-                    <div className="flex h-40 w-full items-center justify-center bg-gradient-to-br from-amber-100 to-orange-100">
-                      <UtensilsCrossed className="h-10 w-10 text-orange-400" />
+                    <div className="flex h-40 w-full items-center justify-center bg-gradient-to-br from-mangue-100 to-mangue-100">
+                      <UtensilsCrossed className="h-10 w-10 text-mangue-400" />
                     </div>
                   )}
                   <div className="space-y-2 p-5">
                     <div className="flex items-start justify-between gap-2">
-                      <h2 className="font-bold text-slate-900">{p.nom}</h2>
-                      <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${p.disponible ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
+                      <h2 className="font-bold text-nuit-900">{p.nom}</h2>
+                      <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${p.disponible ? 'bg-accent-100 text-accent-700' : 'bg-bissap-100 text-bissap-700'}`}>
                         {p.disponible ? 'Disponible' : 'Épuisé'}
                       </span>
                     </div>
-                    <p className="text-xs text-slate-500">{p.description}</p>
+                    <p className="text-xs text-chaux-600">{p.description}</p>
                     <div className="flex items-center justify-between pt-1">
-                      <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-800">{p.categorie}</span>
-                      <p className="font-black text-orange-700">{p.prix.toLocaleString('fr-FR')} F</p>
+                      <span className="rounded-full bg-mangue-100 px-2.5 py-1 text-xs font-semibold text-mangue-700">{p.categorie}</span>
+                      <p className="font-black text-mangue-700">{p.prix.toLocaleString('fr-FR')} F</p>
                     </div>
                     <div className="flex items-center justify-between gap-2 border-t pt-2">
                       <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${st.color}`}>
@@ -265,7 +265,7 @@ export default function Page() {
                       </span>
                       <button
                         onClick={() => ouvrirStock(p)}
-                        className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700 transition hover:bg-slate-200"
+                        className="rounded-full bg-chaux-100 px-3 py-1 text-xs font-semibold text-nuit-700 transition hover:bg-chaux-200"
                       >
                         📦 Gérer le stock
                       </button>
@@ -277,7 +277,7 @@ export default function Page() {
           </div>
 
           {filtrés.length === 0 && (
-            <div className="rounded-[1.5rem] border border-dashed bg-white/60 p-10 text-center text-slate-500">
+            <div className="rounded-[1.5rem] border border-dashed bg-white/60 p-10 text-center text-chaux-600">
               Aucun produit dans cette catégorie.
             </div>
           )}
@@ -289,8 +289,8 @@ export default function Page() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="max-h-[90vh] w-full max-w-lg space-y-4 overflow-y-auto rounded-[1.5rem] bg-white p-6 shadow-2xl">
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-black text-slate-900">🍽️ Nouveau produit</h2>
-              <button onClick={() => setOuvert(false)} className="rounded-full p-2 hover:bg-slate-100"><X className="h-5 w-5" /></button>
+              <h2 className="text-xl font-black text-nuit-900">🍽️ Nouveau produit</h2>
+              <button onClick={() => setOuvert(false)} className="rounded-full p-2 hover:bg-chaux-100"><X className="h-5 w-5" /></button>
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2">
@@ -300,34 +300,34 @@ export default function Page() {
               <input className="rounded-lg border p-2" placeholder="Description" value={fDesc} onChange={e => setFDesc(e.target.value)} />
             </div>
 
-            <div className="grid gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-3 sm:grid-cols-2">
+            <div className="grid gap-3 rounded-2xl border border-mangue-200 bg-mangue-50 p-3 sm:grid-cols-2">
               <div>
-                <label className="mb-1 block text-xs font-semibold text-amber-800">📦 Stock actuel</label>
-                <input type="number" min="0" placeholder="ex : 12 (laisser vide = sans suivi)" value={fStock} onChange={e => setFStock(e.target.value)} className="w-full rounded-lg border border-amber-300 bg-white p-2 text-sm" />
+                <label className="mb-1 block text-xs font-semibold text-mangue-700">📦 Stock actuel</label>
+                <input type="number" min="0" placeholder="ex : 12 (laisser vide = sans suivi)" value={fStock} onChange={e => setFStock(e.target.value)} className="w-full rounded-lg border border-mangue-300 bg-white p-2 text-sm" />
               </div>
               <div>
-                <label className="mb-1 block text-xs font-semibold text-amber-800">🔔 Alerte à</label>
-                <input type="number" min="0" placeholder="ex : 5" value={fSeuil} onChange={e => setFSeuil(e.target.value)} className="w-full rounded-lg border border-amber-300 bg-white p-2 text-sm" />
+                <label className="mb-1 block text-xs font-semibold text-mangue-700">🔔 Alerte à</label>
+                <input type="number" min="0" placeholder="ex : 5" value={fSeuil} onChange={e => setFSeuil(e.target.value)} className="w-full rounded-lg border border-mangue-300 bg-white p-2 text-sm" />
               </div>
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-semibold text-slate-600">📸 Photo du plat</label>
+              <label className="mb-1 block text-sm font-semibold text-chaux-600">📸 Photo du plat</label>
               <input type="file" accept="image/*" onChange={e => setFFile(e.target.files?.[0] || null)}
-                className="block w-full text-sm text-slate-500 file:mr-3 file:rounded-full file:border-0 file:bg-orange-100 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-orange-700 hover:file:bg-orange-200" />
-              <p className="mt-2 text-xs text-slate-400">…ou colle un lien image :</p>
+                className="block w-full text-sm text-chaux-600 file:mr-3 file:rounded-full file:border-0 file:bg-mangue-100 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-mangue-700 hover:file:bg-mangue-200" />
+              <p className="mt-2 text-xs text-chaux-600">…ou colle un lien image :</p>
               <input className="mt-1 w-full rounded-lg border p-2" placeholder="https://…/photo.jpg" value={fUrl} onChange={e => setFUrl(e.target.value)} />
               {(fFile || fUrl) && (
                 <img src={fFile ? URL.createObjectURL(fFile) : fUrl} alt="aperçu" className="mt-2 h-28 w-full rounded-lg object-cover" />
               )}
             </div>
 
-            <label className="flex items-center gap-2 text-sm font-semibold text-slate-700">
-              <input type="checkbox" checked={fDispo} onChange={e => setFDispo(e.target.checked)} className="h-4 w-4 accent-emerald-600" />
+            <label className="flex items-center gap-2 text-sm font-semibold text-nuit-700">
+              <input type="checkbox" checked={fDispo} onChange={e => setFDispo(e.target.checked)} className="h-4 w-4 accent-accent-600" />
               Disponible à la vente
             </label>
 
-            {msg && <p className="rounded-lg bg-rose-50 p-3 text-sm text-rose-700">{msg}</p>}
+            {msg && <p className="rounded-lg bg-bissap-50 p-3 text-sm text-bissap-700">{msg}</p>}
 
             <Bouton onClick={ajouter} chargement={envoi} className="w-full">
               {!envoi && <Plus className="h-5 w-5" />}
@@ -343,31 +343,31 @@ export default function Page() {
           <div className="w-full max-w-md space-y-4 rounded-[1.5rem] bg-white p-6 shadow-2xl">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-xl font-black text-slate-900">📦 Gérer le stock</h2>
-                <p className="text-sm text-slate-500">{editProd.nom}</p>
+                <h2 className="text-xl font-black text-nuit-900">📦 Gérer le stock</h2>
+                <p className="text-sm text-chaux-600">{editProd.nom}</p>
               </div>
-              <button onClick={() => setEditProd(null)} className="rounded-full p-2 hover:bg-slate-100"><X className="h-5 w-5" /></button>
+              <button onClick={() => setEditProd(null)} className="rounded-full p-2 hover:bg-chaux-100"><X className="h-5 w-5" /></button>
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2">
               <div>
-                <label className="mb-1 block text-sm font-semibold text-slate-700">Stock actuel</label>
+                <label className="mb-1 block text-sm font-semibold text-nuit-700">Stock actuel</label>
                 <input type="number" min="0" placeholder="ex : 12" value={eStock} onChange={x => setEStock(x.target.value)} className="w-full rounded-lg border p-2" />
-                <p className="mt-1 text-xs text-slate-400">Vide = pas de suivi</p>
+                <p className="mt-1 text-xs text-chaux-600">Vide = pas de suivi</p>
               </div>
               <div>
-                <label className="mb-1 block text-sm font-semibold text-slate-700">Seuil d'alerte</label>
+                <label className="mb-1 block text-sm font-semibold text-nuit-700">Seuil d'alerte</label>
                 <input type="number" min="0" placeholder="ex : 5" value={eSeuil} onChange={x => setESeuil(x.target.value)} className="w-full rounded-lg border p-2" />
-                <p className="mt-1 text-xs text-slate-400">Alerte quand stock ≤ ce nombre</p>
+                <p className="mt-1 text-xs text-chaux-600">Alerte quand stock ≤ ce nombre</p>
               </div>
             </div>
 
-            <label className="flex items-center gap-2 text-sm font-semibold text-slate-700">
-              <input type="checkbox" checked={eDispo} onChange={x => setEDispo(x.target.checked)} className="h-4 w-4 accent-emerald-600" />
+            <label className="flex items-center gap-2 text-sm font-semibold text-nuit-700">
+              <input type="checkbox" checked={eDispo} onChange={x => setEDispo(x.target.checked)} className="h-4 w-4 accent-accent-600" />
               Disponible à la vente
             </label>
 
-            {eMsg && <p className="rounded-lg bg-rose-50 p-3 text-sm text-rose-700">{eMsg}</p>}
+            {eMsg && <p className="rounded-lg bg-bissap-50 p-3 text-sm text-bissap-700">{eMsg}</p>}
 
             <div className="flex gap-2">
               <Bouton variante="calme" onClick={() => setEditProd(null)} className="flex-1">Annuler</Bouton>

@@ -65,14 +65,14 @@ function LoginPageContent() {
 
           <div className="text-center">
             <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-500 to-accent-600 text-xl font-black text-white shadow-lg shadow-primary-500/20">D</div>
-            <h1 className="text-3xl font-black tracking-tight text-slate-900">DjiguiFlow</h1>
-            <p className="mt-2 text-slate-600">Connectez-vous à votre compte</p>
+            <h1 className="text-3xl font-black tracking-tight text-nuit-900">DjiguiFlow</h1>
+            <p className="mt-2 text-chaux-600">Connectez-vous à votre compte</p>
           </div>
         </div>
 
         <div className="rounded-[2rem] border border-white/70 bg-white/75 p-8 shadow-[0_20px_60px_rgba(49,35,20,0.12)] backdrop-blur-xl">
           {erreurOAuth && (
-            <div className="mb-5 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+            <div className="mb-5 rounded-xl border border-bissap-200 bg-bissap-50 px-4 py-3 text-sm text-bissap-700">
               {erreurOAuth}
             </div>
           )}
@@ -80,39 +80,39 @@ function LoginPageContent() {
           <BoutonGoogle suite={suite} libelle="Se connecter avec Google" />
 
           <div className="my-6 flex items-center gap-3">
-            <span className="h-px flex-1 bg-slate-200" />
-            <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">ou</span>
-            <span className="h-px flex-1 bg-slate-200" />
+            <span className="h-px flex-1 bg-chaux-200" />
+            <span className="text-xs font-semibold uppercase tracking-wide text-chaux-600">ou</span>
+            <span className="h-px flex-1 bg-chaux-200" />
           </div>
 
           <form onSubmit={handleLogin} className="space-y-5">
             <div>
-              <label htmlFor="email" className="mb-2 block text-sm font-semibold text-slate-700">Email</label>
+              <label htmlFor="email" className="mb-2 block text-sm font-semibold text-nuit-700">Email</label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
-                <input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pl-10 pr-4 text-slate-700 outline-none transition focus:border-primary-400 focus:ring-2 focus:ring-primary-100" placeholder="votre@email.com" />
+                <Mail className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-chaux-600" />
+                <input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="w-full rounded-xl border border-[var(--hairline)] bg-chaux-50 py-3 pl-10 pr-4 text-nuit-700 outline-none transition focus:border-primary-400 focus:ring-2 focus:ring-primary-100" placeholder="votre@email.com" />
               </div>
             </div>
 
             <div>
-              <label htmlFor="password" className="mb-2 block text-sm font-semibold text-slate-700">Mot de passe</label>
+              <label htmlFor="password" className="mb-2 block text-sm font-semibold text-nuit-700">Mot de passe</label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
-                <input id="password" type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} required className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pl-10 pr-12 text-slate-700 outline-none transition focus:border-primary-400 focus:ring-2 focus:ring-primary-100" placeholder="••••••••" />
-                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-slate-600">
+                <Lock className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-chaux-600" />
+                <input id="password" type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} required className="w-full rounded-xl border border-[var(--hairline)] bg-chaux-50 py-3 pl-10 pr-12 text-nuit-700 outline-none transition focus:border-primary-400 focus:ring-2 focus:ring-primary-100" placeholder="••••••••" />
+                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-chaux-600 transition hover:text-chaux-600">
                   {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
               </div>
             </div>
 
-            {error && <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div>}
-            {success && <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{success}</div>}
+            {error && <div className="rounded-xl border border-bissap-200 bg-bissap-50 px-4 py-3 text-sm text-bissap-700">{error}</div>}
+            {success && <div className="rounded-xl border border-accent-200 bg-accent-50 px-4 py-3 text-sm text-accent-700">{success}</div>}
 
             <button type="submit" disabled={loading} className="w-full rounded-full bg-gradient-to-r from-primary-600 to-primary-500 py-3.5 font-semibold text-white shadow-lg shadow-primary-500/30 transition hover:translate-y-[-1px] disabled:opacity-60">
               {loading ? 'Connexion...' : 'Se connecter'}
             </button>
 
-            <div className="text-center text-sm text-slate-600">
+            <div className="text-center text-sm text-chaux-600">
               Pas encore de compte ?{' '}
               <Link href="/register" className="font-bold text-primary-700 transition hover:text-primary-800">S&apos;inscrire</Link>
             </div>

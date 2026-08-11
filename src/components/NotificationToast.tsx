@@ -53,38 +53,38 @@ export default function NotificationToast() {
             exit={{ opacity: 0, x: 100, scale: 0.9 }}
             className={`rounded-xl shadow-2xl border backdrop-blur-xl overflow-hidden ${
               notif.type === 'new-order' 
-                ? 'bg-gradient-to-r from-amber-500 to-orange-500 border-amber-400 text-white' 
+                ? 'bg-gradient-to-r from-mangue-500 to-mangue-500 border-mangue-400 text-white' 
                 : notif.type === 'success'
-                ? 'bg-white border-green-200'
+                ? 'bg-white border-accent-200'
                 : notif.type === 'warning'
-                ? 'bg-white border-amber-200'
-                : 'bg-white border-blue-200'
+                ? 'bg-white border-mangue-200'
+                : 'bg-white border-nuit-200'
             }`}
           >
             <div className="p-4 flex items-start gap-3">
               <div className={`p-2 rounded-lg shrink-0 ${
                 notif.type === 'new-order' ? 'bg-white/20' :
-                notif.type === 'success' ? 'bg-green-100' :
-                notif.type === 'warning' ? 'bg-amber-100' : 'bg-blue-100'
+                notif.type === 'success' ? 'bg-accent-100' :
+                notif.type === 'warning' ? 'bg-mangue-100' : 'bg-nuit-100'
               }`}>
                 {notif.type === 'new-order' ? (
                   <Package className="w-5 h-5 text-white" />
                 ) : notif.type === 'success' ? (
-                  <CheckCircle className="w-5 h-5 text-green-600" />
+                  <CheckCircle className="w-5 h-5 text-accent-600" />
                 ) : (
                   <Bell className={`w-5 h-5 ${
-                    notif.type === 'warning' ? 'text-amber-600' : 'text-blue-600'
+                    notif.type === 'warning' ? 'text-mangue-600' : 'text-nuit-600'
                   }`} />
                 )}
               </div>
               <div className="flex-1 min-w-0">
                 <p className={`font-bold text-sm ${
-                  notif.type === 'new-order' ? 'text-white' : 'text-gray-900'
+                  notif.type === 'new-order' ? 'text-white' : 'text-nuit-900'
                 }`}>
                   {notif.title}
                 </p>
                 <p className={`text-xs mt-0.5 ${
-                  notif.type === 'new-order' ? 'text-white/90' : 'text-gray-600'
+                  notif.type === 'new-order' ? 'text-white/90' : 'text-chaux-600'
                 }`}>
                   {notif.message}
                 </p>
@@ -92,7 +92,7 @@ export default function NotificationToast() {
               <button
                 onClick={() => setNotifications(prev => prev.filter(n => n.id !== notif.id))}
                 className={`p-1 rounded-lg transition ${
-                  notif.type === 'new-order' ? 'hover:bg-white/20 text-white' : 'hover:bg-gray-100 text-gray-400'
+                  notif.type === 'new-order' ? 'hover:bg-white/20 text-white' : 'hover:bg-chaux-100 text-chaux-600'
                 }`}
               >
                 <X className="w-4 h-4" />
@@ -104,7 +104,7 @@ export default function NotificationToast() {
                   onClick={() => {
                     window.location.href = '/dashboard/orders';
                   }}
-                  className="w-full py-2 bg-white text-amber-600 rounded-lg text-xs font-bold hover:bg-amber-50 transition"
+                  className="w-full py-2 bg-white text-mangue-600 rounded-lg text-xs font-bold hover:bg-mangue-50 transition"
                 >
                   Voir la commande →
                 </button>

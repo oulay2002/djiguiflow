@@ -293,12 +293,12 @@ export default function PaiementsPage() {
               <ArrowLeft className="h-4 w-4 transition-transform duration-150 group-hover:-translate-x-0.5" />
               Retour au dashboard
             </Link>
-            <h1 className="text-3xl font-black tracking-tight text-slate-900">Abonnements et facturation</h1>
-            <p className="mt-2 text-slate-600">Activez votre formule, securisez vos paiements et gerez votre abonnement.</p>
+            <h1 className="text-3xl font-black tracking-tight text-nuit-900">Abonnements et facturation</h1>
+            <p className="mt-2 text-chaux-600">Activez votre formule, securisez vos paiements et gerez votre abonnement.</p>
           </div>
           <div className="hidden rounded-2xl border border-primary-200 bg-white/70 px-4 py-3 shadow-sm md:flex md:items-center md:gap-2">
             <ShieldCheck className="h-5 w-5 text-primary-700" />
-            <span className="text-sm font-semibold text-slate-700">Paiement securise avec Stripe</span>
+            <span className="text-sm font-semibold text-nuit-700">Paiement securise avec Stripe</span>
           </div>
         </div>
 
@@ -309,13 +309,13 @@ export default function PaiementsPage() {
         ) : (
           <>
             {error && (
-              <div className="mb-6 rounded-2xl border border-rose-200 bg-rose-50 px-5 py-4 text-sm font-medium text-rose-700">
+              <div className="mb-6 rounded-2xl border border-bissap-200 bg-bissap-50 px-5 py-4 text-sm font-medium text-bissap-700">
                 {error}
               </div>
             )}
 
             {notice && (
-              <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm font-medium text-amber-800">
+              <div className="mb-6 rounded-2xl border border-mangue-200 bg-mangue-50 px-5 py-4 text-sm font-medium text-mangue-700">
                 {notice}
               </div>
             )}
@@ -323,13 +323,13 @@ export default function PaiementsPage() {
             <section className="mb-8 rounded-[2rem] border border-white/70 bg-white/75 p-6 shadow-[0_18px_45px_rgba(49,35,20,0.1)] backdrop-blur-xl">
               <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <p className="text-sm font-semibold uppercase tracking-[0.14em] text-slate-500">Votre abonnement</p>
-                  <h2 className="mt-1 text-2xl font-black text-slate-900">
+                  <p className="text-sm font-semibold uppercase tracking-[0.14em] text-chaux-600">Votre abonnement</p>
+                  <h2 className="mt-1 text-2xl font-black text-nuit-900">
                     {subscription ? getPlanLabel(subscription.plan_key) : 'Aucun abonnement actif'}
                   </h2>
                 </div>
                 {subscription && isSubscriptionActive && (
-                  <span className="inline-flex items-center gap-2 rounded-full bg-emerald-100 px-3 py-1.5 text-sm font-semibold text-emerald-700">
+                  <span className="inline-flex items-center gap-2 rounded-full bg-accent-100 px-3 py-1.5 text-sm font-semibold text-accent-700">
                     <CheckCircle className="h-4 w-4" />
                     Actif
                   </span>
@@ -337,17 +337,17 @@ export default function PaiementsPage() {
               </div>
 
               <div className="grid gap-4 md:grid-cols-3">
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                  <p className="text-xs uppercase tracking-[0.15em] text-slate-500">Statut</p>
-                  <p className="mt-2 text-lg font-bold capitalize text-slate-900">{subscription?.status ?? '-'}</p>
+                <div className="rounded-2xl border border-[var(--hairline)] bg-chaux-50 p-4">
+                  <p className="text-xs uppercase tracking-[0.15em] text-chaux-600">Statut</p>
+                  <p className="mt-2 text-lg font-bold capitalize text-nuit-900">{subscription?.status ?? '-'}</p>
                 </div>
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                  <p className="text-xs uppercase tracking-[0.15em] text-slate-500">Debut periode</p>
-                  <p className="mt-2 text-lg font-bold text-slate-900">{formatDate(subscription?.current_period_start ?? null)}</p>
+                <div className="rounded-2xl border border-[var(--hairline)] bg-chaux-50 p-4">
+                  <p className="text-xs uppercase tracking-[0.15em] text-chaux-600">Debut periode</p>
+                  <p className="mt-2 text-lg font-bold text-nuit-900">{formatDate(subscription?.current_period_start ?? null)}</p>
                 </div>
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                  <p className="text-xs uppercase tracking-[0.15em] text-slate-500">Fin periode</p>
-                  <p className="mt-2 text-lg font-bold text-slate-900">{formatDate(subscription?.current_period_end ?? null)}</p>
+                <div className="rounded-2xl border border-[var(--hairline)] bg-chaux-50 p-4">
+                  <p className="text-xs uppercase tracking-[0.15em] text-chaux-600">Fin periode</p>
+                  <p className="mt-2 text-lg font-bold text-nuit-900">{formatDate(subscription?.current_period_end ?? null)}</p>
                 </div>
               </div>
 
@@ -356,7 +356,7 @@ export default function PaiementsPage() {
                   type="button"
                   onClick={openBillingPortal}
                   disabled={loadingPortal}
-                  className="mt-5 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-primary-300 hover:text-primary-700 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="mt-5 inline-flex items-center gap-2 rounded-full border border-[var(--hairline)] bg-white px-5 py-2.5 text-sm font-semibold text-nuit-700 transition hover:border-primary-300 hover:text-primary-700 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {loadingPortal ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
                   Gerer ma facturation
@@ -367,7 +367,7 @@ export default function PaiementsPage() {
             <section>
               <div className="mb-6 flex items-center gap-2">
                 <CreditCard className="h-5 w-5 text-primary-700" />
-                <h3 className="text-xl font-black text-slate-900">Choisir une formule</h3>
+                <h3 className="text-xl font-black text-nuit-900">Choisir une formule</h3>
               </div>
 
               <div className="grid gap-6 lg:grid-cols-3">
@@ -381,8 +381,8 @@ export default function PaiementsPage() {
                       className={`rounded-[2rem] border p-6 ${
                         plan.popular
                           ? 'border-primary-500 bg-gradient-to-br from-primary-600 to-primary-800 text-white shadow-2xl shadow-primary-500/20'
-                          : 'border-slate-200 bg-white/85 shadow-lg shadow-slate-100'
-                      } ${isHighlighted ? 'ring-2 ring-amber-300' : ''}`}
+                          : 'border-[var(--hairline)] bg-white/85 shadow-lg shadow-nuit-100'
+                      } ${isHighlighted ? 'ring-2 ring-mangue-300' : ''}`}
                     >
                       {plan.popular && (
                         <p className="mb-4 inline-flex rounded-full bg-white/15 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.2em] text-white/90">
@@ -391,13 +391,13 @@ export default function PaiementsPage() {
                       )}
 
                       <h4 className="text-2xl font-black">{plan.name}</h4>
-                      <p className={`${plan.popular ? 'mt-2 text-primary-100' : 'mt-2 text-slate-600'}`}>
+                      <p className={`${plan.popular ? 'mt-2 text-primary-100' : 'mt-2 text-chaux-600'}`}>
                         {plan.description}
                       </p>
 
                       <div className="mt-5 flex items-end gap-2">
                         <span className="text-4xl font-black">{plan.priceLabel}</span>
-                        <span className={`${plan.popular ? 'text-primary-100' : 'text-slate-500'} pb-1`}>
+                        <span className={`${plan.popular ? 'text-primary-100' : 'text-chaux-600'} pb-1`}>
                           FCFA/mois
                         </span>
                       </div>
@@ -405,8 +405,8 @@ export default function PaiementsPage() {
                       <ul className="mt-6 space-y-2.5">
                         {plan.features.map((feature) => (
                           <li key={feature} className="flex items-center gap-2.5">
-                            <CheckCircle className={`h-4.5 w-4.5 ${plan.popular ? 'text-amber-200' : 'text-emerald-600'}`} />
-                            <span className={plan.popular ? 'text-white/90' : 'text-slate-700'}>{feature}</span>
+                            <CheckCircle className={`h-4.5 w-4.5 ${plan.popular ? 'text-mangue-200' : 'text-accent-600'}`} />
+                            <span className={plan.popular ? 'text-white/90' : 'text-nuit-700'}>{feature}</span>
                           </li>
                         ))}
                       </ul>

@@ -105,7 +105,7 @@ export default function AjouterMarchand() {
 
   return (
     <>
-      <div className="border-b border-amber-200/70 bg-[#f9f4ec]/95 px-4 py-2">
+      <div className="border-b border-mangue-200/70 bg-[#f9f4ec]/95 px-4 py-2">
         <div className="mx-auto flex max-w-6xl justify-end">
           <Bouton
             taille="sm"
@@ -117,20 +117,20 @@ export default function AjouterMarchand() {
       </div>
 
       {ouvert && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-chaux-600/50 p-4">
           <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-3xl bg-white p-6 shadow-2xl">
             <div className="mb-5 flex items-center justify-between">
-              <h2 className="flex items-center gap-2 text-lg font-black text-slate-800">
-                <Store className="h-5 w-5 text-amber-600" /> Nouveau marchand
+              <h2 className="flex items-center gap-2 text-lg font-black text-nuit-800">
+                <Store className="h-5 w-5 text-mangue-600" /> Nouveau marchand
               </h2>
-              <button onClick={fermer} className="rounded-full p-1 hover:bg-slate-100">
+              <button onClick={fermer} className="rounded-full p-1 hover:bg-chaux-100">
                 <X className="h-5 w-5" />
               </button>
             </div>
 
             {succes ? (
               <div className="space-y-4">
-                <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
+                <div className="rounded-2xl border border-accent-200 bg-accent-50 p-4 text-sm text-accent-800">
                   <p className="font-bold">✅ Marchand « {succes.slug} » provisionné.</p>
                   <ul className="mt-2 space-y-1 text-xs">
                     <li>
@@ -155,10 +155,10 @@ export default function AjouterMarchand() {
                 <input
                   value={nom} onChange={e => setNom(e.target.value)}
                   placeholder="Nom de la boutique (ex : Rose MonDE)"
-                  className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm focus:border-amber-400 focus:outline-none"
+                  className="w-full rounded-2xl border border-[var(--hairline)] px-4 py-3 text-sm focus:border-mangue-400 focus:outline-none"
                 />
                 {slug && (
-                  <p className="px-1 text-xs text-slate-500">
+                  <p className="px-1 text-xs text-chaux-600">
                     Identifiant : <span className="font-mono font-semibold">{slug}</span> · onglets{' '}
                     <span className="font-mono">Commandes_{slug.replace(/-/g, '').replace(/^./, c => c.toUpperCase())}</span>
                   </p>
@@ -166,49 +166,49 @@ export default function AjouterMarchand() {
                 <input
                   value={email} onChange={e => setEmail(e.target.value)}
                   type="email" placeholder="Email du marchand (reçoit l'invitation)"
-                  className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm focus:border-amber-400 focus:outline-none"
+                  className="w-full rounded-2xl border border-[var(--hairline)] px-4 py-3 text-sm focus:border-mangue-400 focus:outline-none"
                 />
                 <div className="flex gap-3">
                   <input
                     value={categorie} onChange={e => setCategorie(e.target.value)}
                     placeholder="Catégorie"
-                    className="flex-1 rounded-2xl border border-slate-200 px-4 py-3 text-sm focus:border-amber-400 focus:outline-none"
+                    className="flex-1 rounded-2xl border border-[var(--hairline)] px-4 py-3 text-sm focus:border-mangue-400 focus:outline-none"
                   />
                   <input
                     value={emoji} onChange={e => setEmoji(e.target.value)}
                     placeholder="Emoji" maxLength={4}
-                    className="w-20 rounded-2xl border border-slate-200 px-4 py-3 text-center text-sm focus:border-amber-400 focus:outline-none"
+                    className="w-20 rounded-2xl border border-[var(--hairline)] px-4 py-3 text-center text-sm focus:border-mangue-400 focus:outline-none"
                   />
                 </div>
                 <div className="flex gap-3">
                   <input
                     value={zone} onChange={e => setZone(e.target.value)}
                     placeholder="Zone (ex : Cocody)"
-                    className="flex-1 rounded-2xl border border-slate-200 px-4 py-3 text-sm focus:border-amber-400 focus:outline-none"
+                    className="flex-1 rounded-2xl border border-[var(--hairline)] px-4 py-3 text-sm focus:border-mangue-400 focus:outline-none"
                   />
                   <input
                     value={telephone} onChange={e => setTelephone(e.target.value)}
                     placeholder="WhatsApp (225…)"
-                    className="flex-1 rounded-2xl border border-slate-200 px-4 py-3 text-sm focus:border-amber-400 focus:outline-none"
+                    className="flex-1 rounded-2xl border border-[var(--hairline)] px-4 py-3 text-sm focus:border-mangue-400 focus:outline-none"
                   />
                 </div>
                 <input
                   value={groupeLivreurs} onChange={e => setGroupeLivreurs(e.target.value)}
                   placeholder="Groupe livreurs (JID WhatsApp / chat Telegram)"
-                  className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm focus:border-amber-400 focus:outline-none"
+                  className="w-full rounded-2xl border border-[var(--hairline)] px-4 py-3 text-sm focus:border-mangue-400 focus:outline-none"
                 />
 
-                <label className="flex items-center gap-2 px-1 text-sm text-slate-700">
+                <label className="flex items-center gap-2 px-1 text-sm text-nuit-700">
                   <input
                     type="checkbox" checked={creerOnglets}
                     onChange={e => setCreerOnglets(e.target.checked)}
-                    className="h-4 w-4 accent-amber-600"
+                    className="h-4 w-4 accent-mangue-600"
                   />
                   Créer les onglets Google Sheets
                 </label>
 
                 {erreur && (
-                  <p className="rounded-2xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                  <p className="rounded-2xl border border-bissap-200 bg-bissap-50 p-3 text-sm text-bissap-700">
                     ❌ {erreur}
                   </p>
                 )}

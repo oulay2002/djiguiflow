@@ -24,45 +24,58 @@ import {
 } from 'lucide-react';
 import NotificationToast from '@/components/NotificationToast';
 
+/**
+ * Les cinq etats d'une commande, dans les couleurs de la maison.
+ *
+ * Le systeme compte cinq teintes et leur assigne un role : mangue pour ce qui
+ * est en cours, feuille pour ce qui est fait, bissap pour ce qui est urgent ou
+ * annule, indigo pour la structure. Le cycle, lui, compte cinq etapes — il
+ * fallait donc distinguer sans inventer une sixieme teinte.
+ *
+ * La coupure est celle du terrain : tant que la commande est chez le
+ * commercant elle est en mangue, et se lit du pale au dense a mesure qu'elle
+ * avance ; des qu'elle sort en rue elle passe a l'indigo. L'icone tranche le
+ * reste — la casserole n'est pas le camion.
+ */
 const STATUS_CONFIG = {
-  en_attente: { 
-    label: 'En attente', 
-    bg: 'bg-amber-50', 
-    text: 'text-amber-700', 
-    border: 'border-amber-200',
-    dot: 'bg-amber-500',
-    icon: Clock 
+  en_attente: {
+    label: 'En attente',
+    bg: 'bg-mangue-50',
+    text: 'text-mangue-700',
+    border: 'border-mangue-200',
+    dot: 'bg-mangue-300',
+    icon: Clock
   },
-  en_preparation: { 
-    label: 'En préparation', 
-    bg: 'bg-blue-50', 
-    text: 'text-blue-700', 
-    border: 'border-blue-200',
-    dot: 'bg-blue-500',
-    icon: ChefHat 
+  en_preparation: {
+    label: 'En préparation',
+    bg: 'bg-mangue-100',
+    text: 'text-mangue-700',
+    border: 'border-mangue-300',
+    dot: 'bg-mangue-500',
+    icon: ChefHat
   },
-  en_livraison: { 
-    label: 'En livraison', 
-    bg: 'bg-purple-50', 
-    text: 'text-purple-700', 
-    border: 'border-purple-200',
-    dot: 'bg-purple-500',
-    icon: Truck 
+  en_livraison: {
+    label: 'En livraison',
+    bg: 'bg-nuit-50',
+    text: 'text-nuit-700',
+    border: 'border-nuit-200',
+    dot: 'bg-nuit-500',
+    icon: Truck
   },
   livree: { 
     label: 'Livrée', 
-    bg: 'bg-green-50', 
-    text: 'text-green-700', 
-    border: 'border-green-200',
-    dot: 'bg-green-500',
+    bg: 'bg-accent-50', 
+    text: 'text-accent-700', 
+    border: 'border-accent-200',
+    dot: 'bg-accent-500',
     icon: CheckCircle 
   },
   annulee: { 
     label: 'Annulée', 
-    bg: 'bg-red-50', 
-    text: 'text-red-700', 
-    border: 'border-red-200',
-    dot: 'bg-red-500',
+    bg: 'bg-bissap-50', 
+    text: 'text-bissap-700', 
+    border: 'border-bissap-200',
+    dot: 'bg-bissap-500',
     icon: XCircle 
   },
 };
@@ -260,27 +273,27 @@ export default function OrdersPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Loader2 className="w-10 h-10 animate-spin text-amber-600" />
+      <div className="min-h-screen bg-chaux-50 flex items-center justify-center">
+        <Loader2 className="w-10 h-10 animate-spin text-mangue-600" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6 lg:p-8">
+    <div className="min-h-screen bg-chaux-50 p-6 lg:p-8">
       <NotificationToast />
       {/* En-tête */}
       <div className="mb-8">
         <LienRetour href="/dashboard">Retour au dashboard</LienRetour>
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Gestion des Commandes</h1>
-            <p className="text-gray-600 mt-1">Suivez et gérez toutes vos commandes en temps réel</p>
+            <h1 className="text-3xl font-bold text-nuit-900">Gestion des Commandes</h1>
+            <p className="text-chaux-600 mt-1">Suivez et gérez toutes vos commandes en temps réel</p>
           </div>
           {stats.en_attente > 0 && (
-            <div className="flex items-center gap-2 px-4 py-2 bg-amber-50 border border-amber-200 rounded-full">
-              <Bell className="w-4 h-4 text-amber-600 animate-pulse" />
-              <span className="text-sm font-semibold text-amber-700">
+            <div className="flex items-center gap-2 px-4 py-2 bg-mangue-50 border border-mangue-200 rounded-full">
+              <Bell className="w-4 h-4 text-mangue-600 animate-pulse" />
+              <span className="text-sm font-semibold text-mangue-700">
                 {stats.en_attente} nouvelle{stats.en_attente > 1 ? 's' : ''} à traiter
               </span>
             </div>
@@ -290,63 +303,63 @@ export default function OrdersPage() {
 
       {/* Statistiques rapides */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white rounded-xl p-4 border border-gray-100">
+        <div className="bg-white rounded-xl p-4 border border-[var(--hairline)]">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-amber-50 rounded-lg">
-              <Package className="w-5 h-5 text-amber-600" />
+            <div className="p-2 bg-mangue-50 rounded-lg">
+              <Package className="w-5 h-5 text-mangue-600" />
             </div>
             <div>
-              <p className="text-xs text-gray-500">Total</p>
-              <p className="text-xl font-bold text-gray-900">{stats.total}</p>
+              <p className="text-xs text-chaux-600">Total</p>
+              <p className="text-xl font-bold text-nuit-900">{stats.total}</p>
             </div>
           </div>
         </div>
-        <div className="bg-white rounded-xl p-4 border border-gray-100">
+        <div className="bg-white rounded-xl p-4 border border-[var(--hairline)]">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-amber-50 rounded-lg">
-              <Clock className="w-5 h-5 text-amber-600" />
+            <div className="p-2 bg-mangue-50 rounded-lg">
+              <Clock className="w-5 h-5 text-mangue-600" />
             </div>
             <div>
-              <p className="text-xs text-gray-500">En attente</p>
-              <p className="text-xl font-bold text-amber-600">{stats.en_attente}</p>
+              <p className="text-xs text-chaux-600">En attente</p>
+              <p className="text-xl font-bold text-mangue-600">{stats.en_attente}</p>
             </div>
           </div>
         </div>
-        <div className="bg-white rounded-xl p-4 border border-gray-100">
+        <div className="bg-white rounded-xl p-4 border border-[var(--hairline)]">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-purple-50 rounded-lg">
-              <Truck className="w-5 h-5 text-purple-600" />
+            <div className="p-2 bg-nuit-50 rounded-lg">
+              <Truck className="w-5 h-5 text-nuit-600" />
             </div>
             <div>
-              <p className="text-xs text-gray-500">En livraison</p>
-              <p className="text-xl font-bold text-purple-600">{stats.en_livraison}</p>
+              <p className="text-xs text-chaux-600">En livraison</p>
+              <p className="text-xl font-bold text-nuit-600">{stats.en_livraison}</p>
             </div>
           </div>
         </div>
-        <div className="bg-white rounded-xl p-4 border border-gray-100">
+        <div className="bg-white rounded-xl p-4 border border-[var(--hairline)]">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-green-50 rounded-lg">
-              <TrendingUp className="w-5 h-5 text-green-600" />
+            <div className="p-2 bg-accent-50 rounded-lg">
+              <TrendingUp className="w-5 h-5 text-accent-600" />
             </div>
             <div>
-              <p className="text-xs text-gray-500">Chiffre d&apos;affaires</p>
-              <p className="text-xl font-bold text-green-600">{stats.chiffre.toLocaleString()} F</p>
+              <p className="text-xs text-chaux-600">Chiffre d&apos;affaires</p>
+              <p className="text-xl font-bold text-accent-600">{stats.chiffre.toLocaleString()} F</p>
             </div>
           </div>
         </div>
       </div>
 
       {/* Barre de recherche et filtres */}
-      <div className="bg-white rounded-xl border border-gray-100 p-4 mb-6">
+      <div className="bg-white rounded-xl border border-[var(--hairline)] p-4 mb-6">
         <div className="flex flex-col md:flex-row gap-4">
           <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-chaux-600" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Rechercher par client, numéro ou téléphone..."
-              className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2.5 border border-[var(--hairline)] rounded-lg focus:ring-2 focus:ring-mangue-500 focus:border-transparent"
             />
           </div>
           <div className="flex flex-wrap gap-2">
@@ -363,14 +376,14 @@ export default function OrdersPage() {
                 onClick={() => setFilter(key)}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2 ${
                   filter === key
-                    ? 'bg-amber-600 text-white shadow-md'
-                    : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
+                    ? 'bg-mangue-600 text-white shadow-md'
+                    : 'bg-chaux-50 text-nuit-700 hover:bg-chaux-100'
                 }`}
               >
                 {label}
                 {count > 0 && (
                   <span className={`px-1.5 py-0.5 rounded text-xs ${
-                    filter === key ? 'bg-amber-500 text-white' : 'bg-gray-200 text-gray-600'
+                    filter === key ? 'bg-mangue-500 text-white' : 'bg-chaux-200 text-chaux-600'
                   }`}>
                     {count}
                   </span>
@@ -383,31 +396,31 @@ export default function OrdersPage() {
 
       {/* Tableau des commandes */}
       {filteredCommandes.length === 0 ? (
-        <div className="text-center py-16 bg-white rounded-xl border border-gray-100 border-dashed">
-          <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-900">
+        <div className="text-center py-16 bg-white rounded-xl border border-[var(--hairline)] border-dashed">
+          <Package className="w-16 h-16 text-chaux-600 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-nuit-900">
             {search || filter !== 'toutes' ? 'Aucune commande ne correspond' : 'Aucune commande pour le moment'}
           </h3>
-          <p className="text-gray-500 mt-1">
+          <p className="text-chaux-600 mt-1">
             {search || filter !== 'toutes' ? 'Essayez de modifier vos filtres' : 'Les nouvelles commandes apparaîtront ici automatiquement'}
           </p>
         </div>
       ) : (
-        <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+        <div className="bg-white rounded-xl border border-[var(--hairline)] overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-100">
+              <thead className="bg-chaux-50 border-b border-[var(--hairline)]">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">N° Commande</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Client</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Articles</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Total</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Statut</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Date</th>
-                  <th className="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-chaux-600 uppercase tracking-wider">N° Commande</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-chaux-600 uppercase tracking-wider">Client</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-chaux-600 uppercase tracking-wider">Articles</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-chaux-600 uppercase tracking-wider">Total</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-chaux-600 uppercase tracking-wider">Statut</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-chaux-600 uppercase tracking-wider">Date</th>
+                  <th className="px-6 py-3 text-right text-xs font-semibold text-chaux-600 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-nuit-100">
                 {filteredCommandes.map((commande, index) => {
                   const statusConfig = STATUS_CONFIG[commande.statut as keyof typeof STATUS_CONFIG];
                   const StatusIcon = statusConfig.icon;
@@ -419,29 +432,29 @@ export default function OrdersPage() {
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: index * 0.03 }}
-                      className="hover:bg-gray-50/50 transition"
+                      className="hover:bg-chaux-50/50 transition"
                     >
                       <td className="px-6 py-4">
-                        <span className="font-bold text-amber-600">
+                        <span className="font-bold text-mangue-600">
                           #{commande.id.slice(0, 6).toUpperCase()}
                         </span>
                       </td>
                       <td className="px-6 py-4">
                         <div>
-                          <p className="font-semibold text-gray-900">{commande.client_nom}</p>
-                          <p className="text-xs text-gray-500">{commande.client_telephone}</p>
+                          <p className="font-semibold text-nuit-900">{commande.client_nom}</p>
+                          <p className="text-xs text-chaux-600">{commande.client_telephone}</p>
                         </div>
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2">
-                          <Package className="w-4 h-4 text-gray-400" />
-                          <span className="text-sm text-gray-700">
+                          <Package className="w-4 h-4 text-chaux-600" />
+                          <span className="text-sm text-nuit-700">
                             {commande.commande_items?.length || 0} article{(commande.commande_items?.length || 0) > 1 ? 's' : ''}
                           </span>
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <span className="font-bold text-gray-900">
+                        <span className="font-bold text-nuit-900">
                           {commande.total?.toLocaleString() || 0} FCFA
                         </span>
                       </td>
@@ -452,7 +465,7 @@ export default function OrdersPage() {
                         </span>
                       </td>
                       <td className="px-6 py-4">
-                        <span className="text-sm text-gray-600">
+                        <span className="text-sm text-chaux-600">
                           {formatShortDate(commande.created_at)}
                         </span>
                       </td>
@@ -461,7 +474,7 @@ export default function OrdersPage() {
                           {/* Bouton voir détails */}
                           <button
                             onClick={() => openDetails(commande)}
-                            className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition"
+                            className="p-2 text-chaux-600 hover:bg-chaux-100 rounded-lg transition"
                             title="Voir les détails"
                           >
                             <Eye className="w-4 h-4" />
@@ -474,10 +487,10 @@ export default function OrdersPage() {
                               disabled={updating === commande.id}
                               className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 ${
                                 commande.statut === 'en_attente' 
-                                  ? 'bg-blue-50 text-blue-700 hover:bg-blue-100'
+                                  ? 'bg-nuit-50 text-nuit-700 hover:bg-nuit-100'
                                   : commande.statut === 'en_preparation'
-                                  ? 'bg-purple-50 text-purple-700 hover:bg-purple-100'
-                                  : 'bg-green-50 text-green-700 hover:bg-green-100'
+                                  ? 'bg-nuit-50 text-nuit-700 hover:bg-nuit-100'
+                                  : 'bg-accent-50 text-accent-700 hover:bg-accent-100'
                               } disabled:opacity-50`}
                               title={`Passer à: ${STATUS_CONFIG[nextStatus as keyof typeof STATUS_CONFIG].label}`}
                             >
@@ -512,10 +525,10 @@ export default function OrdersPage() {
               className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl"
             >
               {/* Header du modal */}
-              <div className="sticky top-0 bg-white border-b border-gray-100 p-6 flex justify-between items-start z-10">
+              <div className="sticky top-0 bg-white border-b border-[var(--hairline)] p-6 flex justify-between items-start z-10">
                 <div>
                   <div className="flex items-center gap-3 mb-2">
-                    <h2 className="text-xl font-bold text-gray-900">
+                    <h2 className="text-xl font-bold text-nuit-900">
                       Commande #{selectedCommande.id.slice(0, 6).toUpperCase()}
                     </h2>
                     {(() => {
@@ -529,45 +542,45 @@ export default function OrdersPage() {
                       );
                     })()}
                   </div>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-chaux-600">
                     Passée le {formatDate(selectedCommande.created_at)}
                   </p>
                 </div>
                 <button
                   onClick={() => setShowModal(false)}
-                  className="p-2 hover:bg-gray-100 rounded-lg transition"
+                  className="p-2 hover:bg-chaux-100 rounded-lg transition"
                 >
-                  <X className="w-5 h-5 text-gray-500" />
+                  <X className="w-5 h-5 text-chaux-600" />
                 </button>
               </div>
 
               <div className="p-6 space-y-6">
                 {/* Informations client */}
-                <div className="bg-gray-50 rounded-xl p-4">
-                  <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                    <User className="w-4 h-4 text-amber-600" />
+                <div className="bg-chaux-50 rounded-xl p-4">
+                  <h3 className="font-semibold text-nuit-900 mb-3 flex items-center gap-2">
+                    <User className="w-4 h-4 text-mangue-600" />
                     Informations client
                   </h3>
                   <div className="grid md:grid-cols-2 gap-3">
                     <div className="flex items-center gap-2 text-sm">
-                      <User className="w-4 h-4 text-gray-400" />
+                      <User className="w-4 h-4 text-chaux-600" />
                       <div>
-                        <p className="text-xs text-gray-500">Nom</p>
-                        <p className="font-medium text-gray-900">{selectedCommande.client_nom}</p>
+                        <p className="text-xs text-chaux-600">Nom</p>
+                        <p className="font-medium text-nuit-900">{selectedCommande.client_nom}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2 text-sm">
-                      <Phone className="w-4 h-4 text-gray-400" />
+                      <Phone className="w-4 h-4 text-chaux-600" />
                       <div>
-                        <p className="text-xs text-gray-500">Téléphone</p>
-                        <p className="font-medium text-gray-900">{selectedCommande.client_telephone}</p>
+                        <p className="text-xs text-chaux-600">Téléphone</p>
+                        <p className="font-medium text-nuit-900">{selectedCommande.client_telephone}</p>
                       </div>
                     </div>
                     <div className="flex items-start gap-2 text-sm md:col-span-2">
-                      <MapPin className="w-4 h-4 text-gray-400 mt-0.5" />
+                      <MapPin className="w-4 h-4 text-chaux-600 mt-0.5" />
                       <div>
-                        <p className="text-xs text-gray-500">Adresse de livraison</p>
-                        <p className="font-medium text-gray-900">{selectedCommande.client_adresse}</p>
+                        <p className="text-xs text-chaux-600">Adresse de livraison</p>
+                        <p className="font-medium text-nuit-900">{selectedCommande.client_adresse}</p>
                       </div>
                     </div>
                   </div>
@@ -575,20 +588,20 @@ export default function OrdersPage() {
 
                 {/* Articles commandés */}
                 <div>
-                  <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                    <Package className="w-4 h-4 text-amber-600" />
+                  <h3 className="font-semibold text-nuit-900 mb-3 flex items-center gap-2">
+                    <Package className="w-4 h-4 text-mangue-600" />
                     Articles commandés
                   </h3>
                   <div className="space-y-2">
                     {selectedCommande.commande_items?.map((item) => (
-                      <div key={item.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div key={item.id} className="flex items-center justify-between p-3 bg-chaux-50 rounded-lg">
                         <div className="flex items-center gap-3">
-                          <span className="px-2 py-1 bg-amber-100 text-amber-700 rounded text-xs font-bold">
+                          <span className="px-2 py-1 bg-mangue-100 text-mangue-700 rounded text-xs font-bold">
                             x{item.quantite}
                           </span>
-                          <span className="font-medium text-gray-900">{item.nom_produit}</span>
+                          <span className="font-medium text-nuit-900">{item.nom_produit}</span>
                         </div>
-                        <span className="font-semibold text-gray-900">
+                        <span className="font-semibold text-nuit-900">
                           {((item.quantite || 0) * (item.prix_unitaire || 0)).toLocaleString()} FCFA
                         </span>
                       </div>
@@ -597,16 +610,16 @@ export default function OrdersPage() {
                 </div>
 
                 {/* Total */}
-                <div className="flex justify-between items-center p-4 bg-amber-50 border border-amber-200 rounded-xl">
-                  <span className="font-semibold text-gray-700">Total de la commande</span>
-                  <span className="text-2xl font-bold text-amber-600">
+                <div className="flex justify-between items-center p-4 bg-mangue-50 border border-mangue-200 rounded-xl">
+                  <span className="font-semibold text-nuit-700">Total de la commande</span>
+                  <span className="text-2xl font-bold text-mangue-600">
                     {selectedCommande.total?.toLocaleString() || 0} FCFA
                   </span>
                 </div>
 
                 {/* Actions de changement de statut */}
-                <div className="border-t border-gray-100 pt-4">
-                  <h3 className="font-semibold text-gray-900 mb-3">Actions rapides</h3>
+                <div className="border-t border-[var(--hairline)] pt-4">
+                  <h3 className="font-semibold text-nuit-900 mb-3">Actions rapides</h3>
                   <div className="flex flex-wrap gap-2">
                     {Object.entries(NEXT_STATUS).map(([current, next]) => {
                       if (selectedCommande.statut !== current) return null;
@@ -639,7 +652,7 @@ export default function OrdersPage() {
                           }
                         }}
                         disabled={updating === selectedCommande.id}
-                        className="flex items-center justify-center gap-2 px-4 py-3 border border-red-200 text-red-600 rounded-lg text-sm font-semibold hover:bg-red-50 transition disabled:opacity-50"
+                        className="flex items-center justify-center gap-2 px-4 py-3 border border-bissap-200 text-bissap-600 rounded-lg text-sm font-semibold hover:bg-bissap-50 transition disabled:opacity-50"
                       >
                         <XCircle className="w-4 h-4" />
                         Annuler la commande

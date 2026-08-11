@@ -235,33 +235,33 @@ export default function AnalyticsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Loader2 className="w-10 h-10 animate-spin text-amber-600" />
+      <div className="min-h-screen bg-chaux-50 flex items-center justify-center">
+        <Loader2 className="w-10 h-10 animate-spin text-mangue-600" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6 lg:p-8">
+    <div className="min-h-screen bg-chaux-50 p-6 lg:p-8">
       {/* Header */}
       <div className="mb-8">
         <LienRetour href="/dashboard">Retour au dashboard</LienRetour>
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Tableau de Bord Analytique</h1>
-            <p className="text-gray-600 mt-1">Analysez la performance de votre boutique</p>
+            <h1 className="text-3xl font-bold text-nuit-900">Tableau de Bord Analytique</h1>
+            <p className="text-chaux-600 mt-1">Analysez la performance de votre boutique</p>
           </div>
           <div className="flex items-center gap-2">
             <select
               value={period}
               onChange={(e) => setPeriod(e.target.value as Period)}
-              className="px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-amber-500"
+              className="px-4 py-2 border border-[var(--hairline)] rounded-lg focus:ring-2 focus:ring-mangue-500"
             >
               <option value="week">Cette semaine</option>
               <option value="month">Ce mois</option>
               <option value="year">Cette année</option>
             </select>
-            <button className="flex items-center gap-2 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition">
+            <button className="flex items-center gap-2 px-4 py-2 bg-mangue-600 text-white rounded-lg hover:bg-mangue-700 transition">
               <Download className="w-4 h-4" />
               Exporter
             </button>
@@ -304,9 +304,9 @@ export default function AnalyticsPage() {
       {/* Graphiques */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         {/* Évolution du CA */}
-        <div className="bg-white rounded-xl p-6 border border-gray-100">
-          <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-            <TrendingUp className="w-5 h-5 text-amber-600" />
+        <div className="bg-white rounded-xl p-6 border border-[var(--hairline)]">
+          <h3 className="text-lg font-bold text-nuit-900 mb-4 flex items-center gap-2">
+            <TrendingUp className="w-5 h-5 text-mangue-600" />
             Évolution du chiffre d&apos;affaires
           </h3>
           <ResponsiveContainer width="100%" height={300}>
@@ -329,9 +329,9 @@ export default function AnalyticsPage() {
         </div>
 
         {/* Top Produits */}
-        <div className="bg-white rounded-xl p-6 border border-gray-100">
-          <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-            <Star className="w-5 h-5 text-amber-600" />
+        <div className="bg-white rounded-xl p-6 border border-[var(--hairline)]">
+          <h3 className="text-lg font-bold text-nuit-900 mb-4 flex items-center gap-2">
+            <Star className="w-5 h-5 text-mangue-600" />
             Top 5 des produits les plus vendus
           </h3>
           <ResponsiveContainer width="100%" height={300}>
@@ -349,9 +349,9 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Heures de pointe */}
-      <div className="bg-white rounded-xl p-6 border border-gray-100 mb-8">
-        <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-          <Clock className="w-5 h-5 text-amber-600" />
+      <div className="bg-white rounded-xl p-6 border border-[var(--hairline)] mb-8">
+        <h3 className="text-lg font-bold text-nuit-900 mb-4 flex items-center gap-2">
+          <Clock className="w-5 h-5 text-mangue-600" />
           Heures de pointe (commandes par heure)
         </h3>
         <ResponsiveContainer width="100%" height={200}>
@@ -369,8 +369,8 @@ export default function AnalyticsPage() {
 
       {/* Répartition par statut */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-xl p-6 border border-gray-100">
-          <h3 className="text-lg font-bold text-gray-900 mb-4">Répartition des commandes</h3>
+        <div className="bg-white rounded-xl p-6 border border-[var(--hairline)]">
+          <h3 className="text-lg font-bold text-nuit-900 mb-4">Répartition des commandes</h3>
           <ResponsiveContainer width="100%" height={250}>
             <PieChart>
               <Pie
@@ -392,21 +392,21 @@ export default function AnalyticsPage() {
           </ResponsiveContainer>
         </div>
 
-        <div className="bg-white rounded-xl p-6 border border-gray-100">
-          <h3 className="text-lg font-bold text-gray-900 mb-4">Performance livreurs</h3>
+        <div className="bg-white rounded-xl p-6 border border-[var(--hairline)]">
+          <h3 className="text-lg font-bold text-nuit-900 mb-4">Performance livreurs</h3>
           <div className="space-y-4">
             {driverPerformance.map((driver) => (
-              <div key={driver.name} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <div key={driver.name} className="flex items-center justify-between p-3 bg-chaux-50 rounded-lg">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
-                    <Truck className="w-5 h-5 text-amber-600" />
+                  <div className="w-10 h-10 rounded-full bg-mangue-100 flex items-center justify-center">
+                    <Truck className="w-5 h-5 text-mangue-600" />
                   </div>
                   <div>
-                    <p className="font-semibold text-gray-900">{driver.name}</p>
-                    <p className="text-xs text-gray-500">{driver.deliveries} livraisons</p>
+                    <p className="font-semibold text-nuit-900">{driver.name}</p>
+                    <p className="text-xs text-chaux-600">{driver.deliveries} livraisons</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-1 text-amber-600">
+                <div className="flex items-center gap-1 text-mangue-600">
                   <Star className="w-4 h-4 fill-current" />
                   <span className="font-semibold">{driver.rating.toFixed(1)}</span>
                 </div>
@@ -429,21 +429,21 @@ type KPICardProps = {
 
 function KPICard({ icon: Icon, label, value, growth, color }: KPICardProps) {
   const colors: Record<string, string> = {
-    amber: 'bg-amber-50 text-amber-600',
-    blue: 'bg-blue-50 text-blue-600',
-    green: 'bg-green-50 text-green-600',
-    purple: 'bg-purple-50 text-purple-600',
+    amber: 'bg-mangue-50 text-mangue-600',
+    blue: 'bg-nuit-50 text-nuit-600',
+    green: 'bg-accent-50 text-accent-600',
+    purple: 'bg-nuit-50 text-nuit-600',
   };
 
   return (
-    <div className="bg-white rounded-xl p-6 border border-gray-100">
+    <div className="bg-white rounded-xl p-6 border border-[var(--hairline)]">
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-sm text-gray-500 mb-1">{label}</p>
-          <p className="text-2xl font-bold text-gray-900">{value}</p>
+          <p className="text-sm text-chaux-600 mb-1">{label}</p>
+          <p className="text-2xl font-bold text-nuit-900">{value}</p>
           {growth !== undefined && (
             <div className={`flex items-center gap-1 mt-2 text-sm font-medium ${
-              growth >= 0 ? 'text-green-600' : 'text-red-600'
+              growth >= 0 ? 'text-accent-600' : 'text-bissap-600'
             }`}>
               {growth >= 0 ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
               {growth >= 0 ? '+' : ''}{growth.toFixed(1)}%

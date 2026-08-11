@@ -28,7 +28,7 @@ export default function ReglagesPage() {
       description: 'WhatsApp, Telegram et alertes',
       icon: Bell,
       href: '/dashboard/reglages/notifications',
-      color: 'bg-mangue-50 text-mangue-600'
+      color: 'bg-mangue-50 text-mangue-700'
     },
     {
       title: 'Sécurité',

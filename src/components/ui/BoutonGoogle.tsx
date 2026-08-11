@@ -90,14 +90,14 @@ export default function BoutonGoogle({
 				type="button"
 				onClick={connecter}
 				disabled={chargement}
-				className="flex w-full items-center justify-center gap-3 rounded-full border border-slate-200 bg-white py-3.5 font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:opacity-60"
+				className="flex w-full items-center justify-center gap-3 rounded-full border border-[var(--hairline)] bg-white py-3.5 font-semibold text-nuit-700 shadow-sm transition hover:bg-chaux-50 disabled:opacity-60"
 			>
 				{chargement ? <Loader2 className="h-5 w-5 animate-spin" /> : <LogoGoogle />}
 				{chargement ? 'Redirection vers Google...' : libelle}
 			</button>
 
 			{erreur && (
-				<div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+				<div className="rounded-xl border border-bissap-200 bg-bissap-50 px-4 py-3 text-sm text-bissap-700">
 					{erreur}
 				</div>
 			)}

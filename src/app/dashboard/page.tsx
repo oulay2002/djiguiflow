@@ -35,9 +35,9 @@ const sidebarItems = [
 ];
 
 const canalMeta: Record<string, { label: string; icon: ComponentType<{ className?: string }>; txt: string; bar: string }> = {
-  whatsapp: { label: 'WhatsApp', icon: Smartphone, txt: 'text-emerald-700', bar: 'bg-emerald-500' },
-  telegram: { label: 'Telegram', icon: Send, txt: 'text-sky-700', bar: 'bg-sky-500' },
-  app: { label: 'Application', icon: Globe2, txt: 'text-orange-700', bar: 'bg-orange-500' },
+  whatsapp: { label: 'WhatsApp', icon: Smartphone, txt: 'text-accent-700', bar: 'bg-accent-500' },
+  telegram: { label: 'Telegram', icon: Send, txt: 'text-nuit-700', bar: 'bg-nuit-500' },
+  app: { label: 'Application', icon: Globe2, txt: 'text-mangue-700', bar: 'bg-mangue-500' },
 };
 
 export default function Page() {
@@ -91,10 +91,10 @@ export default function Page() {
   const totalCanal = s ? Object.values(s.parCanal).reduce((a, b) => a + b, 0) || 1 : 1;
 
   const kpis = s ? [
-    { label: 'Ventes du jour', value: `${s.caJour.toLocaleString('fr-FR')} F`, sub: `${s.nbJour} commande(s) aujourd'hui`, icon: Wallet, accent: 'bg-amber-100 text-amber-700' },
-    { label: 'Commandes', value: String(s.nbCommandes), sub: `${s.enCours} en cours · ${s.livrees} livrées`, icon: ShoppingCart, accent: 'bg-violet-100 text-violet-700' },
-    { label: 'Produits vendus', value: String(s.produitsVendus), sub: `panier moyen ${s.panierMoyen.toLocaleString('fr-FR')} F`, icon: Package2, accent: 'bg-sky-100 text-sky-700' },
-    { label: 'Satisfaction', value: s.noteMoyenne ? `${s.noteMoyenne}/5` : '—', sub: `${s.nbNotes} avis clients`, icon: Star, accent: 'bg-emerald-100 text-emerald-700' },
+    { label: 'Ventes du jour', value: `${s.caJour.toLocaleString('fr-FR')} F`, sub: `${s.nbJour} commande(s) aujourd'hui`, icon: Wallet, accent: 'bg-mangue-100 text-mangue-700' },
+    { label: 'Commandes', value: String(s.nbCommandes), sub: `${s.enCours} en cours · ${s.livrees} livrées`, icon: ShoppingCart, accent: 'bg-nuit-100 text-nuit-700' },
+    { label: 'Produits vendus', value: String(s.produitsVendus), sub: `panier moyen ${s.panierMoyen.toLocaleString('fr-FR')} F`, icon: Package2, accent: 'bg-nuit-100 text-nuit-700' },
+    { label: 'Satisfaction', value: s.noteMoyenne ? `${s.noteMoyenne}/5` : '—', sub: `${s.nbNotes} avis clients`, icon: Star, accent: 'bg-accent-100 text-accent-700' },
   ] : [];
 
   return (
@@ -105,7 +105,7 @@ export default function Page() {
             <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-500 to-accent-600 text-lg font-black text-white">D</div>
             <div>
               <p className="text-lg font-black">DjiguiFlow</p>
-              <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Admin</p>
+              <p className="text-xs uppercase tracking-[0.2em] text-chaux-600">Admin</p>
             </div>
           </div>
           <nav className="space-y-2">
@@ -114,14 +114,14 @@ export default function Page() {
                 className={`flex items-center gap-3 rounded-2xl px-3 py-3 text-sm font-semibold transition ${
                   href === '/dashboard'
                     ? 'bg-gradient-to-r from-primary-600 to-primary-500 text-white shadow-lg'
-                    : 'text-slate-600 hover:bg-slate-100'
+                    : 'text-chaux-600 hover:bg-chaux-100'
                 }`}>
                 <Icon className="h-4 w-4" />{label}
               </Link>
             ))}
           </nav>
           <button onClick={async () => { await supabase.auth.signOut(); router.push('/login'); }}
-            className="mt-8 flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold hover:bg-slate-100">
+            className="mt-8 flex w-full items-center justify-center gap-2 rounded-2xl border border-[var(--hairline)] bg-chaux-50 px-4 py-3 text-sm font-semibold hover:bg-chaux-100">
             <LogOut className="h-4 w-4" />Déconnexion
           </button>
         </aside>
@@ -129,11 +129,11 @@ export default function Page() {
         <main className="flex-1 space-y-6">
           <header className="flex flex-col gap-4 rounded-[2rem] border border-white/70 bg-white/75 p-5 shadow-[0_20px_60px_rgba(49,35,20,0.08)] backdrop-blur-xl md:flex-row md:items-center md:justify-between">
             <div>
-              <p className="text-sm uppercase tracking-[0.2em] text-slate-500">Tableau de bord · données réelles</p>
+              <p className="text-sm uppercase tracking-[0.2em] text-chaux-600">Tableau de bord · données réelles</p>
               <h1 className="mt-2 text-3xl font-black">Bonjour, {nomBoutique} 👋</h1>
             </div>
             <div className="flex items-center gap-3">
-              <button className="flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-slate-600 hover:text-primary-700">
+              <button className="flex h-11 w-11 items-center justify-center rounded-full border border-[var(--hairline)] bg-chaux-50 text-chaux-600 hover:text-primary-700">
                 <Bell className="h-5 w-5" />
               </button>
               <Link href="/boutiques" className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-primary-600 to-primary-500 px-4 py-2.5 text-sm font-semibold text-white shadow-lg">
@@ -150,22 +150,22 @@ export default function Page() {
                   <div className={`flex h-12 w-12 items-center justify-center rounded-2xl ${k.accent}`}>
                     <Icon className="h-6 w-6" />
                   </div>
-                  <p className="mt-4 text-sm text-slate-500">{k.label}</p>
-                  <p className="mt-1 text-3xl font-black text-slate-900">{k.value}</p>
-                  <p className="mt-1 text-xs text-slate-400">{k.sub}</p>
+                  <p className="mt-4 text-sm text-chaux-600">{k.label}</p>
+                  <p className="mt-1 text-3xl font-black text-nuit-900">{k.value}</p>
+                  <p className="mt-1 text-xs text-chaux-600">{k.sub}</p>
                 </div>
               );
             })}
           </section>
 
           <section className="grid gap-6 xl:grid-cols-[1.6fr_1fr]">
-            <div className="rounded-[1.75rem] border border-slate-200 bg-white/80 p-6 shadow-[0_18px_45px_rgba(48,35,20,0.08)] backdrop-blur-sm">
+            <div className="rounded-[1.75rem] border border-[var(--hairline)] bg-white/80 p-6 shadow-[0_18px_45px_rgba(48,35,20,0.08)] backdrop-blur-sm">
               <div className="mb-4 flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-slate-500">Performance</p>
+                  <p className="text-sm text-chaux-600">Performance</p>
                   <h2 className="text-2xl font-black">Évolution du CA · 7 jours</h2>
                 </div>
-                <span className="rounded-full bg-orange-100 px-3 py-1.5 text-sm font-bold text-orange-700">
+                <span className="rounded-full bg-mangue-100 px-3 py-1.5 text-sm font-bold text-mangue-700">
                   {s ? s.caTotal.toLocaleString('fr-FR') : 0} F au total
                 </span>
               </div>
@@ -194,15 +194,15 @@ export default function Page() {
                   </g>
                 ))}
               </svg>
-              <p className="mt-2 text-xs text-slate-400">💡 Survole les points pour voir le détail de chaque jour.</p>
+              <p className="mt-2 text-xs text-chaux-600">💡 Survole les points pour voir le détail de chaque jour.</p>
             </div>
 
             <div className="space-y-6">
-              <div className="rounded-[1.75rem] border border-slate-200 bg-white/80 p-6 shadow-[0_18px_45px_rgba(48,35,20,0.08)] backdrop-blur-sm">
+              <div className="rounded-[1.75rem] border border-[var(--hairline)] bg-white/80 p-6 shadow-[0_18px_45px_rgba(48,35,20,0.08)] backdrop-blur-sm">
                 <h3 className="text-xl font-black">🌍 Canaux de vente</h3>
                 <div className="mt-4 space-y-4">
                   {s && Object.entries(s.parCanal).map(([canal, nb]) => {
-                    const m = canalMeta[canal] || { label: canal, icon: Globe2, txt: 'text-slate-600', bar: 'bg-slate-400' };
+                    const m = canalMeta[canal] || { label: canal, icon: Globe2, txt: 'text-chaux-600', bar: 'bg-chaux-400' };
                     const Icon = m.icon;
                     const pct = Math.round((nb / totalCanal) * 100);
                     return (
@@ -211,7 +211,7 @@ export default function Page() {
                           <span className={`flex items-center gap-2 font-semibold ${m.txt}`}><Icon className="h-4 w-4" />{m.label}</span>
                           <span className="font-bold">{nb} · {pct}%</span>
                         </div>
-                        <div className="mt-1.5 h-2.5 overflow-hidden rounded-full bg-slate-100">
+                        <div className="mt-1.5 h-2.5 overflow-hidden rounded-full bg-chaux-100">
                           <div className={`h-full rounded-full ${m.bar}`} style={{ width: `${pct}%` }} />
                         </div>
                       </div>
@@ -220,19 +220,19 @@ export default function Page() {
                 </div>
               </div>
 
-              <div className="rounded-[1.75rem] border border-slate-200 bg-white/80 p-6 shadow-[0_18px_45px_rgba(48,35,20,0.08)] backdrop-blur-sm">
+              <div className="rounded-[1.75rem] border border-[var(--hairline)] bg-white/80 p-6 shadow-[0_18px_45px_rgba(48,35,20,0.08)] backdrop-blur-sm">
                 <div className="flex items-center gap-2">
-                  <Trophy className="h-5 w-5 text-amber-600" />
+                  <Trophy className="h-5 w-5 text-mangue-600" />
                   <h3 className="text-xl font-black">Top produits</h3>
                 </div>
                 <div className="mt-4 space-y-3">
                   {s?.topPlats.slice(0, 4).map(([nom, q], i) => (
-                    <div key={nom} className="flex items-center justify-between rounded-[1rem] bg-slate-50 p-3">
+                    <div key={nom} className="flex items-center justify-between rounded-[1rem] bg-chaux-50 p-3">
                       <span className="flex items-center gap-3">
-                        <span className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-black ${i === 0 ? 'bg-amber-400 text-white' : 'bg-slate-200 text-slate-600'}`}>{i + 1}</span>
-                        <span className="font-semibold text-slate-800">{nom}</span>
+                        <span className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-black ${i === 0 ? 'bg-mangue-400 text-white' : 'bg-chaux-200 text-chaux-600'}`}>{i + 1}</span>
+                        <span className="font-semibold text-nuit-800">{nom}</span>
                       </span>
-                      <span className="text-sm font-bold text-slate-600">{q} vendus</span>
+                      <span className="text-sm font-bold text-chaux-600">{q} vendus</span>
                     </div>
                   ))}
                 </div>

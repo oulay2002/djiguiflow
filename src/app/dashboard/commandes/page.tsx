@@ -113,11 +113,15 @@ export default function Page() {
   const canalIcon = (c: string) =>
     c === 'app' ? '🌐' : c === 'whatsapp' ? '📲' : c === 'telegram' ? '✈️' : '❓';
 
+  // Meme coupure que sur l'ecran Commandes : mangue tant que c'est chez le
+  // commercant, indigo des que c'est en rue, feuille quand c'est arrive.
+  // « Prise par » et « En route » etaient devenues de la meme couleur, alors
+  // que l'une dit « un livreur a accepte » et l'autre « il est parti ».
   const badgeColor = (c: Cmd) =>
-    /livr/i.test(c.statut_livraison) ? 'bg-emerald-100 text-emerald-700' :
-    /route|part|cours/i.test(c.statut_livraison) ? 'bg-sky-100 text-sky-700' :
-    c.nom_livreur ? 'bg-violet-100 text-violet-700' :
-    'bg-amber-100 text-amber-700';
+    /livr/i.test(c.statut_livraison) ? 'bg-accent-100 text-accent-700' :
+    /route|part|cours/i.test(c.statut_livraison) ? 'bg-nuit-100 text-nuit-700' :
+    c.nom_livreur ? 'bg-mangue-200 text-mangue-700' :
+    'bg-mangue-50 text-mangue-700';
 
   const statutLabel = (c: Cmd) =>
     /livr/i.test(c.statut_livraison) ? 'Livrée' :
@@ -129,21 +133,21 @@ export default function Page() {
   const badgeConfirmation = (c: Cmd) => {
     if (c.confirmation_statut === 'confirmee') {
       return (
-        <span className="rounded-full bg-emerald-50 border border-emerald-200 px-2.5 py-1 text-xs font-semibold text-emerald-700">
+        <span className="rounded-full bg-accent-50 border border-accent-200 px-2.5 py-1 text-xs font-semibold text-accent-700">
           ✅ Confirmée
         </span>
       );
     }
     if (c.confirmation_statut === 'refusee') {
       return (
-        <span className="rounded-full bg-rose-50 border border-rose-200 px-2.5 py-1 text-xs font-semibold text-rose-700">
+        <span className="rounded-full bg-bissap-50 border border-bissap-200 px-2.5 py-1 text-xs font-semibold text-bissap-700">
           ❌ Refusée
         </span>
       );
     }
     // Pas encore répondu (ou ancienne commande sans suivi)
     return (
-      <span className="rounded-full bg-amber-50 border border-amber-200 px-2.5 py-1 text-xs font-semibold text-amber-700">
+      <span className="rounded-full bg-mangue-50 border border-mangue-200 px-2.5 py-1 text-xs font-semibold text-mangue-700">
         🟡 À confirmer
       </span>
     );
@@ -161,7 +165,7 @@ export default function Page() {
             <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-500 to-accent-600 text-lg font-black text-white">D</div>
             <div>
               <p className="text-lg font-black">DjiguiFlow</p>
-              <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Admin</p>
+              <p className="text-xs uppercase tracking-[0.2em] text-chaux-600">Admin</p>
             </div>
           </div>
           <nav className="space-y-2">
@@ -170,14 +174,14 @@ export default function Page() {
                 className={`flex items-center gap-3 rounded-2xl px-3 py-3 text-sm font-semibold transition ${
                   href === '/dashboard/commandes'
                     ? 'bg-gradient-to-r from-primary-600 to-primary-500 text-white shadow-lg'
-                    : 'text-slate-600 hover:bg-slate-100'
+                    : 'text-chaux-600 hover:bg-chaux-100'
                 }`}>
                 <Icon className="h-4 w-4" />{label}
               </Link>
             ))}
           </nav>
           <button onClick={async () => { await supabase.auth.signOut(); location.href = '/login'; }}
-            className="mt-8 flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold hover:bg-slate-100">
+            className="mt-8 flex w-full items-center justify-center gap-2 rounded-2xl border border-[var(--hairline)] bg-chaux-50 px-4 py-3 text-sm font-semibold hover:bg-chaux-100">
             <LogOut className="h-4 w-4" />Déconnexion
           </button>
         </aside>
@@ -185,9 +189,9 @@ export default function Page() {
         <main className="flex-1 space-y-6">
           <header className="flex flex-col gap-4 rounded-[2rem] border border-white/70 bg-white/75 p-5 shadow-[0_20px_60px_rgba(49,35,20,0.08)] backdrop-blur-xl md:flex-row md:items-center md:justify-between">
             <div>
-              <p className="text-sm uppercase tracking-[0.2em] text-slate-500">Gestion</p>
+              <p className="text-sm uppercase tracking-[0.2em] text-chaux-600">Gestion</p>
               <h1 className="mt-2 text-3xl font-black">🛒 Commandes {nomBoutique}</h1>
-              <p className="mt-1 text-sm text-slate-500">{cmds.length} commandes · {filtrées.length} affichées · refresh 10s</p>
+              <p className="mt-1 text-sm text-chaux-600">{cmds.length} commandes · {filtrées.length} affichées · refresh 10s</p>
             </div>
             <div className="flex flex-wrap gap-2">
               {[
@@ -198,7 +202,7 @@ export default function Page() {
               ].map(([k, l, n]) => (
                 <button key={k} onClick={() => setFiltre(String(k))}
                   className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-                    filtre === k ? 'bg-orange-700 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                    filtre === k ? 'bg-mangue-700 text-white' : 'bg-chaux-100 text-nuit-700 hover:bg-chaux-200'
                   }`}>
                   {l} · {n}
                 </button>
@@ -208,27 +212,27 @@ export default function Page() {
 
           {/* Bannière confirmation anti-retours */}
           {(nbAConfirmer > 0 || nbRefusees > 0) && (
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-gradient-to-r from-amber-50 to-orange-50 p-4">
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-mangue-200 bg-gradient-to-r from-mangue-50 to-mangue-50 p-4">
               <div className="flex flex-wrap items-center gap-3 text-sm">
-                <span className="font-semibold text-amber-900">🛡️ Anti-retours</span>
+                <span className="font-semibold text-mangue-700">🛡️ Anti-retours</span>
                 {nbAConfirmer > 0 && (
-                  <button onClick={() => setFiltre('aconfirmer')} className="rounded-full bg-amber-100 px-3 py-1 font-semibold text-amber-800 hover:bg-amber-200">
+                  <button onClick={() => setFiltre('aconfirmer')} className="rounded-full bg-mangue-100 px-3 py-1 font-semibold text-mangue-700 hover:bg-mangue-200">
                     🟡 {nbAConfirmer} à confirmer
                   </button>
                 )}
                 {nbConfirmees > 0 && (
-                  <button onClick={() => setFiltre('confirmees')} className="rounded-full bg-emerald-100 px-3 py-1 font-semibold text-emerald-800 hover:bg-emerald-200">
+                  <button onClick={() => setFiltre('confirmees')} className="rounded-full bg-accent-100 px-3 py-1 font-semibold text-accent-800 hover:bg-accent-200">
                     ✅ {nbConfirmees} confirmées
                   </button>
                 )}
                 {nbRefusees > 0 && (
-                  <button onClick={() => setFiltre('refusees')} className="rounded-full bg-rose-100 px-3 py-1 font-semibold text-rose-800 hover:bg-rose-200">
+                  <button onClick={() => setFiltre('refusees')} className="rounded-full bg-bissap-100 px-3 py-1 font-semibold text-bissap-800 hover:bg-bissap-200">
                     ❌ {nbRefusees} refusées
                   </button>
                 )}
               </div>
               {filtre !== 'tous' && (
-                <button onClick={() => setFiltre('tous')} className="text-xs font-semibold text-slate-500 hover:text-slate-700">
+                <button onClick={() => setFiltre('tous')} className="text-xs font-semibold text-chaux-600 hover:text-nuit-700">
                   ← Voir tout
                 </button>
               )}
@@ -237,45 +241,45 @@ export default function Page() {
 
           <div className="space-y-3">
             {filtrées.length === 0 && (
-              <div className="rounded-[1.5rem] border border-dashed bg-white/60 p-10 text-center text-slate-500">
+              <div className="rounded-[1.5rem] border border-dashed bg-white/60 p-10 text-center text-chaux-600">
                 Aucune commande dans cette catégorie.
               </div>
             )}
             {filtrées.map((c, i) => (
               <div key={i + '-' + c.order_id} className={`rounded-[1.5rem] border bg-white/90 p-5 shadow-sm backdrop-blur-sm ${
-                c.confirmation_statut === 'refusee' ? 'border-rose-200 opacity-60' :
-                c.confirmation_statut === 'confirmee' ? 'border-emerald-200' :
-                'border-slate-200'
+                c.confirmation_statut === 'refusee' ? 'border-bissap-200 opacity-60' :
+                c.confirmation_statut === 'confirmee' ? 'border-accent-200' :
+                'border-[var(--hairline)]'
               }`}>
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div className="flex-1 space-y-2">
                     <div className="flex flex-wrap items-center gap-3">
-                      <span className="font-mono text-sm font-bold text-orange-700">{c.order_id}</span>
+                      <span className="font-mono text-sm font-bold text-mangue-700">{c.order_id}</span>
                       <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${badgeColor(c)}`}>{statutLabel(c)}</span>
                       {badgeConfirmation(c)}
-                      <span className="text-xs text-slate-500">{canalIcon(c.canal)} {c.canal}</span>
-                      <span className="text-xs text-slate-500"><Clock className="inline h-3 w-3" /> {c.timestamp ? new Date(c.timestamp).toLocaleString('fr-FR') : '—'}</span>
+                      <span className="text-xs text-chaux-600">{canalIcon(c.canal)} {c.canal}</span>
+                      <span className="text-xs text-chaux-600"><Clock className="inline h-3 w-3" /> {c.timestamp ? new Date(c.timestamp).toLocaleString('fr-FR') : '—'}</span>
                     </div>
-                    <p className="text-base font-bold text-slate-900">{c.customer_name}</p>
-                    <p className="flex items-center gap-1 text-sm text-slate-600"><Phone className="h-3 w-3" />{c.phone}</p>
-                    <p className="flex items-center gap-1 text-sm text-slate-600"><MapPin className="h-3 w-3" />{c.address}</p>
+                    <p className="text-base font-bold text-nuit-900">{c.customer_name}</p>
+                    <p className="flex items-center gap-1 text-sm text-chaux-600"><Phone className="h-3 w-3" />{c.phone}</p>
+                    <p className="flex items-center gap-1 text-sm text-chaux-600"><MapPin className="h-3 w-3" />{c.address}</p>
                     <div className="flex flex-wrap gap-2">
                       {parseItems(c.items).length === 0 ? (
-                        <p className="text-sm text-slate-500">📦 —</p>
+                        <p className="text-sm text-chaux-600">📦 —</p>
                       ) : (
                         parseItems(c.items).map((it, i) => (
-                          <span key={i} className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-sm font-semibold text-amber-900">
-                            <span className="rounded-full bg-orange-700 px-2 py-0.5 text-xs font-bold text-white">{it.q}×</span>
+                          <span key={i} className="inline-flex items-center gap-1.5 rounded-full border border-mangue-200 bg-mangue-50 px-3 py-1 text-sm font-semibold text-mangue-700">
+                            <span className="rounded-full bg-mangue-700 px-2 py-0.5 text-xs font-bold text-white">{it.q}×</span>
                             {it.plat}
-                            {it.prix > 0 && <span className="text-amber-600">· {(it.q * it.prix).toLocaleString('fr-FR')} F</span>}
+                            {it.prix > 0 && <span className="text-mangue-600">· {(it.q * it.prix).toLocaleString('fr-FR')} F</span>}
                           </span>
                         ))
                       )}
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-2xl font-black text-orange-700">{c.total_price.toLocaleString('fr-FR')} F</p>
-                    {c.heure_livraison && <p className="text-xs text-emerald-700">✅ {new Date(c.heure_livraison).toLocaleTimeString('fr-FR')}</p>}
+                    <p className="text-2xl font-black text-mangue-700">{c.total_price.toLocaleString('fr-FR')} F</p>
+                    {c.heure_livraison && <p className="text-xs text-accent-700">✅ {new Date(c.heure_livraison).toLocaleTimeString('fr-FR')}</p>}
                   </div>
                 </div>
 
@@ -285,7 +289,7 @@ export default function Page() {
                     <button
                       onClick={() => relancer(c.order_id)}
                       disabled={busy === c.order_id + 'relance'}
-                      className="flex items-center gap-2 rounded-full bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700 disabled:opacity-50"
+                      className="flex items-center gap-2 rounded-full bg-mangue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-mangue-700 disabled:opacity-50"
                     >
                       {busy === c.order_id + 'relance' ? (
                         <RefreshCw className="h-4 w-4 animate-spin" />
@@ -298,7 +302,7 @@ export default function Page() {
 
                   {/* Refusée : verrouiller les actions de livraison */}
                   {c.confirmation_statut === 'refusee' && (
-                    <span className="flex items-center gap-2 rounded-full bg-rose-100 px-4 py-2 text-sm font-semibold text-rose-700">
+                    <span className="flex items-center gap-2 rounded-full bg-bissap-100 px-4 py-2 text-sm font-semibold text-bissap-700">
                       ❌ Ne pas préparer
                     </span>
                   )}
@@ -306,24 +310,24 @@ export default function Page() {
                   {/* Actions classiques (uniquement si confirmée ou sans suivi) */}
                   {c.confirmation_statut !== 'refusee' && !c.nom_livreur && !/livr/i.test(c.statut_livraison) && (
                     <button onClick={() => agir(c.order_id, 'acceptee')} disabled={busy === c.order_id + 'acceptee'}
-                      className="flex items-center gap-2 rounded-full bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-700 disabled:opacity-50">
+                      className="flex items-center gap-2 rounded-full bg-nuit-600 px-4 py-2 text-sm font-semibold text-white hover:bg-nuit-700 disabled:opacity-50">
                       <Handshake className="h-4 w-4" />Accepter
                     </button>
                   )}
                   {c.confirmation_statut !== 'refusee' && c.nom_livreur && !/route|part|cours|livr/i.test(c.statut_livraison) && (
                     <button onClick={() => agir(c.order_id, 'route')} disabled={busy === c.order_id + 'route'}
-                      className="flex items-center gap-2 rounded-full bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-700 disabled:opacity-50">
+                      className="flex items-center gap-2 rounded-full bg-nuit-600 px-4 py-2 text-sm font-semibold text-white hover:bg-nuit-700 disabled:opacity-50">
                       <Bike className="h-4 w-4" />En route
                     </button>
                   )}
                   {c.confirmation_statut !== 'refusee' && !/livr/i.test(c.statut_livraison) && (
                     <button onClick={() => agir(c.order_id, 'livree')} disabled={busy === c.order_id + 'livree'}
-                      className="flex items-center gap-2 rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50">
+                      className="flex items-center gap-2 rounded-full bg-accent-600 px-4 py-2 text-sm font-semibold text-white hover:bg-accent-700 disabled:opacity-50">
                       <Check className="h-4 w-4" />Livrée
                     </button>
                   )}
                   {/livr/i.test(c.statut_livraison) && (
-                    <span className="flex items-center gap-2 rounded-full bg-emerald-100 px-4 py-2 text-sm font-semibold text-emerald-700">
+                    <span className="flex items-center gap-2 rounded-full bg-accent-100 px-4 py-2 text-sm font-semibold text-accent-700">
                       <CheckCircle2 className="h-4 w-4" />Cycle terminé
                     </span>
                   )}

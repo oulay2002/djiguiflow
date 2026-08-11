@@ -1,7 +1,18 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { fetchDashboard } from '@/lib/apiClient';
+import { classesBouton } from '@/components/ui/Bouton';
+
+/**
+ * Le branchement d'une boutique, en cinq etapes.
+ *
+ * La numerotation n'est pas un ornement : l'ordre porte une contrainte reelle.
+ * On ne peut pas relever son identifiant Telegram avant d'avoir connecte son
+ * bot, ni creer le groupe des livreurs avant que le bot existe. Chaque etape
+ * suppose la precedente, et le chiffre le dit.
+ */
 
 type Boutique = {
   id: string;
@@ -21,18 +32,59 @@ type Boutique = {
   telegram_webhook_branche?: boolean;
 };
 
+/** Un voyant, pas une phrase : l'etat se lit avant de se relire. */
 function Etat({ actif, quand, sinon }: { actif?: boolean; quand: string; sinon: string }) {
   return (
-    <span className={actif ? 'text-green-700' : 'text-gray-500'}>
-      {actif ? `✅ ${quand}` : `○ ${sinon}`}
+    <span
+      className={`inline-flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.14em] ${
+        actif ? 'text-accent-700' : 'text-chaux-600'
+      }`}
+    >
+      <span
+        aria-hidden
+        className={`h-1.5 w-1.5 shrink-0 ${actif ? 'bg-accent-500' : 'bg-chaux-400'}`}
+      />
+      {actif ? quand : sinon}
     </span>
   );
 }
 
+/** Une etape du branchement : son rang, son titre, ce qu'elle demande. */
+function Etape({
+  rang,
+  titre,
+  aide,
+  children,
+}: {
+  rang: number;
+  titre: string;
+  aide: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="border border-[var(--hairline)] bg-chaux-50 p-6 soft-shadow">
+      <div className="flex items-baseline gap-3">
+        <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-bissap-500">
+          {String(rang).padStart(2, '0')}
+        </span>
+        <h2 className="font-display text-xl font-bold text-nuit-900">{titre}</h2>
+      </div>
+      <p className="mt-2 text-sm leading-relaxed text-chaux-600">{aide}</p>
+      <div className="mt-5 space-y-3">{children}</div>
+    </section>
+  );
+}
+
+const CHAMP =
+  'w-full border border-[var(--hairline)] bg-white px-3 py-2.5 text-sm outline-none ' +
+  'transition focus:border-nuit-400';
+
 export default function OnboardingPage() {
   const [boutique, setBoutique] = useState<Boutique | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [message, setMessage] = useState('');
+  const [chargement, setChargement] = useState(true);
+  const [message, setMessage] = useState<{ ton: 'ok' | 'erreur' | 'attente'; texte: string } | null>(
+    null,
+  );
 
   useEffect(() => {
     (async () => {
@@ -42,192 +94,248 @@ export default function OnboardingPage() {
           setBoutique(await r.json());
         } else {
           const j = await r.json().catch(() => null);
-          setMessage('❌ ' + (j?.error || `HTTP ${r.status}`));
+          setMessage({ ton: 'erreur', texte: j?.error || `Erreur ${r.status}` });
         }
       } catch {
-        setMessage('❌ Connexion impossible — êtes-vous connecté ?');
+        setMessage({
+          ton: 'erreur',
+          texte: 'Connexion impossible. Vérifiez que vous êtes connecté.',
+        });
       }
-      setLoading(false);
+      setChargement(false);
     })();
   }, []);
 
-  const save = async (field: string, value: string) => {
-    setMessage('…');
+  const enregistrer = async (champ: string, valeur: string) => {
+    setMessage({ ton: 'attente', texte: 'Enregistrement…' });
     try {
       const r = await fetchDashboard('/api/onboarding', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ [field]: value }),
+        body: JSON.stringify({ [champ]: valeur }),
       });
       const j = await r.json().catch(() => null);
       if (r.ok) {
         // La fiche renvoyee fait foi : elle porte l'etat de branchement
         // recalcule, que la page ne saurait pas deviner seule.
-        setBoutique((b) => (j?.boutique ? j.boutique : b ? { ...b, [field]: value } : b));
-        setMessage(j?.faits?.length ? `✅ ${j.faits.join(' · ')}` : '✅ Enregistré');
+        setBoutique((b) => (j?.boutique ? j.boutique : b ? { ...b, [champ]: valeur } : b));
+        setMessage({ ton: 'ok', texte: j?.faits?.length ? j.faits.join(' · ') : 'Enregistré' });
       } else {
-        setMessage('❌ ' + (j?.error || 'Erreur'));
+        setMessage({ ton: 'erreur', texte: j?.error || "L'enregistrement a échoué." });
       }
     } catch {
-      setMessage('❌ Enregistrement impossible');
+      setMessage({ ton: 'erreur', texte: "L'enregistrement a échoué. Réessayez." });
     }
-    setTimeout(() => setMessage(''), 5000);
+    setTimeout(() => setMessage(null), 5000);
   };
 
   /** Un secret ne se reaffiche pas : le champ se vide une fois envoye. */
-  const saveSecret = async (field: string, e: React.FocusEvent<HTMLInputElement>) => {
+  const enregistrerSecret = async (champ: string, e: React.FocusEvent<HTMLInputElement>) => {
     const valeur = e.target.value.trim();
     if (!valeur) return;
     e.target.value = '';
-    await save(field, valeur);
+    await enregistrer(champ, valeur);
   };
 
-  if (loading) return <div className="p-8">Chargement…</div>;
+  if (chargement) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-chaux-100">
+        <p className="font-mono text-xs uppercase tracking-[0.2em] text-chaux-600">Chargement…</p>
+      </main>
+    );
+  }
+
+  const tons = {
+    ok: 'border-accent-200 bg-accent-50 text-accent-800',
+    erreur: 'border-bissap-200 bg-bissap-50 text-bissap-700',
+    attente: 'border-[var(--hairline)] bg-chaux-50 text-chaux-600',
+  };
 
   return (
-    <div className="max-w-2xl mx-auto p-8 space-y-6">
-      <h1 className="text-3xl font-bold">🏭 Onboarding — {boutique?.nom || 'ma boutique'}</h1>
-      <p className="text-gray-600">
-        Configurez votre boutique : les workflows s&apos;adaptent automatiquement.
-      </p>
-
-      {message && <div className="p-3 bg-blue-50 rounded">{message}</div>}
-
-      {!boutique && !message && (
-        <div className="p-3 bg-red-50 text-red-700 rounded">
-          Boutique introuvable — vérifiez que vous êtes connecté.
+    <main className="min-h-screen bg-chaux-100 pb-20">
+      <header className="indigo-weave relative bg-nuit-900 px-5 pb-10 pt-8 text-chaux-50 sm:px-8">
+        <div className="mx-auto max-w-3xl">
+          <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-mangue-300">
+            Branchement
+          </p>
+          <h1 className="mt-3 font-display text-3xl font-black leading-[1.05] sm:text-5xl">
+            {boutique?.nom || 'Votre boutique'}
+          </h1>
+          <p className="mt-3 max-w-lg text-sm text-chaux-200">
+            Cinq étapes, dans cet ordre. Vos clients écriront à votre propre numéro, et vos
+            livreurs recevront les courses par votre propre bot.
+          </p>
         </div>
-      )}
+        <div className="perf-line absolute inset-x-0 bottom-0 text-chaux-50" aria-hidden />
+      </header>
 
-      {boutique && (
-        <>
-          <section className="border rounded-lg p-4 space-y-2">
-            <h2 className="font-semibold">📱 1. Numéro WhatsApp Business</h2>
-            <p className="text-sm text-gray-600">Format international sans + (ex : 2250759486701)</p>
-            <input
-              key={'tel' + (boutique.telephone || '')}
-              defaultValue={boutique.telephone || ''}
-              onBlur={(e) => save('telephone', e.target.value)}
-              className="w-full border rounded p-2"
-            />
-          </section>
+      <div className="mx-auto max-w-3xl px-5 py-8 sm:px-8">
+        {message && (
+          <p role="status" className={`mb-6 border px-4 py-3 text-sm ${tons[message.ton]}`}>
+            {message.texte}
+          </p>
+        )}
 
-          <section className="border rounded-lg p-4 space-y-3">
-            <h2 className="font-semibold">🔑 2. Connectez vos comptes</h2>
-            <p className="text-sm text-gray-600">
-              Ce sont vos propres comptes qui parlent à vos clients : votre numéro WhatsApp et
-              votre bot Telegram. Tout ce que vous collez ici part dans un coffre chiffré — rien
-              ne réapparaîtra sur cette page, et personne d&apos;autre ne peut le lire.
-            </p>
+        {!boutique && !message && (
+          <p className="mb-6 border border-bissap-200 bg-bissap-50 px-4 py-3 text-sm text-bissap-700">
+            Boutique introuvable. Vérifiez que vous êtes connecté au bon compte.
+          </p>
+        )}
 
-            <div className="space-y-1">
-              <p className="text-sm font-medium">WhatsApp</p>
-              <p className="text-xs text-gray-600">
-                Vos clients écrivent à <b>votre</b> numéro. C&apos;est nous qui ouvrons la session
-                et la relions à votre boutique : vous n&apos;avez qu&apos;un QR code à scanner, et
-                aucune clé à manipuler.{' '}
-                <Etat
-                  actif={boutique.whatsapp_connecte}
-                  quand="numéro connecté"
-                  sinon="numéro pas encore connecté — écrivez-nous pour recevoir votre QR"
-                />
-                {boutique.whatsapp_connecte && (
-                  <>
-                    {' · '}
+        {boutique && (
+          <div className="space-y-5">
+            <Etape
+              rang={1}
+              titre="Votre numéro WhatsApp"
+              aide="Le numéro auquel vos clients écrivent. Au format international, sans le plus — par exemple 2250759486701."
+            >
+              <input
+                key={'tel' + (boutique.telephone || '')}
+                defaultValue={boutique.telephone || ''}
+                onBlur={(e) => enregistrer('telephone', e.target.value)}
+                className={CHAMP}
+                placeholder="2250759486701"
+                aria-label="Numéro WhatsApp de la boutique"
+              />
+            </Etape>
+
+            <Etape
+              rang={2}
+              titre="Vos comptes de messagerie"
+              aide="Ce sont vos propres comptes qui parlent à vos clients. Tout ce que vous collez ici part dans un coffre chiffré : rien ne réapparaîtra sur cette page, et personne d'autre ne peut le lire."
+            >
+              <div className="border border-[var(--hairline)] bg-white p-4">
+                <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-nuit-900">
+                  WhatsApp
+                </p>
+                <p className="mt-2 text-sm leading-relaxed text-chaux-600">
+                  C&apos;est nous qui ouvrons la session et la relions à votre boutique. Vous
+                  n&apos;avez qu&apos;un QR code à scanner, aucune clé à manipuler.
+                </p>
+                <span className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1">
+                  <Etat
+                    actif={boutique.whatsapp_connecte}
+                    quand="numéro connecté"
+                    sinon="écrivez-nous pour recevoir votre QR"
+                  />
+                  {boutique.whatsapp_connecte && (
                     <Etat
                       actif={boutique.whatsapp_webhook_protege}
                       quand="réception sécurisée"
                       sinon="réception non sécurisée"
                     />
-                  </>
-                )}
-              </p>
-            </div>
+                  )}
+                </span>
+              </div>
 
-            <div className="space-y-1">
-              <label className="text-sm font-medium">Jeton du bot Telegram</label>
-              <input
-                type="password"
-                autoComplete="off"
-                onBlur={(e) => saveSecret('telegram_bot_token', e)}
-                className="w-full border rounded p-2"
-                placeholder={boutique.telegram_connecte ? '•••••• déjà connecté' : 'collez le jeton donné par @BotFather'}
-              />
-              <p className="text-xs text-gray-600">
-                Créez votre bot avec <b>@BotFather</b> sur Telegram et collez son jeton : nous le
-                branchons tout seuls.{' '}
-                <Etat
-                  actif={boutique.telegram_webhook_branche}
-                  quand="bot branché"
-                  sinon="bot pas encore branché"
+              <div className="border border-[var(--hairline)] bg-white p-4">
+                <label
+                  htmlFor="jeton-telegram"
+                  className="font-mono text-[11px] uppercase tracking-[0.16em] text-nuit-900"
+                >
+                  Jeton du bot Telegram
+                </label>
+                <p className="mt-2 text-sm leading-relaxed text-chaux-600">
+                  Créez votre bot avec <b className="font-semibold text-nuit-800">@BotFather</b> sur
+                  Telegram et collez son jeton. Nous le branchons pour vous.
+                </p>
+                <input
+                  id="jeton-telegram"
+                  type="password"
+                  autoComplete="off"
+                  onBlur={(e) => enregistrerSecret('telegram_bot_token', e)}
+                  className={`${CHAMP} mt-3`}
+                  placeholder={
+                    boutique.telegram_connecte ? '•••••• déjà connecté' : 'Collez le jeton ici'
+                  }
                 />
-              </p>
+                <p className="mt-3">
+                  <Etat
+                    actif={boutique.telegram_webhook_branche}
+                    quand="bot branché"
+                    sinon="bot pas encore branché"
+                  />
+                </p>
+              </div>
+            </Etape>
+
+            <Etape
+              rang={3}
+              titre="Votre identifiant Telegram"
+              aide={
+                <>
+                  Là où vous recevrez vos alertes. Écrivez <code className="font-mono">ID</code> en
+                  privé à votre bot, puis recopiez le numéro qu&apos;il répond.
+                </>
+              }
+            >
+              <input
+                key={'tg' + (boutique.telegram_marchand || '')}
+                defaultValue={boutique.telegram_marchand || ''}
+                onBlur={(e) => enregistrer('telegram_marchand', e.target.value)}
+                className={CHAMP}
+                placeholder="1724402569"
+                aria-label="Identifiant Telegram du gérant"
+              />
+            </Etape>
+
+            <Etape
+              rang={4}
+              titre="Le groupe de vos livreurs"
+              aide={
+                <>
+                  Créez le groupe sur Telegram, ajoutez votre bot comme administrateur, puis
+                  envoyez <code className="font-mono">ID</code> dans le groupe.
+                </>
+              }
+            >
+              <input
+                key={'gr' + (boutique.groupe_livreurs || '')}
+                defaultValue={boutique.groupe_livreurs || ''}
+                onBlur={(e) => enregistrer('groupe_livreurs', e.target.value)}
+                className={CHAMP}
+                placeholder="-1004461402565"
+                aria-label="Identifiant du groupe des livreurs"
+              />
+            </Etape>
+
+            <Etape
+              rang={5}
+              titre="Vos feuilles Google"
+              aide="Le nom des onglets où sont tenus vos commandes, votre menu et vos notes."
+            >
+              <div className="grid gap-3 sm:grid-cols-3">
+                {(
+                  [
+                    ['sheet_commandes', 'Commandes', 'Commandes_Zahara'],
+                    ['sheet_menu', 'Menu', 'Menu'],
+                    ['sheet_notes', 'Notes', 'Notes'],
+                  ] as const
+                ).map(([champ, libelle, exemple]) => (
+                  <label key={champ} className="block">
+                    <span className="font-mono text-[11px] uppercase tracking-[0.16em] text-chaux-600">
+                      {libelle}
+                    </span>
+                    <input
+                      key={champ + (boutique[champ] || '')}
+                      defaultValue={boutique[champ] || ''}
+                      onBlur={(e) => enregistrer(champ, e.target.value)}
+                      className={`${CHAMP} mt-1.5`}
+                      placeholder={exemple}
+                    />
+                  </label>
+                ))}
+              </div>
+            </Etape>
+
+            <div className="pt-2">
+              <Link href="/dashboard" className={classesBouton('action', 'md', 'carree')}>
+                Aller au tableau de bord
+              </Link>
             </div>
-          </section>
-
-          <section className="border rounded-lg p-4 space-y-2">
-            <h2 className="font-semibold">💬 3. Votre ID Telegram (alertes)</h2>
-            <p className="text-sm text-gray-600">
-              Écrivez <code>ID</code> en privé à <b>votre bot</b>, copiez la réponse.
-            </p>
-            <input
-              key={'tg' + (boutique.telegram_marchand || '')}
-              defaultValue={boutique.telegram_marchand || ''}
-              onBlur={(e) => save('telegram_marchand', e.target.value)}
-              className="w-full border rounded p-2"
-              placeholder="ex : 1724402569"
-            />
-          </section>
-
-          <section className="border rounded-lg p-4 space-y-2">
-            <h2 className="font-semibold">🚚 4. ID du groupe livreurs</h2>
-            <p className="text-sm text-gray-600">
-              Créez le groupe, ajoutez <b>votre bot</b>, envoyez <code>ID</code> dans le groupe.
-            </p>
-            <input
-              key={'gr' + (boutique.groupe_livreurs || '')}
-              defaultValue={boutique.groupe_livreurs || ''}
-              onBlur={(e) => save('groupe_livreurs', e.target.value)}
-              className="w-full border rounded p-2"
-              placeholder="ex : -1004461402565"
-            />
-          </section>
-
-          <section className="border rounded-lg p-4 space-y-2">
-            <h2 className="font-semibold">📊 5. Noms des feuilles Google</h2>
-            <div className="grid grid-cols-3 gap-2">
-              <input
-                key={'sc' + (boutique.sheet_commandes || '')}
-                defaultValue={boutique.sheet_commandes || ''}
-                onBlur={(e) => save('sheet_commandes', e.target.value)}
-                className="border rounded p-2"
-                placeholder="Commandes_Zahara"
-              />
-              <input
-                key={'sm' + (boutique.sheet_menu || '')}
-                defaultValue={boutique.sheet_menu || ''}
-                onBlur={(e) => save('sheet_menu', e.target.value)}
-                className="border rounded p-2"
-                placeholder="Menu"
-              />
-              <input
-                key={'sn' + (boutique.sheet_notes || '')}
-                defaultValue={boutique.sheet_notes || ''}
-                onBlur={(e) => save('sheet_notes', e.target.value)}
-                className="border rounded p-2"
-                placeholder="Notes"
-              />
-            </div>
-          </section>
-
-          <a
-            href="/dashboard"
-            className="inline-block bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
-          >
-            → Retour au dashboard
-          </a>
-        </>
-      )}
-    </div>
+          </div>
+        )}
+      </div>
+    </main>
   );
 }

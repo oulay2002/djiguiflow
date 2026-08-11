@@ -83,60 +83,60 @@ export default function RegisterPage() {
 
           <div className="text-center">
             <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-500 to-accent-600 text-xl font-black text-white shadow-lg shadow-primary-500/20">D</div>
-            <h1 className="text-3xl font-black tracking-tight text-slate-900">DjiguiFlow</h1>
-            <p className="mt-2 text-slate-600">Créez votre compte commerçant</p>
+            <h1 className="text-3xl font-black tracking-tight text-nuit-900">DjiguiFlow</h1>
+            <p className="mt-2 text-chaux-600">Créez votre compte commerçant</p>
           </div>
         </div>
 
         <div className="rounded-[2rem] border border-white/70 bg-white/75 p-8 shadow-[0_20px_60px_rgba(49,35,20,0.12)] backdrop-blur-xl">
           <BoutonGoogle libelle="S'inscrire avec Google" />
 
-          <p className="mt-3 text-center text-xs text-slate-500">
+          <p className="mt-3 text-center text-xs text-chaux-600">
             Vous renseignerez votre boutique juste après, dans Réglages → Boutique.
           </p>
 
           <div className="my-6 flex items-center gap-3">
-            <span className="h-px flex-1 bg-slate-200" />
-            <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">ou</span>
-            <span className="h-px flex-1 bg-slate-200" />
+            <span className="h-px flex-1 bg-chaux-200" />
+            <span className="text-xs font-semibold uppercase tracking-wide text-chaux-600">ou</span>
+            <span className="h-px flex-1 bg-chaux-200" />
           </div>
 
           <form onSubmit={handleRegister} className="space-y-4">
             <div>
-              <label htmlFor="fullName" className="mb-1 block text-sm font-semibold text-slate-700">Nom complet</label>
+              <label htmlFor="fullName" className="mb-1 block text-sm font-semibold text-nuit-700">Nom complet</label>
               <div className="relative">
-                <User className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
-                <input id="fullName" name="fullName" type="text" value={formData.fullName} onChange={handleChange} required className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-10 pr-4 text-slate-700 outline-none transition focus:border-primary-400 focus:ring-2 focus:ring-primary-100" placeholder="Moussa Koné" />
+                <User className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-chaux-600" />
+                <input id="fullName" name="fullName" type="text" value={formData.fullName} onChange={handleChange} required className="w-full rounded-xl border border-[var(--hairline)] bg-chaux-50 py-2.5 pl-10 pr-4 text-nuit-700 outline-none transition focus:border-primary-400 focus:ring-2 focus:ring-primary-100" placeholder="Moussa Koné" />
               </div>
             </div>
 
             <div>
-              <label htmlFor="email" className="mb-1 block text-sm font-semibold text-slate-700">Email</label>
+              <label htmlFor="email" className="mb-1 block text-sm font-semibold text-nuit-700">Email</label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
-                <input id="email" name="email" type="email" value={formData.email} onChange={handleChange} required className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-10 pr-4 text-slate-700 outline-none transition focus:border-primary-400 focus:ring-2 focus:ring-primary-100" placeholder="votre@email.com" />
+                <Mail className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-chaux-600" />
+                <input id="email" name="email" type="email" value={formData.email} onChange={handleChange} required className="w-full rounded-xl border border-[var(--hairline)] bg-chaux-50 py-2.5 pl-10 pr-4 text-nuit-700 outline-none transition focus:border-primary-400 focus:ring-2 focus:ring-primary-100" placeholder="votre@email.com" />
               </div>
             </div>
 
             <div>
-              <label htmlFor="phone" className="mb-1 block text-sm font-semibold text-slate-700">Téléphone</label>
+              <label htmlFor="phone" className="mb-1 block text-sm font-semibold text-nuit-700">Téléphone</label>
               <div className="relative">
-                <Phone className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
-                <input id="phone" name="phone" type="tel" value={formData.phone} onChange={handleChange} required className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-10 pr-4 text-slate-700 outline-none transition focus:border-primary-400 focus:ring-2 focus:ring-primary-100" placeholder="07 00 00 00 00" />
+                <Phone className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-chaux-600" />
+                <input id="phone" name="phone" type="tel" value={formData.phone} onChange={handleChange} required className="w-full rounded-xl border border-[var(--hairline)] bg-chaux-50 py-2.5 pl-10 pr-4 text-nuit-700 outline-none transition focus:border-primary-400 focus:ring-2 focus:ring-primary-100" placeholder="07 00 00 00 00" />
               </div>
             </div>
 
             <div>
-              <label htmlFor="businessName" className="mb-1 block text-sm font-semibold text-slate-700">Nom du commerce</label>
+              <label htmlFor="businessName" className="mb-1 block text-sm font-semibold text-nuit-700">Nom du commerce</label>
               <div className="relative">
-                <Store className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
-                <input id="businessName" name="businessName" type="text" value={formData.businessName} onChange={handleChange} required className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-10 pr-4 text-slate-700 outline-none transition focus:border-primary-400 focus:ring-2 focus:ring-primary-100" placeholder="Restaurant Le Palmier" />
+                <Store className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-chaux-600" />
+                <input id="businessName" name="businessName" type="text" value={formData.businessName} onChange={handleChange} required className="w-full rounded-xl border border-[var(--hairline)] bg-chaux-50 py-2.5 pl-10 pr-4 text-nuit-700 outline-none transition focus:border-primary-400 focus:ring-2 focus:ring-primary-100" placeholder="Restaurant Le Palmier" />
               </div>
             </div>
 
             <div>
-              <label htmlFor="businessType" className="mb-1 block text-sm font-semibold text-slate-700">Type de commerce</label>
-              <select id="businessType" name="businessType" value={formData.businessType} onChange={handleChange} className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-slate-700 outline-none transition focus:border-primary-400 focus:ring-2 focus:ring-primary-100">
+              <label htmlFor="businessType" className="mb-1 block text-sm font-semibold text-nuit-700">Type de commerce</label>
+              <select id="businessType" name="businessType" value={formData.businessType} onChange={handleChange} className="w-full rounded-xl border border-[var(--hairline)] bg-chaux-50 px-4 py-2.5 text-nuit-700 outline-none transition focus:border-primary-400 focus:ring-2 focus:ring-primary-100">
                 <option value="restaurant">Restaurant / Fast-food</option>
                 <option value="boutique">Boutique / Vêtements</option>
                 <option value="pharmacie">Pharmacie</option>
@@ -147,32 +147,32 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label htmlFor="password" className="mb-1 block text-sm font-semibold text-slate-700">Mot de passe</label>
+              <label htmlFor="password" className="mb-1 block text-sm font-semibold text-nuit-700">Mot de passe</label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
-                <input id="password" name="password" type={showPassword ? 'text' : 'password'} value={formData.password} onChange={handleChange} required className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-10 pr-12 text-slate-700 outline-none transition focus:border-primary-400 focus:ring-2 focus:ring-primary-100" placeholder="••••••••" />
-                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-slate-600">
+                <Lock className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-chaux-600" />
+                <input id="password" name="password" type={showPassword ? 'text' : 'password'} value={formData.password} onChange={handleChange} required className="w-full rounded-xl border border-[var(--hairline)] bg-chaux-50 py-2.5 pl-10 pr-12 text-nuit-700 outline-none transition focus:border-primary-400 focus:ring-2 focus:ring-primary-100" placeholder="••••••••" />
+                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-chaux-600 transition hover:text-chaux-600">
                   {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
               </div>
             </div>
 
             <div>
-              <label htmlFor="confirmPassword" className="mb-1 block text-sm font-semibold text-slate-700">Confirmer le mot de passe</label>
+              <label htmlFor="confirmPassword" className="mb-1 block text-sm font-semibold text-nuit-700">Confirmer le mot de passe</label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
-                <input id="confirmPassword" name="confirmPassword" type={showPassword ? 'text' : 'password'} value={formData.confirmPassword} onChange={handleChange} required className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-10 pr-4 text-slate-700 outline-none transition focus:border-primary-400 focus:ring-2 focus:ring-primary-100" placeholder="••••••••" />
+                <Lock className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-chaux-600" />
+                <input id="confirmPassword" name="confirmPassword" type={showPassword ? 'text' : 'password'} value={formData.confirmPassword} onChange={handleChange} required className="w-full rounded-xl border border-[var(--hairline)] bg-chaux-50 py-2.5 pl-10 pr-4 text-nuit-700 outline-none transition focus:border-primary-400 focus:ring-2 focus:ring-primary-100" placeholder="••••••••" />
               </div>
             </div>
 
-            {error && <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div>}
-            {success && <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{success}</div>}
+            {error && <div className="rounded-xl border border-bissap-200 bg-bissap-50 px-4 py-3 text-sm text-bissap-700">{error}</div>}
+            {success && <div className="rounded-xl border border-accent-200 bg-accent-50 px-4 py-3 text-sm text-accent-700">{success}</div>}
 
             <button type="submit" disabled={loading} className="w-full rounded-full bg-gradient-to-r from-primary-600 to-primary-500 py-3.5 font-semibold text-white shadow-lg shadow-primary-500/30 transition hover:translate-y-[-1px] disabled:opacity-60">
               {loading ? 'Création...' : 'Créer mon compte'}
             </button>
 
-            <div className="text-center text-sm text-slate-600">
+            <div className="text-center text-sm text-chaux-600">
               Vous avez déjà un compte ?{' '}
               <Link href="/login" className="font-bold text-primary-700 transition hover:text-primary-800">Se connecter</Link>
             </div>
