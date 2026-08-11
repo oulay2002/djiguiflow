@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { LienRetour } from '@/components/ui/Bouton';
 import { supabase } from '@/lib/supabase';
+import { useBoutique, uuidBoutiqueCourante } from '@/lib/boutique';
 import { useRouter } from 'next/navigation';
 import {
   LineChart,
@@ -78,6 +79,7 @@ type DriverPerformance = {
 
 export default function AnalyticsPage() {
   const router = useRouter();
+  const { boutiqueId: boutiqueSlug } = useBoutique();
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState<Period>('month');
   const [stats, setStats] = useState({
@@ -101,13 +103,8 @@ export default function AnalyticsPage() {
       return;
     }
 
-    const { data: boutique } = await supabase
-      .from('boutiques')
-      .select('id')
-      .eq('user_id', user.id)
-      .single();
-
-    if (!boutique) {
+    const uuid = await uuidBoutiqueCourante(boutiqueSlug);
+    if (!uuid) {
       setLoading(false);
       return;
     }
@@ -123,7 +120,7 @@ export default function AnalyticsPage() {
           prix_unitaire
         )
       `)
-      .eq('boutique_id', boutique.id)
+      .eq('boutique_id', uuid)
       .neq('statut', 'annulee')
       .order('created_at', { ascending: true });
 
@@ -221,7 +218,7 @@ export default function AnalyticsPage() {
     });
 
     setLoading(false);
-  }, [router]);
+  }, [router, boutiqueSlug]);
 
   useEffect(() => {
     const timerId = window.setTimeout(() => {

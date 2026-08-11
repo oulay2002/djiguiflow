@@ -216,7 +216,7 @@ export default function CustomersPage() {
           <header className="mb-8 flex flex-col gap-4 rounded-[2rem] border border-white/70 bg-white/75 p-5 shadow-[0_20px_60px_rgba(49,35,20,0.08)] backdrop-blur-xl md:flex-row md:items-center md:justify-between">
             <div>
               <p className="text-sm font-medium uppercase tracking-[0.2em] text-chaux-600">Clients</p>
-              <h1 className="mt-2 text-3xl font-black tracking-tight text-nuit-900">Base clients</h1>
+              <h1 className="mt-2 font-display text-3xl font-black tracking-tight text-nuit-900">Clients</h1>
             </div>
 
             <div className="flex items-center gap-3">

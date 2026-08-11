@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { LienRetour, classesBouton } from '@/components/ui/Bouton';
 import { supabase } from '@/lib/supabase';
+import { useBoutique, uuidBoutiqueCourante } from '@/lib/boutique';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
@@ -34,6 +35,7 @@ type NotificationSettings = {
 
 export default function NotificationsPage() {
   const router = useRouter();
+  const { boutiqueId: boutiqueSlug } = useBoutique();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -57,30 +59,25 @@ export default function NotificationsPage() {
       return;
     }
 
-    const { data: boutique } = await supabase
-      .from('boutiques')
-      .select('id')
-      .eq('user_id', user.id)
-      .single();
-
-    if (!boutique) {
+    const uuid = await uuidBoutiqueCourante(boutiqueSlug);
+    if (!uuid) {
       setLoading(false);
       return;
     }
 
-    setBoutiqueId(boutique.id);
+    setBoutiqueId(uuid);
 
     const { data } = await supabase
       .from('notification_settings')
       .select('*')
-      .eq('boutique_id', boutique.id)
+      .eq('boutique_id', uuid)
       .single();
 
     if (data) {
       setSettings(data as NotificationSettings);
     }
     setLoading(false);
-  }, [router]);
+  }, [router, boutiqueSlug]);
 
   useEffect(() => {
     const timerId = window.setTimeout(() => {
