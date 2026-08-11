@@ -142,8 +142,35 @@ export async function getMarchand(id: string | null | undefined): Promise<Marcha
   return dict[String(id).trim()] || null;
 }
 
-export async function resoudreMarchand(id: string | null | undefined): Promise<Marchand | null> {
-  return getMarchand(id);
+// Déduit la boutique depuis le préfixe de la référence (ZH-…, BO-…, APP-…)
+export async function resoudreMarchandParRef(ref: string) {
+  const match = ref.match(/^([A-Z]{2,4})-/i);
+  if (!match) return null;
+  const prefixe = match[1].toUpperCase();
+
+  const sb = getSupabaseAdmin();
+  if (!sb) return null;
+
+  // D'abord chercher par préfixe exact
+  const { data } = await sb
+    .from('boutiques')
+    .select('id, slug, nom, prefixe_commande, groupe_livreurs, actif')
+    .eq('actif', true)
+    .eq('prefixe_commande', prefixe)
+    .maybeSingle();
+
+  if (data) return data;
+
+  // Fallback historique : APP → Zahara (refs legacy)
+  if (prefixe === 'APP') {
+    const { data: fb } = await sb
+      .from('boutiques')
+      .select('id, slug, nom, prefixe_commande, groupe_livreurs, actif')
+      .eq('slug', 'zahara')
+      .maybeSingle();
+    return fb;
+  }
+  return null;
 }
 
 export async function listerMarchands(): Promise<Marchand[]> {
