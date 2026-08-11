@@ -1,4 +1,4 @@
-import { creerOnglet, readHeaders, appendRow } from '@/lib/googleSheets';
+import { creerOnglet } from '@/lib/googleSheets';
 import { invaliderCacheMarchands } from '@/lib/marchands';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 
@@ -210,32 +210,10 @@ export async function provisionnerMarchand(d: DemandeProvisioning): Promise<Resu
     );
   }
 
-    // 5. Registre Marchands (feuille Google) : le selecteur de boutique et le
-  //    garde des routes lisent cette feuille. Sans cette ligne, le nouveau
-  //    marchand serait invisible au dashboard.
-  const ligneRegistre: Record<string, string> = {
-    id: slug,
-    nom,
-    secteur: d.categorie?.trim() || 'Restaurant',
-    emoji: d.emoji?.trim() || '🏪',
-    sheetCommandes,
-    sheetMenu,
-    sheetNotes: '',
-    groupeLivreurs: d.groupeLivreurs?.trim() || '',
-    whatsapp: d.whatsapp?.trim() || d.telephone?.trim() || '',
-    boutiqueId: boutique.id,
-  };
-  try {
-    const entetes = await readHeaders('Marchands!A1:Z1', process.env.SHEET_ID!);
-    await appendRow(
-      'Marchands!A:Z',
-      entetes.map(h => ligneRegistre[h] ?? ''),
-      process.env.SHEET_ID!,
-    );
-  } catch (e) {
-    // La boutique existe deja en base : on journalise sans casser le flux.
-    console.error('Ajout au registre Marchands impossible :', e);
-  }
+  // 5. Le registre vit dans Supabase : la fiche inseree ci-dessus suffit a
+  //    rendre le marchand visible partout. Une ligne etait aussi ajoutee dans
+  //    l'onglet Marchands, du temps ou ce dernier servait de registre ; il ne
+  //    porte plus rien que la base ne porte, et sa lecture a ete retiree.
 
     // 6. Essai de 30 jours offert : le marchand entre immediatement dans son
   //    dashboard (statut « trialing »). A echeance, le paywall reprend la
