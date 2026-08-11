@@ -17,23 +17,36 @@ type Ligne = {
   commande_items: LigneItem[] | null;
 };
 
-function pageHtml(emoji: string, titre: string, detail: string): string {
-  return `<!doctype html><html lang="fr"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>${titre}</title></head><body style="font-family:system-ui,sans-serif;background:#f7f0e7;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0"><div style="background:#fff;border-radius:24px;padding:40px;max-width:420px;text-align:center;box-shadow:0 20px 60px rgba(49,35,20,.12)"><div style="font-size:48px">${emoji}</div><h1 style="font-size:22px;margin:16px 0 8px;color:#0f172a">${titre}</h1><p style="color:#64748b;margin:0">${detail}</p><p style="margin-top:24px;font-size:13px;color:#94a3b8">DjiguiFlow 🍽️</p></div></body></html>`;
+/**
+ * Pourquoi un bouton, et non un simple lien.
+ *
+ * Le lien de confirmation vit dans un message WhatsApp, et WhatsApp visite les
+ * URL qu'il contient pour en fabriquer l'apercu. Un GET qui modifie l'etat est
+ * donc declenche tout seul, avant meme que le client ait lu le message :
+ * constate le 11 aout 2026, une commande s'est confirmee une seconde apres
+ * l'envoi, sans aucun clic. L'etape de confirmation ne servait alors a rien, et
+ * les livreurs partaient sur une commande que personne n'avait acceptee.
+ *
+ * Le GET ne fait plus que montrer la commande et proposer deux boutons ; seul
+ * le POST qu'ils declenchent ecrit. Aucun robot d'apercu ne poste.
+ */
+function pageHtml(emoji: string, titre: string, detail: string, corps = ''): string {
+  return `<!doctype html><html lang="fr"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>${titre}</title></head><body style="font-family:system-ui,sans-serif;background:#f7f0e7;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0"><div style="background:#fff;border-radius:24px;padding:40px;max-width:420px;text-align:center;box-shadow:0 20px 60px rgba(49,35,20,.12)"><div style="font-size:48px">${emoji}</div><h1 style="font-size:22px;margin:16px 0 8px;color:#0f172a">${titre}</h1><p style="color:#64748b;margin:0">${detail}</p>${corps}<p style="margin-top:24px;font-size:13px;color:#94a3b8">DjiguiFlow 🍽️</p></div></body></html>`;
 }
 
-export async function GET(req: Request) {
-  const html = (e: string, t: string, d: string, code = 200) =>
-    new Response(pageHtml(e, t, d), { status: code, headers: { 'Content-Type': 'text/html; charset=utf-8' } });
+function reponseHtml(emoji: string, titre: string, detail: string, code = 200, corps = ''): Response {
+  return new Response(pageHtml(emoji, titre, detail, corps), {
+    status: code,
+    headers: { 'Content-Type': 'text/html; charset=utf-8' },
+  });
+}
 
-  const { searchParams } = new URL(req.url);
-  const ref = (searchParams.get('ref') || '').trim();
-  const r = (searchParams.get('r') || '').toLowerCase();
-  if (!ref || (r !== 'oui' && r !== 'non')) return html('❌', 'Lien invalide', 'Ce lien de confirmation est incomplet.', 400);
-
+/** Lecture de la commande, commune au GET et au POST. */
+async function chargerCommande(ref: string) {
   const sb = getSupabaseAdmin();
-  if (!sb) return html('⏳', 'Service indisponible', 'Réessayez dans quelques secondes.', 503);
+  if (!sb) return { sb: null, ligne: null as Ligne | null };
 
-  const { data, error } = await sb
+  const { data } = await sb
     .from('commandes')
     .select(
       'reference, confirmation_statut, boutique_id, client_nom, client_telephone, chat_id,' +
@@ -42,20 +55,85 @@ export async function GET(req: Request) {
     .ilike('reference', ref)
     .maybeSingle();
 
-  if (error || !data) return html('❌', 'Commande introuvable', 'Vérifiez le lien reçu.', 404);
+  return { sb, ligne: (data as unknown as Ligne) ?? null };
+}
 
-  const ligne = data as unknown as Ligne;
-
-  if (ligne.confirmation_statut === 'confirmee' || ligne.confirmation_statut === 'refusee') {
-    return html('ℹ️', 'Déjà répondu', `Cette commande a déjà été ${ligne.confirmation_statut === 'confirmee' ? 'confirmée ✅' : 'annulée ❌'}.`);
+function dejaRepondu(ligne: Ligne): Response | null {
+  if (ligne.confirmation_statut !== 'confirmee' && ligne.confirmation_statut !== 'refusee') {
+    return null;
   }
+  const quoi = ligne.confirmation_statut === 'confirmee' ? 'confirmée ✅' : 'annulée ❌';
+  return reponseHtml('ℹ️', 'Déjà répondu', `Cette commande a déjà été ${quoi}.`);
+}
+
+function articlesDe(ligne: Ligne): string[] {
+  return (ligne.commande_items ?? []).map(
+    (i) => `${i.quantite ?? 1}× ${i.nom_produit ?? 'Article'}`,
+  );
+}
+
+/** Ce que le client voit en ouvrant le lien : sa commande, et deux boutons. */
+export async function GET(req: Request) {
+  const { searchParams } = new URL(req.url);
+  const ref = (searchParams.get('ref') || '').trim();
+  if (!ref) return reponseHtml('❌', 'Lien invalide', 'Ce lien de confirmation est incomplet.', 400);
+
+  const { sb, ligne } = await chargerCommande(ref);
+  if (!sb) return reponseHtml('⏳', 'Service indisponible', 'Réessayez dans quelques secondes.', 503);
+  if (!ligne) return reponseHtml('❌', 'Commande introuvable', 'Vérifiez le lien reçu.', 404);
+
+  const repondu = dejaRepondu(ligne);
+  if (repondu) return repondu;
+
+  const bouton = (valeur: string, libelle: string, fond: string) =>
+    `<form method="post" style="display:inline-block;margin:6px">` +
+    `<input type="hidden" name="ref" value="${ligne.reference}"/>` +
+    `<input type="hidden" name="r" value="${valeur}"/>` +
+    `<button type="submit" style="border:0;border-radius:12px;padding:14px 22px;font-size:16px;cursor:pointer;color:#fff;background:${fond}">${libelle}</button>` +
+    `</form>`;
+
+  const articles = articlesDe(ligne).join(', ');
+  const recap =
+    `<p style="color:#0f172a;margin:18px 0 4px;font-weight:600">${articles || 'Votre commande'}</p>` +
+    `<p style="color:#64748b;margin:0 0 18px">${Number(ligne.total ?? 0).toLocaleString('fr-FR')} FCFA · ${ligne.client_adresse ?? ''}</p>` +
+    `<div>${bouton('oui', '✅ Je confirme', '#16a34a')}${bouton('non', "❌ J'annule", '#dc2626')}</div>`;
+
+  return reponseHtml('🍽️', 'Confirmez votre commande', 'Serez-vous disponible pour la réception ?', 200, recap);
+}
+
+/** L'ecriture, declenchee par le bouton et par lui seul. */
+export async function POST(req: Request) {
+  let ref = '';
+  let r = '';
+
+  const type = req.headers.get('content-type') || '';
+  if (type.includes('application/json')) {
+    const corps = (await req.json().catch(() => ({}))) as Record<string, unknown>;
+    ref = String(corps.ref ?? '').trim();
+    r = String(corps.r ?? '').toLowerCase();
+  } else {
+    const form = await req.formData();
+    ref = String(form.get('ref') ?? '').trim();
+    r = String(form.get('r') ?? '').toLowerCase();
+  }
+
+  if (!ref || (r !== 'oui' && r !== 'non')) {
+    return reponseHtml('❌', 'Lien invalide', 'Ce lien de confirmation est incomplet.', 400);
+  }
+
+  const { sb, ligne } = await chargerCommande(ref);
+  if (!sb) return reponseHtml('⏳', 'Service indisponible', 'Réessayez dans quelques secondes.', 503);
+  if (!ligne) return reponseHtml('❌', 'Commande introuvable', 'Vérifiez le lien reçu.', 404);
+
+  const repondu = dejaRepondu(ligne);
+  if (repondu) return repondu;
 
   const statut = r === 'oui' ? 'confirmee' : 'refusee';
   const { error: errUpd } = await sb
     .from('commandes')
     .update({ confirmation_statut: statut, confirmation_heure: new Date().toISOString() } as never)
     .eq('reference', ligne.reference);
-  if (errUpd) return html('⏳', 'Erreur technique', 'Réessayez dans quelques secondes.', 503);
+  if (errUpd) return reponseHtml('⏳', 'Erreur technique', 'Réessayez dans quelques secondes.', 503);
 
   const n8n = process.env.N8N_CONFIRMATION_URL;
   if (n8n) {
@@ -71,17 +149,19 @@ export async function GET(req: Request) {
           customer_name: ligne.client_nom ?? 'Client',
           phone: telClient,
           address: ligne.client_adresse ?? '',
-          items: (ligne.commande_items ?? []).map(i => `${i.quantite ?? 1}× ${i.nom_produit ?? 'Article'}`),
+          items: articlesDe(ligne),
           total_price: Number(ligne.total ?? 0),
           canal: String(ligne.canal ?? 'whatsapp').toLowerCase(),
           chat_id: ligne.chat_id || telClient,
           destinataire: telClient,
         }),
       });
-    } catch { /* non bloquant */ }
+    } catch {
+      /* non bloquant : la reponse du client est deja enregistree */
+    }
   }
 
   return statut === 'confirmee'
-    ? html('✅', 'Commande confirmée !', 'Le commerçant prépare votre commande. Merci !')
-    : html('❌', 'Commande annulée', 'Le commerçant a été prévenu. Aucune somme ne sera due.');
+    ? reponseHtml('✅', 'Commande confirmée !', 'Le commerçant prépare votre commande. Merci !')
+    : reponseHtml('❌', 'Commande annulée', 'Le commerçant a été prévenu. Aucune somme ne sera due.');
 }
