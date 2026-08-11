@@ -115,47 +115,32 @@ export default function OnboardingPage() {
           <section className="border rounded-lg p-4 space-y-3">
             <h2 className="font-semibold">🔑 2. Connectez vos comptes</h2>
             <p className="text-sm text-gray-600">
-              Vos clients écrivent à <b>votre</b> numéro et à <b>votre</b> bot. Ces clés partent
-              dans un coffre chiffré : elles ne réapparaîtront jamais ici, et personne d&apos;autre
-              ne les lit.
+              Ce sont vos propres comptes qui parlent à vos clients : votre numéro WhatsApp et
+              votre bot Telegram. Tout ce que vous collez ici part dans un coffre chiffré — rien
+              ne réapparaîtra sur cette page, et personne d&apos;autre ne peut le lire.
             </p>
 
             <div className="space-y-1">
-              <label className="text-sm font-medium">Clé API WhatsApp (wasender)</label>
-              <input
-                type="password"
-                autoComplete="off"
-                onBlur={(e) => saveSecret('wasender_token', e)}
-                className="w-full border rounded p-2"
-                placeholder={boutique.whatsapp_connecte ? '•••••• déjà connecté' : 'collez la clé'}
-              />
-              <p className="text-xs">
+              <p className="text-sm font-medium">WhatsApp</p>
+              <p className="text-xs text-gray-600">
+                Vos clients écrivent à <b>votre</b> numéro. C&apos;est nous qui ouvrons la session
+                et la relions à votre boutique : vous n&apos;avez qu&apos;un QR code à scanner, et
+                aucune clé à manipuler.{' '}
                 <Etat
                   actif={boutique.whatsapp_connecte}
-                  quand="WhatsApp connecté"
-                  sinon="WhatsApp pas encore connecté"
+                  quand="numéro connecté"
+                  sinon="numéro pas encore connecté — écrivez-nous pour recevoir votre QR"
                 />
-              </p>
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-sm font-medium">Secret du webhook wasender</label>
-              <input
-                type="password"
-                autoComplete="off"
-                onBlur={(e) => saveSecret('wasender_webhook_secret', e)}
-                className="w-full border rounded p-2"
-                placeholder={boutique.whatsapp_webhook_protege ? '•••••• déjà posé' : 'collez le secret'}
-              />
-              <p className="text-xs text-gray-600">
-                Dans wasender, pointez le webhook sur
-                {' '}<code>https://oulai2002.app.n8n.cloud/webhook/1b96720c-e3b3-4638-a351-7f3704bd483e/whatsapp/{String(boutique.slug ?? '')}</code>
-                {' '}puis collez ici le secret qu&apos;il affiche.{' '}
-                <Etat
-                  actif={boutique.whatsapp_webhook_protege}
-                  quand="webhook protégé"
-                  sinon="webhook non protégé"
-                />
+                {boutique.whatsapp_connecte && (
+                  <>
+                    {' · '}
+                    <Etat
+                      actif={boutique.whatsapp_webhook_protege}
+                      quand="réception sécurisée"
+                      sinon="réception non sécurisée"
+                    />
+                  </>
+                )}
               </p>
             </div>
 
