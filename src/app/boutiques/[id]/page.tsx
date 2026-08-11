@@ -23,8 +23,37 @@ const fcfa = (n: number) => n.toLocaleString('fr-FR');
 /** Fond de la page : sert aux encoches du ticket, qui doivent être des trous. */
 const FOND_PAGE = '#eeece5';
 
-/** Distingue une adresse lisible (`/boutiques/zahara`) d'un ancien lien uuid. */
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+type FicheRow = {
+  id: string;
+  nom: string | null;
+  categorie: string | null;
+  telephone: string | null;
+  zone: string | null;
+  emoji: string | null;
+};
+
+type ProduitRow = {
+  id: string;
+  nom: string | null;
+  categorie: string | null;
+  prix: number | null;
+  description: string | null;
+  photo_url: string | null;
+  menu_du_jour: boolean | null;
+};
+
+/**
+ * Les fonctions `vitrine_*` viennent d'etre ajoutees en base et n'existent pas
+ * encore dans les types generes. On les appelle a travers ce passe-plat plutot
+ * que de regenerer tout le schema.
+ */
+function appelerVitrine<T>(nom: string, ref: string): Promise<{ data: T[] | null }> {
+  const rpc = supabase.rpc as unknown as (
+    n: string,
+    args: Record<string, string>,
+  ) => Promise<{ data: T[] | null }>;
+  return rpc(nom, { p_ref: ref }).catch(() => ({ data: null }));
+}
 
 /**
  * Visuel d'un plat.
@@ -117,18 +146,18 @@ export default function Page() {
         }
 
         // 2. Sinon, boutique Supabase (commande via lien WhatsApp).
-        // Colonnes explicites : le rôle anon n'a plus le droit de lire la
-        // config interne du registre (onglets Sheets, groupe livreurs).
-        // L'URL porte tantôt le slug, tantôt l'uuid : les liens partagés par
-        // WhatsApp datent d'avant les adresses lisibles. `id` est une colonne
-        // uuid — y comparer « rosemonde » fait échouer la requête entière, et
-        // la vitrine restait vide sans rien dire. On choisit donc la colonne.
-        const colonne = UUID.test(slug) ? 'id' : 'slug';
-        const { data: b } = await supabase
-          .from('boutiques')
-          .select('id, nom, categorie, telephone, description, logo_url, zone, emoji, slug')
-          .eq(colonne, slug)
-          .single();
+        //
+        // On passe par `vitrine_boutique` et non par la table : la lecture
+        // publique de `boutiques` n'est accordée qu'au rôle `anon`, et un
+        // visiteur connecté ne voit alors que sa propre enseigne — la fiche
+        // d'un autre commerçant restait vide sans rien dire. Ces fonctions
+        // acceptent le slug comme l'uuid, et ne rendent que le public : ni
+        // stock, ni seuil d'alerte, ni configuration interne.
+        const [fiche, catalogue] = await Promise.all([
+          appelerVitrine<FicheRow>('vitrine_boutique', slug),
+          appelerVitrine<ProduitRow>('vitrine_produits', slug),
+        ]);
+        const b = fiche.data?.[0];
         if (annule || !b) return;
 
         setHeader({
@@ -139,15 +168,7 @@ export default function Page() {
         setZone(String(b.zone ?? ''));
         setTelBoutique(String(b.telephone ?? ''));
 
-        // Ni stock, ni seuil d'alerte : ces chiffres n'ont rien à faire
-        // sur une vitrine publique.
-        const { data: ps } = await supabase
-          .from('produits')
-          .select('id, nom, categorie, prix, description, photo_url, disponible, menu_du_jour')
-          .eq('boutique_id', b.id)
-          .eq('disponible', true);
-        if (annule) return;
-        setProduits((ps ?? []).map((p: Record<string, unknown>) => ({
+        setProduits((catalogue.data ?? []).map((p) => ({
           id: String(p.id),
           nom: String(p.nom ?? 'Produit'),
           categorie: String(p.categorie ?? ''),

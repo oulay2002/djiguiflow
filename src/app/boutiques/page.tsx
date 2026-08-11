@@ -22,28 +22,25 @@ import { supabase } from '@/lib/supabase';
  * « sponsorisee » aussi : personne ne payait pour l'obtenir.
  */
 
-type BoutiqueRow = {
+type VitrineRow = {
   id: string;
   slug: string | null;
   nom: string | null;
   description: string | null;
   zone: string | null;
   categorie: string | null;
-  logo_url?: string | null;
-};
-
-type NoteRow = {
-  boutique_id: string;
+  logo_url: string | null;
+  articles: number | null;
   note_moyenne: number | string | null;
   avis: number | null;
   commandes_livrees: number | null;
 };
 
 /**
- * `notes_publiques()` vient d'etre ajoutee en base et n'existe pas encore dans
- * les types generes. On la declare ici plutot que de regenerer tout le schema.
+ * `vitrine_boutiques()` vient d'etre ajoutee en base et n'existe pas encore
+ * dans les types generes. On la declare ici plutot que de regenerer le schema.
  */
-type AppelNotes = () => Promise<{ data: NoteRow[] | null }>;
+type AppelVitrine = () => Promise<{ data: VitrineRow[] | null; error: unknown }>;
 
 type Boutique = {
   id: string;
@@ -88,45 +85,30 @@ export default function VitrinePage() {
     let vivant = true;
 
     (async () => {
-      const appelerNotes = (() =>
-        (supabase.rpc as unknown as (nom: string) => ReturnType<AppelNotes>)(
-          'notes_publiques',
-        )) as AppelNotes;
+      // Une seule porte, et elle ne depend pas du role du visiteur : lire
+      // `boutiques` directement ne rendait que ses propres enseignes des qu'on
+      // etait connecte, et la place de marche se vidait.
+      const appelerVitrine = (() =>
+        (supabase.rpc as unknown as (nom: string) => ReturnType<AppelVitrine>)(
+          'vitrine_boutiques',
+        )) as AppelVitrine;
 
-      const [fiches, produits, notes] = await Promise.all([
-        supabase
-          .from('boutiques')
-          .select('id, slug, nom, description, zone, categorie, logo_url'),
-        supabase.from('produits').select('id, boutique_id, disponible'),
-        // Une note manquante ne doit pas emporter la vitrine entiere.
-        appelerNotes().catch(() => ({ data: null })),
-      ]);
+      const { data, error } = await appelerVitrine().catch(() => ({
+        data: null,
+        error: true,
+      }));
 
       if (!vivant) return;
 
-      if (fiches.error) {
+      if (error || !data) {
         setErreur("Les boutiques n'ont pas pu être chargées. Réessayez dans un instant.");
         setChargement(false);
         return;
       }
 
-      // On ne compte que le disponible : la fiche boutique filtre pareil, et
-      // annoncer douze articles pour en presenter trois est une promesse
-      // rompue des le clic.
-      const parBoutique = new Map<string, number>();
-      const lignes = (produits.data ?? []) as { boutique_id: string; disponible: boolean | null }[];
-      for (const p of lignes) {
-        if (p.disponible === false) continue;
-        parBoutique.set(p.boutique_id, (parBoutique.get(p.boutique_id) ?? 0) + 1);
-      }
-
-      const notesParBoutique = new Map<string, NoteRow>();
-      for (const n of notes.data ?? []) notesParBoutique.set(n.boutique_id, n);
-
       setBoutiques(
-        ((fiches.data ?? []) as BoutiqueRow[]).map((f) => {
-          const n = notesParBoutique.get(f.id);
-          const moyenne = n?.note_moyenne == null ? null : Number(n.note_moyenne);
+        data.map((f) => {
+          const moyenne = f.note_moyenne == null ? null : Number(f.note_moyenne);
           return {
             id: f.id,
             // Une vitrine se partage : `/boutiques/zahara` se lit, se dicte au
@@ -138,10 +120,13 @@ export default function VitrinePage() {
             categorie: f.categorie?.trim() || 'Autre',
             description: f.description?.trim() || '',
             logo: f.logo_url?.trim() || null,
-            produits: parBoutique.get(f.id) ?? 0,
-            note: Number.isFinite(moyenne) ? moyenne : null,
-            avis: n?.avis ?? 0,
-            livrees: n?.commandes_livrees ?? 0,
+            // Le compte est fait en base et ne retient que le disponible,
+            // comme la fiche : promettre douze articles pour en presenter
+            // trois est une promesse rompue des le clic.
+            produits: f.articles ?? 0,
+            note: moyenne !== null && Number.isFinite(moyenne) ? moyenne : null,
+            avis: f.avis ?? 0,
+            livrees: f.commandes_livrees ?? 0,
           };
         }),
       );
