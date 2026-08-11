@@ -56,6 +56,11 @@ function clePrincipale(m: Marchand): string {
  * webhooks deja configures utilisent des identifiants sans tiret, herites du
  * registre Sheets — « boulangeriedor » doit continuer de repondre.
  *
+ * L'uuid de la boutique est indexe pour la meme raison : les liens partages
+ * avant les adresses lisibles pointent sur `/boutiques/<uuid>`, et le layout de
+ * la fiche resout le titre et le canonical par ce chemin. Sans cet alias,
+ * chacune de ces pages s'annoncait « Boutique introuvable » en `noindex`.
+ *
  * Mais deux boutiques peuvent se disputer une meme forme compactee :
  * « chez-ali » produit l'alias « chezali », qui est le slug legitime d'une
  * autre. Si l'alias l'emportait, les commandes d'un marchand partiraient chez
@@ -63,7 +68,7 @@ function clePrincipale(m: Marchand): string {
  * seulement sur les cles encore libres.
  */
 function alias(m: Marchand): string[] {
-  return [m.id.replace(/-/g, ''), m.nom.toLowerCase().replace(/\s+/g, '')]
+  return [m.boutiqueId, m.id.replace(/-/g, ''), m.nom.toLowerCase().replace(/\s+/g, '')]
     .map((s) => String(s || '').trim())
     .filter(Boolean);
 }

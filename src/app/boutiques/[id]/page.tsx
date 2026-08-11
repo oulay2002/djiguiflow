@@ -23,6 +23,9 @@ const fcfa = (n: number) => n.toLocaleString('fr-FR');
 /** Fond de la page : sert aux encoches du ticket, qui doivent être des trous. */
 const FOND_PAGE = '#eeece5';
 
+/** Distingue une adresse lisible (`/boutiques/zahara`) d'un ancien lien uuid. */
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 /**
  * Visuel d'un plat.
  *
@@ -116,10 +119,15 @@ export default function Page() {
         // 2. Sinon, boutique Supabase (commande via lien WhatsApp).
         // Colonnes explicites : le rôle anon n'a plus le droit de lire la
         // config interne du registre (onglets Sheets, groupe livreurs).
+        // L'URL porte tantôt le slug, tantôt l'uuid : les liens partagés par
+        // WhatsApp datent d'avant les adresses lisibles. `id` est une colonne
+        // uuid — y comparer « rosemonde » fait échouer la requête entière, et
+        // la vitrine restait vide sans rien dire. On choisit donc la colonne.
+        const colonne = UUID.test(slug) ? 'id' : 'slug';
         const { data: b } = await supabase
           .from('boutiques')
           .select('id, nom, categorie, telephone, description, logo_url, zone, emoji, slug')
-          .eq('id', slug)
+          .eq(colonne, slug)
           .single();
         if (annule || !b) return;
 
@@ -136,7 +144,7 @@ export default function Page() {
         const { data: ps } = await supabase
           .from('produits')
           .select('id, nom, categorie, prix, description, photo_url, disponible, menu_du_jour')
-          .eq('boutique_id', slug)
+          .eq('boutique_id', b.id)
           .eq('disponible', true);
         if (annule) return;
         setProduits((ps ?? []).map((p: Record<string, unknown>) => ({
