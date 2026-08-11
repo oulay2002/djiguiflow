@@ -189,7 +189,7 @@ export default function Page() {
         </aside>
 
         <main className="flex-1 space-y-6">
-          <header className="relative overflow-hidden rounded-[2rem] bg-gradient-to-r from-mangue-700 via-mangue-600 to-mangue-500 p-6 text-white shadow-xl">
+          <header className="indigo-weave relative overflow-hidden rounded-[2rem] bg-nuit-900 p-6 text-chaux-50 shadow-xl">
             <div className="relative z-10 flex flex-wrap items-center justify-between gap-4">
               <div>
                 <p className="text-sm uppercase tracking-[0.2em] text-mangue-100">Menu réel · feuille Google</p>
@@ -243,7 +243,7 @@ export default function Page() {
                   {p.image ? (
                     <img src={p.image} alt={p.nom} className="h-40 w-full object-cover" />
                   ) : (
-                    <div className="flex h-40 w-full items-center justify-center bg-gradient-to-br from-mangue-100 to-mangue-100">
+                    <div className="flex h-40 w-full items-center justify-center bg-mangue-100">
                       <UtensilsCrossed className="h-10 w-10 text-mangue-400" />
                     </div>
                   )}

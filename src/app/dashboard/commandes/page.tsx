@@ -212,7 +212,7 @@ export default function Page() {
 
           {/* Bannière confirmation anti-retours */}
           {(nbAConfirmer > 0 || nbRefusees > 0) && (
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-mangue-200 bg-gradient-to-r from-mangue-50 to-mangue-50 p-4">
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-mangue-200 bg-mangue-50 p-4">
               <div className="flex flex-wrap items-center gap-3 text-sm">
                 <span className="font-semibold text-mangue-700">🛡️ Anti-retours</span>
                 {nbAConfirmer > 0 && (

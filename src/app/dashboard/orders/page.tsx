@@ -375,15 +375,19 @@ export default function OrdersPage() {
                 key={key}
                 onClick={() => setFilter(key)}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2 ${
+                  // Indigo, et non mangue : le filtre actif dit « c'est la vue
+                  // que vous regardez », pas « attention ». Laisser la mangue
+                  // ici la mettait en concurrence avec les etats qu'elle sert
+                  // a signaler juste en dessous.
                   filter === key
-                    ? 'bg-mangue-600 text-white shadow-md'
+                    ? 'bg-nuit-900 text-chaux-50'
                     : 'bg-chaux-50 text-nuit-700 hover:bg-chaux-100'
                 }`}
               >
                 {label}
                 {count > 0 && (
                   <span className={`px-1.5 py-0.5 rounded text-xs ${
-                    filter === key ? 'bg-mangue-500 text-white' : 'bg-chaux-200 text-chaux-600'
+                    filter === key ? 'bg-nuit-700 text-chaux-50' : 'bg-chaux-200 text-chaux-600'
                   }`}>
                     {count}
                   </span>

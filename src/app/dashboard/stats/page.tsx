@@ -95,7 +95,7 @@ export default function Page() {
         </aside>
 
         <main className="flex-1 space-y-6">
-          <header className="relative overflow-hidden rounded-[2rem] bg-gradient-to-r from-mangue-700 via-mangue-600 to-mangue-500 p-6 text-white shadow-xl">
+          <header className="indigo-weave relative overflow-hidden rounded-[2rem] bg-nuit-900 p-6 text-chaux-50 shadow-xl">
             <div className="relative z-10 flex flex-wrap items-center justify-between gap-4">
               <div>
                 <p className="text-sm uppercase tracking-[0.2em] text-mangue-100">Analytics · données réelles</p>
