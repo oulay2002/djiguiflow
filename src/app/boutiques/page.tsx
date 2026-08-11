@@ -339,7 +339,7 @@ export default function VitrinePage() {
                         {b.note !== null && (
                           <span className="font-display text-lg font-bold text-nuit-900">
                             {b.note.toFixed(1).replace('.', ',')}
-                            <span className="text-chaux-500">/5</span>
+                            <span className="text-chaux-600">/5</span>
                           </span>
                         )}
                         <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-chaux-600">

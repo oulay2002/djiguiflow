@@ -20,8 +20,19 @@ import type { ButtonHTMLAttributes, ReactNode } from 'react';
 export type VarianteBouton = 'action' | 'calme' | 'fantome' | 'contraste' | 'voile';
 export type TailleBouton = 'sm' | 'md';
 
+/**
+ * La silhouette, et elle depend de l'ecran.
+ *
+ * Le tableau de bord est un outil : ses boutons sont des pilules, comme le
+ * reste de l'application. La vitrine est un imprime — bon de commande, carte
+ * affichee — et n'a pas un seul angle arrondi. `carree` existe pour qu'elle
+ * puisse le dire sans qu'on aille modifier le socle commun, ce qui aurait
+ * change tous les ecrans du marchand par ricochet.
+ */
+export type FormeBouton = 'pilule' | 'carree';
+
 const SOCLE =
-  'inline-flex items-center justify-center gap-2 rounded-full font-semibold ' +
+  'inline-flex items-center justify-center gap-2 font-semibold ' +
   'transition duration-150 active:translate-y-px ' +
   // 45 % et pas 55 : au-dessus, le bissap reste trop vif pour se lire
   // comme un bouton inactif.
@@ -45,16 +56,23 @@ const TAILLES: Record<TailleBouton, string> = {
   md: 'min-h-11 px-5 text-sm',
 };
 
+const FORMES: Record<FormeBouton, string> = {
+  pilule: 'rounded-full',
+  carree: 'rounded-none',
+};
+
 export function classesBouton(
   variante: VarianteBouton = 'action',
   taille: TailleBouton = 'md',
+  forme: FormeBouton = 'pilule',
 ): string {
-  return `${SOCLE} ${VARIANTES[variante]} ${TAILLES[taille]}`;
+  return `${SOCLE} ${FORMES[forme]} ${VARIANTES[variante]} ${TAILLES[taille]}`;
 }
 
 type ProprietesBouton = ButtonHTMLAttributes<HTMLButtonElement> & {
   variante?: VarianteBouton;
   taille?: TailleBouton;
+  forme?: FormeBouton;
   /** Affiche le rouet et neutralise le bouton pendant l'envoi. */
   chargement?: boolean;
 };
@@ -62,6 +80,7 @@ type ProprietesBouton = ButtonHTMLAttributes<HTMLButtonElement> & {
 export function Bouton({
   variante = 'action',
   taille = 'md',
+  forme = 'pilule',
   chargement = false,
   className = '',
   disabled,
@@ -73,7 +92,7 @@ export function Bouton({
       {...reste}
       disabled={disabled || chargement}
       aria-busy={chargement || undefined}
-      className={`${classesBouton(variante, taille)} ${className}`}
+      className={`${classesBouton(variante, taille, forme)} ${className}`}
     >
       {chargement && <Loader2 className="h-4 w-4 animate-spin" />}
       {children}

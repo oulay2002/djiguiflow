@@ -264,7 +264,7 @@ export default function Page() {
       {liste.map(p => (
         <article
           key={p.id}
-          className="group flex flex-col overflow-hidden rounded-2xl border border-[var(--hairline)] bg-white transition duration-200 soft-shadow hover:-translate-y-0.5"
+          className="group flex flex-col overflow-hidden border border-[var(--hairline)] bg-chaux-50 transition duration-200 soft-shadow hover:-translate-y-1"
         >
           <Visuel p={p} />
 
@@ -279,31 +279,34 @@ export default function Page() {
                   à l'autre et se compare d'un coup d'œil. */}
               <p className="font-mono text-lg font-bold leading-none text-bissap-600">
                 {fcfa(p.prix)}
-                <span className="ml-1 text-[11px] font-semibold text-chaux-500">FCFA</span>
+                <span className="ml-1 text-[11px] font-semibold text-chaux-600">FCFA</span>
               </p>
 
               {panier[p.id] ? (
-                <div className="flex items-center gap-1 rounded-full border border-[var(--hairline)] bg-chaux-50 p-1">
+                <div className="flex items-center border border-[var(--hairline)] bg-white">
                   <button
                     onClick={() => retirer(p.id)}
                     aria-label={`Retirer un ${p.nom}`}
-                    className="flex h-8 w-8 items-center justify-center rounded-full text-nuit-700 transition hover:bg-white"
+                    className="flex h-9 w-9 items-center justify-center text-nuit-700 transition hover:bg-chaux-100"
                   >
                     <Minus className="h-4 w-4" />
                   </button>
-                  <span className="w-6 text-center font-mono text-sm font-bold text-nuit-900">
+                  <span className="w-7 text-center font-mono text-sm font-bold text-nuit-900">
                     {panier[p.id]}
                   </span>
                   <button
                     onClick={() => ajouter(p.id)}
                     aria-label={`Ajouter un ${p.nom}`}
-                    className="flex h-8 w-8 items-center justify-center rounded-full bg-bissap-500 text-white transition hover:bg-bissap-600"
+                    className="flex h-9 w-9 items-center justify-center bg-bissap-500 text-white transition hover:bg-bissap-600"
                   >
                     <Plus className="h-4 w-4" />
                   </button>
                 </div>
               ) : (
-                <button onClick={() => ajouter(p.id)} className={classesBouton('action', 'sm')}>
+                <button
+                  onClick={() => ajouter(p.id)}
+                  className={classesBouton('action', 'sm', 'carree')}
+                >
                   <Plus className="h-4 w-4" /> Ajouter
                 </button>
               )}
@@ -339,7 +342,7 @@ export default function Page() {
 
             <Link
               href="/suivi"
-              className="inline-flex min-h-10 items-center gap-2 rounded-full border border-white/25 bg-white/10 px-4 text-sm font-semibold transition hover:bg-white/20"
+              className="inline-flex min-h-10 items-center gap-2 border border-white/25 bg-white/10 px-4 font-mono text-[11px] uppercase tracking-[0.18em] transition hover:bg-white/20"
             >
               <MapPin className="h-4 w-4" /> Suivre ma commande
             </Link>
@@ -352,7 +355,7 @@ export default function Page() {
 
       <main className="mx-auto max-w-6xl px-5 py-8 sm:px-8">
         {confirmation && (
-          <div className="mb-8 flex flex-wrap items-center gap-4 rounded-2xl border border-accent-200 bg-accent-50 p-5">
+          <div className="mb-8 flex flex-wrap items-center gap-4 border border-accent-200 bg-accent-50 p-5">
             <span className="stamp font-mono text-xs font-bold text-accent-700">REÇUE</span>
             <p className="text-sm text-accent-800">
               Commande <b className="font-mono">{confirmation}</b> transmise au commerçant.{' '}
@@ -374,10 +377,13 @@ export default function Page() {
               <button
                 key={c}
                 onClick={() => setCategorie(c)}
-                className={`min-h-9 shrink-0 rounded-full px-4 text-sm font-semibold transition ${
+                aria-pressed={categorie === c}
+                // Memes onglets que sur la liste des boutiques : c'est le meme
+                // classeur qu'on feuillette.
+                className={`min-h-9 shrink-0 border px-3.5 font-mono text-[11px] uppercase tracking-[0.16em] transition ${
                   categorie === c
-                    ? 'bg-nuit-800 text-white'
-                    : 'border border-[var(--hairline)] bg-white/70 text-nuit-700 hover:bg-white'
+                    ? 'border-nuit-900 bg-nuit-900 text-chaux-50'
+                    : 'border-[var(--hairline)] text-chaux-600 hover:border-nuit-900 hover:text-nuit-900'
                 }`}
               >
                 {c === 'tout' ? 'Tout le menu' : c}
@@ -389,9 +395,9 @@ export default function Page() {
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_340px]">
           <div className="space-y-10">
             {chargement ? (
-              <p className="font-mono text-sm text-chaux-500">Chargement du menu…</p>
+              <p className="font-mono text-sm text-chaux-600">Chargement du menu…</p>
             ) : visibles.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-chaux-300 bg-white/60 p-10 text-center">
+              <div className="border border-dashed border-[var(--hairline)] p-10 text-center">
                 <p className="font-display text-lg font-bold text-nuit-800">Le menu arrive</p>
                 <p className="mt-1 text-sm text-chaux-600">
                   Ce commerçant n&apos;a pas encore publié de plat.
@@ -407,7 +413,7 @@ export default function Page() {
                   {grille(duJour)}
                 </section>
                 <section>
-                  <h2 className="mb-4 flex items-center gap-3 font-mono text-xs font-bold uppercase tracking-[0.24em] text-chaux-500">
+                  <h2 className="mb-4 flex items-center gap-3 font-mono text-xs font-bold uppercase tracking-[0.24em] text-chaux-600">
                     À la carte
                     <span className="h-px flex-1 bg-chaux-200" />
                   </h2>
@@ -423,13 +429,14 @@ export default function Page() {
           <aside className="lg:sticky lg:top-6 lg:self-start">
             <div
               ref={commandeRef}
-              className="relative scroll-mt-6 rounded-2xl bg-white p-5 soft-shadow"
+              className="relative scroll-mt-6 border border-[var(--hairline)] bg-chaux-50 p-5 soft-shadow"
               style={{ ['--tear-bg' as string]: FOND_PAGE }}
             >
               {/* Le talon du bon, au-dessus de la perforation. Les encoches
-                  mordent les bords du ticket : placées dans les angles
-                  arrondis, elles ne se voyaient pas. */}
-              <p className="font-mono text-[10px] font-bold uppercase tracking-[0.28em] text-chaux-500">
+                  mordent les bords du ticket : tant que le panneau avait des
+                  angles arrondis, elles s'y noyaient et le motif ne se lisait
+                  pas. */}
+              <p className="font-mono text-[10px] font-bold uppercase tracking-[0.28em] text-chaux-600">
                 Bon de commande
               </p>
               <div className="tear absolute inset-x-0 top-11" />
@@ -449,7 +456,7 @@ export default function Page() {
                     {lignes.map(l => (
                       <li key={l.prod.id} className="flex items-baseline justify-between gap-3 text-sm">
                         <span className="truncate text-nuit-800">
-                          <span className="font-mono font-bold text-chaux-500">{l.q}×</span>{' '}
+                          <span className="font-mono font-bold text-chaux-600">{l.q}×</span>{' '}
                           {l.prod.nom}
                         </span>
                         <span className="shrink-0 font-mono text-nuit-900">
@@ -462,18 +469,18 @@ export default function Page() {
                   <div className="perf-line my-4 text-nuit-900" />
 
                   <div className="flex items-baseline justify-between">
-                    <span className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-chaux-500">
+                    <span className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-chaux-600">
                       Total
                     </span>
                     <span className="font-mono text-2xl font-black text-bissap-600">
                       {fcfa(total)}
-                      <span className="ml-1 text-xs font-semibold text-chaux-500">FCFA</span>
+                      <span className="ml-1 text-xs font-semibold text-chaux-600">FCFA</span>
                     </span>
                   </div>
 
                   <div className="mt-5 space-y-3">
                     <input
-                      className="w-full rounded-xl border border-chaux-200 bg-chaux-50 px-3 py-2.5 text-sm outline-none transition focus:border-nuit-300 focus:bg-white"
+                      className="w-full border border-[var(--hairline)] bg-white px-3 py-2.5 text-sm outline-none transition focus:border-nuit-400"
                       placeholder="Votre nom complet"
                       value={nom}
                       onChange={e => setNom(e.target.value)}
@@ -485,10 +492,10 @@ export default function Page() {
                         autoComplete="tel"
                         aria-invalid={!!erreurTel}
                         aria-describedby={erreurTel ? 'erreur-tel' : undefined}
-                        className={`w-full rounded-xl border bg-chaux-50 px-3 py-2.5 text-sm outline-none transition focus:bg-white ${
+                        className={`w-full border bg-white px-3 py-2.5 text-sm outline-none transition ${
                           erreurTel
                             ? 'border-bissap-400 bg-bissap-50'
-                            : 'border-chaux-200 focus:border-nuit-300'
+                            : 'border-[var(--hairline)] focus:border-nuit-400'
                         }`}
                         placeholder="Téléphone (ex. 01 02 03 04 05)"
                         value={tel}
@@ -501,13 +508,13 @@ export default function Page() {
                       )}
                     </div>
                     <input
-                      className="w-full rounded-xl border border-chaux-200 bg-chaux-50 px-3 py-2.5 text-sm outline-none transition focus:border-nuit-300 focus:bg-white"
+                      className="w-full border border-[var(--hairline)] bg-white px-3 py-2.5 text-sm outline-none transition focus:border-nuit-400"
                       placeholder="Adresse de livraison"
                       value={adresse}
                       onChange={e => setAdresse(e.target.value)}
                     />
                     <input
-                      className="w-full rounded-xl border border-chaux-200 bg-chaux-50 px-3 py-2.5 text-sm outline-none transition focus:border-nuit-300 focus:bg-white"
+                      className="w-full border border-[var(--hairline)] bg-white px-3 py-2.5 text-sm outline-none transition focus:border-nuit-400"
                       placeholder="Instructions (facultatif)"
                       value={instructions}
                       onChange={e => setInstructions(e.target.value)}
@@ -516,7 +523,7 @@ export default function Page() {
                     <button
                       onClick={commander}
                       disabled={envoi || !nom || !telOk || !adresse}
-                      className={`${classesBouton('action')} w-full`}
+                      className={`${classesBouton('action', 'md', 'carree')} w-full`}
                     >
                       {envoi
                         ? 'Envoi…'
@@ -534,10 +541,10 @@ export default function Page() {
 
       {/* Barre mobile : le ticket est hors écran, le total doit rester visible. */}
       {articles > 0 && (
-        <div className="fixed inset-x-0 bottom-0 z-50 border-t border-[var(--hairline)] bg-white/95 p-3 backdrop-blur lg:hidden">
+        <div className="fixed inset-x-0 bottom-0 z-50 border-t border-[var(--hairline)] bg-chaux-50/95 p-3 backdrop-blur lg:hidden">
           <button
             onClick={() => commandeRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-            className={`${classesBouton('action')} w-full justify-between`}
+            className={`${classesBouton('action', 'md', 'carree')} w-full justify-between`}
           >
             <span className="flex items-center gap-2">
               <ShoppingBag className="h-4 w-4" />
