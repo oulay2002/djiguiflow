@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { LienRetour, classesBouton } from '@/components/ui/Bouton';
 import { TuileStat } from '@/components/ui/Etat';
 import { supabase } from '@/lib/supabase';
+import { useBoutique, uuidBoutiqueCourante } from '@/lib/boutique';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -65,6 +66,7 @@ type Livreur = {
 
 export default function LivreursPage() {
   const router = useRouter();
+  const { boutiqueId } = useBoutique();
   const [loading, setLoading] = useState(true);
   const [livreurs, setLivreurs] = useState<Livreur[]>([]);
   const [filter, setFilter] = useState<'tous' | 'interne' | 'independant'>('tous');
@@ -87,13 +89,8 @@ export default function LivreursPage() {
       return;
     }
 
-    const { data: boutique } = await supabase
-      .from('boutiques')
-      .select('id')
-      .eq('user_id', user.id)
-      .single();
-
-    if (!boutique) {
+    const uuid = await uuidBoutiqueCourante(boutiqueId);
+    if (!uuid) {
       setLoading(false);
       return;
     }
@@ -101,14 +98,14 @@ export default function LivreursPage() {
     const { data } = await supabase
       .from('livreurs')
       .select('*')
-      .eq('boutique_id', boutique.id)
+      .eq('boutique_id', uuid)
       .order('created_at', { ascending: false });
 
     if (data) {
       setLivreurs(data as Livreur[]);
     }
     setLoading(false);
-  }, [router]);
+  }, [router, boutiqueId]);
 
   useEffect(() => {
     const timerId = window.setTimeout(() => {
@@ -124,18 +121,13 @@ export default function LivreursPage() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    const { data: boutique } = await supabase
-      .from('boutiques')
-      .select('id')
-      .eq('user_id', user.id)
-      .single();
-
-    if (!boutique) return;
+    const uuid = await uuidBoutiqueCourante(boutiqueId);
+    if (!uuid) return;
 
     const { error } = await supabase
       .from('livreurs')
       .insert({
-        boutique_id: boutique.id,
+        boutique_id: uuid,
         ...formData,
       });
 

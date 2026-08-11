@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { LienRetour, classesBouton } from '@/components/ui/Bouton';
 import { TuileStat } from '@/components/ui/Etat';
 import { supabase } from '@/lib/supabase';
+import { useBoutique, uuidBoutiqueCourante } from '@/lib/boutique';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -60,6 +61,7 @@ type Livraison = {
 
 export default function AssignationsPage() {
   const router = useRouter();
+  const { boutiqueId } = useBoutique();
   const [loading, setLoading] = useState(true);
   const [commandes, setCommandes] = useState<Commande[]>([]);
   const [livreurs, setLivreurs] = useState<Livreur[]>([]);
@@ -77,13 +79,8 @@ export default function AssignationsPage() {
       return;
     }
 
-    const { data: boutique } = await supabase
-      .from('boutiques')
-      .select('id')
-      .eq('user_id', user.id)
-      .single();
-
-    if (!boutique) {
+    const uuid = await uuidBoutiqueCourante(boutiqueId);
+    if (!uuid) {
       setLoading(false);
       return;
     }
@@ -98,7 +95,7 @@ export default function AssignationsPage() {
           quantite
         )
       `)
-      .eq('boutique_id', boutique.id)
+      .eq('boutique_id', uuid)
       .in('statut', ['en_preparation', 'en_livraison'])
       .order('created_at', { ascending: false });
 
@@ -106,7 +103,7 @@ export default function AssignationsPage() {
     const { data: livreursData } = await supabase
       .from('livreurs')
       .select('*')
-      .eq('boutique_id', boutique.id)
+      .eq('boutique_id', uuid)
       .in('statut', ['disponible', 'en_livraison']);
 
     // Charger les livraisons actives
@@ -132,7 +129,7 @@ export default function AssignationsPage() {
           statut
         )
       `)
-      .eq('commande.boutique_id', boutique.id)
+      .eq('commande.boutique_id', uuid)
       .in('statut', ['assignee', 'en_cours']);
 
     if (commandesData) setCommandes(commandesData as Commande[]);
@@ -140,7 +137,7 @@ export default function AssignationsPage() {
     if (livraisonsData) setLivraisons(livraisonsData as Livraison[]);
     
     setLoading(false);
-  }, [router]);
+  }, [router, boutiqueId]);
 
   useEffect(() => {
     const timerId = window.setTimeout(() => {

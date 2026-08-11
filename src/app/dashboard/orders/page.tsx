@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { LienRetour } from '@/components/ui/Bouton';
 import { supabase } from '@/lib/supabase';
+import { useBoutique, uuidBoutiqueCourante } from '@/lib/boutique';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -109,6 +110,7 @@ type Commande = {
 
 export default function OrdersPage() {
   const router = useRouter();
+  const { boutiqueId } = useBoutique();
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<string | null>(null);
   const [commandes, setCommandes] = useState<Commande[]>([]);
@@ -124,13 +126,8 @@ export default function OrdersPage() {
       return;
     }
 
-    const { data: boutique } = await supabase
-      .from('boutiques')
-      .select('id')
-      .eq('user_id', user.id)
-      .single();
-
-    if (!boutique) {
+    const uuid = await uuidBoutiqueCourante(boutiqueId);
+    if (!uuid) {
       setLoading(false);
       return;
     }
@@ -146,7 +143,7 @@ export default function OrdersPage() {
           prix_unitaire
         )
       `)
-      .eq('boutique_id', boutique.id)
+      .eq('boutique_id', uuid)
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -157,7 +154,7 @@ export default function OrdersPage() {
       setCommandes(data as Commande[]);
     }
     setLoading(false);
-  }, [router]);
+  }, [router, boutiqueId]);
 
   useEffect(() => {
     const timer = setTimeout(() => {

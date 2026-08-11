@@ -30,6 +30,34 @@ export function avecBoutique(url: string, boutiqueId: string): string {
   return `${url}${sep}boutique_id=${encodeURIComponent(boutiqueId)}`;
 }
 
+/**
+ * Rend l'uuid de la boutique sur laquelle travailler, ou null.
+ *
+ * Trois ecrans resolvaient « ma boutique » par un `.single()` sur
+ * `user_id` — ce qui suppose qu'un marchand n'en possede qu'une. Des qu'un
+ * compte en tient deux, PostgREST repond 406 (« The result contains 2 rows »),
+ * la resolution echoue et l'ecran s'affiche vide : constate le 11 aout 2026
+ * sur Commandes et Livreurs, qui annoncaient zero commande a un compte qui en
+ * avait six. Et le selecteur du bandeau, lui, etait purement ignore.
+ *
+ * `boutiqueId` porte le slug, alors que `commandes.boutique_id` est un uuid :
+ * d'ou la traduction. Sans selection — un compte sans registre — on prend la
+ * premiere boutique possedee, mais avec `limit(1)` et non `single()`, pour que
+ * le cas « plusieurs » cesse d'etre une erreur.
+ */
+export async function uuidBoutiqueCourante(boutiqueId: string): Promise<string | null> {
+  const requete = supabase.from('boutiques').select('id');
+  const { data, error } = boutiqueId
+    ? await requete.eq('slug', boutiqueId).limit(1)
+    : await requete.limit(1);
+
+  if (error) {
+    console.error('Résolution de la boutique courante :', error);
+    return null;
+  }
+  return data?.[0]?.id ?? null;
+}
+
 export function BoutiqueProvider({ children }: { children: ReactNode }) {
   const [boutiqueId, setBoutiqueIdState] = useState('');
   const [boutiques, setBoutiques] = useState<BoutiqueOption[]>([]);
