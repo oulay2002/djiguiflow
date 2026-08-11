@@ -264,8 +264,11 @@ export default function OnboardingPage() {
               titre="Votre identifiant Telegram"
               aide={
                 <>
-                  Là où vous recevrez vos alertes. Écrivez <code className="font-mono">ID</code> en
-                  privé à votre bot, puis recopiez le numéro qu&apos;il répond.
+                  {/* L'espace est explicite : quand le texte qui suit la balise
+                      passe a la ligne, JSX rogne le blanc de debut de ligne et
+                      la phrase se lisait « Écrivez IDen privé ». */}
+                  Là où vous recevrez vos alertes. Écrivez <code className="font-mono">ID</code>{' '}
+                  en privé à votre bot, puis recopiez le numéro qu&apos;il répond.
                 </>
               }
             >
