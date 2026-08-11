@@ -101,7 +101,7 @@ export function TuileStat({
           <Icone className="h-5 w-5" />
         </span>
       </div>
-      <p className="mt-3 text-xs font-semibold uppercase tracking-[0.12em] text-chaux-500">
+      <p className="mt-3 text-xs font-semibold uppercase tracking-[0.12em] text-chaux-600">
         {intitule}
       </p>
     </div>

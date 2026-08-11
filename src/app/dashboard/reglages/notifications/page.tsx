@@ -127,8 +127,8 @@ export default function NotificationsPage() {
       <div className="mb-8">
         <LienRetour href="/dashboard">Retour au dashboard</LienRetour>
         <div>
-          <h1 className="text-3xl font-bold text-nuit-900">Paramètres de Notification</h1>
-          <p className="text-chaux-600 mt-1">Configurez vos préférences de notification</p>
+          <h1 className="font-display text-3xl font-bold text-nuit-900">Notifications</h1>
+          <p className="text-chaux-600 mt-1">Ce que vous recevez, et sur quel canal.</p>
         </div>
       </div>
 
@@ -146,7 +146,7 @@ export default function NotificationsPage() {
               </div>
               <div>
                 <h2 className="text-xl font-bold text-nuit-900">WhatsApp</h2>
-                <p className="text-sm text-chaux-500">Recevez les notifications sur WhatsApp</p>
+                <p className="text-sm text-chaux-600">Recevez les notifications sur WhatsApp</p>
               </div>
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
@@ -173,7 +173,7 @@ export default function NotificationsPage() {
                   placeholder="Ex: 0759486701"
                   className="w-full px-4 py-3 border border-chaux-200 rounded-lg focus:ring-2 focus:ring-nuit-200"
                 />
-                <p className="text-xs text-chaux-500 mt-1">
+                <p className="text-xs text-chaux-600 mt-1">
                   Format : numéro local (ex: 0759486701)
                 </p>
               </div>
@@ -194,7 +194,7 @@ export default function NotificationsPage() {
               </div>
               <div>
                 <h2 className="text-xl font-bold text-nuit-900">Telegram</h2>
-                <p className="text-sm text-chaux-500">Recevez les notifications sur Telegram</p>
+                <p className="text-sm text-chaux-600">Recevez les notifications sur Telegram</p>
               </div>
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
@@ -221,7 +221,7 @@ export default function NotificationsPage() {
                   placeholder="Ex: 123456789"
                   className="w-full px-4 py-3 border border-chaux-200 rounded-lg focus:ring-2 focus:ring-nuit-200"
                 />
-                <p className="text-xs text-chaux-500 mt-1">
+                <p className="text-xs text-chaux-600 mt-1">
                   Obtenez votre Chat ID via @userinfobot sur Telegram
                 </p>
               </div>
@@ -325,7 +325,7 @@ function NotificationToggle({ icon: Icon, label, description, checked, onChange 
         <Icon className="w-5 h-5 text-chaux-600" />
         <div>
           <p className="font-medium text-nuit-900">{label}</p>
-          <p className="text-sm text-chaux-500">{description}</p>
+          <p className="text-sm text-chaux-600">{description}</p>
         </div>
       </div>
       <label className="relative inline-flex items-center cursor-pointer">

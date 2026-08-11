@@ -248,8 +248,8 @@ export default function AnalyticsPage() {
         <LienRetour href="/dashboard">Retour au dashboard</LienRetour>
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-nuit-900">Tableau de Bord Analytique</h1>
-            <p className="text-chaux-600 mt-1">Analysez la performance de votre boutique</p>
+            <h1 className="font-display text-3xl font-bold text-nuit-900">Analytics</h1>
+            <p className="text-chaux-600 mt-1">Ce que vos chiffres disent de la semaine écoulée.</p>
           </div>
           <div className="flex items-center gap-2">
             <select

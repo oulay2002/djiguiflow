@@ -207,7 +207,7 @@ export default function MaBoutiquePage() {
     <div className="min-h-screen bg-[var(--background)] p-6 lg:p-8">
       <div className="mb-8">
         <LienRetour href="/dashboard">Retour au dashboard</LienRetour>
-        <h1 className="text-3xl font-bold text-nuit-900">Ma Boutique</h1>
+        <h1 className="font-display text-3xl font-bold text-nuit-900">Ma boutique</h1>
         <p className="text-chaux-600 mt-1">Configurez les informations de votre commerce</p>
 
         {nbBoutiques > 1 && (
@@ -264,7 +264,7 @@ export default function MaBoutiquePage() {
                     className="hidden" 
                   />
                 </label>
-                <p className="text-xs text-chaux-500 mt-2 text-center">PNG, JPG ou GIF (max 2MB)</p>
+                <p className="text-xs text-chaux-600 mt-2 text-center">PNG, JPG ou GIF (max 2MB)</p>
               </div>
             </div>
           </div>

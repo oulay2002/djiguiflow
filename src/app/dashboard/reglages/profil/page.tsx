@@ -187,7 +187,7 @@ export default function ProfilPage() {
                 className="w-full px-4 py-2.5 border border-chaux-200 rounded-lg focus:ring-2 focus:ring-nuit-200 focus:border-nuit-300"
                 placeholder="Ex: Chez Aminata"
               />
-              <p className="text-xs text-chaux-500 mt-1">
+              <p className="text-xs text-chaux-600 mt-1">
                 Le nom affiché aux clients se règle dans{' '}
                 <span className="font-medium">Réglages → Boutique</span>.
               </p>
@@ -204,7 +204,7 @@ export default function ProfilPage() {
                 className="w-full px-4 py-2.5 border border-chaux-200 rounded-lg focus:ring-2 focus:ring-nuit-200 focus:border-nuit-300"
                 placeholder="vous@exemple.com"
               />
-              <p className="text-xs text-chaux-500 mt-1">
+              <p className="text-xs text-chaux-600 mt-1">
                 Changer d&apos;adresse demande une confirmation par email.
               </p>
             </div>

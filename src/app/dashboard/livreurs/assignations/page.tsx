@@ -214,8 +214,8 @@ export default function AssignationsPage() {
       <div className="mb-8">
         <LienRetour href="/dashboard/livreurs">Retour aux livreurs</LienRetour>
         <div>
-          <h1 className="text-3xl font-bold text-nuit-900">Assignation des Livraisons</h1>
-          <p className="text-chaux-600 mt-1">Assignez les commandes aux livreurs disponibles</p>
+          <h1 className="font-display text-3xl font-bold text-nuit-900">Assigner les livraisons</h1>
+          <p className="text-chaux-600 mt-1">Choisissez qui prend chaque commande en attente.</p>
         </div>
       </div>
 
@@ -282,7 +282,7 @@ export default function AssignationsPage() {
                   <h3 className="font-bold text-nuit-900 mb-1">
                     Commande #{commande.id.slice(0, 6).toUpperCase()}
                   </h3>
-                  <p className="text-sm text-chaux-500">
+                  <p className="text-sm text-chaux-600">
                     {new Date(commande.created_at).toLocaleString('fr-FR')}
                   </p>
                 </div>
@@ -334,7 +334,7 @@ export default function AssignationsPage() {
             <div className="col-span-2 text-center py-16 bg-white rounded-xl border border-chaux-200 border-dashed">
               <CheckCircle className="w-16 h-16 text-accent-500 mx-auto mb-4" />
               <h3 className="text-lg font-semibold text-nuit-900">Toutes les commandes sont assignées !</h3>
-              <p className="text-chaux-500 mt-1">Aucune commande en attente de livraison.</p>
+              <p className="text-chaux-600 mt-1">Aucune commande en attente de livraison.</p>
             </div>
           )}
         </div>
@@ -422,7 +422,7 @@ export default function AssignationsPage() {
               <div className="p-6 border-b border-chaux-200 flex justify-between items-center">
                 <h2 className="text-xl font-bold text-nuit-900">Assigner un livreur</h2>
                 <button onClick={() => setShowModal(false)} className="p-2 hover:bg-chaux-100 rounded-lg">
-                  <X className="w-5 h-5 text-chaux-500" />
+                  <X className="w-5 h-5 text-chaux-600" />
                 </button>
               </div>
 
@@ -481,7 +481,7 @@ export default function AssignationsPage() {
                   ))}
 
                   {livreurs.filter(l => l.statut === 'disponible').length === 0 && (
-                    <div className="text-center py-8 text-chaux-500">
+                    <div className="text-center py-8 text-chaux-600">
                       <AlertCircle className="w-12 h-12 mx-auto mb-2 text-chaux-400" />
                       <p>Aucun livreur disponible pour le moment</p>
                     </div>

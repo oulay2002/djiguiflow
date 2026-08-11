@@ -284,8 +284,8 @@ export default function OrdersPage() {
         <LienRetour href="/dashboard">Retour au dashboard</LienRetour>
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-nuit-900">Gestion des Commandes</h1>
-            <p className="text-chaux-600 mt-1">Suivez et gérez toutes vos commandes en temps réel</p>
+            <h1 className="font-display text-3xl font-bold text-nuit-900">Commandes</h1>
+            <p className="text-chaux-600 mt-1">Chaque commande avance d’une étape par bouton, du reçu au livré.</p>
           </div>
           {stats.en_attente > 0 && (
             <div className="flex items-center gap-2 px-4 py-2 bg-mangue-50 border border-mangue-200 rounded-full">

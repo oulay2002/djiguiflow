@@ -193,7 +193,7 @@ export default function Page() {
             <div className="relative z-10 flex flex-wrap items-center justify-between gap-4">
               <div>
                 <p className="text-sm uppercase tracking-[0.2em] text-mangue-100">Menu réel · feuille Google</p>
-                <h1 className="mt-2 text-3xl font-black">🍽️ Produits {nomBoutique}</h1>
+                <h1 className="mt-2 font-display text-3xl font-black">Produits · {nomBoutique}</h1>
                 <p className="mt-1 text-xs text-mangue-100">
                   {prods.length} produits · {prods.filter(p => p.disponible).length} disponibles · maj {maj}
                 </p>

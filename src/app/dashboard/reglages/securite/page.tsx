@@ -157,7 +157,7 @@ export default function SecuritePage() {
             </div>
             <div>
               <h2 className="text-xl font-bold text-nuit-900">Mot de passe</h2>
-              <p className="text-sm text-chaux-500">Compte : {email}</p>
+              <p className="text-sm text-chaux-600">Compte : {email}</p>
             </div>
           </div>
 
@@ -198,7 +198,7 @@ export default function SecuritePage() {
                 onChange={(e) => setForm({ ...form, nouveau: e.target.value })}
                 className="w-full px-4 py-2.5 border border-chaux-200 rounded-lg focus:ring-2 focus:ring-nuit-200 focus:border-nuit-300"
               />
-              <p className="text-xs text-chaux-500 mt-1">
+              <p className="text-xs text-chaux-600 mt-1">
                 {LONGUEUR_MINIMALE} caractères minimum.
               </p>
             </div>
@@ -245,7 +245,7 @@ export default function SecuritePage() {
             </div>
             <div>
               <h2 className="text-xl font-bold text-nuit-900">Sessions actives</h2>
-              <p className="text-sm text-chaux-500">
+              <p className="text-sm text-chaux-600">
                 Déconnectez tous les appareils connectés à ce compte
               </p>
             </div>

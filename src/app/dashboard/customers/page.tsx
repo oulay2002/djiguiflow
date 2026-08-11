@@ -172,7 +172,7 @@ export default function CustomersPage() {
             </div>
             <div>
               <p className="text-lg font-black text-nuit-900">DjiguiFlow</p>
-              <p className="text-xs uppercase tracking-[0.2em] text-chaux-500">Admin</p>
+              <p className="text-xs uppercase tracking-[0.2em] text-chaux-600">Admin</p>
             </div>
           </div>
 
@@ -192,7 +192,7 @@ export default function CustomersPage() {
           </nav>
 
           <div className="mt-8 rounded-[1.5rem] bg-gradient-to-br from-nuit-50 via-chaux-50 to-white p-4">
-            <p className="text-sm text-chaux-500">Base clients</p>
+            <p className="text-sm text-chaux-600">Base clients</p>
             <p className="mt-2 text-2xl font-black text-nuit-900">{customers.length}</p>
             <p className="mt-2 flex items-center gap-2 text-xs font-semibold text-accent-700">
               <CheckCircle2 className="h-4 w-4" />
@@ -215,7 +215,7 @@ export default function CustomersPage() {
         <main className="flex-1">
           <header className="mb-8 flex flex-col gap-4 rounded-[2rem] border border-white/70 bg-white/75 p-5 shadow-[0_20px_60px_rgba(49,35,20,0.08)] backdrop-blur-xl md:flex-row md:items-center md:justify-between">
             <div>
-              <p className="text-sm font-medium uppercase tracking-[0.2em] text-chaux-500">Clients</p>
+              <p className="text-sm font-medium uppercase tracking-[0.2em] text-chaux-600">Clients</p>
               <h1 className="mt-2 text-3xl font-black tracking-tight text-nuit-900">Base clients</h1>
             </div>
 
@@ -272,13 +272,13 @@ export default function CustomersPage() {
               <table className="w-full">
                 <thead className="bg-chaux-50">
                   <tr>
-                    <th className="px-6 py-4 text-left text-[11px] font-bold uppercase tracking-[0.18em] text-chaux-500">Client</th>
-                    <th className="px-6 py-4 text-left text-[11px] font-bold uppercase tracking-[0.18em] text-chaux-500">Contact</th>
-                    <th className="px-6 py-4 text-left text-[11px] font-bold uppercase tracking-[0.18em] text-chaux-500">Adresse</th>
-                    <th className="px-6 py-4 text-left text-[11px] font-bold uppercase tracking-[0.18em] text-chaux-500">Commandes</th>
-                    <th className="px-6 py-4 text-left text-[11px] font-bold uppercase tracking-[0.18em] text-chaux-500">Dépensé</th>
-                    <th className="px-6 py-4 text-left text-[11px] font-bold uppercase tracking-[0.18em] text-chaux-500">Dernière cmd</th>
-                    <th className="px-6 py-4 text-left text-[11px] font-bold uppercase tracking-[0.18em] text-chaux-500">Note</th>
+                    <th className="px-6 py-4 text-left text-[11px] font-bold uppercase tracking-[0.18em] text-chaux-600">Client</th>
+                    <th className="px-6 py-4 text-left text-[11px] font-bold uppercase tracking-[0.18em] text-chaux-600">Contact</th>
+                    <th className="px-6 py-4 text-left text-[11px] font-bold uppercase tracking-[0.18em] text-chaux-600">Adresse</th>
+                    <th className="px-6 py-4 text-left text-[11px] font-bold uppercase tracking-[0.18em] text-chaux-600">Commandes</th>
+                    <th className="px-6 py-4 text-left text-[11px] font-bold uppercase tracking-[0.18em] text-chaux-600">Dépensé</th>
+                    <th className="px-6 py-4 text-left text-[11px] font-bold uppercase tracking-[0.18em] text-chaux-600">Dernière cmd</th>
+                    <th className="px-6 py-4 text-left text-[11px] font-bold uppercase tracking-[0.18em] text-chaux-600">Note</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-chaux-200">
@@ -294,7 +294,7 @@ export default function CustomersPage() {
                             {/* Le canal remplace l'e-mail : une commande WhatsApp
                                 n'en fournit aucun, et savoir par où le client
                                 écrit sert davantage. */}
-                            <p className="text-xs text-chaux-500">
+                            <p className="text-xs text-chaux-600">
                               {CANAUX[customer.canal] ?? 'Canal inconnu'}
                             </p>
                           </div>
@@ -319,13 +319,13 @@ export default function CustomersPage() {
                       <td className="px-6 py-4 text-sm text-chaux-600">{dateCourte(customer.derniereCommande)}</td>
                       <td className="px-6 py-4">
                         {customer.note === null ? (
-                          <span className="text-xs text-chaux-400">Pas encore noté</span>
+                          <span className="text-xs text-chaux-600">Pas encore noté</span>
                         ) : (
                           <div className="flex items-center gap-1 text-mangue-400">
                             {[...Array(5)].map((_, i) => (
                               <Star key={i} className={`h-4 w-4 ${i < Math.round(customer.note!) ? 'fill-current' : 'text-chaux-300'}`} />
                             ))}
-                            <span className="ml-1 font-mono text-xs text-chaux-500">{customer.note.toFixed(1)}</span>
+                            <span className="ml-1 font-mono text-xs text-chaux-600">{customer.note.toFixed(1)}</span>
                           </div>
                         )}
                       </td>
@@ -345,12 +345,12 @@ export default function CustomersPage() {
             ) : customers.length === 0 ? (
               <div className="py-12 text-center">
                 <p className="font-bold text-nuit-700">Aucun client pour l&apos;instant</p>
-                <p className="mt-1 text-sm text-chaux-500">
+                <p className="mt-1 text-sm text-chaux-600">
                   Vos clients apparaîtront ici dès la première commande reçue.
                 </p>
               </div>
             ) : filteredCustomers.length === 0 ? (
-              <div className="py-12 text-center text-chaux-500">
+              <div className="py-12 text-center text-chaux-600">
                 Aucun client ne correspond à « {search} »
               </div>
             ) : null}

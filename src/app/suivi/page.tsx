@@ -99,7 +99,7 @@ export default function Page() {
     <div className="min-h-screen bg-chaux-50 p-6">
       <main className="mx-auto max-w-xl space-y-6">
         <header className="rounded-xl bg-gradient-to-r from-mangue-600 to-mangue-700 p-6 text-white">
-          <h1 className="text-2xl font-bold">📍 Suivre ma commande</h1>
+          <h1 className="font-display text-2xl font-bold">Suivre ma commande</h1>
           <p className="mt-1 text-mangue-100">Entre ta référence (ex : APP-…) pour voir le statut en direct.</p>
         </header>
 

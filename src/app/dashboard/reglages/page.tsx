@@ -65,7 +65,7 @@ export default function ReglagesPage() {
                 </div>
                 <div>
                   <h3 className="text-lg font-bold text-nuit-900">{item.title}</h3>
-                  <p className="text-sm text-chaux-500">{item.description}</p>
+                  <p className="text-sm text-chaux-600">{item.description}</p>
                 </div>
               </div>
               <ChevronRight className="w-5 h-5 text-chaux-400" />

@@ -89,7 +89,7 @@ export default function BoutiquesEnLigne() {
             href="/register"
             className="group flex items-center gap-4 rounded-2xl border border-dashed border-chaux-300 p-4 transition hover:border-bissap-400 hover:bg-white/50"
           >
-            <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border border-dashed border-chaux-300 text-chaux-500 transition group-hover:border-bissap-300 group-hover:text-bissap-500">
+            <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border border-dashed border-chaux-300 text-chaux-600 transition group-hover:border-bissap-300 group-hover:text-bissap-500">
               <Plus className="h-6 w-6" />
             </span>
             <span className="min-w-0 flex-1">

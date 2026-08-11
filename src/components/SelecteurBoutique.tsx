@@ -40,8 +40,13 @@ export default function SelecteurBoutique() {
           ))}
         </select>
 
+        {/* Le secteur de la boutique choisie. Pose nu, ce seul mot — « Mode »,
+            « Restauration » — se lisait comme un libelle orphelin plutot que
+            comme une propriete de la boutique d'a cote. */}
         {active?.secteur && (
-          <span className="hidden text-xs text-chaux-600 sm:inline">{active.secteur}</span>
+          <span className="hidden border border-[var(--hairline)] px-2 py-1 font-mono text-[10px] uppercase tracking-[0.16em] text-chaux-600 sm:inline">
+            {active.secteur}
+          </span>
         )}
       </div>
     </div>

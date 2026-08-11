@@ -183,8 +183,8 @@ export default function LivreursPage() {
         <LienRetour href="/dashboard">Retour au dashboard</LienRetour>
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-nuit-900">Gestion des Livreurs</h1>
-            <p className="text-chaux-600 mt-1">Gérez vos livreurs internes et indépendants</p>
+            <h1 className="font-display text-3xl font-bold text-nuit-900">Livreurs</h1>
+            <p className="text-chaux-600 mt-1">Vos livreurs internes et les indépendants qui prennent vos courses.</p>
           </div>
           
           {/* BOUTON ASSIGNATIONS - AJOUTEZ CECI */}
@@ -251,7 +251,7 @@ export default function LivreursPage() {
         <div className="text-center py-16 bg-white rounded-xl border border-chaux-200 border-dashed">
           <Truck className="w-16 h-16 text-chaux-300 mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-nuit-900">Aucun livreur</h3>
-          <p className="text-chaux-500 mt-1">Commencez par ajouter votre premier livreur.</p>
+          <p className="text-chaux-600 mt-1">Commencez par ajouter votre premier livreur.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -317,15 +317,15 @@ export default function LivreursPage() {
                         <Star className="w-4 h-4 fill-current" />
                         {livreur.note_moyenne.toFixed(1)}
                       </div>
-                      <p className="text-xs text-chaux-500 mt-1">Note</p>
+                      <p className="text-xs text-chaux-600 mt-1">Note</p>
                     </div>
                     <div className="text-center">
                       <p className="font-bold text-nuit-900">{livreur.total_livraisons}</p>
-                      <p className="text-xs text-chaux-500 mt-1">Livraisons</p>
+                      <p className="text-xs text-chaux-600 mt-1">Livraisons</p>
                     </div>
                     <div className="text-center">
                       <p className="font-bold text-nuit-900">{livreur.gain_total.toLocaleString()}F</p>
-                      <p className="text-xs text-chaux-500 mt-1">Gains</p>
+                      <p className="text-xs text-chaux-600 mt-1">Gains</p>
                     </div>
                   </div>
 
@@ -374,7 +374,7 @@ export default function LivreursPage() {
               <div className="p-6 border-b border-chaux-200 flex justify-between items-center">
                 <h2 className="text-xl font-bold text-nuit-900">Ajouter un livreur</h2>
                 <button onClick={() => setShowModal(false)} className="p-2 hover:bg-chaux-100 rounded-lg">
-                  <X className="w-5 h-5 text-chaux-500" />
+                  <X className="w-5 h-5 text-chaux-600" />
                 </button>
               </div>
 
