@@ -67,11 +67,15 @@ export default function NotificationsPage() {
 
     setBoutiqueId(uuid);
 
+    // `maybeSingle` et non `single` : une boutique qui n'a jamais touche a ses
+    // preferences n'a pas de ligne ici, et l'absence n'est pas une erreur — on
+    // affiche alors les valeurs par defaut. `single` repondait 406 a chaque
+    // ouverture de l'ecran.
     const { data } = await supabase
       .from('notification_settings')
       .select('*')
       .eq('boutique_id', uuid)
-      .single();
+      .maybeSingle();
 
     if (data) {
       setSettings(data as NotificationSettings);

@@ -212,7 +212,11 @@ export default function CustomersPage() {
           </button>
         </aside>
 
-        <main className="flex-1">
+        {/* `min-w-0` : sans lui, la largeur minimale d'un enfant flex vaut
+            celle de son contenu, et le conteneur defilant du tableau ne peut
+            jamais retrecir — la page entiere partait en defilement
+            horizontal, jusqu'a 1 103 px de large sur un telephone. */}
+        <main className="min-w-0 flex-1">
           <header className="mb-8 flex flex-col gap-4 rounded-[2rem] border border-white/70 bg-white/75 p-5 shadow-[0_20px_60px_rgba(49,35,20,0.08)] backdrop-blur-xl md:flex-row md:items-center md:justify-between">
             <div>
               <p className="text-sm font-medium uppercase tracking-[0.2em] text-chaux-600">Clients</p>
