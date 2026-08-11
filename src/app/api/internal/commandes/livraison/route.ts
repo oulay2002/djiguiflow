@@ -62,6 +62,18 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'aucun champ de livraison fourni' }, { status: 400 });
   }
 
+  /**
+   * Une livraison terminee cloture aussi la commande.
+   *
+   * `rapport_retards` et `rapport_activite` raisonnent sur `statut`, jamais sur
+   * `statut_livraison` : sans cette ligne, une commande livree reste « en
+   * attente » pour la base — elle figure indefiniment dans l'alerte retard du
+   * gerant, et n'est jamais comptee parmi les livrees du jour.
+   */
+  if (maj.statut_livraison === 'livre') {
+    (maj as Record<string, string>).statut = 'livree';
+  }
+
   const sb = getSupabaseAdmin();
   if (!sb) return NextResponse.json({ error: 'Base indisponible' }, { status: 503 });
 
