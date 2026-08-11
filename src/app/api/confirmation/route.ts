@@ -34,6 +34,35 @@ function pageHtml(emoji: string, titre: string, detail: string, corps = ''): str
   return `<!doctype html><html lang="fr"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>${titre}</title></head><body style="font-family:system-ui,sans-serif;background:#f7f0e7;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0"><div style="background:#fff;border-radius:24px;padding:40px;max-width:420px;text-align:center;box-shadow:0 20px 60px rgba(49,35,20,.12)"><div style="font-size:48px">${emoji}</div><h1 style="font-size:22px;margin:16px 0 8px;color:#0f172a">${titre}</h1><p style="color:#64748b;margin:0">${detail}</p>${corps}<p style="margin-top:24px;font-size:13px;color:#94a3b8">DjiguiFlow 🍽️</p></div></body></html>`;
 }
 
+/**
+ * Echappe tout ce qui vient du client avant de l'inserer dans la page.
+ *
+ * L'adresse et le nom des produits sont saisis par le client dans WhatsApp et
+ * stockes tels quels : les afficher bruts, c'est du XSS stocke sur une page
+ * publique. La reference elle-meme atterrit dans un attribut value : un
+ * guillemet suffirait a tronquer le champ cache et a envoyer le POST sur une
+ * autre commande.
+ */
+function echapper(valeur: unknown): string {
+  return String(valeur ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+/**
+ * Neutralise les jokers d'un motif LIKE.
+ *
+ * La reference vient de la query string : « ? ref=% » ferait correspondre la
+ * premiere commande venue, et permettrait de confirmer ou d'annuler celle d'un
+ * autre client.
+ */
+function motifExact(valeur: string): string {
+  return valeur.replace(/[\\%_]/g, (c) => `\\${c}`);
+}
+
 function reponseHtml(emoji: string, titre: string, detail: string, code = 200, corps = ''): Response {
   return new Response(pageHtml(emoji, titre, detail, corps), {
     status: code,
@@ -52,7 +81,7 @@ async function chargerCommande(ref: string) {
       'reference, confirmation_statut, boutique_id, client_nom, client_telephone, chat_id,' +
         ' client_adresse, total, canal, commande_items(nom_produit, quantite)',
     )
-    .ilike('reference', ref)
+    .ilike('reference', motifExact(ref))
     .maybeSingle();
 
   return { sb, ligne: (data as unknown as Ligne) ?? null };
@@ -87,15 +116,15 @@ export async function GET(req: Request) {
 
   const bouton = (valeur: string, libelle: string, fond: string) =>
     `<form method="post" style="display:inline-block;margin:6px">` +
-    `<input type="hidden" name="ref" value="${ligne.reference}"/>` +
+    `<input type="hidden" name="ref" value="${echapper(ligne.reference)}"/>` +
     `<input type="hidden" name="r" value="${valeur}"/>` +
     `<button type="submit" style="border:0;border-radius:12px;padding:14px 22px;font-size:16px;cursor:pointer;color:#fff;background:${fond}">${libelle}</button>` +
     `</form>`;
 
   const articles = articlesDe(ligne).join(', ');
   const recap =
-    `<p style="color:#0f172a;margin:18px 0 4px;font-weight:600">${articles || 'Votre commande'}</p>` +
-    `<p style="color:#64748b;margin:0 0 18px">${Number(ligne.total ?? 0).toLocaleString('fr-FR')} FCFA · ${ligne.client_adresse ?? ''}</p>` +
+    `<p style="color:#0f172a;margin:18px 0 4px;font-weight:600">${echapper(articles) || 'Votre commande'}</p>` +
+    `<p style="color:#64748b;margin:0 0 18px">${Number(ligne.total ?? 0).toLocaleString('fr-FR')} FCFA · ${echapper(ligne.client_adresse)}</p>` +
     `<div>${bouton('oui', '✅ Je confirme', '#16a34a')}${bouton('non', "❌ J'annule", '#dc2626')}</div>`;
 
   return reponseHtml('🍽️', 'Confirmez votre commande', 'Serez-vous disponible pour la réception ?', 200, recap);
@@ -112,9 +141,11 @@ export async function POST(req: Request) {
     ref = String(corps.ref ?? '').trim();
     r = String(corps.r ?? '').toLowerCase();
   } else {
-    const form = await req.formData();
-    ref = String(form.get('ref') ?? '').trim();
-    r = String(form.get('r') ?? '').toLowerCase();
+    // Un corps tronque ou un content-type inattendu ne doit pas rendre un 500
+    // brut a un client qui vient simplement de cliquer sur un bouton.
+    const form = await req.formData().catch(() => null);
+    ref = String(form?.get('ref') ?? '').trim();
+    r = String(form?.get('r') ?? '').toLowerCase();
   }
 
   if (!ref || (r !== 'oui' && r !== 'non')) {

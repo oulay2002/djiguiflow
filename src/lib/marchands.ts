@@ -40,18 +40,30 @@ let cacheTime = 0;
 const TTL = 30_000; // 30 secondes
 
 /**
- * Toutes les cles sous lesquelles un marchand doit repondre.
+ * Cle principale d'un marchand : son slug, tel qu'il est en base.
+ *
+ * Elle prime toujours. Une boutique doit repondre a son propre slug meme si
+ * l'alias d'une autre lui ressemble.
+ */
+function clePrincipale(m: Marchand): string {
+  return String(m.id || '').trim();
+}
+
+/**
+ * Cles secondaires, tolerees mais jamais prioritaires.
  *
  * Le slug compacte n'est pas un ornement : les liens deja partages et les
  * webhooks deja configures utilisent des identifiants sans tiret, herites du
- * registre Sheets.
+ * registre Sheets — « boulangeriedor » doit continuer de repondre.
+ *
+ * Mais deux boutiques peuvent se disputer une meme forme compactee :
+ * « chez-ali » produit l'alias « chezali », qui est le slug legitime d'une
+ * autre. Si l'alias l'emportait, les commandes d'un marchand partiraient chez
+ * son voisin — c'est pourquoi les alias ne sont poses qu'apres coup, et
+ * seulement sur les cles encore libres.
  */
-function clesDe(m: Marchand): string[] {
-  return [
-    m.id,
-    m.id.replace(/-/g, ''),
-    m.nom.toLowerCase().replace(/\s+/g, ''),
-  ]
+function alias(m: Marchand): string[] {
+  return [m.id.replace(/-/g, ''), m.nom.toLowerCase().replace(/\s+/g, '')]
     .map((s) => String(s || '').trim())
     .filter(Boolean);
 }
@@ -94,18 +106,24 @@ async function chargerMarchands(): Promise<Record<string, Marchand>> {
 
   const base = await depuisSupabase();
 
-  const entrees: { m: Marchand; cles: Set<string> }[] = base.map((m) => ({
-    m,
-    cles: new Set(clesDe(m)),
-  }));
-
   // Base muette : on garde le dernier etat connu plutot que de rendre toutes
   // les boutiques introuvables.
-  if (!entrees.length) return cache ?? {};
+  if (!base.length) return cache ?? {};
 
   const dict: Record<string, Marchand> = {};
-  for (const e of entrees) {
-    for (const cle of e.cles) dict[cle] = e.m;
+
+  // Deux passes, et l'ordre compte. Les slugs d'abord, pour qu'aucun alias ne
+  // puisse prendre la place d'une boutique existante ; les alias ensuite, et
+  // seulement la ou la cle est encore libre.
+  for (const m of base) {
+    const cle = clePrincipale(m);
+    if (cle) dict[cle] = m;
+  }
+
+  for (const m of base) {
+    for (const cle of alias(m)) {
+      if (!dict[cle]) dict[cle] = m;
+    }
   }
 
   cache = dict;

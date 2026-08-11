@@ -24,6 +24,17 @@ type Champs = {
   heure_livraison?: string;
 };
 
+/**
+ * Neutralise les jokers d'un motif LIKE.
+ *
+ * `ilike` interprete % et _ : une reference valant « % » mettrait a jour
+ * TOUTES les commandes de la plateforme, livrees comprises. La reference
+ * arrive d'une feuille que l'agent remplit — elle n'est pas de confiance.
+ */
+function motifExact(valeur: string): string {
+  return valeur.replace(/[\\%_]/g, (c) => `\\${c}`);
+}
+
 const CHAMPS: (keyof Champs)[] = [
   'statut_livraison',
   'nom_livreur',
@@ -69,8 +80,12 @@ export async function POST(req: Request) {
    * `statut_livraison` : sans cette ligne, une commande livree reste « en
    * attente » pour la base — elle figure indefiniment dans l'alerte retard du
    * gerant, et n'est jamais comptee parmi les livrees du jour.
+   *
+   * Le test est volontairement large : selon la source, la valeur s'ecrit
+   * « livre », « livree » ou « livrée ». Une comparaison stricte laisserait la
+   * commande ouverte sans que rien ne le signale, derriere un 200 ok.
    */
-  if (maj.statut_livraison === 'livre') {
+  if (/^livr/i.test(maj.statut_livraison ?? '')) {
     (maj as Record<string, string>).statut = 'livree';
   }
 
@@ -80,7 +95,7 @@ export async function POST(req: Request) {
   const { data, error } = await sb
     .from('commandes')
     .update(maj as never)
-    .ilike('reference', reference)
+    .ilike('reference', motifExact(reference))
     .select('id');
 
   if (error) {
