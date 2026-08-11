@@ -40,7 +40,11 @@ export default function Page() {
   const [s, setS] = useState<Stats | null>(null);
   const [maj, setMaj] = useState('');
 
-  const { boutiqueId, pret } = useBoutique();
+  const { boutiqueId, boutiques, pret } = useBoutique();
+  // Le titre etait fige sur « Zahara » : la page affichait les chiffres de la
+  // boutique choisie sous le nom d'une autre. Sur une plateforme multi-marchand,
+  // c'est le genre d'ecart qui fait douter de tout le reste.
+  const nomBoutique = boutiques.find((b) => b.id === boutiqueId)?.nom ?? 'ma boutique';
 
   const charger = async () => {
     try {
@@ -99,7 +103,7 @@ export default function Page() {
             <div className="relative z-10 flex flex-wrap items-center justify-between gap-4">
               <div>
                 <p className="text-sm uppercase tracking-[0.2em] text-mangue-100">Analytics · données réelles</p>
-                <h1 className="mt-2 text-3xl font-black">📊 Pilotage Zahara</h1>
+                <h1 className="mt-2 font-display text-3xl font-black">Pilotage · {nomBoutique}</h1>
               </div>
               <button onClick={charger} className="flex items-center gap-2 rounded-full bg-white/15 px-4 py-2 text-sm font-semibold hover:bg-white/25">
                 <RefreshCw className="h-4 w-4" /> Actualiser
