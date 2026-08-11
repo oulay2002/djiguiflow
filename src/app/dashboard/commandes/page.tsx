@@ -202,7 +202,7 @@ export default function Page() {
               ].map(([k, l, n]) => (
                 <button key={k} onClick={() => setFiltre(String(k))}
                   className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-                    filtre === k ? 'bg-mangue-700 text-white' : 'bg-chaux-100 text-nuit-700 hover:bg-chaux-200'
+                    filtre === k ? 'bg-nuit-900 text-chaux-50' : 'bg-chaux-100 text-nuit-700 hover:bg-chaux-200'
                   }`}>
                   {l} · {n}
                 </button>

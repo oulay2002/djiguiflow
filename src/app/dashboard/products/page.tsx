@@ -228,7 +228,7 @@ export default function Page() {
             {cats.map(c => (
               <button key={c} onClick={() => setCat(c)}
                 className={`rounded-full px-4 py-2 text-sm font-semibold capitalize transition ${
-                  cat === c ? 'bg-mangue-700 text-white' : 'bg-chaux-100 text-nuit-700 hover:bg-chaux-200'
+                  cat === c ? 'bg-nuit-900 text-chaux-50' : 'bg-chaux-100 text-nuit-700 hover:bg-chaux-200'
                 }`}>
                 {c}
               </button>

@@ -261,7 +261,7 @@ export default function AnalyticsPage() {
               <option value="month">Ce mois</option>
               <option value="year">Cette année</option>
             </select>
-            <button className="flex items-center gap-2 px-4 py-2 bg-mangue-600 text-white rounded-lg hover:bg-mangue-700 transition">
+            <button className="flex items-center gap-2 px-4 py-2 bg-bissap-500 text-white rounded-lg hover:bg-bissap-600 transition">
               <Download className="w-4 h-4" />
               Exporter
             </button>
