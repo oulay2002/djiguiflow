@@ -12,6 +12,8 @@ export type Marchand = {
   sheetMenu: string;
   groupeLivreurs: string;
   whatsapp: string;
+  /** Chat Telegram du gerant, pour lui adresser ses alertes. */
+  telegramMarchand: string;
 };
 
 /**
@@ -49,7 +51,9 @@ async function depuisSupabase(): Promise<Marchand[]> {
 
   const { data, error } = await sb
     .from('boutiques')
-    .select('id, slug, nom, categorie, emoji, sheet_commandes, sheet_menu, groupe_livreurs, telephone');
+    .select(
+      'id, slug, nom, categorie, emoji, sheet_commandes, sheet_menu, groupe_livreurs, telephone, telegram_marchand',
+    );
 
   if (error) {
     console.error('Marchands — lecture Supabase impossible :', error);
@@ -69,6 +73,7 @@ async function depuisSupabase(): Promise<Marchand[]> {
       sheetMenu: String(b.sheet_menu || 'Menu'),
       groupeLivreurs: String(b.groupe_livreurs || ''),
       whatsapp: String(b.telephone || ''),
+      telegramMarchand: String(b.telegram_marchand || ''),
     }));
 }
 
@@ -89,6 +94,7 @@ async function depuisFeuille(): Promise<Partial<Marchand>[]> {
           sheetMenu: r.sheetMenu,
           groupeLivreurs: r.groupeLivreurs,
           whatsapp: r.whatsapp,
+          telegramMarchand: r.telegramMarchand,
         };
         for (const cle of Object.keys(brut) as (keyof Marchand)[]) {
           if (!String(brut[cle] ?? '').trim()) delete brut[cle];
@@ -133,6 +139,7 @@ async function chargerMarchands(): Promise<Record<string, Marchand>> {
         sheetMenu: ligne.sheetMenu ?? 'Menu',
         groupeLivreurs: ligne.groupeLivreurs ?? '',
         whatsapp: ligne.whatsapp ?? '',
+        telegramMarchand: ligne.telegramMarchand ?? '',
       };
       entrees.push({ m, cles: new Set(clesDe(m)) });
       continue;
