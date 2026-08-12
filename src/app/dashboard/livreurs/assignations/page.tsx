@@ -202,17 +202,41 @@ export default function AssignationsPage() {
     setAssigning(false);
   };
 
+  /**
+   * L'avancement passe par le serveur, lui aussi.
+   *
+   * L'écran écrivait le statut depuis le navigateur, et c'est un déclencheur
+   * Postgres qui devait prévenir le client. Ce déclencheur postait vers un
+   * webhook n8n disparu : le client n'apprenait donc jamais que sa commande
+   * était partie, ni qu'elle était arrivée — et rien ne le signalait.
+   */
   const updateLivraisonStatut = async (livraisonId: string, newStatut: string) => {
-    const { error } = await supabase
-      .from('livraisons')
-      .update({ 
-        statut: newStatut,
-        date_livraison: newStatut === 'livree' ? new Date().toISOString() : null,
-      })
-      .eq('id', livraisonId);
+    setMessage('');
+    try {
+      const r = await fetchDashboard('/api/dashboard/livreurs/statut', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          livraison_id: livraisonId,
+          statut: newStatut,
+          boutique: boutiqueId,
+        }),
+      });
+      const j = await r.json().catch(() => null);
 
-    if (!error) {
+      if (!r.ok) {
+        setMessage(j?.error || "La mise à jour a échoué. Réessayez.");
+        return;
+      }
+
+      // Le statut est enregistré même si le message n'est pas parti. Le taire
+      // laisserait croire que le client a été prévenu.
+      if (j?.notif && j.notif !== 'sent' && j.notif !== 'aucune') {
+        setMessage(`Statut enregistré, mais le client n'a pas été prévenu (${j.notif}).`);
+      }
       loadData();
+    } catch {
+      setMessage('Connexion impossible. Réessayez.');
     }
   };
 
@@ -238,6 +262,17 @@ export default function AssignationsPage() {
           <p className="text-chaux-600 mt-1">Choisissez qui prend chaque commande en attente.</p>
         </div>
       </div>
+
+      {/* Le retour des actions. Il etait calcule mais jamais rendu : une
+          assignation refusee, ou un client non prevenu, ne se voyait pas. */}
+      {message && (
+        <div
+          role="status"
+          className="mb-6 rounded-xl border border-chaux-200 bg-white px-4 py-3 text-sm text-nuit-800"
+        >
+          {message}
+        </div>
+      )}
 
       {/* Stats rapides */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">

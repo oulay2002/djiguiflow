@@ -107,9 +107,12 @@ export async function POST(req: Request) {
       boutique: m.id,
       canal: 'whatsapp',
       destinataire: versClient,
+      // Une course assignee n'est pas une course partie : le depart est
+      // annonce par « Demarrer », qui passe la livraison en cours. Les deux
+      // messages disaient « part en livraison » — le client le lisait deux fois.
       message:
-        `🛵 ${commande.client_nom || 'Bonjour'}, votre commande ${reference} part en livraison.\n` +
-        `${livreur.nom ? `${livreur.nom} s'en charge.` : 'Un livreur s\'en charge.'}`,
+        `📦 ${commande.client_nom || 'Bonjour'}, votre commande ${reference} est prise en charge.\n` +
+        `${livreur.nom ? `${livreur.nom} s'en occupe` : 'Un livreur s\'en occupe'} et vous préviendra du départ.`,
     });
     notifications.client = envoi.ok ? 'sent' : `refuse (${envoi.statut ?? '?'})`;
     if (!envoi.ok) console.error(`Assignation ${reference} — client non prevenu :`, envoi.raison);

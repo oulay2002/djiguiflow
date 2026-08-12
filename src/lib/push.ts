@@ -8,8 +8,24 @@ import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
  * messages au nom du domaine, et fuite dans le bundle si ce module y entre.
  */
 
-const clePublique = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY?.trim();
-const clePrivee = process.env.VAPID_PRIVATE_KEY?.trim();
+/**
+ * La cle publique VAPID, vue du serveur.
+ *
+ * `VAPID_PUBLIC_KEY` d'abord, `NEXT_PUBLIC_VAPID_PUBLIC_KEY` en secours.
+ * L'ordre a son importance : une variable prefixee `NEXT_PUBLIC_` est figee
+ * dans le bundle A LA COMPILATION, y compris dans le code serveur. Le 12 aout
+ * 2026, la poser dans Vercel puis redeployer n'a rien change — le build
+ * reutilisait son cache, et le serveur gardait la valeur « absente » compilee
+ * la veille. Une variable sans prefixe, elle, est lue a l'execution : la
+ * configuration cesse de dependre de ce qu'un build a bien voulu figer.
+ */
+export function clePubliqueVapid(): string {
+  return (
+    process.env.VAPID_PUBLIC_KEY?.trim() ||
+    process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY?.trim() ||
+    ''
+  );
+}
 
 // `mailto:` est exige par la specification VAPID : c'est l'adresse que le
 // service de push (Google, Mozilla, Apple) contacte en cas d'abus.
@@ -25,11 +41,25 @@ let configure = false;
  * Les alertes marchand passent de toute facon aussi par WhatsApp et Telegram.
  */
 export function pushConfigure(): boolean {
+  const clePublique = clePubliqueVapid();
+  const clePrivee = process.env.VAPID_PRIVATE_KEY?.trim();
+
   if (!clePublique || !clePrivee) return false;
-  if (!configure) {
+  if (configure) return true;
+
+  // `setVapidDetails` ne rend pas un booleen : il LEVE si une cle est mal
+  // formee. Sans ce filet, une valeur collee avec ses guillemets — l'erreur de
+  // saisie la plus banale — faisait repondre 500 a /api/push/abonner au lieu
+  // du 503 prevu, et le marchand voyait une panne la ou il y a une variable a
+  // corriger.
+  try {
     webpush.setVapidDetails(contact, clePublique, clePrivee);
-    configure = true;
+  } catch (e) {
+    console.error('Cles VAPID invalides, notifications push desactivees :', e);
+    return false;
   }
+
+  configure = true;
   return true;
 }
 

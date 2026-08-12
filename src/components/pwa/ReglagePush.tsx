@@ -38,7 +38,10 @@ export default function ReglagePush() {
   const [occupe, setOccupe] = useState(false);
   const [erreur, setErreur] = useState('');
 
-  const clePublique = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+  // Demandee au serveur plutot que lue dans `process.env`. Une variable
+  // `NEXT_PUBLIC_` est figee a la compilation : tant que le build n'avait pas
+  // vu la cle, aucun reglage dans Vercel ne pouvait la faire apparaitre ici.
+  const [clePublique, setClePublique] = useState<string | null>(null);
 
   useEffect(() => {
     let monte = true;
@@ -50,10 +53,27 @@ export default function ReglagePush() {
         'PushManager' in window &&
         'Notification' in window;
 
-      if (!supporte || !clePublique) {
+      if (!supporte) {
         if (monte) setEtat('non-supporte');
         return;
       }
+
+      // Le deploiement peut ne pas avoir de cle : l'ecran doit alors le dire,
+      // pas proposer un bouton qui echouerait.
+      let cle = '';
+      try {
+        const r = await fetch('/api/push/cle');
+        if (r.ok) cle = ((await r.json()) as { cle?: string }).cle ?? '';
+      } catch {
+        // Hors ligne : on ne peut pas savoir. On traite comme indisponible.
+      }
+
+      if (!monte) return;
+      if (!cle) {
+        setEtat('non-supporte');
+        return;
+      }
+      setClePublique(cle);
 
       if (Notification.permission === 'denied') {
         if (monte) setEtat('refuse');
@@ -74,9 +94,13 @@ export default function ReglagePush() {
     return () => {
       monte = false;
     };
-  }, [clePublique]);
+    // Au montage seulement : la cle est desormais recuperee ici, la relister
+    // en dependance relancerait l'effet a chaque fois qu'elle arrive.
+  }, []);
 
   const activer = useCallback(async () => {
+    if (!clePublique) return;
+
     setOccupe(true);
     setErreur('');
 
@@ -97,7 +121,7 @@ export default function ReglagePush() {
         (await enregistrement.pushManager.subscribe({
           // Obligatoire : le navigateur refuse un push silencieux.
           userVisibleOnly: true,
-          applicationServerKey: base64UrlVersOctets(clePublique!),
+          applicationServerKey: base64UrlVersOctets(clePublique),
         }));
 
       const reponse = await fetchDashboard('/api/push/abonner', {
