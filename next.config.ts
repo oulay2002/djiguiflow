@@ -36,6 +36,10 @@ const csp = [
   `connect-src 'self' ${origineSupabase} ${origineSupabaseWs} https://api.stripe.com`.trim(),
   "frame-src 'self' https://js.stripe.com https://hooks.stripe.com",
   "form-action 'self'",
+  // Le service worker est un script, mais il ne releve pas de `script-src` :
+  // sans `worker-src`, la CSP le refuse une fois passee en mode bloquant.
+  "worker-src 'self'",
+  "manifest-src 'self'",
   // Le dashboard ne doit jamais etre encadre : c'est ce qui rend le
   // detournement de clic (clickjacking) impossible sur les navigateurs
   // recents, la ou X-Frame-Options ne couvre plus tous les cas.
@@ -68,7 +72,19 @@ const nextConfig: NextConfig = {
   },
 
   async headers() {
-    return [{ source: '/:path*', headers: enTetesSecurite }];
+    return [
+      { source: '/:path*', headers: enTetesSecurite },
+      {
+        // Le service worker se met a jour en se retelechargeant. S'il est mis
+        // en cache, un correctif n'atteint jamais un marchand qui garde
+        // l'application ouverte — d'ou le no-store.
+        source: '/sw.js',
+        headers: [
+          { key: 'Content-Type', value: 'application/javascript; charset=utf-8' },
+          { key: 'Cache-Control', value: 'no-cache, no-store, must-revalidate' },
+        ],
+      },
+    ];
   },
 };
 

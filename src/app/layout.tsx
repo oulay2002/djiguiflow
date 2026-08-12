@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Bricolage_Grotesque, IBM_Plex_Mono, Instrument_Sans } from "next/font/google";
 import "./globals.css";
+import EnregistrementServiceWorker from "@/components/pwa/EnregistrementServiceWorker";
 import {
   SITE_DESCRIPTION,
   SITE_LOCALE,
@@ -38,6 +39,12 @@ const plexMono = IBM_Plex_Mono({
  */
 export const viewport: Viewport = {
   themeColor: "#131c3d",
+  width: "device-width",
+  initialScale: 1,
+  // `cover` est ce qui donne une valeur non nulle a env(safe-area-inset-*).
+  // Sans lui, la barre de navigation du bas passe sous l'indicateur d'accueil
+  // de l'iPhone et ses deux derniers onglets deviennent intouchables.
+  viewportFit: "cover",
 };
 
 export const metadata: Metadata = {
@@ -51,6 +58,14 @@ export const metadata: Metadata = {
   },
   description: SITE_DESCRIPTION,
   applicationName: SITE_NOM,
+  // Safari ignore le manifeste : sans ce bloc, « Sur l'ecran d'accueil »
+  // rouvre l'application dans un onglet avec la barre d'adresse. iOS exige
+  // aussi ce mode pour delivrer les notifications push.
+  appleWebApp: {
+    capable: true,
+    title: SITE_NOM,
+    statusBarStyle: "default",
+  },
   alternates: { canonical: "/" },
   openGraph: {
     type: "website",
@@ -123,6 +138,7 @@ export default function RootLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(donneesStructurees) }}
         />
+        <EnregistrementServiceWorker />
         {children}
       </body>
     </html>

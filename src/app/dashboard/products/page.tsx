@@ -1,11 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
 import { useBoutique, avecBoutique } from '@/lib/boutique';
 import {
-  AlertTriangle, Bell, CreditCard, Gauge, LogOut, Package2, Plus, RefreshCw,
-  Settings, ShoppingCart, Store, TrendingUp, Truck, Users, UtensilsCrossed, X,
+  AlertTriangle,
+  Plus,
+  RefreshCw,
+  UtensilsCrossed,
+  X,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { BUCKET_IMAGES, dossierMarchand, nomFichierSain } from '@/lib/storage';
@@ -17,19 +19,6 @@ type Prod = {
   description: string; disponible: boolean; image: string;
   stock: number | null; seuil_alerte: number | null;
 };
-
-const sidebarItems = [
-  { label: "Vue d'ensemble", href: '/dashboard', icon: Gauge },
-  { label: 'Ma Boutique', href: '/dashboard/ma-boutique', icon: Store },
-  { label: 'Commandes', href: '/dashboard/commandes', icon: ShoppingCart },
-  { label: 'Clients', href: '/dashboard/customers', icon: Users },
-  { label: 'Produits', href: '/dashboard/products', icon: Package2 },
-  { label: 'Analytics', href: '/dashboard/stats', icon: TrendingUp },
-  { label: 'Livreurs', href: '/dashboard/livreurs', icon: Truck },
-  { label: 'Paiements', href: '/dashboard/paiements', icon: CreditCard },
-  { label: 'Notifications', href: '/dashboard/reglages/notifications', icon: Bell },
-  { label: 'Réglages', href: '/dashboard/reglages', icon: Settings },
-];
 
 export default function Page() {
   const [prods, setProds] = useState<Prod[]>([]);
@@ -158,36 +147,7 @@ export default function Page() {
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(219,149,52,0.15),transparent_25%),linear-gradient(180deg,#fffdf9_0%,#f7f0e7_100%)] p-4 lg:p-6">
-      <div className="mx-auto flex max-w-[1600px] gap-6">
-        <aside className="hidden w-72 shrink-0 rounded-[2rem] border border-white/70 bg-white/75 p-5 shadow-[0_20px_60px_rgba(49,35,20,0.08)] backdrop-blur-xl lg:block">
-          <div className="mb-8 flex items-center gap-3 px-2">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-500 to-accent-600 text-lg font-black text-white">D</div>
-            <div>
-              <p className="text-lg font-black">DjiguiFlow</p>
-              <p className="text-xs uppercase tracking-[0.2em] text-chaux-600">Admin</p>
-            </div>
-          </div>
-          <nav className="space-y-2">
-            {sidebarItems.map(({ label, href, icon: Icon }) => (
-              <Link key={href} href={href}
-                className={`flex items-center gap-3 rounded-2xl px-3 py-3 text-sm font-semibold transition ${
-                  href === '/dashboard/products'
-                    ? 'bg-gradient-to-r from-primary-600 to-primary-500 text-white shadow-lg'
-                    : 'text-chaux-600 hover:bg-chaux-100'
-                }`}>
-                <Icon className="h-4 w-4" />{label}
-              </Link>
-            ))}
-          </nav>
-          <Bouton
-            variante="calme"
-            className="mt-8 w-full"
-            onClick={async () => { await supabase.auth.signOut(); location.href = '/login'; }}
-          >
-            <LogOut className="h-4 w-4" />Déconnexion
-          </Bouton>
-        </aside>
-
+      <div className="mx-auto max-w-[1600px]">
         <main className="flex-1 space-y-6">
           <header className="indigo-weave relative overflow-hidden rounded-[2rem] bg-nuit-900 p-6 text-chaux-50 shadow-xl">
             <div className="relative z-10 flex flex-wrap items-center justify-between gap-4">

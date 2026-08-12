@@ -8,6 +8,8 @@ import { isMockBillingMode } from '@/lib/billing/mode';
 import { BoutiqueProvider } from '@/lib/boutique';
 import SelecteurBoutique from '@/components/SelecteurBoutique';
 import AjouterMarchand from '@/components/AjouterMarchand';
+import NavigationDashboard from '@/components/dashboard/NavigationDashboard';
+import InvitationInstallation from '@/components/pwa/InvitationInstallation';
 
 type SubscriptionState = {
   status: string;
@@ -130,7 +132,10 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     <BoutiqueProvider>
       <SelecteurBoutique />
       <AjouterMarchand />
-      {children}
+      <NavigationDashboard>{children}</NavigationDashboard>
+      {/* Proposee au marchand connecte seulement : un visiteur de la vitrine
+          n'a rien a installer. */}
+      <InvitationInstallation />
     </BoutiqueProvider>
   );
 }

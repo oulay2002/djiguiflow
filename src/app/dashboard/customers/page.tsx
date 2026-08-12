@@ -11,29 +11,21 @@ import {
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
-  CreditCard,
   Crown,
   Download,
   Edit,
   Eye,
   Filter,
-  Gauge,
-  LogOut,
   Mail,
   MapPin,
   MoreHorizontal,
   Package,
-  Package2,
   Phone,
   Plus,
   Search,
-  Settings,
   ShoppingCart,
   Star,
-  Store,
   Trash2,
-  TrendingUp,
-  Truck,
   UserPlus,
   Users,
   X,
@@ -79,19 +71,6 @@ function dateCourte(iso: string): string {
   return Number.isNaN(d.getTime()) ? '—' : d.toLocaleDateString('fr-FR');
 }
 
-const sidebarItems = [
-  { label: 'Vue d\'ensemble', href: '/dashboard', active: true, icon: Gauge },
-  { label: 'Ma Boutique', href: '/dashboard/ma-boutique', active: false, icon: Store },
-  { label: 'Commandes', href: '/dashboard/commandes', active: false, icon: ShoppingCart },
-  { label: 'Clients', href: '/dashboard/customers', active: false, icon: Users },
-  { label: 'Produits', href: '/dashboard/products', active: false, icon: Package2 },
-  { label: 'Analytics', href: '/dashboard/stats', active: false, icon: TrendingUp }, // ← CORRIGÉ
-  { label: 'Livreurs', href: '/dashboard/livreurs', active: false, icon: Truck },
-  { label: 'Paiements', href: '/dashboard/paiements', active: false, icon: CreditCard },
-  { label: 'Notifications', href: '/dashboard/reglages/notifications', active: false, icon: Bell },
-  { label: 'Réglages', href: '/dashboard/reglages', active: false, icon: Settings },
-];
-
 export default function CustomersPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
@@ -100,10 +79,6 @@ export default function CustomersPage() {
   const [search, setSearch] = useState('');
   const { boutiqueId, pret } = useBoutique();
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    router.push('/login');
-  };
 
   useEffect(() => {
     let isMounted = true;
@@ -164,54 +139,7 @@ export default function CustomersPage() {
 
   return (
     <div className="min-h-screen bg-[var(--background)] p-4 lg:p-6">
-      <div className="mx-auto flex max-w-[1600px] gap-6">
-        <aside className="hidden w-72 shrink-0 rounded-[2rem] border border-white/70 bg-white/75 p-5 shadow-[0_20px_60px_rgba(49,35,20,0.08)] backdrop-blur-xl lg:block">
-          <div className="mb-8 flex items-center gap-3 px-2">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-nuit-500 to-accent-600 text-lg font-black text-white shadow-lg shadow-primary-500/20">
-              D
-            </div>
-            <div>
-              <p className="text-lg font-black text-nuit-900">DjiguiFlow</p>
-              <p className="text-xs uppercase tracking-[0.2em] text-chaux-600">Admin</p>
-            </div>
-          </div>
-
-          <nav className="space-y-2">
-            {sidebarItems.map(({ label, href, active, icon: Icon }) => (
-              <Link
-                key={label}
-                href={href}
-                className={`flex items-center gap-3 rounded-2xl px-3 py-3 text-sm font-semibold transition ${
-                  active ? 'bg-gradient-to-r from-primary-600 to-primary-500 text-white shadow-lg shadow-primary-500/20' : 'text-chaux-600 hover:bg-chaux-100 hover:text-nuit-900'
-                }`}
-              >
-                <Icon className="h-4 w-4" />
-                {label}
-              </Link>
-            ))}
-          </nav>
-
-          <div className="mt-8 rounded-[1.5rem] bg-gradient-to-br from-nuit-50 via-chaux-50 to-white p-4">
-            <p className="text-sm text-chaux-600">Base clients</p>
-            <p className="mt-2 text-2xl font-black text-nuit-900">{customers.length}</p>
-            <p className="mt-2 flex items-center gap-2 text-xs font-semibold text-accent-700">
-              <CheckCircle2 className="h-4 w-4" />
-              {customers.filter((c) => c.commandes >= 3).length} client
-              {customers.filter((c) => c.commandes >= 3).length > 1 ? 's' : ''} régulier
-              {customers.filter((c) => c.commandes >= 3).length > 1 ? 's' : ''}
-            </p>
-          </div>
-
-          <button
-            type="button"
-            onClick={handleLogout}
-            className={`${classesBouton('calme')} mt-8 w-full`}
-          >
-            <LogOut className="h-4 w-4" />
-            Déconnexion
-          </button>
-        </aside>
-
+      <div className="mx-auto max-w-[1600px]">
         {/* `min-w-0` : sans lui, la largeur minimale d'un enfant flex vaut
             celle de son contenu, et le conteneur defilant du tableau ne peut
             jamais retrecir — la page entiere partait en defilement

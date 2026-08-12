@@ -6,9 +6,8 @@ import { fetchDashboard } from '@/lib/apiClient';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
-  ArrowRight, Bell, CreditCard, Gauge, Globe2, LogOut, Package2, Search,
-  Send, Settings, ShoppingCart, Smartphone, Star, Store, TrendingUp, Trophy,
-  Truck, Users, Wallet, Rocket,
+  ArrowRight, Bell, Globe2, Package2, Send, ShoppingCart, Smartphone, Star,
+  Trophy, Wallet,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
@@ -19,20 +18,6 @@ type Stats = {
   serie7j: { jour: string; ca: number; nb: number }[];
   produitsVendus: number; panierMoyen: number;
 };
-
-const sidebarItems = [
-  { label: "Vue d'ensemble", href: '/dashboard', icon: Gauge },
-  { label: 'Ma Boutique', href: '/dashboard/ma-boutique', icon: Store },
-  { label: 'Commandes', href: '/dashboard/commandes', icon: ShoppingCart },
-  { label: 'Onboarding', href: '/onboarding', icon: Rocket },    
-  { label: 'Clients', href: '/dashboard/customers', icon: Users },
-  { label: 'Produits', href: '/dashboard/products', icon: Package2 },
-  { label: 'Analytics', href: '/dashboard/stats', icon: TrendingUp },
-  { label: 'Livreurs', href: '/dashboard/livreurs', icon: Truck },
-  { label: 'Paiements', href: '/dashboard/paiements', icon: CreditCard },
-  { label: 'Notifications', href: '/dashboard/reglages/notifications', icon: Bell },
-  { label: 'Réglages', href: '/dashboard/reglages', icon: Settings },
-];
 
 const canalMeta: Record<string, { label: string; icon: ComponentType<{ className?: string }>; txt: string; bar: string }> = {
   whatsapp: { label: 'WhatsApp', icon: Smartphone, txt: 'text-accent-700', bar: 'bg-accent-500' },
@@ -99,34 +84,8 @@ export default function Page() {
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(219,149,52,0.15),transparent_25%),linear-gradient(180deg,#fffdf9_0%,#f7f0e7_100%)] p-4 lg:p-6">
-      <div className="mx-auto flex max-w-[1600px] gap-6">
-        <aside className="hidden w-72 shrink-0 rounded-[2rem] border border-white/70 bg-white/75 p-5 shadow-[0_20px_60px_rgba(49,35,20,0.08)] backdrop-blur-xl lg:block">
-          <div className="mb-8 flex items-center gap-3 px-2">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-500 to-accent-600 text-lg font-black text-white">D</div>
-            <div>
-              <p className="text-lg font-black">DjiguiFlow</p>
-              <p className="text-xs uppercase tracking-[0.2em] text-chaux-600">Admin</p>
-            </div>
-          </div>
-          <nav className="space-y-2">
-            {sidebarItems.map(({ label, href, icon: Icon }) => (
-              <Link key={href} href={href}
-                className={`flex items-center gap-3 rounded-2xl px-3 py-3 text-sm font-semibold transition ${
-                  href === '/dashboard'
-                    ? 'bg-gradient-to-r from-primary-600 to-primary-500 text-white shadow-lg'
-                    : 'text-chaux-600 hover:bg-chaux-100'
-                }`}>
-                <Icon className="h-4 w-4" />{label}
-              </Link>
-            ))}
-          </nav>
-          <button onClick={async () => { await supabase.auth.signOut(); router.push('/login'); }}
-            className="mt-8 flex w-full items-center justify-center gap-2 rounded-2xl border border-[var(--hairline)] bg-chaux-50 px-4 py-3 text-sm font-semibold hover:bg-chaux-100">
-            <LogOut className="h-4 w-4" />Déconnexion
-          </button>
-        </aside>
-
-        <main className="flex-1 space-y-6">
+      <div className="mx-auto max-w-[1600px]">
+        <main className="min-w-0 flex-1 space-y-6">
           <header className="flex flex-col gap-4 rounded-[2rem] border border-white/70 bg-white/75 p-5 shadow-[0_20px_60px_rgba(49,35,20,0.08)] backdrop-blur-xl md:flex-row md:items-center md:justify-between">
             <div>
               <p className="text-sm uppercase tracking-[0.2em] text-chaux-600">Tableau de bord · données réelles</p>

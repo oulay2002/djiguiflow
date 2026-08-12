@@ -1,0 +1,91 @@
+<!doctype html>
+<!--
+  Page servie par le service worker quand une navigation echoue faute de
+  reseau. Volontairement en HTML brut et autonome : elle doit s'afficher
+  alors que rien d'autre n'est joignable, donc sans dependre d'un chunk
+  Next, d'une police distante ou d'une feuille de style externe.
+-->
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#131c3d" />
+    <title>Hors ligne — DjiguiFlow</title>
+    <style>
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100dvh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1.5rem;
+        background: #0c1229;
+        color: #eeece5;
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        text-align: center;
+      }
+      .carte {
+        max-width: 22rem;
+        width: 100%;
+      }
+      .pastille {
+        width: 4.5rem;
+        height: 4.5rem;
+        margin: 0 auto 1.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 1.25rem;
+        background: linear-gradient(135deg, #364a80, #177a5d);
+        font-size: 1.75rem;
+        font-weight: 900;
+        color: #fff;
+      }
+      h1 {
+        margin: 0 0 0.75rem;
+        font-size: 1.5rem;
+        font-weight: 800;
+        letter-spacing: -0.01em;
+      }
+      p {
+        margin: 0 0 1.75rem;
+        line-height: 1.6;
+        color: #b0badc;
+        font-size: 0.95rem;
+      }
+      button {
+        width: 100%;
+        /* 3rem : au-dessus du seuil sous lequel une cible se rate au pouce. */
+        min-height: 3rem;
+        padding: 0.85rem 1.25rem;
+        border: 0;
+        border-radius: 999px;
+        background: #c4123f;
+        color: #fff;
+        font-size: 0.95rem;
+        font-weight: 700;
+        font-family: inherit;
+        cursor: pointer;
+      }
+      button:active { background: #a50e36; }
+      .note {
+        margin: 1.25rem 0 0;
+        font-size: 0.8rem;
+        color: #55679f;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="carte">
+      <div class="pastille">D</div>
+      <h1>Pas de connexion</h1>
+      <p>
+        DjiguiFlow n'arrive pas à joindre le réseau. Vos commandes sont en
+        sécurité — elles s'afficheront dès que la connexion revient.
+      </p>
+      <button type="button" onclick="location.reload()">Réessayer</button>
+      <p class="note">Vérifiez vos données mobiles ou votre Wi-Fi.</p>
+    </main>
+  </body>
+</html>
