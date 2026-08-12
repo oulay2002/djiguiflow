@@ -25,6 +25,34 @@ function base64UrlVersOctets(base64: string): Uint8Array<ArrayBuffer> {
 type Etat = 'chargement' | 'non-supporte' | 'refuse' | 'inactif' | 'actif';
 
 /**
+ * Declare l'abonnement au serveur. Vrai s'il l'a bien enregistre.
+ *
+ * L'ecriture est un upsert sur l'endpoint : la rejouer sur un abonnement deja
+ * connu ne cree pas de doublon. C'est ce qui permet de l'appeler aussi a
+ * l'ouverture de l'ecran, pour rattraper un abonnement que le navigateur porte
+ * mais que le serveur ignore.
+ */
+async function declarerAuServeur(
+  boutiqueId: string,
+  abonnement: PushSubscription,
+): Promise<{ ok: boolean; erreur?: string }> {
+  try {
+    const reponse = await fetchDashboard('/api/push/abonner', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ boutique_id: boutiqueId, abonnement: abonnement.toJSON() }),
+    });
+
+    if (reponse.ok) return { ok: true };
+
+    const d = (await reponse.json().catch(() => null)) as { error?: string } | null;
+    return { ok: false, erreur: d?.error || `Enregistrement refusé (${reponse.status})` };
+  } catch (e) {
+    return { ok: false, erreur: e instanceof Error ? e.message : 'Serveur injoignable' };
+  }
+}
+
+/**
  * Active les notifications push sur CET appareil.
  *
  * L'abonnement appartient au navigateur, pas au compte : le marchand qui veut
@@ -33,7 +61,7 @@ type Etat = 'chargement' | 'non-supporte' | 'refuse' | 'inactif' | 'actif';
  * « active » sur un appareil laisse croire que l'autre l'est aussi.
  */
 export default function ReglagePush() {
-  const { boutiqueId } = useBoutique();
+  const { boutiqueId, pret } = useBoutique();
   const [etat, setEtat] = useState<Etat>('chargement');
   const [occupe, setOccupe] = useState(false);
   const [erreur, setErreur] = useState('');
@@ -44,6 +72,7 @@ export default function ReglagePush() {
   const [clePublique, setClePublique] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!pret) return;
     let monte = true;
 
     (async () => {
@@ -85,7 +114,19 @@ export default function ReglagePush() {
         // toutes dans le layout racine.
         const enregistrement = await navigator.serviceWorker.ready;
         const abonnement = await enregistrement.pushManager.getSubscription();
-        if (monte) setEtat(abonnement ? 'actif' : 'inactif');
+
+        if (!abonnement) {
+          if (monte) setEtat('inactif');
+          return;
+        }
+
+        // Le navigateur peut porter un abonnement que le serveur ignore : un
+        // enregistrement interrompu en chemin suffit. L'ecran affichait alors
+        // « actif » a un marchand que personne ne pouvait joindre — la pire
+        // panne possible ici, puisqu'elle rassure a tort. On redeclare donc
+        // l'abonnement, et « actif » n'est dit que si le serveur confirme.
+        const connu = await declarerAuServeur(boutiqueId, abonnement);
+        if (monte) setEtat(connu.ok ? 'actif' : 'inactif');
       } catch {
         if (monte) setEtat('non-supporte');
       }
@@ -94,9 +135,9 @@ export default function ReglagePush() {
     return () => {
       monte = false;
     };
-    // Au montage seulement : la cle est desormais recuperee ici, la relister
-    // en dependance relancerait l'effet a chaque fois qu'elle arrive.
-  }, []);
+    // `pret` conditionne la boutique : declarer l'abonnement avant que le
+    // contexte soit charge le rattacherait au marchand par defaut.
+  }, [pret, boutiqueId]);
 
   const activer = useCallback(async () => {
     if (!clePublique) return;
@@ -124,21 +165,13 @@ export default function ReglagePush() {
           applicationServerKey: base64UrlVersOctets(clePublique),
         }));
 
-      const reponse = await fetchDashboard('/api/push/abonner', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          boutique_id: boutiqueId,
-          abonnement: abonnement.toJSON(),
-        }),
-      });
+      const declare = await declarerAuServeur(boutiqueId, abonnement);
 
-      if (!reponse.ok) {
-        const d = await reponse.json().catch(() => null);
+      if (!declare.ok) {
         // L'abonnement local sans ligne en base ferait croire a une activation
         // reussie, et le marchand attendrait des alertes qui ne viendront pas.
         await abonnement.unsubscribe().catch(() => {});
-        throw new Error(d?.error || `Enregistrement refusé (${reponse.status})`);
+        throw new Error(declare.erreur);
       }
 
       setEtat('actif');
