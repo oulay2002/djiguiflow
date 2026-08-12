@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { LienRetour, classesBouton } from '@/components/ui/Bouton';
 import { TuileStat } from '@/components/ui/Etat';
 import { supabase } from '@/lib/supabase';
+import { fetchDashboard } from '@/lib/apiClient';
 import { useBoutique, uuidBoutiqueCourante } from '@/lib/boutique';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -71,6 +72,9 @@ export default function AssignationsPage() {
   const [selectedCommande, setSelectedCommande] = useState<Commande | null>(null);
   const [selectedLivreur, setSelectedLivreur] = useState<string>('');
   const [assigning, setAssigning] = useState(false);
+  // Ce que l'ecran a le droit de dire au marchand : la course est-elle
+  // assignee, et le livreur a-t-il ete reellement prevenu.
+  const [message, setMessage] = useState('');
 
   const loadData = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -147,38 +151,54 @@ export default function AssignationsPage() {
     return () => window.clearTimeout(timerId);
   }, [loadData]);
 
+  /**
+   * L'assignation passe par le serveur.
+   *
+   * L'écran écrivait les trois lignes directement en base, et personne n'était
+   * prévenu : ni le livreur, qui devait deviner qu'une course lui revenait, ni
+   * le client, dont la commande venait pourtant de partir. Seul le serveur peut
+   * résoudre le jeton du marchand et joindre ses interlocuteurs.
+   */
   const assignerLivreur = async () => {
     if (!selectedCommande || !selectedLivreur) return;
 
     setAssigning(true);
-    
-    const { error } = await supabase
-      .from('livraisons')
-      .insert({
-        commande_id: selectedCommande.id,
-        livreur_id: selectedLivreur,
-        statut: 'assignee',
+    setMessage('');
+
+    try {
+      const r = await fetchDashboard('/api/dashboard/livreurs/assigner', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          commande_id: selectedCommande.id,
+          livreur_id: selectedLivreur,
+          boutique: boutiqueId,
+        }),
       });
+      const j = await r.json().catch(() => null);
 
-    if (!error) {
-      // Mettre à jour le statut de la commande
-      await supabase
-        .from('commandes')
-        .update({ statut: 'en_livraison' })
-        .eq('id', selectedCommande.id);
-
-      // Mettre à jour le statut du livreur
-      await supabase
-        .from('livreurs')
-        .update({ statut: 'en_livraison' })
-        .eq('id', selectedLivreur);
-
-      setShowModal(false);
-      setSelectedCommande(null);
-      setSelectedLivreur('');
-      loadData();
+      if (!r.ok) {
+        setMessage(j?.error || "L'assignation a échoué. Réessayez.");
+      } else {
+        // La course est enregistrée même si un message n'est pas parti : le
+        // dire vaut mieux que laisser croire que le livreur a été prévenu.
+        const perdus = Object.entries(j?.notifications ?? {})
+          .filter(([, etat]) => etat !== 'sent')
+          .map(([qui, etat]) => `${qui} : ${etat}`);
+        setMessage(
+          perdus.length
+            ? `Course assignée, mais non signalée — ${perdus.join(', ')}.`
+            : 'Course assignée. Le livreur et le client ont été prévenus.',
+        );
+        setShowModal(false);
+        setSelectedCommande(null);
+        setSelectedLivreur('');
+        loadData();
+      }
+    } catch {
+      setMessage('Connexion impossible. Réessayez.');
     }
-    
+
     setAssigning(false);
   };
 
