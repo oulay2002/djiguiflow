@@ -1,0 +1,52 @@
+import { NextResponse } from 'next/server';
+import { diagnosticPush } from '@/lib/push';
+
+export const dynamic = 'force-dynamic';
+
+/**
+ * Ce que le deploiement en cours voit reellement de sa configuration push.
+ *
+ * Ecrit apres cinq redeploiements passes a deviner pourquoi les cles VAPID
+ * n'arrivaient pas. Le diagnostic public de /api/push/cle dit qu'une cle
+ * manque ; il ne dit pas laquelle des variables existe, sous quel nom, ni quel
+ * deploiement repond. Cette route repond a ces trois questions d'un coup.
+ *
+ * Aucune valeur n'est rendue, jamais — seulement des NOMS et des LONGUEURS.
+ * La longueur suffit a reconnaitre les deux fautes de saisie courantes : une
+ * valeur collee avec ses guillemets fait deux caracteres de trop, une valeur
+ * tronquee en fait beaucoup trop peu. Et la route reste derriere le meme
+ * secret partage que le reste de /api/internal.
+ */
+export async function GET(req: Request) {
+  const secret = req.headers.get('x-sync-secret');
+  if (!process.env.SYNC_SECRET || secret !== process.env.SYNC_SECRET) {
+    return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
+  }
+
+  // Les noms seuls : de quoi reperer un `VAPID_PUBLIC` tronque ou un
+  // `VAPID_PUBLIC_KEY ` avec une espace finale, invisibles dans l'interface.
+  const nomsVapid = Object.keys(process.env)
+    .filter((n) => n.toUpperCase().includes('VAPID'))
+    .sort();
+
+  const longueur = (v: string | undefined) => (v === undefined ? null : v.length);
+
+  return NextResponse.json({
+    // Quel deploiement repond, et sous quel environnement. Une variable posee
+    // sur Production reste invisible a une fonction qui tourne en preview.
+    deploiement: {
+      environnement: process.env.VERCEL_ENV ?? '(hors Vercel)',
+      commit: process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? null,
+      branche: process.env.VERCEL_GIT_COMMIT_REF ?? null,
+    },
+    variablesVapidVues: nomsVapid,
+    longueurs: {
+      VAPID_PUBLIC_KEY: longueur(process.env.VAPID_PUBLIC_KEY),
+      NEXT_PUBLIC_VAPID_PUBLIC_KEY: longueur(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY),
+      VAPID_PRIVATE_KEY: longueur(process.env.VAPID_PRIVATE_KEY),
+    },
+    // Attendu pour des cles saines : 87 et 43 caracteres.
+    longueursAttendues: { publique: 87, privee: 43 },
+    push: diagnosticPush(),
+  });
+}
