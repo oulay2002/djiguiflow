@@ -99,8 +99,19 @@ export async function GET(req: Request) {
 
   // Un marchand qui a au moins un secret pose ne doit pas pouvoir etre lu en
   // omettant simplement l'en-tete : l'absence totale de preuve vaut refus.
+  //
+  // Mais tous les appelants ne sont pas des webhooks de canal. `Commande App`
+  // lit la fiche pour un ordre passe depuis la boutique en ligne : il n'a ni
+  // secret wasender ni secret Telegram a presenter, et cette regle le refusait
+  // en 401 — ce qui explique qu'il n'ait jamais abouti depuis le 10 aout.
+  //
+  // Ces appels-la se declarent par `x-usage-interne`, et restent couverts par
+  // SYNC_SECRET, exige plus haut pour tout le monde. Le second facteur garde
+  // donc tout son role la ou il sert : le trafic de canal, ou le secret vient
+  // du fournisseur et prouve l'origine du message.
+  const usageInterne = req.headers.get('x-usage-interne') === '1';
   const aUnSecret = canaux.some(({ empreinte }) => String(empreinte ?? '').trim());
-  if (aUnSecret && !secretPresente) {
+  if (aUnSecret && !secretPresente && !usageInterne) {
     console.warn(`Fiche — aucun secret presente pour « ${slug} »`);
     return NextResponse.json({ error: 'Secret webhook requis' }, { status: 401 });
   }
