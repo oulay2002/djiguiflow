@@ -18,15 +18,36 @@ export async function POST(req: Request) {
   const sb = getSupabaseAdmin();
   if (!sb) return Response.json({ error: 'Indisponible' }, { status: 503 });
 
-  const payload = {
-    client_nom: String(b.customer_name || b.nom || 'Client'),
-    client_telephone: String(b.phone || ''),
-    chat_id: String(b.chat_id || b.phone || ''),
-    client_adresse: String(b.address || ''),
-    total: Number(b.total_price ?? b.total ?? 0) || 0,
-    canal: String(b.canal || 'whatsapp'),
-    statut: 'en_attente',
+  /**
+   * Ne recopier que ce qui est reellement fourni.
+   *
+   * Cette route ecrasait chaque champ, meme absent de l'appel : une commande
+   * enregistree avec son adresse la perdait des la premiere synchronisation,
+   * `String(undefined || '')` valant la chaine vide. Constate le 12 aout 2026
+   * sur deux commandes de test — adresse saisie, adresse disparue, et donc une
+   * course impossible a livrer.
+   *
+   * Un champ absent veut dire « je n'en sais rien », pas « efface-le ».
+   */
+  const siFourni = (valeur: unknown): string | undefined => {
+    if (valeur === undefined || valeur === null) return undefined;
+    const t = String(valeur).trim();
+    return t === '' ? undefined : t;
   };
+
+  const payload: Record<string, unknown> = {};
+  const poser = (colonne: string, valeur: string | undefined) => {
+    if (valeur !== undefined) payload[colonne] = valeur;
+  };
+
+  poser('client_nom', siFourni(b.customer_name ?? b.nom));
+  poser('client_telephone', siFourni(b.phone));
+  poser('chat_id', siFourni(b.chat_id ?? b.phone));
+  poser('client_adresse', siFourni(b.address));
+  poser('canal', siFourni(b.canal));
+
+  const total = Number(b.total_price ?? b.total);
+  if (Number.isFinite(total) && total > 0) payload.total = total;
 
   const { data } = await sb
     .from('commandes')
@@ -35,12 +56,23 @@ export async function POST(req: Request) {
     .maybeSingle();
 
   if (data) {
+    // Ni `statut` ni `confirmation_statut` ici : ils appartiennent au cycle de
+    // vie reel de la commande. Les forcer remettait a « en attente » une
+    // commande deja en livraison, et annulait une confirmation que le client
+    // venait de donner — c'est justement cet appel qui suit sa confirmation.
+    if (Object.keys(payload).length === 0) {
+      return Response.json({ ok: true, reference, maj: 'rien a mettre a jour' });
+    }
     const { error } = await sb
       .from('commandes')
-      .update({ ...payload, confirmation_statut: null } as never)
+      .update(payload as never)
       .eq('reference', reference);
     if (error) return Response.json({ error: 'UPDATE: ' + error.message }, { status: 500 });
   } else {
+    // A la creation seulement, l'etat de depart est connu.
+    payload.statut = 'en_attente';
+    if (!payload.client_nom) payload.client_nom = 'Client';
+    if (!payload.canal) payload.canal = 'whatsapp';
     const { error } = await sb
       .from('commandes')
       .insert({ ...payload, reference, boutique_id } as never);
