@@ -55,12 +55,18 @@ export async function POST(req: Request) {
     }
   }
 
+  // `format: "html"` demande a Telegram d'analyser les balises du message.
+  // Sans lui, le texte part brut — ce qui est le bon defaut : un texte analyse
+  // echoue des qu'il contient une esperluette, et l'envoi entier est perdu.
+  const html = String(corps.format ?? '').toLowerCase() === 'html';
+
   const resultat = await envoyerMessage({
     boutique,
     canal: canalBrut as Canal,
     destinataire,
     message,
     clavier,
+    html,
   });
 
   if (!resultat.ok) {

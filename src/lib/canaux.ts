@@ -112,6 +112,7 @@ async function envoyerTelegram(
   destinataire: string,
   message: string,
   clavier?: unknown,
+  html = false,
 ): Promise<{ ok: boolean; raison?: string; statut: number }> {
   // Un groupe de livreurs porte un identifiant negatif : pas de
   // normalisation telephonique ici, c'est un chat_id, pas un numero.
@@ -121,11 +122,15 @@ async function envoyerTelegram(
   // Le clavier inline n'est pas un ornement : c'est par lui que le livreur
   // repond « accepte », « parti », « livre ». Sans lui, le suivi de livraison
   // n'a plus de moyen d'entree.
-  const corps: Record<string, unknown> = {
-    chat_id: chatId,
-    text: message,
-    parse_mode: 'HTML',
-  };
+  const corps: Record<string, unknown> = { chat_id: chatId, text: message };
+
+  // `parse_mode` etait impose a tout le monde, et c'est ce qui a casse quatre
+  // envois differents : des lors que Telegram analyse le texte, la moindre
+  // esperluette dans un nom de client ou de produit fait repondre
+  // « can't parse entities » et l'envoi entier est perdu. Le defaut est donc
+  // le texte brut, que rien ne peut faire echouer ; seuls les appelants qui
+  // composent volontairement des balises demandent l'analyse.
+  if (html) corps.parse_mode = 'HTML';
   if (clavier && typeof clavier === 'object') corps.reply_markup = clavier;
 
   const res = await fetch(`https://api.telegram.org/bot${jeton}/sendMessage`, {
@@ -148,8 +153,17 @@ export async function envoyerMessage(params: {
   message: string;
   /** Clavier inline Telegram, ignore sur WhatsApp. */
   clavier?: unknown;
+  /**
+   * Le message porte des balises HTML et doit etre analyse par Telegram.
+   *
+   * Faux par defaut : un texte brut ne peut pas faire echouer l'envoi, alors
+   * qu'un texte analyse echoue des qu'il contient une esperluette. Seuls les
+   * appelants qui composent des balises — le dispatch livreurs, l'alerte
+   * retard — le demandent, et ceux-la echappent ce qu'ils y inserent.
+   */
+  html?: boolean;
 }): Promise<ResultatEnvoi> {
-  const { boutique, canal, destinataire, message, clavier } = params;
+  const { boutique, canal, destinataire, message, clavier, html } = params;
 
   if (!message?.trim()) {
     return { ok: false, canal, raison: 'message vide', statut: 400 };
@@ -171,7 +185,7 @@ export async function envoyerMessage(params: {
     const envoi =
       canal === 'whatsapp'
         ? await envoyerWhatsApp(jeton.jeton, destinataire, message)
-        : await envoyerTelegram(jeton.jeton, destinataire, message, clavier);
+        : await envoyerTelegram(jeton.jeton, destinataire, message, clavier, html === true);
 
     if (!envoi.ok) {
       console.error(`Canaux — envoi ${canal} refuse (${boutique}) :`, envoi.raison);
