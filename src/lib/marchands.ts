@@ -1,4 +1,5 @@
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
+import { nomsOngletsParDefaut } from '@/lib/provisioning';
 
 export type Marchand = {
   id: string;
@@ -90,19 +91,27 @@ async function depuisSupabase(): Promise<Marchand[]> {
 
   return (data ?? [])
     .filter((b) => String(b.slug ?? '').trim())
-    .map((b) => ({
+    .map((b) => {
+      // Meme convention que `/api/internal/fiche`. Les deux divergeaient :
+      // la fiche rendait « Commandes_Rosemonde », ce registre « Commandes ».
+      // Les routeurs, qui lisent la fiche, et les taches planifiees, qui
+      // lisent ce registre, auraient donc vise deux onglets differents pour
+      // une meme boutique — l'une des deux ecrivant dans le vide.
+      const parDefaut = nomsOngletsParDefaut(String(b.slug));
+      return {
       id: String(b.slug),
       boutiqueId: String(b.id),
       nom: String(b.nom ?? ''),
       secteur: String(b.categorie ?? ''),
       emoji: String(b.emoji || '🏪'),
       sheetId: SHEET_ID,
-      sheetCommandes: String(b.sheet_commandes || 'Commandes'),
-      sheetMenu: String(b.sheet_menu || 'Menu'),
+      sheetCommandes: String(b.sheet_commandes || parDefaut.sheetCommandes),
+      sheetMenu: String(b.sheet_menu || parDefaut.sheetMenu),
       groupeLivreurs: String(b.groupe_livreurs || ''),
       whatsapp: String(b.telephone || ''),
       telegramMarchand: String(b.telegram_marchand || ''),
-    }));
+      };
+    });
 }
 
 async function chargerMarchands(): Promise<Record<string, Marchand>> {
