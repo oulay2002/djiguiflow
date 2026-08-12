@@ -38,6 +38,25 @@ export async function GET(req: Request) {
       environnement: process.env.VERCEL_ENV ?? '(hors Vercel)',
       commit: process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? null,
       branche: process.env.VERCEL_GIT_COMMIT_REF ?? null,
+      // `VERCEL_URL` est propre a CHAQUE deploiement. Le commit, lui, ne bouge
+      // pas quand on redeploie sans nouveau code : il ne dit donc pas si un
+      // redeploiement a vraiment atteint ce domaine. Cette valeur, si.
+      urlUnique: process.env.VERCEL_URL ?? null,
+      depot: process.env.VERCEL_GIT_REPO_SLUG ?? null,
+      proprietaire: process.env.VERCEL_GIT_REPO_OWNER ?? null,
+    },
+
+    // De quelle « generation » de configuration ce deploiement dispose.
+    // Presence seulement, jamais les valeurs. Si les anciennes variables sont
+    // la et les nouvelles absentes, les cles ont ete saisies ailleurs que dans
+    // le projet qui sert ce domaine.
+    autresVariables: {
+      SYNC_SECRET: Boolean(process.env.SYNC_SECRET),
+      NEXT_PUBLIC_SUPABASE_URL: Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL),
+      SUPABASE_SERVICE_ROLE_KEY: Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY),
+      N8N_WEBHOOK_SECRET: Boolean(process.env.N8N_WEBHOOK_SECRET),
+      ADMIN_EMAILS: Boolean(process.env.ADMIN_EMAILS),
+      STRIPE_SECRET_KEY: Boolean(process.env.STRIPE_SECRET_KEY),
     },
     variablesVapidVues: nomsVapid,
     longueurs: {
