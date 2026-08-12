@@ -1,7 +1,20 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useCallback, useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { classesBouton } from '@/components/ui/Bouton';
+
+/**
+ * Le suivi d'une commande : le double du bon, cote client.
+ *
+ * C'est l'ecran ou le motif de la maison tombe le plus juste — le client tient
+ * son talon et regarde la commande avancer. D'ou le ticket : bord haut
+ * dechire, reference en machine a ecrire, perforation avant le total.
+ *
+ * La numerotation des etapes n'est pas un ornement : la livraison est une
+ * sequence, et le rang dit ou l'on en est.
+ */
 
 type Suivi = {
   order_id: string;
@@ -15,39 +28,70 @@ type Suivi = {
   heure_livraison: string;
 };
 
-export default function Page() {
-  const [ref, setRef] = useState('');
-  const [boutique, setBoutique] = useState('');
+const FOND_PAGE = '#eeece5';
+
+function horodatage(valeur: string): string {
+  if (!valeur) return '';
+  const d = new Date(valeur);
+  if (Number.isNaN(d.getTime())) return valeur;
+  return d.toLocaleString('fr-FR', {
+    day: '2-digit',
+    month: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+/**
+ * Le lien envoye au client porte deja sa reference : `?ref=…&boutique=…`.
+ *
+ * On les lit par `useSearchParams` plutot qu'en tapant dans `window` depuis un
+ * effet — sinon le premier rendu part vide, puis un `setState` immediat force
+ * un second rendu pour rien. C'est ce que cette page faisait.
+ */
+function Suivre() {
+  const params = useSearchParams();
+  const refUrl = (params.get('ref') || '').trim();
+  const boutique = (params.get('boutique') || '').trim();
+
+  const [ref, setRef] = useState(refUrl);
   const [suivi, setSuivi] = useState<Suivi | null>(null);
   const [erreur, setErreur] = useState('');
   const [chargement, setChargement] = useState(false);
 
-  const charger = async (r: string, b = boutique) => {
-    setChargement(true); setErreur('');
+  const charger = useCallback(async (r: string, b: string) => {
+    setChargement(true);
+    setErreur('');
     try {
-      const qs = new URLSearchParams({ ref: r.trim().toUpperCase() });
+      const qs = new URLSearchParams({ ref: r.trim() });
       if (b) qs.set('boutique_id', b);
       const res = await fetch(`/api/suivi?${qs.toString()}`);
-      if (!res.ok) { setSuivi(null); setErreur('Commande introuvable. Vérifie la référence (ex : ZH-…, BO-…, APP-…).'); }
-      else setSuivi(await res.json());
-    } catch { setErreur('Erreur de connexion.'); }
-    finally { setChargement(false); }
-  };
-
-  // Lecture des params URL
-  useEffect(() => {
-    const p = new URLSearchParams(window.location.search);
-    const r = (p.get('ref') || '').trim();
-    const b = (p.get('boutique') || '').trim();
-    if (b) setBoutique(b);
-    if (r) { setRef(r.toUpperCase()); charger(r, b); }
+      if (res.ok) {
+        setSuivi(await res.json());
+      } else {
+        setSuivi(null);
+        setErreur(
+          "Aucune commande sous cette référence. Recopiez-la telle qu'elle apparaît dans votre message de confirmation.",
+        );
+      }
+    } catch {
+      setErreur('La connexion a échoué. Réessayez dans un instant.');
+    } finally {
+      setChargement(false);
+    }
   }, []);
 
-  // ⚡ REALTIME : écoute les changements en direct
+  // Une reference dans l'URL se charge d'elle-meme : le client a clique sur le
+  // lien de son message, il n'a rien a retaper.
+  useEffect(() => {
+    if (refUrl) void charger(refUrl, boutique);
+  }, [refUrl, boutique, charger]);
+
+  // Le statut change pendant qu'on regarde : Supabase pousse la mise a jour.
   useEffect(() => {
     if (!suivi?.order_id) return;
 
-    const channel = supabase
+    const canal = supabase
       .channel(`suivi-${suivi.order_id}`)
       .on(
         'postgres_changes',
@@ -57,143 +101,205 @@ export default function Page() {
           table: 'commandes',
           filter: `reference=eq.${suivi.order_id}`,
         },
-        (payload) => {
-          const nouveau = payload.new as {
-            reference: string;
+        (charge) => {
+          const nouveau = charge.new as {
             nom_livreur: string | null;
             statut_livraison: string | null;
             heure_livraison: string | null;
           };
-          setSuivi(prev => prev ? {
-            ...prev,
-            nom_livreur: nouveau.nom_livreur ?? '',
-            statut_livraison: nouveau.statut_livraison ?? '',
-            heure_livraison: nouveau.heure_livraison ?? '',
-          } : prev);
-        }
+          setSuivi((prec) =>
+            prec
+              ? {
+                  ...prec,
+                  nom_livreur: nouveau.nom_livreur ?? '',
+                  statut_livraison: nouveau.statut_livraison ?? '',
+                  heure_livraison: nouveau.heure_livraison ?? '',
+                }
+              : prec,
+          );
+        },
       )
       .subscribe();
 
-    return () => { supabase.removeChannel(channel); };
+    return () => {
+      supabase.removeChannel(canal);
+    };
   }, [suivi?.order_id]);
 
-  // 🔄 FALLBACK : polling toutes les 15s
+  // Filet de secours : si le temps reel ne passe pas, on redemande.
   useEffect(() => {
-    if (!suivi || suivi.statut_livraison === 'livree') return;
-    const t = setInterval(() => charger(suivi.order_id, boutique), 15000);
+    if (!suivi || /livr/i.test(suivi.statut_livraison)) return;
+    const t = setInterval(() => void charger(suivi.order_id, boutique), 15000);
     return () => clearInterval(t);
-  }, [suivi?.order_id, boutique]);
+  }, [suivi, boutique, charger]);
 
-  // Logique d'étapes enrichie (5 étapes au lieu de 4)
-  const recue = !!suivi;
   const confirmee = !!suivi && /confirm|valid|accept/i.test(suivi.statut_livraison);
   const preparation = !!suivi && /prep|cuisine|cours|fabric/i.test(suivi.statut_livraison);
   const acceptee = !!suivi?.nom_livreur;
-  const enRoute = !!suivi && /part|route|cours|livraison/i.test(suivi.statut_livraison) && !suivi.heure_livraison;
+  const enRoute =
+    !!suivi && /part|route|cours|livraison/i.test(suivi.statut_livraison) && !suivi.heure_livraison;
   const livree = !!suivi && (/livr/i.test(suivi.statut_livraison) || !!suivi.heure_livraison);
 
   const etapes = [
-    { label: '📥 Commande reçue', ok: recue, detail: suivi?.timestamp || '' },
-    { label: '👩🏾‍🍳 En préparation', ok: preparation || confirmee || acceptee || enRoute || livree, detail: '' },
-    { label: '🛵 Pris en charge', ok: acceptee || enRoute || livree, detail: suivi?.nom_livreur || '' },
-    { label: '🏁 En route', ok: enRoute || livree, detail: '' },
-    { label: '✅ Livrée', ok: livree, detail: suivi?.heure_livraison || '' },
+    { label: 'Commande reçue', ok: !!suivi, detail: horodatage(suivi?.timestamp ?? '') },
+    {
+      label: 'En préparation',
+      ok: preparation || confirmee || acceptee || enRoute || livree,
+      detail: '',
+    },
+    { label: 'Prise par un livreur', ok: acceptee || enRoute || livree, detail: suivi?.nom_livreur || '' },
+    { label: 'En route', ok: enRoute || livree, detail: '' },
+    { label: 'Livrée', ok: livree, detail: horodatage(suivi?.heure_livraison ?? '') },
   ];
-  const idxActif = etapes.map(e => e.ok).lastIndexOf(true);
+  const idxActif = etapes.map((e) => e.ok).lastIndexOf(true);
 
   return (
-    <div className="min-h-screen bg-chaux-50 p-6">
-      <main className="mx-auto max-w-xl space-y-6">
-        <header className="rounded-xl bg-gradient-to-r from-mangue-600 to-mangue-700 p-6 text-white shadow-md">
-          <p className="text-xs uppercase tracking-widest text-mangue-200">DjiguiFlow · suivi en direct</p>
-          <h1 className="mt-1 font-display text-2xl font-bold">Suivre ma commande</h1>
-          <p className="mt-1 text-mangue-100">Entre ta référence (ex : ZH-…, BO-…, APP-…) pour voir le statut en direct.</p>
-        </header>
+    <main className="min-h-screen bg-chaux-100">
+      <header className="indigo-weave relative bg-nuit-900 px-5 pb-10 pt-10 text-chaux-50 sm:px-8">
+        <div className="mx-auto max-w-xl">
+          <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-mangue-300">
+            Suivi en direct
+          </p>
+          <h1 className="mt-3 font-display text-3xl font-black leading-[1.05] sm:text-4xl">
+            Où en est ma commande ?
+          </h1>
+          <p className="mt-3 text-sm text-chaux-200">
+            Entrez la référence reçue dans votre message de confirmation. La page se met à jour
+            toute seule.
+          </p>
 
-        <div className="flex gap-2">
-          <input
-            className="flex-1 rounded-lg border border-chaux-200 bg-white p-3 font-mono text-sm tracking-wide outline-none focus:border-mangue-600 focus:ring-2 focus:ring-mangue-100"
-            placeholder="ZH-… · BO-… · APP-…"
-            value={ref}
-            onChange={e => setRef(e.target.value.toUpperCase())}
-            onKeyDown={e => e.key === 'Enter' && charger(ref)}
-          />
-          <button
-            onClick={() => charger(ref)}
-            disabled={chargement || !ref}
-            className="rounded-lg bg-mangue-700 px-5 font-bold text-white transition hover:bg-mangue-800 disabled:opacity-40"
-          >
-            {chargement ? '…' : 'Suivre'}
-          </button>
+          <div className="mt-7 flex gap-2">
+            <label className="flex-1">
+              <span className="sr-only">Référence de la commande</span>
+              <input
+                className="w-full border border-chaux-50/25 bg-nuit-800/70 px-4 py-3 font-mono text-sm tracking-wide text-chaux-50 placeholder:text-chaux-400 focus:border-mangue-300 focus:outline-none"
+                placeholder="ZH-1234567890-…"
+                value={ref}
+                onChange={(e) => setRef(e.target.value.toUpperCase())}
+                onKeyDown={(e) => e.key === 'Enter' && void charger(ref, boutique)}
+              />
+            </label>
+            <button
+              onClick={() => void charger(ref, boutique)}
+              disabled={chargement || !ref}
+              className={classesBouton('action', 'md', 'carree')}
+            >
+              {chargement ? 'Recherche…' : 'Suivre'}
+            </button>
+          </div>
         </div>
+        <div className="perf-line absolute inset-x-0 bottom-0 text-chaux-50" aria-hidden />
+      </header>
 
+      <div className="mx-auto max-w-xl px-5 py-8 sm:px-8">
         {erreur && (
-          <p className="rounded-lg border border-bissap-200 bg-bissap-50 p-3 text-sm text-bissap-700">{erreur}</p>
+          <p role="alert" className="border border-bissap-200 bg-bissap-50 px-4 py-3 text-sm text-bissap-700">
+            {erreur}
+          </p>
         )}
 
         {suivi && (
-          <div className="space-y-4 rounded-xl border border-chaux-200 bg-white p-6 shadow-sm">
-            <div className="flex items-start justify-between">
+          <article
+            className="relative border border-[var(--hairline)] bg-chaux-50 p-6 soft-shadow"
+            style={{ ['--tear-bg' as string]: FOND_PAGE }}
+          >
+            <div className="tear absolute inset-x-0 top-0" aria-hidden />
+
+            <div className="flex items-start justify-between gap-4 pt-3">
               <div>
-                <p className="text-xs uppercase tracking-wide text-chaux-500">{suivi.nom_boutique || 'Commande'}</p>
-                <p className="font-mono text-base font-bold text-chaux-800">{suivi.order_id}</p>
+                <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-chaux-600">
+                  {suivi.nom_boutique || 'Votre commande'}
+                </p>
+                <p className="mt-1 font-mono text-base font-bold text-nuit-900">{suivi.order_id}</p>
               </div>
-              <span className="rounded-full bg-mangue-100 px-3 py-1 text-xs font-semibold text-mangue-800">
-                ⚡ Temps réel
-              </span>
+              {!livree && (
+                <span className="stamp shrink-0 font-mono text-[10px] uppercase text-mangue-600">
+                  En cours
+                </span>
+              )}
             </div>
 
-            {suivi.customer_name && (
-              <p className="text-sm text-chaux-600">👤 {suivi.customer_name}</p>
-            )}
-            {suivi.address && (
-              <p className="text-sm text-chaux-600">📍 {suivi.address}</p>
+            {(suivi.customer_name || suivi.address) && (
+              <dl className="mt-5 space-y-1 text-sm text-chaux-600">
+                {suivi.customer_name && (
+                  <div className="flex gap-2">
+                    <dt className="sr-only">Client</dt>
+                    <dd>{suivi.customer_name}</dd>
+                  </div>
+                )}
+                {suivi.address && (
+                  <div className="flex gap-2">
+                    <dt className="sr-only">Adresse de livraison</dt>
+                    <dd>{suivi.address}</dd>
+                  </div>
+                )}
+              </dl>
             )}
 
-            <div className="space-y-3 border-t border-chaux-100 pt-4">
+            <ol className="mt-6 space-y-3 border-t border-[var(--hairline)] pt-5">
               {etapes.map((e, i) => (
-                <div
-                  key={i}
-                  className={`flex items-center gap-3 transition ${
-                    e.ok ? '' : 'opacity-40'
-                  } ${i === idxActif ? 'font-semibold' : ''}`}
-                >
-                  <div
-                    className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold ${
+                <li key={e.label} className={`flex items-center gap-3 ${e.ok ? '' : 'opacity-45'}`}>
+                  <span
+                    aria-hidden
+                    className={`flex h-8 w-8 shrink-0 items-center justify-center font-mono text-xs font-bold ${
                       e.ok
-                        ? i === idxActif && !livree
-                          ? 'bg-accent-600 text-white ring-4 ring-accent-100 animate-pulse'
-                          : 'bg-accent-600 text-white'
-                        : 'bg-chaux-200 text-chaux-600'
-                    }`}
+                        ? 'bg-accent-600 text-white'
+                        : 'border border-[var(--hairline)] text-chaux-600'
+                    } ${i === idxActif && !livree ? 'pulse-dot' : ''}`}
                   >
                     {e.ok ? '✓' : i + 1}
-                  </div>
-                  <div className="flex-1">
-                    <p className={e.ok ? 'text-chaux-800' : 'text-chaux-500'}>{e.label}</p>
-                    {e.detail && <p className="text-xs text-accent-700">{e.detail}</p>}
-                  </div>
-                </div>
+                  </span>
+                  <span className="flex-1">
+                    <span
+                      className={`block text-sm ${
+                        i === idxActif ? 'font-semibold text-nuit-900' : 'text-chaux-600'
+                      }`}
+                    >
+                      {e.label}
+                    </span>
+                    {e.detail && (
+                      <span className="block font-mono text-[11px] uppercase tracking-[0.14em] text-accent-700">
+                        {e.detail}
+                      </span>
+                    )}
+                  </span>
+                </li>
               ))}
-            </div>
+            </ol>
 
-            <div className="flex items-center justify-between border-t border-chaux-100 pt-3 text-sm font-bold">
-              <span>Total</span>
-              <span className="text-mangue-700">
-                {Number(suivi.total_price).toLocaleString('fr-FR')} FCFA
+            <div className="perf-line my-5 text-nuit-900" aria-hidden />
+
+            <div className="flex items-baseline justify-between">
+              <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-chaux-600">
+                Total
+              </span>
+              <span className="font-mono text-2xl font-black text-bissap-600">
+                {Number(suivi.total_price).toLocaleString('fr-FR')}
+                <span className="ml-1 text-xs font-semibold text-chaux-600">FCFA</span>
               </span>
             </div>
-
-            <p className="pt-1 text-center text-xs text-chaux-500">
-              ⚡ Mise à jour en temps réel (+ fallback toutes les 15 s)
-            </p>
-          </div>
+          </article>
         )}
 
-        <p className="text-center text-xs text-chaux-500">
-          Un souci ? Écris directement au marchand sur WhatsApp.
+        <p className="mt-8 text-center text-sm text-chaux-600">
+          Un doute sur votre commande ? Répondez au message du commerçant, il vous lit.
         </p>
-      </main>
-    </div>
+      </div>
+    </main>
+  );
+}
+
+/** `useSearchParams` suspend au premier rendu : il lui faut une frontière. */
+export default function Page() {
+  return (
+    <Suspense
+      fallback={
+        <main className="flex min-h-screen items-center justify-center bg-chaux-100">
+          <p className="font-mono text-xs uppercase tracking-[0.2em] text-chaux-600">Chargement…</p>
+        </main>
+      }
+    >
+      <Suivre />
+    </Suspense>
   );
 }
