@@ -247,7 +247,12 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     try {
       await fetch(n8nUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          // Meme secret que les webhooks `nouvelle-livraison` et
+          // `statut-livraison`, deja proteges cote n8n.
+          'x-djiguiflow-secret': process.env.N8N_WEBHOOK_SECRET ?? '',
+        },
         body: JSON.stringify({
           boutique_id: m.id,
           boutique_nom: m.nom,
@@ -276,7 +281,12 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     try {
       await fetch(confUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          // Meme secret que les webhooks `nouvelle-livraison` et
+          // `statut-livraison`, deja proteges cote n8n.
+          'x-djiguiflow-secret': process.env.N8N_WEBHOOK_SECRET ?? '',
+        },
         body: JSON.stringify({
           type: 'demande',
           reference: order_id,

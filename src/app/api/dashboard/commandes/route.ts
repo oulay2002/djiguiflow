@@ -109,7 +109,12 @@ export async function PATCH(req: Request) {
     try {
       await fetch(n8n, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          // Meme secret que les webhooks `nouvelle-livraison` et
+          // `statut-livraison`, deja proteges cote n8n.
+          'x-djiguiflow-secret': process.env.N8N_WEBHOOK_SECRET ?? '',
+        },
         body: JSON.stringify({
           type: 'demande',
           reference,
