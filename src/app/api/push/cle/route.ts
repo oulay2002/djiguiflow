@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { clePubliqueVapid, pushConfigure } from '@/lib/push';
+import { clePubliqueVapid, diagnosticPush } from '@/lib/push';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,13 +17,21 @@ export const dynamic = 'force-dynamic';
  * reintroduirait exactement le probleme qu'on supprime.
  */
 export async function GET() {
-  // `pushConfigure` et non la seule presence de la cle : il verifie aussi
-  // qu'elle est bien formee et que la cle privee repond. Une cle collee avec
-  // ses guillemets passerait le test de presence, et l'ecran afficherait alors
-  // un bouton « Activer » que le serveur ne pourrait pas honorer.
-  if (!pushConfigure()) {
+  // On passe par le diagnostic et non par la seule presence de la cle : il
+  // verifie aussi qu'elle est bien formee et que la cle privee repond. Une cle
+  // collee avec ses guillemets passerait le test de presence, et l'ecran
+  // afficherait un bouton « Activer » que le serveur ne pourrait pas honorer.
+  const etat = diagnosticPush();
+
+  if (!etat.clesValides) {
     return NextResponse.json(
-      { error: 'Notifications push non configurees sur ce deploiement.' },
+      {
+        error: 'Notifications push non configurees sur ce deploiement.',
+        // Presence et verdict seulement — jamais les valeurs. De quoi
+        // distinguer « variable absente » de « valeur mal formee » sans
+        // ouvrir les journaux ni redeployer a l'aveugle.
+        diagnostic: etat,
+      },
       { status: 503 },
     );
   }

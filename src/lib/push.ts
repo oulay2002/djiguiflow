@@ -27,6 +27,27 @@ export function clePubliqueVapid(): string {
   );
 }
 
+/**
+ * Pourquoi le push n'est pas disponible, sans reveler aucune valeur.
+ *
+ * « Non configure » couvrait deux pannes tres differentes — une variable
+ * absente, ou une valeur mal formee — et rien ne permettait de les separer
+ * depuis l'exterieur. Le 12 aout 2026, cette ambiguite a coute quatre
+ * redeploiements a l'aveugle. On rend donc la presence de chaque cle et le
+ * verdict de validation, jamais leur contenu.
+ */
+export function diagnosticPush(): {
+  clePubliquePresente: boolean;
+  clePriveePresente: boolean;
+  clesValides: boolean;
+} {
+  return {
+    clePubliquePresente: Boolean(clePubliqueVapid()),
+    clePriveePresente: Boolean(process.env.VAPID_PRIVATE_KEY?.trim()),
+    clesValides: pushConfigure(),
+  };
+}
+
 // `mailto:` est exige par la specification VAPID : c'est l'adresse que le
 // service de push (Google, Mozilla, Apple) contacte en cas d'abus.
 const contact = process.env.VAPID_CONTACT?.trim() || 'mailto:contact@djiguiflow.com';
