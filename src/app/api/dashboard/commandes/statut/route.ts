@@ -149,7 +149,7 @@ export async function POST(req: Request) {
       livree: `🎉 ${nom}, votre commande ${reference} a été livrée ! Merci pour votre confiance. Répondez par un chiffre de 1 à 5 pour noter le service. ⭐`,
     };
     try {
-      await fetch(urlNotif, {
+      const r = await fetch(urlNotif, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -162,9 +162,20 @@ export async function POST(req: Request) {
           order_id: reference,
         }),
       });
-      notif = 'sent';
-    } catch {
+
+      // `fetch` ne rejette que sur une panne reseau : un 403 de n8n en
+      // ressortait comme un succes, et l'ecran annoncait « envoye » au
+      // marchand alors que le client n'avait rien recu. Les webhooks n8n
+      // exigent desormais un secret, ce qui rend ce silence dangereux.
+      if (r.ok) {
+        notif = 'sent';
+      } else {
+        notif = `refuse (${r.status})`;
+        console.error(`Notification client ${reference} — n8n a repondu ${r.status}`);
+      }
+    } catch (e) {
       notif = 'failed';
+      console.error(`Notification client ${reference} — appel n8n impossible :`, e);
     }
   }
 
