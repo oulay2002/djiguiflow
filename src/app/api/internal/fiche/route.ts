@@ -1,6 +1,7 @@
 import { createHash, timingSafeEqual } from 'node:crypto';
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
+import { nomsOngletsParDefaut } from '@/lib/provisioning';
 
 export const dynamic = 'force-dynamic';
 
@@ -118,5 +119,26 @@ export async function GET(req: Request) {
   ]) {
     delete publique[cle];
   }
+
+  // Un nom d'onglet vide est une panne garantie, pas une valeur par defaut :
+  // n8n le passe tel quel a Google Sheets, qui repond « Sheet with ID  not
+  // found » et interrompt la prise de commande. Constate le 12 aout 2026 :
+  // `rosemonde` avait `sheet_commandes` et `sheet_menu` a NULL en base, donc
+  // aucune commande n'etait possible sur ses canaux, sans que rien ne le dise.
+  //
+  // On rend donc la convention de provisioning plutot que le vide. L'onglet
+  // peut manquer au classeur — l'erreur sera alors explicite et nommee, au
+  // lieu de porter sur une chaine vide.
+  const parDefaut = nomsOngletsParDefaut(String(publique.slug ?? slug));
+  if (!String(publique.sheet_commandes ?? '').trim()) {
+    publique.sheet_commandes = parDefaut.sheetCommandes;
+  }
+  if (!String(publique.sheet_menu ?? '').trim()) {
+    publique.sheet_menu = parDefaut.sheetMenu;
+  }
+  if (!String(publique.sheet_notes ?? '').trim()) {
+    publique.sheet_notes = 'Notes';
+  }
+
   return NextResponse.json(publique);
 }
