@@ -1,4 +1,5 @@
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
+import { secretWebhookN8n } from '@/lib/secretN8n';
 
 export const dynamic = 'force-dynamic';
 
@@ -176,7 +177,7 @@ export async function POST(req: Request) {
           'Content-Type': 'application/json',
           // Meme secret que les webhooks `nouvelle-livraison` et
           // `statut-livraison`, deja proteges cote n8n.
-          'x-djiguiflow-secret': process.env.N8N_WEBHOOK_SECRET ?? '',
+          'x-djiguiflow-secret': await secretWebhookN8n(),
         },
         body: JSON.stringify({
           type: statut,
