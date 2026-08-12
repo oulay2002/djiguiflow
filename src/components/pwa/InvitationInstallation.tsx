@@ -51,14 +51,6 @@ export default function InvitationInstallation() {
     if (refusee) return;
 
     const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
-    setSurIOS(ios);
-
-    // iOS n'annoncera jamais l'installabilite : on affiche les instructions
-    // sans attendre d'evenement.
-    if (ios) {
-      setVisible(true);
-      return;
-    }
 
     const surInvite = (e: Event) => {
       // Sans cela Chrome affiche sa propre barre, en plus de la notre.
@@ -67,8 +59,25 @@ export default function InvitationInstallation() {
       setVisible(true);
     };
 
-    window.addEventListener('beforeinstallprompt', surInvite);
-    return () => window.removeEventListener('beforeinstallprompt', surInvite);
+    // L'ecoute est posee tout de suite : `beforeinstallprompt` peut partir
+    // tres tot apres le chargement, et un abonnement differe le manquerait.
+    if (!ios) window.addEventListener('beforeinstallprompt', surInvite);
+
+    // iOS n'annoncera jamais l'installabilite : on affiche les instructions
+    // sans attendre d'evenement. Le report d'un tick evite d'ecrire dans
+    // l'etat pendant l'effet, ce qui declencherait un rendu en cascade —
+    // meme procede que la garde d'acces de `dashboard/layout.tsx`.
+    const minuteur = window.setTimeout(() => {
+      if (ios) {
+        setSurIOS(true);
+        setVisible(true);
+      }
+    }, 0);
+
+    return () => {
+      window.clearTimeout(minuteur);
+      window.removeEventListener('beforeinstallprompt', surInvite);
+    };
   }, []);
 
   const fermer = () => {

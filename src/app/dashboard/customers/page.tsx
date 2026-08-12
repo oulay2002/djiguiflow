@@ -144,22 +144,25 @@ export default function CustomersPage() {
             celle de son contenu, et le conteneur defilant du tableau ne peut
             jamais retrecir — la page entiere partait en defilement
             horizontal, jusqu'a 1 103 px de large sur un telephone. */}
-        <main className="min-w-0 flex-1">
+        <main className="min-w-0">
           <header className="mb-8 flex flex-col gap-4 rounded-[2rem] border border-white/70 bg-white/75 p-5 shadow-[0_20px_60px_rgba(49,35,20,0.08)] backdrop-blur-xl md:flex-row md:items-center md:justify-between">
             <div>
               <p className="text-sm font-medium uppercase tracking-[0.2em] text-chaux-600">Clients</p>
               <h1 className="mt-2 font-display text-3xl font-black tracking-tight text-nuit-900">Clients</h1>
             </div>
 
-            <div className="flex items-center gap-3">
-              <div className="relative hidden sm:block">
+            <div className="flex flex-wrap items-center gap-3">
+              {/* La recherche etait `hidden sm:block` : c'est sur telephone,
+                  face a une liste qu'on ne peut pas balayer des yeux, qu'elle
+                  sert le plus. Elle prend toute la largeur sur petit ecran. */}
+              <div className="relative w-full sm:w-auto">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-chaux-400" />
                 <input
                   type="text"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Rechercher..."
-                  className="w-56 rounded-full border border-chaux-200 bg-chaux-50 py-2.5 pl-9 pr-4 text-sm text-nuit-700 outline-none transition focus:border-primary-400 focus:ring-2 focus:ring-primary-100"
+                  className="w-full rounded-full border border-chaux-200 bg-chaux-50 py-2.5 pl-9 pr-4 text-sm text-nuit-700 outline-none transition focus:border-primary-400 focus:ring-2 focus:ring-primary-100 sm:w-56"
                 />
               </div>
               <button className="flex h-11 w-11 items-center justify-center rounded-full border border-chaux-200 bg-chaux-50 text-chaux-600 transition hover:border-primary-300 hover:text-primary-700">

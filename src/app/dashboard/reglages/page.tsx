@@ -40,7 +40,7 @@ export default function ReglagesPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-[var(--background)] p-6 lg:p-8">
+    <div className="min-h-screen bg-[var(--background)] p-4 sm:p-6 lg:p-8">
       {/* Header */}
       <div className="mb-8">
         <LienRetour href="/dashboard">Retour au dashboard</LienRetour>

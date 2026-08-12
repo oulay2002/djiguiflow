@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, type ComponentType } from 'react';
+import { useCallback, useEffect, useState, type ComponentType } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
@@ -254,23 +254,25 @@ function BarreBas({ actif, ouvrir }: { actif: string | null; ouvrir: () => void 
  */
 export default function NavigationDashboard({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const [tiroirOuvert, setTiroirOuvert] = useState(false);
   const actif = hrefActif(pathname ?? '');
 
-  // Naviguer depuis le tiroir doit le refermer, y compris quand la
-  // destination est deja affichee.
-  useEffect(() => {
-    setTiroirOuvert(false);
-  }, [pathname]);
+  // On memorise la page depuis laquelle le tiroir a ete ouvert, plutot qu'un
+  // simple booleen remis a false par un effet sur `pathname`. Le tiroir se
+  // referme alors de lui-meme des que la page change — y compris sur un retour
+  // navigateur — sans effet de synchronisation ni rendu en cascade.
+  const [ouvertDepuis, setOuvertDepuis] = useState<string | null>(null);
+  const tiroirOuvert = ouvertDepuis !== null && ouvertDepuis === pathname;
+
+  const fermerTiroir = useCallback(() => setOuvertDepuis(null), []);
 
   return (
     <>
       <BarreLaterale actif={actif} />
-      {/* pb-20 : la barre du bas est fixe, sans quoi elle recouvrirait la
-          derniere ligne de chaque page. */}
-      <div className="pb-20 lg:pb-0 lg:pl-72">{children}</div>
-      <BarreBas actif={actif} ouvrir={() => setTiroirOuvert(true)} />
-      <Tiroir actif={actif} ouvert={tiroirOuvert} fermer={() => setTiroirOuvert(false)} />
+      {/* `coque-dashboard` reserve la place de la barre du bas sans creer de
+          defilement vide — voir globals.css. */}
+      <div className="coque-dashboard lg:pl-72">{children}</div>
+      <BarreBas actif={actif} ouvrir={() => setOuvertDepuis(pathname ?? '')} />
+      <Tiroir actif={actif} ouvert={tiroirOuvert} fermer={fermerTiroir} />
     </>
   );
 }

@@ -195,6 +195,26 @@ body {
   background-size: 18px 18px, 100% 100%;
 }
 
+/* --- Coque du tableau de bord -------------------------------------------- */
+
+/* Sous `lg`, la navigation est une barre fixe de 5rem posée en bas de l'écran.
+   Il faut donc réserver 5rem sous le contenu, sinon la barre recouvre la
+   dernière ligne de chaque page.
+
+   Mais les pages portent toutes `min-h-screen`, c'est-à-dire 100vh : ajouter
+   la marge par-dessus donnerait 100vh + 5rem, et chaque écran — même vide —
+   se terminerait par 5rem de défilement inutile. On retire donc cette hauteur
+   du min-height de la page elle-même. */
+@media (max-width: 1023.98px) {
+  .coque-dashboard {
+    padding-bottom: 5rem;
+  }
+
+  .coque-dashboard > .min-h-screen {
+    min-height: calc(100dvh - 5rem);
+  }
+}
+
 /* Conservé : le dashboard s'en sert encore. */
 .glass-panel {
   background: var(--panel);

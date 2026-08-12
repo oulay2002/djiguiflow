@@ -118,7 +118,7 @@ export default function SecuritePage() {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--background)] p-6 lg:p-8">
+    <div className="min-h-screen bg-[var(--background)] p-4 sm:p-6 lg:p-8">
       <div className="mb-8">
         <LienRetour href="/dashboard/reglages">Retour aux réglages</LienRetour>
         <h1 className="text-3xl font-bold text-nuit-900">Sécurité</h1>
