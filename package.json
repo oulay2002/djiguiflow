@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "types:db": "supabase gen types typescript --project-id xshksvlnrgxijsznmkkj > src/lib/database.types.ts",
+    "types:db": "node scripts/types-supabase.mjs",
     "prepare": "git config core.hooksPath .githooks",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
