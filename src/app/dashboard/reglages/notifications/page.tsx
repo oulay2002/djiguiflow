@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { LienRetour, classesBouton } from '@/components/ui/Bouton';
 import { supabase } from '@/lib/supabase';
 import { useBoutique, uuidBoutiqueCourante } from '@/lib/boutique';
+import ReglagePush from '@/components/pwa/ReglagePush';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
@@ -123,7 +124,7 @@ export default function NotificationsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--background)] p-6 lg:p-8">
+    <div className="min-h-screen bg-[var(--background)] p-4 sm:p-6 lg:p-8">
       {/* Header */}
       <div className="mb-8">
         <LienRetour href="/dashboard">Retour au dashboard</LienRetour>
@@ -134,6 +135,11 @@ export default function NotificationsPage() {
       </div>
 
       <div className="max-w-4xl mx-auto space-y-6">
+        {/* Push : place en premier parce que c'est le canal le plus rapide —
+            les autres passent par un fournisseur tiers, celui-ci sonne
+            directement sur l'appareil. */}
+        <ReglagePush />
+
         {/* WhatsApp */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
