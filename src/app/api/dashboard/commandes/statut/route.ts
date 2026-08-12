@@ -2,6 +2,7 @@ import { readSheet, readHeaders, updateCells } from '@/lib/googleSheets';
 import { exigerAccesMarchand } from '@/lib/dashboardAuth';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import type { Marchand } from '@/lib/marchands';
+import { envoyerMessage } from '@/lib/canaux';
 
 /**
  * Avancement d'une commande par le marchand.
@@ -133,49 +134,41 @@ export async function POST(req: Request) {
   // ---- 2. Miroir feuille, jamais bloquant.
   const miroir = await refleterDansFeuille(m, reference, statutLivraison, action, maintenant);
 
-  // ---- 3. Notification WhatsApp au client, via n8n.
-  // Les coordonnees viennent de Supabase et non plus de la ligne de feuille :
-  // la notification part meme quand le miroir a echoue.
+  // ---- 3. Notification WhatsApp au client.
+  //
+  // L'envoi partait vers `N8N_NOTIF_CLIENT_URL`, qui pointe sur le webhook
+  // `notif-client`. Or ce chemin n'existe pas : verifie le 12 aout 2026, il
+  // repond 404. Chaque « commande acceptee », « en route » et « livree »
+  // partait donc dans le vide, et `fetch` ne rejetant pas sur un code
+  // d'erreur, la route annoncait quand meme un envoi reussi.
+  //
+  // On passe desormais par le meme chemin sortant que tout le reste du
+  // produit, sans detour par n8n : la boutique resout son propre jeton cote
+  // serveur, et l'echec, lui, se voit.
   let notif = 'none';
-  const urlNotif = process.env.N8N_NOTIF_CLIENT_URL;
   const phone = String(commande.client_telephone || commande.chat_id || '');
 
-  if (urlNotif && phone) {
+  if (phone) {
     const nom = commande.client_nom || 'cher client';
     const adresse = commande.client_adresse || 'votre adresse';
     const messages: Record<string, string> = {
-      acceptee: `✅ ${nom}, votre commande ${reference} est acceptée par le restaurant. Nous cherchons un livreur pour vous. 🍽️`,
+      acceptee: `✅ ${nom}, votre commande ${reference} est acceptée. Nous cherchons un livreur pour vous.`,
       route: `🛵 ${nom}, bonne nouvelle : votre commande ${reference} est en route vers ${adresse}.`,
       livree: `🎉 ${nom}, votre commande ${reference} a été livrée ! Merci pour votre confiance. Répondez par un chiffre de 1 à 5 pour noter le service. ⭐`,
     };
-    try {
-      const r = await fetch(urlNotif, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-djiguiflow-secret': process.env.N8N_WEBHOOK_SECRET ?? '',
-        },
-        body: JSON.stringify({
-          boutique_id: m.id,
-          phone,
-          message: messages[action] || `Votre commande ${reference} avance bien.`,
-          order_id: reference,
-        }),
-      });
 
-      // `fetch` ne rejette que sur une panne reseau : un 403 de n8n en
-      // ressortait comme un succes, et l'ecran annoncait « envoye » au
-      // marchand alors que le client n'avait rien recu. Les webhooks n8n
-      // exigent desormais un secret, ce qui rend ce silence dangereux.
-      if (r.ok) {
-        notif = 'sent';
-      } else {
-        notif = `refuse (${r.status})`;
-        console.error(`Notification client ${reference} — n8n a repondu ${r.status}`);
-      }
-    } catch (e) {
-      notif = 'failed';
-      console.error(`Notification client ${reference} — appel n8n impossible :`, e);
+    const envoi = await envoyerMessage({
+      boutique: m.id,
+      canal: 'whatsapp',
+      destinataire: phone,
+      message: messages[action] || `Votre commande ${reference} avance bien.`,
+    });
+
+    if (envoi.ok) {
+      notif = 'sent';
+    } else {
+      notif = `refuse (${envoi.statut ?? '?'})`;
+      console.error(`Notification client ${reference} — envoi refuse :`, envoi.raison);
     }
   }
 
