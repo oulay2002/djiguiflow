@@ -1,5 +1,5 @@
 import { readSheet, readHeaders, appendRow } from '@/lib/googleSheets';
-import { getMarchand, type Marchand } from '@/lib/marchands';
+import { getMarchand, prefixeReference, type Marchand } from '@/lib/marchands';
 import { resoudreBoutiqueUuid } from '@/lib/boutiques';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 
@@ -121,8 +121,14 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
   const m = await getMarchand(id);
   if (!m) return Response.json({ error: 'Marchand introuvable' }, { status: 404 });
 
-  const body = await req.json();
-  const { nom, tel, adresse, instructions, panier } = body;
+  // Un corps tronque ou un content-type inattendu ne doit pas rendre un 500 :
+  // c'est un client qui a mal envoye, pas le serveur qui a casse.
+  const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
+  if (!body) return Response.json({ error: 'Requête illisible' }, { status: 400 });
+  const { nom, tel, adresse, instructions, panier } = body as {
+    nom?: unknown; tel?: unknown; adresse?: unknown;
+    instructions?: unknown; panier?: unknown;
+  };
 
   const sb = getSupabaseAdmin();
   const boutiqueUuid = sb ? await resoudreBoutiqueUuid(sb, m) : null;
@@ -134,7 +140,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
 
   let phone = String(tel || '').replace(/\D/g, '');
   if (!phone.startsWith('225')) phone = '225' + phone;
-  const order_id = `APP-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
+  const order_id = `${prefixeReference(m.id)}-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
 
   // ---- 1. Supabase : c'est ici que la commande existe ou n'existe pas.
   if (sb) {

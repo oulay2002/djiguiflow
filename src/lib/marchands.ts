@@ -136,6 +136,25 @@ async function chargerMarchands(): Promise<Record<string, Marchand>> {
   return dict;
 }
 
+/**
+ * Prefixe des references de commande, propre a chaque marchand.
+ *
+ * `APP-` etait ecrit en dur pour tout le monde, et le Cerveau n8n ecrivait
+ * `ZH-` — les initiales de Zahara — pour tout le monde aussi. Deux marchands
+ * pouvaient donc emettre la meme reference, ce que l'unicite en base ne
+ * refusait pas : elle ne portait que sur le couple (boutique_id, reference).
+ * Le suivi, qui cherche desormais par reference seule, serait tombe sur deux
+ * lignes et aurait rendu un 503 opaque.
+ *
+ * La regle doit rester identique des deux cotes : trois lettres du slug, sans
+ * separateur, en capitales. Le noeud `Mettre_a_jour_commande` du workflow
+ * « Cerveau marchand » applique la meme, dans son expression `$fromAI`.
+ */
+export function prefixeReference(slug: string): string {
+  const lettres = String(slug || '').replace(/[^A-Za-z0-9]/g, '').slice(0, 3);
+  return (lettres || 'dj').toUpperCase();
+}
+
 export async function getMarchand(id: string | null | undefined): Promise<Marchand | null> {
   if (!id) return null;
   const dict = await chargerMarchands();
