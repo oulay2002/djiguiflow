@@ -20,13 +20,19 @@ export const dynamic = 'force-dynamic';
 
 const STATUTS = new Set(['assignee', 'en_cours', 'livree', 'annulee']);
 
-/** Ce que le client lit, selon l'etape. Rien pour les etapes qui ne le concernent pas. */
-const MESSAGES: Record<string, (nom: string, ref: string) => string | null> = {
-  en_cours: (nom, ref) => `🛵 ${nom}, votre commande ${ref} est en route.`,
-  livree: (nom, ref) =>
-    `🎉 ${nom}, votre commande ${ref} a été livrée. Merci pour votre confiance !\n` +
+/**
+ * Ce que le client lit, selon l'etape. Rien pour les etapes qui ne le concernent pas.
+ *
+ * `quoi` porte deja la reference quand il y en a une. Les commandes d'avant la
+ * convention de reference n'en ont pas, et « votre commande  est en route »,
+ * avec son trou, se lit plus mal que la phrase sans numero.
+ */
+const MESSAGES: Record<string, (nom: string, quoi: string) => string | null> = {
+  en_cours: (nom, quoi) => `🛵 ${nom}, ${quoi} est en route.`,
+  livree: (nom, quoi) =>
+    `🎉 ${nom}, ${quoi} a été livrée. Merci pour votre confiance !\n` +
     `Répondez par un chiffre de 1 à 5 pour noter le service. ⭐`,
-  annulee: (nom, ref) => `❌ ${nom}, votre commande ${ref} a été annulée. Aucune somme ne sera due.`,
+  annulee: (nom, quoi) => `❌ ${nom}, ${quoi} a été annulée. Aucune somme ne sera due.`,
   assignee: () => null,
 };
 
@@ -101,7 +107,8 @@ export async function POST(req: Request) {
   const reference = String(commande.reference ?? '');
   const nom = String(commande.client_nom ?? 'Bonjour');
   const destinataire = String(commande.client_telephone ?? commande.chat_id ?? '').trim();
-  const texte = MESSAGES[statut]?.(nom, reference) ?? null;
+  const texte =
+    MESSAGES[statut]?.(nom, reference ? `votre commande ${reference}` : 'votre commande') ?? null;
 
   let notif = 'aucune';
   if (texte && destinataire) {

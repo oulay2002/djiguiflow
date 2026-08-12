@@ -76,6 +76,10 @@ export async function POST(req: Request) {
   // et un message perdu ne doit pas faire croire que la course ne l'est pas.
   // En revanche l'echec est rendu a l'appelant, pour que l'ecran le dise.
   const reference = String(commande.reference ?? '');
+  // Les commandes d'avant la convention de reference n'en portent pas, et
+  // « votre commande  est prise en charge », avec son trou, se lit plus mal
+  // que la phrase sans numero.
+  const laCommande = reference ? `votre commande ${reference}` : 'votre commande';
   const adresse = String(commande.client_adresse ?? '').trim();
   const total = Number(commande.total ?? 0).toLocaleString('fr-FR');
 
@@ -91,7 +95,7 @@ export async function POST(req: Request) {
       destinataire: versLivreur,
       message:
         `🛵 Nouvelle course pour vous, ${livreur.nom || 'livreur'}.\n\n` +
-        `Commande ${reference}\n` +
+        `${reference ? `Commande ${reference}\n` : ''}` +
         `Client : ${commande.client_nom || 'Client'}${versClient ? ` · ${versClient}` : ''}\n` +
         `Adresse : ${adresse || 'à confirmer avec le commerçant'}\n` +
         `Montant : ${total} FCFA`,
@@ -111,7 +115,7 @@ export async function POST(req: Request) {
       // annonce par « Demarrer », qui passe la livraison en cours. Les deux
       // messages disaient « part en livraison » — le client le lisait deux fois.
       message:
-        `📦 ${commande.client_nom || 'Bonjour'}, votre commande ${reference} est prise en charge.\n` +
+        `📦 ${commande.client_nom || 'Bonjour'}, ${laCommande} est prise en charge.\n` +
         `${livreur.nom ? `${livreur.nom} s'en occupe` : 'Un livreur s\'en occupe'} et vous préviendra du départ.`,
     });
     notifications.client = envoi.ok ? 'sent' : `refuse (${envoi.statut ?? '?'})`;

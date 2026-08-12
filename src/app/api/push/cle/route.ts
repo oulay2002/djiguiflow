@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { clePubliqueVapid } from '@/lib/push';
+import { clePubliqueVapid, pushConfigure } from '@/lib/push';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,14 +17,16 @@ export const dynamic = 'force-dynamic';
  * reintroduirait exactement le probleme qu'on supprime.
  */
 export async function GET() {
-  const cle = clePubliqueVapid();
-
-  if (!cle) {
+  // `pushConfigure` et non la seule presence de la cle : il verifie aussi
+  // qu'elle est bien formee et que la cle privee repond. Une cle collee avec
+  // ses guillemets passerait le test de presence, et l'ecran afficherait alors
+  // un bouton « Activer » que le serveur ne pourrait pas honorer.
+  if (!pushConfigure()) {
     return NextResponse.json(
       { error: 'Notifications push non configurees sur ce deploiement.' },
       { status: 503 },
     );
   }
 
-  return NextResponse.json({ cle });
+  return NextResponse.json({ cle: clePubliqueVapid() });
 }
