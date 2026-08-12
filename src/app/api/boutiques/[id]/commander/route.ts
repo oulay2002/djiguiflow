@@ -250,8 +250,8 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          // Meme secret que les webhooks `nouvelle-livraison` et
-          // `statut-livraison`, deja proteges cote n8n.
+          // Un seul secret pour tous les webhooks n8n, lu au coffre Supabase.
+          // Voir `secretN8n.ts` pour la rotation.
           'x-djiguiflow-secret': await secretWebhookN8n(),
         },
         body: JSON.stringify({
@@ -284,8 +284,8 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          // Meme secret que les webhooks `nouvelle-livraison` et
-          // `statut-livraison`, deja proteges cote n8n.
+          // Un seul secret pour tous les webhooks n8n, lu au coffre Supabase.
+          // Voir `secretN8n.ts` pour la rotation.
           'x-djiguiflow-secret': await secretWebhookN8n(),
         },
         body: JSON.stringify({
