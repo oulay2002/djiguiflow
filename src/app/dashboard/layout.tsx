@@ -17,9 +17,9 @@ type SubscriptionState = {
 
 type SubscriptionResponse = {
   subscription?: SubscriptionState | null;
+  /** Verdict calcule par le serveur : statut ouvrant ET periode non echue. */
+  actif?: boolean;
 };
-
-const ACTIVE_STATUSES = new Set(['active', 'trialing']);
 const ALLOWED_WITHOUT_SUBSCRIPTION = ['/dashboard/paiements'];
 
 function needsSubscription(pathname: string): boolean {
@@ -86,8 +86,11 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
         const data = (await response.json()) as SubscriptionResponse;
 
-        const status = data.subscription?.status ?? null;
-        if (!status || !ACTIVE_STATUSES.has(status)) {
+        // On lit le verdict du serveur, pas le statut brut : lui seul tient
+        // compte de la date de fin de periode. Rejouer la regle ici, c'etait
+        // se condamner a l'oublier — ce qui est arrive : le statut suffisait,
+        // et un acces echu restait ouvert.
+        if (!data.actif) {
           const fromPath = encodeURIComponent(pathname || '/dashboard');
           router.replace(`/dashboard/paiements?required=1&from=${fromPath}`);
           return;
