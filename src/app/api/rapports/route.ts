@@ -1,4 +1,5 @@
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
+import { etatQuota } from '@/lib/billing/quota';
 
 export const dynamic = 'force-dynamic';
 
@@ -65,6 +66,58 @@ export async function POST(req: Request) {
   const sb = getSupabaseAdmin();
   if (!sb) return Response.json({ error: 'Service indisponible' }, { status: 503 });
 
+  /**
+   * Attache a chaque boutique l'etat du plafond de son proprietaire.
+   *
+   * C'est le resume quotidien qui portera l'alerte : le marchand le lit deja
+   * chaque soir, sur son propre canal. Lui construire un workflow d'alerte
+   * separe l'aurait fait sonner une fois de plus pour une information qui a sa
+   * place dans le bilan du jour.
+   *
+   * Le quota se compte par COMPTE, pas par boutique : deux boutiques du meme
+   * proprietaire partagent le meme plafond et affichent donc le meme chiffre.
+   * On ne calcule qu'une fois par proprietaire.
+   */
+  async function avecQuota<T extends { slug?: unknown }>(
+    client: NonNullable<ReturnType<typeof getSupabaseAdmin>>,
+    lignes: T[],
+  ): Promise<T[]> {
+    if (lignes.length === 0) return lignes;
+
+    const slugs = lignes.map((l) => String(l.slug ?? '').trim()).filter(Boolean);
+    if (slugs.length === 0) return lignes;
+
+    const { data: proprietaires } = await client
+      .from('boutiques')
+      .select('slug, user_id')
+      .in('slug', slugs);
+
+    const parSlug = new Map<string, string>();
+    for (const b of proprietaires ?? []) {
+      if (b.slug && b.user_id) parSlug.set(b.slug, b.user_id);
+    }
+
+    const etats = new Map<string, Awaited<ReturnType<typeof etatQuota>>>();
+    for (const userId of new Set(parSlug.values())) {
+      etats.set(userId, await etatQuota(userId));
+    }
+
+    return lignes.map((l) => {
+      const userId = parSlug.get(String(l.slug ?? '').trim());
+      const etat = userId ? etats.get(userId) : null;
+      // Une lecture manquee n'invente pas de chiffres : le resume omettra
+      // simplement la ligne du plafond.
+      if (!etat || etat.exempt) return l;
+      return {
+        ...l,
+        quota_inclus: etat.quota,
+        quota_utilise: etat.utilise,
+        quota_restant: etat.restant,
+        quota_niveau: etat.niveau,
+      };
+    });
+  }
+
   try {
     if (type === 'retards') {
       const lignes = restreindre(await appeler(sb, 'rapport_retards'));
@@ -81,10 +134,10 @@ export async function POST(req: Request) {
 
     if (type === 'activite') {
       const [boutiques, plats] = await Promise.all([
-        appeler(sb, 'rapport_activite', { p_periode: periode }),
+        appeler<{ slug?: string }>(sb, 'rapport_activite', { p_periode: periode }),
         appeler(sb, 'rapport_top_plats', { p_periode: periode }),
       ]);
-      const vues = restreindre(boutiques);
+      const vues = await avecQuota(sb, restreindre(boutiques));
       return Response.json({ type, periode, boutiques: vues, plats: restreindre(plats), total: vues.length });
     }
 
