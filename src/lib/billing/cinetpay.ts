@@ -112,6 +112,107 @@ export async function initialiserPaiement(params: {
 }
 
 /**
+ * Appelle l'initialisation et rend la reponse BRUTE, sans l'interpreter.
+ *
+ * La documentation de CinetPay est injoignable depuis l'environnement de
+ * developpement : impossible d'ecrire le contrat sur pieces. Mais le
+ * deploiement Vercel, lui, atteint le prestataire. Cette sonde permet donc de
+ * decouvrir le contrat par l'experience — c'est le message d'erreur du
+ * prestataire qui dit quel champ manque, et il le dit precisement.
+ *
+ * `surcharges` s'ecrase sur la charge utile de base : on peut ainsi essayer un
+ * autre `channels`, ajouter le bloc client exige par la carte bancaire ou
+ * corriger un nom de champ SANS redeployer a chaque tentative.
+ *
+ * Aucun paiement n'est preleve : l'initialisation ne fait qu'ouvrir un lien.
+ */
+export type SondeInitialisation = {
+  urlAppelee: string;
+  /** La charge utile envoyee, secrets remplaces par leur longueur. */
+  envoye: Record<string, unknown>;
+  statutHttp: number | null;
+  corpsBrut: unknown;
+  erreurReseau: string | null;
+};
+
+export async function sonderInitialisation(
+  surcharges: Record<string, unknown> = {},
+): Promise<SondeInitialisation> {
+  const url = `${BASE}/payment`;
+  const c = config();
+
+  if (!c) {
+    return {
+      urlAppelee: url,
+      envoye: {},
+      statutHttp: null,
+      corpsBrut: null,
+      erreurReseau: 'Clés absentes de ce déploiement.',
+    };
+  }
+
+  const charge: Record<string, unknown> = {
+    ...c,
+    transaction_id: `DJF-SONDE-${Date.now()}`,
+    amount: 100,
+    currency: 'XOF',
+    description: 'Sonde technique DjiguiFlow',
+    notify_url: 'https://www.djiguiflow.com/api/billing/cinetpay/notification',
+    return_url: 'https://www.djiguiflow.com/dashboard/paiements',
+    channels: 'ALL',
+    lang: 'fr',
+    customer_name: 'Sonde',
+    customer_phone_number: '',
+    ...surcharges,
+  };
+
+  // Ce qu'on montre de la charge utile. Les deux secrets ne sortent jamais :
+  // leur longueur suffit a reconnaitre une valeur collee avec ses guillemets
+  // ou tronquee, comme pour les cles VAPID.
+  const envoye: Record<string, unknown> = {
+    ...charge,
+    apikey: `(${String(c.apikey).length} caractères)`,
+    site_id: `(${String(c.site_id).length} caractères)`,
+  };
+
+  let reponse: Response;
+  try {
+    reponse = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(charge),
+    });
+  } catch (e) {
+    return {
+      urlAppelee: url,
+      envoye,
+      statutHttp: null,
+      corpsBrut: null,
+      erreurReseau: e instanceof Error ? e.message : 'Prestataire injoignable.',
+    };
+  }
+
+  // Le corps est rendu tel quel, texte compris : un prestataire qui repond en
+  // HTML ou en texte plat dit souvent l'essentiel, et le forcer en JSON
+  // effacerait justement le message qu'on est venu chercher.
+  const texte = await reponse.text().catch(() => '');
+  let corpsBrut: unknown = texte;
+  try {
+    corpsBrut = JSON.parse(texte);
+  } catch {
+    /* pas du JSON : on garde le texte */
+  }
+
+  return {
+    urlAppelee: url,
+    envoye,
+    statutHttp: reponse.status,
+    corpsBrut,
+    erreurReseau: null,
+  };
+}
+
+/**
  * Demande au prestataire l'etat REEL d'une transaction.
  *
  * C'est le seul point de verite. La notification qu'il poste sur notre

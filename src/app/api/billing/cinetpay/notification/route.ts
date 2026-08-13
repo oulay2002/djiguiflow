@@ -18,6 +18,21 @@ export const dynamic = 'force-dynamic';
  * On repond 200 des que la notification a ete comprise, meme si le paiement
  * est refuse : un code d'erreur declencherait des reessais en boucle pour une
  * transaction qui, elle, ne changera plus d'avis.
+ *
+ * SUR LA SIGNATURE (`CINETPAY_SECRET_KEY`) : le prestataire signe sa
+ * notification, et cette signature n'est PAS verifiee ici. C'est assume, et ce
+ * n'est pas un trou : la verification par signature prouverait l'origine du
+ * message, or on ne croit deja pas le message. On lui demande sa reference,
+ * puis on interroge le prestataire nous-memes — ce qui prouve davantage, et
+ * qui tient meme si la signature venait a etre compromise.
+ *
+ * La brancher reste souhaitable, comme second verrou : elle permettrait
+ * d'ecarter le bruit avant l'appel sortant. Elle ne l'est pas encore parce
+ * qu'il faut connaitre la chaine exacte a signer — l'ordre des champs
+ * concatenes — et que la documentation de CinetPay est restee injoignable. La
+ * deviner produirait un rejet des notifications LEGITIMES, c'est-a-dire des
+ * paiements encaisses sans acces ouvert : precisement le sens de panne qu'on
+ * refuse.
  */
 
 /** Le prestataire poste en formulaire ; on accepte le JSON par tolerance. */

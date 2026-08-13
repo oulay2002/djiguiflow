@@ -135,8 +135,16 @@ export async function POST(request: Request) {
   }
 
   if (!cinetpayConfigure()) {
+    // Ce texte s'affiche tel quel au marchand, en pleine page. « Paiement non
+    // configure sur ce deploiement » etait exact et inutile : il ne lui disait
+    // ni que ca allait s'ouvrir, ni quoi faire en attendant, et le laissait
+    // penser que la panne venait de lui.
     return NextResponse.json(
-      { error: 'Paiement non configuré sur ce déploiement.' },
+      {
+        error:
+          "Le paiement en ligne n'est pas encore ouvert. Écrivez-nous et nous "
+          + 'activons votre formule à la main, sans attendre.',
+      },
       { status: 503 },
     );
   }
