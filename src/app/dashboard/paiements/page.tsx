@@ -398,7 +398,7 @@ export default function PaiementsPage() {
                       <div className="mt-5 flex items-end gap-2">
                         <span className="text-4xl font-black">{plan.priceLabel}</span>
                         <span className={`${plan.popular ? 'text-primary-100' : 'text-chaux-600'} pb-1`}>
-                          FCFA/mois
+                          {plan.suffixePrix}
                         </span>
                       </div>
 
@@ -411,21 +411,27 @@ export default function PaiementsPage() {
                         ))}
                       </ul>
 
+                      {/* L'essai s'ouvre a l'inscription, il ne se vend pas :
+                          la route de paiement le refuse. Afficher malgre tout
+                          un bouton « S'abonner » menait le marchand vers une
+                          erreur au lieu de le renseigner. */}
                       <button
                         type="button"
                         onClick={() => startCheckout(plan.key)}
-                        disabled={processingPlan !== null || isCurrentPlan}
+                        disabled={!plan.achetable || processingPlan !== null || isCurrentPlan}
                         className={`mt-7 w-full rounded-full px-5 py-3 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${
                           plan.popular
                             ? 'bg-white text-primary-700 hover:bg-primary-50'
                             : 'bg-primary-600 text-white hover:bg-primary-700'
                         }`}
                       >
-                        {isCurrentPlan
-                          ? 'Plan actif'
-                          : processingPlan === plan.key
-                            ? 'Redirection...'
-                            : 'S abonner'}
+                        {!plan.achetable
+                          ? 'Offert à l’inscription'
+                          : isCurrentPlan
+                            ? 'Plan actif'
+                            : processingPlan === plan.key
+                              ? 'Redirection...'
+                              : 'S’abonner'}
                       </button>
                     </div>
                   );

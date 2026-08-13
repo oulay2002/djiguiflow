@@ -30,7 +30,7 @@ const assistantReplies: Record<string, string> = {
   fonctionnement:
     "DjiguiFlow centralise votre boutique, les commandes, les livreurs, les paiements et les notifications dans un seul espace. Le client commande, l'assistant assiste, et votre équipe garde la main sur le suivi.",
   frais:
-    "Les frais dépendent du plan choisi. Vous pouvez commencer avec un plan Starter, monter sur Pro pour plus d'automatisation, ou aller sur Premium pour une personnalisation complète. Si vous voulez, je peux vous résumer les différences.",
+    "Vous commencez par 30 jours d'essai gratuit, jusqu'à 30 commandes, toutes les fonctions ouvertes. Ensuite Pro à 10 000 FCFA par mois couvre 300 commandes, et Premium à 25 000 en couvre 1 000 avec les contenus TikTok et plusieurs boutiques. Payable en Mobile Money, avec une remise si vous prenez plusieurs mois d'avance.",
   paiement:
     "Les paiements sont pensés pour le terrain: Mobile Money, carte bancaire et suivi des transactions. L'idée est de simplifier la confirmation, d'éviter les ambiguïtés et de sécuriser le flux de vente.",
   boutique:

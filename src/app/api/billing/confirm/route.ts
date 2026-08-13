@@ -81,8 +81,8 @@ function toIso(timestampInSeconds: number | null | undefined): string | null {
 
 function buildMockSubscriptionRecord(userId: string, sessionId: string): SubscriptionRecord {
   const mockSessionPart = sessionId.replace(/^mock_/, '');
-  const planCandidate = mockSessionPart.split('_')[0] ?? 'starter';
-  const resolvedPlan = getBillingPlan(planCandidate)?.key ?? 'starter';
+  const planCandidate = mockSessionPart.split('_')[0] ?? 'essai';
+  const resolvedPlan = getBillingPlan(planCandidate)?.key ?? 'essai';
   const now = new Date();
   const periodEnd = new Date(now);
   periodEnd.setMonth(periodEnd.getMonth() + 1);
@@ -193,7 +193,7 @@ export async function POST(request: Request) {
   const normalizedStatus = stripeSubscription?.status ?? 'incomplete';
   const subscriptionRecord: SubscriptionRecord = {
     user_id: user.id,
-    plan_key: session.metadata?.plan_key ?? 'starter',
+    plan_key: session.metadata?.plan_key ?? 'essai',
     status: normalizedStatus,
     stripe_customer_id:
       typeof session.customer === 'string'

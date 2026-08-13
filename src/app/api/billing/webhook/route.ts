@@ -33,10 +33,6 @@ function getPlanFromPriceId(priceId: string | null): string | null {
     return null;
   }
 
-  if (priceId === process.env.STRIPE_PRICE_STARTER) {
-    return 'starter';
-  }
-
   if (priceId === process.env.STRIPE_PRICE_PRO) {
     return 'pro';
   }
@@ -129,7 +125,7 @@ async function handleCheckoutCompleted(args: {
     subscription?.items?.data?.[0]?.price?.id ?? null;
   const planFromPrice = getPlanFromPriceId(priceId);
 
-  const planKey = session.metadata?.plan_key ?? planFromPrice ?? 'starter';
+  const planKey = session.metadata?.plan_key ?? planFromPrice ?? 'essai';
   const status = subscription?.status ?? 'incomplete';
 
   await upsertByUserId({
@@ -182,7 +178,7 @@ async function handleSubscriptionChanged(args: {
     customerId,
     subscriptionId: subscription.id,
     status: subscription.status,
-    planKey: planFromPrice ?? existing?.plan_key ?? 'starter',
+    planKey: planFromPrice ?? existing?.plan_key ?? 'essai',
     periodStart: toIso(subscription.current_period_start),
     periodEnd: toIso(subscription.current_period_end),
     lastCheckoutSessionId: existing?.last_checkout_session_id ?? `webhook:${args.event.id}`,

@@ -31,7 +31,8 @@ const PRICING_KEYWORDS = [
   'cout',
   'plan',
   'premium',
-  'starter',
+  'essai',
+  'tarif',
   'pro',
 ];
 

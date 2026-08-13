@@ -443,7 +443,7 @@ export default function Home() {
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <Eyebrow className="text-chaux-600">tarifs</Eyebrow>
           <h2 className="mt-4 max-w-2xl font-display text-4xl font-extrabold leading-[1.02] tracking-[-0.02em] text-nuit-800 sm:text-5xl">
-            Un abonnement par taille de commerce. Résiliable au mois.
+            Un tarif par volume de commandes. Payé d’avance, sans engagement.
           </h2>
 
           <div className="mt-14 grid gap-6 lg:grid-cols-3">
@@ -500,7 +500,7 @@ export default function Home() {
                         vedette ? 'text-nuit-200' : 'text-chaux-600'
                       }`}
                     >
-                      FCFA / mois
+                      {plan.suffixePrix}
                     </span>
                   </div>
 
