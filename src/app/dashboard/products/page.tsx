@@ -9,8 +9,6 @@ import {
   UtensilsCrossed,
   X,
 } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
-import { BUCKET_IMAGES, dossierMarchand, nomFichierSain } from '@/lib/storage';
 import { fetchDashboard } from '@/lib/apiClient';
 import { Bouton } from '@/components/ui/Bouton';
 
@@ -70,15 +68,26 @@ export default function Page() {
     try {
       let image = fUrl.trim();
       if (fFile) {
-        const dossier = await dossierMarchand(boutiqueId);
-        const path = `${dossier}/produits/${Date.now()}-${nomFichierSain(fFile.name)}`;
-        const { error } = await supabase.storage.from(BUCKET_IMAGES).upload(path, fFile, {
-          cacheControl: '3600',
-          contentType: fFile.type || 'application/octet-stream',
-          upsert: false,
+        // La photo passe par le serveur, qui la redresse, la recadre et
+        // l'allege avant de la ranger. Elle partait auparavant du navigateur
+        // droit au Storage : le fichier brut du telephone, plusieurs
+        // megaoctets, atterrissait tel quel sur la vitrine.
+        const formulaire = new FormData();
+        formulaire.append('fichier', fFile);
+        formulaire.append('boutique_id', boutiqueId);
+
+        const rep = await fetchDashboard('/api/dashboard/produits/photo', {
+          method: 'POST',
+          body: formulaire,
         });
-        if (error) throw new Error(`Upload échoué — ${error.message}`);
-        image = supabase.storage.from(BUCKET_IMAGES).getPublicUrl(path).data.publicUrl;
+        const d = await rep.json();
+        if (!rep.ok) throw new Error(d?.error || `Envoi de la photo échoué (${rep.status})`);
+
+        image = d.url;
+        if (d.octetsAvant && d.octets) {
+          const ko = (n: number) => `${Math.round(n / 1024)} Ko`;
+          setMsg(`📷 Photo retravaillée : ${ko(d.octetsAvant)} → ${ko(d.octets)}.`);
+        }
       }
       const res = await fetchDashboard(avecBoutique('/api/dashboard/produits', boutiqueId), {
         method: 'POST',
