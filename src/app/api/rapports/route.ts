@@ -63,6 +63,23 @@ export async function POST(req: Request) {
       ? lignes.filter((l) => String((l as { slug?: unknown }).slug ?? '').trim() === boutique)
       : lignes;
 
+  /**
+   * Le tableau de bord Telegram, lui, n'a pas le droit de tout voir.
+   *
+   * `dashboard` ne sert qu'a un marchand qui interroge SA boutique depuis son
+   * bot. Le slug vient du routeur ; s'il venait a manquer — fiche incomplete,
+   * appel mal forme, workflow modifie — la regle ci-dessus laissait passer
+   * l'integralite de la plateforme, et le marchand lisait le chiffre
+   * d'affaires et les telephones des clients de ses concurrents.
+   *
+   * Les rapports planifies (resume quotidien, hebdo) gardent le droit
+   * d'appeler sans boutique : ils repartissent eux-memes chaque ligne vers son
+   * gerant. Eux ne repondent a personne, ils diffusent.
+   */
+  if (type === 'dashboard' && !boutique) {
+    return Response.json({ error: 'Boutique requise pour ce rapport' }, { status: 400 });
+  }
+
   const sb = getSupabaseAdmin();
   if (!sb) return Response.json({ error: 'Service indisponible' }, { status: 503 });
 
