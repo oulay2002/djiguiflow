@@ -61,7 +61,7 @@ export const BILLING_PLANS: BillingPlan[] = [
     features: [
       'Bot WhatsApp + IA — 30 commandes',
       'Suivi client et livreurs',
-      'Photos améliorées par IA',
+      'Photos retravaillées pour la vitrine',
       'Posts hebdomadaires Facebook et Instagram',
     ],
     popular: false,
@@ -79,7 +79,7 @@ export const BILLING_PLANS: BillingPlan[] = [
     features: [
       'Bot WhatsApp + IA — 300 commandes par mois',
       'Suivi client et livreurs',
-      'Photos améliorées par IA',
+      'Photos retravaillées pour la vitrine',
       'Posts hebdomadaires Facebook et Instagram',
       'Support par e-mail',
     ],
@@ -98,7 +98,7 @@ export const BILLING_PLANS: BillingPlan[] = [
     features: [
       'Bot WhatsApp + IA — 1 000 commandes par mois',
       'Suivi client et livreurs',
-      'Photos améliorées par IA',
+      'Photos retravaillées pour la vitrine',
       'Posts hebdomadaires Facebook et Instagram',
       'Contenus prêts à publier TikTok et WhatsApp',
       'Plusieurs boutiques sur un même compte',
