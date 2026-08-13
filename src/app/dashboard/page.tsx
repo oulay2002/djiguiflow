@@ -10,6 +10,7 @@ import {
   Trophy, Wallet,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import CompteurQuota from '@/components/dashboard/CompteurQuota';
 
 type Stats = {
   caTotal: number; caJour: number; nbCommandes: number; nbJour: number;
@@ -100,6 +101,8 @@ export default function Page() {
               </Link>
             </div>
           </header>
+
+          <CompteurQuota />
 
           <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             {kpis.map(k => {
