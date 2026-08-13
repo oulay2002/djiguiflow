@@ -161,7 +161,19 @@ export function montantPrepaye(plan: BillingPlan, mois: number): number {
   return Math.round(brut / 100) * 100;
 }
 
-/** Commandes incluses sur toute la periode achetee. */
-export function quotaCommandes(plan: BillingPlan, mois: number): number {
-  return plan.commandesIncluses * (plan.achetable ? mois : 1);
+/**
+ * Commandes incluses par fenetre de 30 jours.
+ *
+ * Le quota ne se cumule PAS sur la duree achetee. Un Pro paye douze mois a
+ * droit a 300 commandes par mois, pas a 3 600 utilisables des janvier : c'est
+ * ce que l'offre annonce, et c'est surtout ce qui borne la facture n8n. Mettre
+ * l'annee en pot commun aurait permis a un marchand de concentrer une annee de
+ * charge sur une semaine — precisement le risque que le plafond existe pour
+ * ecarter.
+ */
+export function quotaCommandes(plan: BillingPlan): number {
+  return plan.commandesIncluses;
 }
+
+/** Duree de la fenetre sur laquelle s'apprecie le quota, en jours. */
+export const FENETRE_QUOTA_JOURS = 30;

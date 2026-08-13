@@ -5,7 +5,13 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 import { ArrowLeft, CheckCircle, CreditCard, Loader2, RefreshCw, ShieldCheck } from 'lucide-react';
-import { BILLING_PLANS, getBillingPlan, type PlanKey } from '@/lib/billing/plans';
+import {
+  BILLING_PLANS,
+  DUREES_PREPAYEES,
+  getBillingPlan,
+  montantPrepaye,
+  type PlanKey,
+} from '@/lib/billing/plans';
 
 type SubscriptionState = {
   user_id: string;
@@ -60,6 +66,9 @@ export default function PaiementsPage() {
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [processingPlan, setProcessingPlan] = useState<PlanKey | null>(null);
+  // Un mois par defaut : la duree la plus courte est aussi la moins
+  // engageante, donc celle qu'on propose sans la forcer.
+  const [moisChoisi, setMoisChoisi] = useState<number>(1);
   const [loadingPortal, setLoadingPortal] = useState(false);
   const [subscription, setSubscription] = useState<SubscriptionState | null>(null);
   const [error, setError] = useState('');
@@ -222,7 +231,7 @@ export default function PaiementsPage() {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${accessToken}`,
         },
-        body: JSON.stringify({ plan: planKey }),
+        body: JSON.stringify({ plan: planKey, mois: moisChoisi }),
       });
 
       const data = (await response.json()) as { url?: string; error?: string };
@@ -370,6 +379,41 @@ export default function PaiementsPage() {
                 <h3 className="text-xl font-black text-nuit-900">Choisir une formule</h3>
               </div>
 
+              {/* Le Mobile Money ne sait pas prelever tout seul : chaque
+                  periode s'achete d'avance. Plutot que de subir cette
+                  contrainte, on la recompense — et le choix doit donc etre
+                  visible avant les prix, puisqu'il les change. */}
+              <div className="mb-6 rounded-[1.5rem] border border-[var(--hairline)] bg-white/70 p-4">
+                <p className="text-sm font-semibold text-nuit-900">Durée à régler d’avance</p>
+                <p className="mt-1 text-sm text-chaux-600">
+                  Plus la période est longue, moins le mois revient cher.
+                </p>
+
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {DUREES_PREPAYEES.map((duree) => (
+                    <button
+                      key={duree.mois}
+                      type="button"
+                      onClick={() => setMoisChoisi(duree.mois)}
+                      aria-pressed={moisChoisi === duree.mois}
+                      className={`min-h-[2.75rem] rounded-full px-4 py-2 text-sm font-semibold transition ${
+                        moisChoisi === duree.mois
+                          ? 'bg-primary-600 text-white shadow-lg'
+                          : 'border border-[var(--hairline)] bg-chaux-50 text-chaux-600 hover:bg-chaux-100'
+                      }`}
+                    >
+                      {duree.label}
+                      {duree.remise > 0 && (
+                        <span className={moisChoisi === duree.mois ? 'text-mangue-200' : 'text-accent-700'}>
+                          {' '}
+                          −{Math.round(duree.remise * 100)} %
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <div className="grid gap-6 lg:grid-cols-3">
                 {BILLING_PLANS.map((plan) => {
                   const isCurrentPlan = subscription?.plan_key === plan.key && isSubscriptionActive;
@@ -401,6 +445,22 @@ export default function PaiementsPage() {
                           {plan.suffixePrix}
                         </span>
                       </div>
+
+                      {/* Le prix mensuel reste l'ancre — c'est lui qui se
+                          compare d'une offre a l'autre. Le total du a la
+                          caisse s'affiche en dessous, avec l'economie, sinon
+                          le marchand decouvre le montant sur l'ecran de
+                          paiement. */}
+                      {plan.achetable && moisChoisi > 1 && (
+                        <p className={`mt-2 text-sm ${plan.popular ? 'text-primary-100' : 'text-chaux-600'}`}>
+                          Soit{' '}
+                          <strong className={plan.popular ? 'text-white' : 'text-nuit-900'}>
+                            {montantPrepaye(plan, moisChoisi).toLocaleString('fr-FR')} F
+                          </strong>{' '}
+                          pour {moisChoisi} mois — vous économisez{' '}
+                          {(plan.amountFcfa * moisChoisi - montantPrepaye(plan, moisChoisi)).toLocaleString('fr-FR')} F
+                        </p>
+                      )}
 
                       <ul className="mt-6 space-y-2.5">
                         {plan.features.map((feature) => (
