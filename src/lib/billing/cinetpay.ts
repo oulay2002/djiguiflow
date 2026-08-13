@@ -17,6 +17,8 @@
  * On vend donc des periodes, et on relance avant l'echeance.
  */
 
+import { lookup } from 'node:dns/promises';
+
 const BASE = 'https://api-checkout.cinetpay.com/v2';
 
 export type ResultatVerification = {
@@ -128,6 +130,8 @@ export async function initialiserPaiement(params: {
  */
 export type SondeInitialisation = {
   urlAppelee: string;
+  /** Ce que le DNS repond pour cet hote, vu depuis le serveur qui appelle. */
+  dns: string[] | string;
   /** La charge utile envoyee, secrets remplaces par leur longueur. */
   envoye: Record<string, unknown>;
   statutHttp: number | null;
@@ -135,15 +139,73 @@ export type SondeInitialisation = {
   erreurReseau: string | null;
 };
 
+/**
+ * Ce que le serveur voit du nom d'hote.
+ *
+ * Un `fetch failed` ne distingue pas « nom introuvable » de « connexion
+ * refusee » ni de « certificat invalide ». La resolution DNS tranche le premier
+ * cas a elle seule, et elle dit aussi si l'hote n'a qu'une adresse IPv6 —
+ * exactement le mur rencontre entre n8n Cloud et Supabase.
+ */
+async function resoudre(hote: string): Promise<string[] | string> {
+  try {
+    const adresses = await lookup(hote, { all: true });
+    return adresses.map((a) => `${a.address} (IPv${a.family})`);
+  } catch (e) {
+    const code = (e as { code?: string })?.code;
+    return `échec DNS${code ? ` (${code})` : ''} : ${e instanceof Error ? e.message : String(e)}`;
+  }
+}
+
+/**
+ * Deplie la cause reelle d'une erreur de `fetch`.
+ *
+ * Node enveloppe tout dans un « fetch failed » sans information. Le diagnostic
+ * vit dans `error.cause` : ENOTFOUND, ECONNREFUSED, un code de certificat ou un
+ * depassement de delai appellent chacun une correction differente.
+ */
+function detailErreur(e: unknown): string {
+  if (!(e instanceof Error)) return String(e);
+
+  const cause = (e as { cause?: unknown }).cause;
+  if (cause instanceof Error) {
+    const code = (cause as { code?: string }).code;
+    return `${e.message} — cause : ${code ? `${code} ` : ''}${cause.message}`.trim();
+  }
+
+  return e.message;
+}
+
 export async function sonderInitialisation(
   surcharges: Record<string, unknown> = {},
+  urlSurchargee?: string,
 ): Promise<SondeInitialisation> {
-  const url = `${BASE}/payment`;
+  // L'URL est surchargeable pour pouvoir essayer un autre hote sans
+  // redeployer : si le nom actuel ne resout pas, c'est la premiere chose
+  // qu'on voudra tester.
+  const url = urlSurchargee?.trim() || `${BASE}/payment`;
+
+  let hote = '';
+  try {
+    hote = new URL(url).hostname;
+  } catch {
+    return {
+      urlAppelee: url,
+      dns: 'URL invalide',
+      envoye: {},
+      statutHttp: null,
+      corpsBrut: null,
+      erreurReseau: 'URL invalide.',
+    };
+  }
+
+  const dns = await resoudre(hote);
   const c = config();
 
   if (!c) {
     return {
       urlAppelee: url,
+      dns,
       envoye: {},
       statutHttp: null,
       corpsBrut: null,
@@ -185,10 +247,11 @@ export async function sonderInitialisation(
   } catch (e) {
     return {
       urlAppelee: url,
+      dns,
       envoye,
       statutHttp: null,
       corpsBrut: null,
-      erreurReseau: e instanceof Error ? e.message : 'Prestataire injoignable.',
+      erreurReseau: detailErreur(e),
     };
   }
 
@@ -205,6 +268,7 @@ export async function sonderInitialisation(
 
   return {
     urlAppelee: url,
+    dns,
     envoye,
     statutHttp: reponse.status,
     corpsBrut,

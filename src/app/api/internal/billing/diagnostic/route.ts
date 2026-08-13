@@ -96,7 +96,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
   }
 
-  let corps: { surcharges?: Record<string, unknown> } = {};
+  let corps: { surcharges?: Record<string, unknown>; url?: string } = {};
   try {
     const brut = await req.text();
     if (brut.trim()) corps = JSON.parse(brut) as typeof corps;
@@ -107,7 +107,10 @@ export async function POST(req: Request) {
   const surcharges =
     corps.surcharges && typeof corps.surcharges === 'object' ? corps.surcharges : {};
 
-  const sonde = await sonderInitialisation(surcharges);
+  // `url` permet d'essayer un autre hote sans redeployer. Indispensable quand
+  // l'appel echoue avant meme d'etre parti : la premiere hypothese est alors
+  // que le nom d'hote est faux.
+  const sonde = await sonderInitialisation(surcharges, corps.url);
 
   // Toujours 200 : c'est un rapport d'observation, pas un verdict. Repondre en
   // erreur ferait croire que la sonde a echoue alors qu'elle a parfaitement
