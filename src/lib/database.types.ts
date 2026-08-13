@@ -440,6 +440,45 @@ export type Database = {
         }
         Relationships: []
       }
+      paiements: {
+        Row: {
+          created_at: string
+          jeton_prestataire: string | null
+          mois: number
+          montant_fcfa: number
+          operateur: string | null
+          paye_le: string | null
+          plan_key: string
+          reference: string
+          statut: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          jeton_prestataire?: string | null
+          mois: number
+          montant_fcfa: number
+          operateur?: string | null
+          paye_le?: string | null
+          plan_key: string
+          reference: string
+          statut?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          jeton_prestataire?: string | null
+          mois?: number
+          montant_fcfa?: number
+          operateur?: string | null
+          paye_le?: string | null
+          plan_key?: string
+          reference?: string
+          statut?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       push_subscriptions: {
         Row: {
           auth_secret: string

@@ -1,19 +1,24 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import Stripe from 'stripe';
-import { getBillingPlan, type PlanKey } from '@/lib/billing/plans';
+import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
+import { getBillingPlan, montantPrepaye, DUREES_PREPAYEES } from '@/lib/billing/plans';
 import { isMockBillingMode } from '@/lib/billing/mode';
+import { cinetpayConfigure, initialiserPaiement } from '@/lib/billing/cinetpay';
 
 export const runtime = 'nodejs';
 
-type CheckoutRequestBody = {
-  plan?: string;
-};
+/**
+ * Ouverture d'un paiement prepaye.
+ *
+ * Le marchand achete une DUREE, pas un abonnement : le Mobile Money ivoirien
+ * ne sait pas prelever tout seul. On enregistre l'intention, on ouvre la
+ * transaction chez le prestataire, et c'est sa notification — verifiee — qui
+ * ouvrira les droits. Rien n'est accorde ici.
+ */
 
-const PRICE_ENV_BY_PLAN: Record<PlanKey, string> = {
-  starter: 'STRIPE_PRICE_STARTER',
-  pro: 'STRIPE_PRICE_PRO',
-  premium: 'STRIPE_PRICE_PREMIUM',
+type CorpsRequete = {
+  plan?: string;
+  mois?: number;
 };
 
 function getBearerToken(request: Request): string | null {
@@ -53,16 +58,19 @@ function buildSupabaseClient(accessToken: string) {
   }
 
   return createClient(supabaseUrl, supabaseAnonKey, {
-    global: {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    },
-    auth: {
-      persistSession: false,
-      autoRefreshToken: false,
-    },
+    global: { headers: { Authorization: `Bearer ${accessToken}` } },
+    auth: { persistSession: false, autoRefreshToken: false },
   });
+}
+
+/**
+ * Reference de transaction. Elle voyage chez le prestataire et nous revient :
+ * c'est notre cle d'idempotence, elle doit etre unique et sans surprise pour
+ * un systeme tiers — d'ou l'alphabet restreint.
+ */
+function nouvelleReference(): string {
+  const hasard = Math.random().toString(36).slice(2, 10).toUpperCase();
+  return `DJF-${Date.now()}-${hasard}`;
 }
 
 export async function POST(request: Request) {
@@ -84,67 +92,91 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Session invalide.' }, { status: 401 });
   }
 
-  let body: CheckoutRequestBody;
+  let corps: CorpsRequete;
   try {
-    body = (await request.json()) as CheckoutRequestBody;
+    corps = (await request.json()) as CorpsRequete;
   } catch {
-    return NextResponse.json({ error: 'Corps de requete invalide.' }, { status: 400 });
+    return NextResponse.json({ error: 'Corps de requête invalide.' }, { status: 400 });
   }
 
-  const selectedPlan = getBillingPlan(body.plan ?? '');
-  if (!selectedPlan) {
+  const plan = getBillingPlan(corps.plan ?? '');
+  if (!plan) {
     return NextResponse.json({ error: 'Plan non reconnu.' }, { status: 400 });
   }
 
-  const appBaseUrl = getAppBaseUrl(request);
+  // L'essai gratuit s'ouvre a l'inscription, il ne se vend pas. Sans cette
+  // garde, un appel forge sur `essai` traverserait le tunnel pour un montant
+  // nul et prolongerait l'acces.
+  if (!plan.achetable) {
+    return NextResponse.json({ error: `Le plan ${plan.name} ne s'achète pas.` }, { status: 400 });
+  }
+
+  // La duree vient du client : elle doit figurer dans le bareme, sinon le
+  // montant se calculerait sur une remise inventee.
+  const mois = Number(corps.mois ?? 1);
+  if (!DUREES_PREPAYEES.some((d) => d.mois === mois)) {
+    return NextResponse.json({ error: 'Durée non proposée.' }, { status: 400 });
+  }
+
+  const montant = montantPrepaye(plan, mois);
+  if (montant <= 0) {
+    return NextResponse.json({ error: 'Montant invalide.' }, { status: 400 });
+  }
+
+  const baseUrl = getAppBaseUrl(request);
+  const reference = nouvelleReference();
+
   if (isMockBillingMode()) {
-    const mockSessionId = `mock_${selectedPlan.key}_${Date.now()}`;
     return NextResponse.json({
-      url: `${appBaseUrl}/dashboard/paiements?success=1&session_id=${mockSessionId}&mock=1`,
+      url: `${baseUrl}/dashboard/paiements?success=1&reference=${reference}&mock=1`,
+      reference,
+      montant,
     });
   }
 
-  const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
-  if (!stripeSecretKey) {
-    return NextResponse.json({ error: 'Configuration Stripe manquante.' }, { status: 500 });
-  }
-
-  const priceEnv = PRICE_ENV_BY_PLAN[selectedPlan.key];
-  const stripePriceId = process.env[priceEnv];
-
-  if (!stripePriceId) {
+  if (!cinetpayConfigure()) {
     return NextResponse.json(
-      { error: `Prix Stripe manquant pour le plan ${selectedPlan.name}.` },
-      { status: 500 },
+      { error: 'Paiement non configuré sur ce déploiement.' },
+      { status: 503 },
     );
   }
 
-  const stripe = new Stripe(stripeSecretKey);
-
-  const session = await stripe.checkout.sessions.create({
-    mode: 'subscription',
-    payment_method_types: ['card'],
-    line_items: [
-      {
-        price: stripePriceId,
-        quantity: 1,
-      },
-    ],
-    customer_email: user.email ?? undefined,
-    client_reference_id: user.id,
-    metadata: {
-      user_id: user.id,
-      plan_key: selectedPlan.key,
-      plan_name: selectedPlan.name,
-    },
-    success_url: `${appBaseUrl}/dashboard/paiements?success=1&session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${appBaseUrl}/dashboard/paiements?canceled=1`,
-    allow_promotion_codes: true,
-  });
-
-  if (!session.url) {
-    return NextResponse.json({ error: 'Impossible de lancer le checkout Stripe.' }, { status: 500 });
+  const admin = getSupabaseAdmin();
+  if (!admin) {
+    return NextResponse.json({ error: 'Base indisponible.' }, { status: 503 });
   }
 
-  return NextResponse.json({ url: session.url });
+  // L'intention est enregistree AVANT d'ouvrir la transaction : si le
+  // prestataire encaisse et que nous n'avons pas trace la reference, sa
+  // notification arriverait sur une commande inconnue et l'argent serait
+  // encaisse sans acces ouvert.
+  const { error: erreurInsert } = await admin.from('paiements').insert({
+    reference,
+    user_id: user.id,
+    plan_key: plan.key,
+    mois,
+    montant_fcfa: montant,
+    statut: 'en_attente',
+  } as never);
+
+  if (erreurInsert) {
+    console.error('Checkout — enregistrement de l intention impossible :', erreurInsert);
+    return NextResponse.json({ error: 'Enregistrement impossible.' }, { status: 503 });
+  }
+
+  const resultat = await initialiserPaiement({
+    reference,
+    montantFcfa: montant,
+    description: `DjiguiFlow ${plan.name} — ${mois} mois`,
+    urlNotification: `${baseUrl}/api/billing/cinetpay/notification`,
+    urlRetour: `${baseUrl}/dashboard/paiements?reference=${reference}`,
+    nomClient: user.email ?? 'Marchand DjiguiFlow',
+  });
+
+  if ('erreur' in resultat) {
+    await admin.from('paiements').update({ statut: 'echoue' } as never).eq('reference', reference);
+    return NextResponse.json({ error: resultat.erreur }, { status: 502 });
+  }
+
+  return NextResponse.json({ url: resultat.url, reference, montant });
 }
