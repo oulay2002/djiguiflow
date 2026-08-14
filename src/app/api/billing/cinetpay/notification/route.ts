@@ -109,7 +109,7 @@ export async function POST(req: Request) {
   if (!verdict.accepte) {
     await sb
       .from('paiements')
-      .update({ statut: 'echoue', operateur: verdict.operateur } as never)
+      .update({ statut: 'echoue', operateur: verdict.operateur })
       .eq('reference', reference);
 
     console.error(`Paiement ${reference} refusé par le prestataire : ${verdict.statutBrut ?? 'inconnu'}`);
@@ -122,7 +122,7 @@ export async function POST(req: Request) {
   if (verdict.montant !== null && verdict.montant !== paiement.montant_fcfa) {
     await sb
       .from('paiements')
-      .update({ statut: 'echoue', operateur: verdict.operateur } as never)
+      .update({ statut: 'echoue', operateur: verdict.operateur })
       .eq('reference', reference);
 
     console.error(
@@ -151,7 +151,7 @@ export async function POST(req: Request) {
       statut: 'paye',
       operateur: verdict.operateur,
       paye_le: new Date().toISOString(),
-    } as never)
+    })
     .eq('reference', reference);
 
   return NextResponse.json({ ok: true, accepte: true, finPeriode: prolongation.finPeriode });
