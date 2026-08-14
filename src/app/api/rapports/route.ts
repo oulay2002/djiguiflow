@@ -1,5 +1,6 @@
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import { etatQuota } from '@/lib/billing/quota';
+import type { Database } from '@/lib/database.types';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,12 +21,25 @@ type Periode = 'jour' | 'semaine';
 
 type ReponseRpc<T> = { data: T[] | null; error: { message: string } | null };
 
+/**
+ * Nom d'une fonction REELLEMENT declaree en base.
+ *
+ * Le nom etait un `string` libre : une fonction renommee ou mal orthographiee
+ * compilait, et n'echouait qu'a l'execution — c'est-a-dire dans un rapport
+ * planifie, la nuit, sur le canal technique. Il est desormais contraint aux
+ * fonctions des types generes.
+ */
+type NomFonction = keyof Database['public']['Functions'];
+
 async function appeler<T>(
   sb: NonNullable<ReturnType<typeof getSupabaseAdmin>>,
-  fonction: string,
+  fonction: NomFonction,
   args: Record<string, string> = {},
 ): Promise<T[]> {
-  const reponse = (await sb.rpc(fonction as never, args as never)) as ReponseRpc<T>;
+  // Le nom est verifie ; la forme des arguments, elle, depend de la fonction
+  // choisie a l'execution et depasse ce que l'inference sait resoudre sur une
+  // union. Ce cast reste donc, seul et localise.
+  const reponse = (await sb.rpc(fonction, args as never)) as ReponseRpc<T>;
   if (reponse.error) {
     throw new Error(`${fonction} : ${reponse.error.message}`);
   }

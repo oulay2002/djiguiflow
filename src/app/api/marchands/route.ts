@@ -3,6 +3,7 @@ import { exigerAdmin } from '@/lib/adminAuth';
 import { ErreurProvisioning, provisionnerMarchand } from '@/lib/provisioning';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import { brancherBotTelegram } from '@/lib/telegramBranchement';
+import type { Database } from '@/lib/database.types';
 
 export const dynamic = 'force-dynamic';
 
@@ -123,8 +124,13 @@ export async function PATCH(req: Request) {
     .maybeSingle();
   if (!boutique) return Response.json({ error: `Boutique « ${slug} » introuvable.` }, { status: 404 });
 
-  const rpc = async (fonction: string, args: Record<string, string>) => {
-    const rep = (await sb.rpc(fonction as never, args as never)) as {
+  // Le nom est contraint aux fonctions declarees : une fonction renommee en
+  // base casse ici la compilation, plutot qu'un appel a l'execution.
+  const rpc = async (
+    fonction: keyof Database['public']['Functions'],
+    args: Record<string, string>,
+  ) => {
+    const rep = (await sb.rpc(fonction, args as never)) as {
       error: { message: string } | null;
     };
     return rep.error?.message ?? null;

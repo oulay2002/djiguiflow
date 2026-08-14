@@ -30,9 +30,7 @@ export async function secretWebhookN8n(): Promise<string> {
   try {
     const sb = getSupabaseAdmin();
     if (sb) {
-      // `secret_webhook_n8n` est posterieure aux types generes.
-      const rpc = sb.rpc as unknown as (n: string) => PromiseLike<{ data: unknown; error: unknown }>;
-      const { data, error } = await rpc('secret_webhook_n8n');
+      const { data, error } = await sb.rpc('secret_webhook_n8n');
       if (error) throw error;
       duCoffre = String(data ?? '').trim();
     }

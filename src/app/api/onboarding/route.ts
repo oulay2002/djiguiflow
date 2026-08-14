@@ -3,6 +3,7 @@ import { estAdmin } from '@/lib/adminAuth';
 import { resoudreMarchand } from '@/lib/marchands';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import { brancherBotTelegram } from '@/lib/telegramBranchement';
+import type { Database } from '@/lib/database.types';
 
 export const dynamic = 'force-dynamic';
 
@@ -110,8 +111,13 @@ export async function PATCH(req: Request) {
    * son propre numero et son propre bot sans qu'aucune credential ne soit
    * ajoutee dans n8n — donc de s'inscrire sans intervention manuelle.
    */
-  const rpc = async (fonction: string, args: Record<string, string>) => {
-    const rep = (await r.sb.rpc(fonction as never, args as never)) as {
+  // Le nom est contraint aux fonctions declarees : une fonction renommee en
+  // base casse ici la compilation, plutot qu'une inscription a l'execution.
+  const rpc = async (
+    fonction: keyof Database['public']['Functions'],
+    args: Record<string, string>,
+  ) => {
+    const rep = (await r.sb.rpc(fonction, args as never)) as {
       error: { message: string } | null;
     };
     return rep.error?.message ?? null;

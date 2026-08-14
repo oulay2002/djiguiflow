@@ -23,10 +23,7 @@ export async function GET(req: Request) {
   const sb = getSupabaseAdmin();
   if (!sb) return NextResponse.json({ error: 'Base indisponible' }, { status: 503 });
 
-  const lecture = (await sb.rpc(
-    'jeton_canal' as never,
-    { p_boutique: slug, p_canal: 'telegram' } as never,
-  )) as { data: string | null; error: { message: string } | null };
+  const lecture = await sb.rpc('jeton_canal', { p_boutique: slug, p_canal: 'telegram' });
 
   const jeton = String(lecture.data ?? '').trim();
   if (!jeton) {

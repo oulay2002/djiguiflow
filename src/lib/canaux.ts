@@ -55,12 +55,12 @@ async function resoudreJeton(
 
   if (sb) {
     try {
-      // `jeton_canal` est posterieure aux types generes : le client typé ne
-      // la connait pas encore, d'ou le passage par une forme explicite.
-      const reponse = (await sb.rpc(
-        'jeton_canal' as never,
-        { p_boutique: boutique, p_canal: JETON_DU_CANAL[canal] } as never,
-      )) as { data: string | null; error: { message: string } | null };
+      // Le jeton sort du Vault. La signature vient des types generes, donc un
+      // renommage d'argument cote base casse la compilation plutot que l'appel.
+      const reponse = await sb.rpc('jeton_canal', {
+        p_boutique: boutique,
+        p_canal: JETON_DU_CANAL[canal],
+      });
 
       if (reponse.error) {
         console.error(

@@ -38,20 +38,14 @@ export async function prolongerAcces(params: {
   const sb = getSupabaseAdmin();
   if (!sb) return { ok: false, erreur: 'Base indisponible.' };
 
-  // `prolonger_acces` est posterieure aux types generes.
-  const rpc = sb.rpc as unknown as (
-    nom: string,
-    args: Record<string, unknown>,
-  ) => PromiseLike<{ data: unknown; error: unknown }>;
-
-  let data: unknown;
-  let error: unknown;
+  let data: string | null = null;
+  let error: { message: string } | null = null;
   try {
     // `sb.rpc()` n'est pas une promesse au sens strict : il n'a pas de
     // `.catch`. Une panne de transport doit donc etre attrapee ici, sinon elle
     // remonte non geree et la route repond 500 au lieu de laisser le
     // prestataire rejouer.
-    ({ data, error } = await rpc('prolonger_acces', {
+    ({ data, error } = await sb.rpc('prolonger_acces', {
       p_user_id: params.userId,
       p_plan_key: params.planKey,
       p_mois: params.mois,

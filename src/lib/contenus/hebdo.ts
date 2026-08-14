@@ -167,8 +167,8 @@ export async function contenusHebdo(baseUrl: string): Promise<ContenuHebdo[]> {
   if (!sb) return [];
 
   const [activites, plats] = await Promise.all([
-    sb.rpc('rapport_activite' as never, { p_periode: 'semaine' } as never),
-    sb.rpc('rapport_top_plats' as never, { p_periode: 'semaine' } as never),
+    sb.rpc('rapport_activite', { p_periode: 'semaine' }),
+    sb.rpc('rapport_top_plats', { p_periode: 'semaine' }),
   ]);
 
   const lignesActivite = (activites.data ?? []) as LigneActivite[];

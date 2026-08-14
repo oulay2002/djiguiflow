@@ -37,10 +37,7 @@ export async function brancherBotTelegram(
   if (!sb) return { ok: false, raison: 'Base indisponible', statut: 503 };
 
   // Le jeton du bot sort du Vault et ne va nulle part ailleurs qu'a Telegram.
-  const lecture = (await sb.rpc(
-    'jeton_canal' as never,
-    { p_boutique: slug, p_canal: 'telegram' } as never,
-  )) as { data: string | null; error: { message: string } | null };
+  const lecture = await sb.rpc('jeton_canal', { p_boutique: slug, p_canal: 'telegram' });
 
   if (lecture.error) {
     console.error(`Telegram — lecture du jeton impossible (${slug}) :`, lecture.error.message);
@@ -88,10 +85,10 @@ export async function brancherBotTelegram(
 
   // L'empreinte n'est posee qu'apres l'acceptation de Telegram : sinon on
   // rejetterait les mises a jour encore signees par l'ancien secret.
-  const pose = (await sb.rpc(
-    'definir_secret_webhook_telegram' as never,
-    { p_slug: slug, p_secret: secretToken } as never,
-  )) as { error: { message: string } | null };
+  const pose = await sb.rpc('definir_secret_webhook_telegram', {
+    p_slug: slug,
+    p_secret: secretToken,
+  });
 
   if (pose.error) {
     console.error(`Telegram — empreinte non posee (${slug}) :`, pose.error.message);

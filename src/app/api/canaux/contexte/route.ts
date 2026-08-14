@@ -67,7 +67,10 @@ export async function POST(req: Request) {
     );
   }
 
-  const reponse = (await sb.rpc(fonction as never, argument as never)) as {
+  // Le nom vient de tuples `as const` : il est deja une union de litteraux, et
+  // le compilateur verifie donc qu'il designe une fonction declaree. Seule la
+  // forme des arguments, variable selon la branche, echappe encore.
+  const reponse = (await sb.rpc(fonction, argument as never)) as {
     data: Contexte[] | null;
     error: { message: string } | null;
   };
