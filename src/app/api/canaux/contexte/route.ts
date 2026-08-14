@@ -23,6 +23,12 @@ type Contexte = {
   sheet_menu: string | null;
   groupe_livreurs: string | null;
   telephone: string | null;
+  /**
+   * Chat Telegram du gerant. Sans lui, les workflows qui previennent le
+   * marchand n'avaient d'autre choix que WhatsApp : celui qui ne tient que
+   * Telegram n'apprenait jamais qu'une commande venait d'arriver.
+   */
+  telegram_marchand: string | null;
 };
 
 export async function POST(req: Request) {
