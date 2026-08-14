@@ -1,8 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useBoutique, avecBoutique } from '@/lib/boutique';
+import { useBoutique, avecBoutique, uuidBoutiqueCourante } from '@/lib/boutique';
 import { fetchDashboard } from '@/lib/apiClient';
+import { supabase } from '@/lib/supabase';
+import NotificationToast from '@/components/NotificationToast';
 import {
   CheckCircle2,
   Clock,
@@ -12,7 +14,26 @@ import {
   Bike,
   Check,
   RefreshCw,
+  Search,
 } from 'lucide-react';
+
+/**
+ * L'ecran des commandes du marchand — le seul.
+ *
+ * Il y en avait deux, `/dashboard/commandes` et `/dashboard/orders`, pour le
+ * meme sujet et avec deux mises en page. Seul celui-ci figurait au menu ;
+ * l'autre n'etait atteignable que par la notification push et par un lien
+ * depuis Clients — autrement dit, le marchand qui touchait l'alerte
+ * « nouvelle commande » atterrissait sur l'ecran qui n'etait pas le sien.
+ *
+ * Et l'ecart n'etait pas cosmetique : l'autre ecran ecrivait `statut`
+ * DIRECTEMENT en base depuis le navigateur, sans passer par l'API. Ni miroir
+ * dans la feuille, ni `statut_livraison`, ni notification au client : le
+ * marchand faisait avancer sa commande et le client n'en savait rien.
+ *
+ * Ce qu'il avait de bon a ete repris ici : l'alerte temps reel et la
+ * recherche. Il redirige desormais vers cette page.
+ */
 
 type Cmd = {
   order_id: string; customer_name: string; phone: string; address: string;
@@ -38,6 +59,7 @@ const parseItems = (s: string) => {
 export default function Page() {
   const [cmds, setCmds] = useState<Cmd[]>([]);
   const [filtre, setFiltre] = useState('tous');
+  const [recherche, setRecherche] = useState('');
   const [busy, setBusy] = useState<string | null>(null);
 
   const { boutiqueId, boutiques, pret } = useBoutique();
@@ -59,6 +81,62 @@ export default function Page() {
     charger();
     const t = setInterval(charger, 10000);
     return () => clearInterval(t);
+  }, [pret, boutiqueId]);
+
+  /**
+   * Alerte immediate a l'arrivee d'une commande, son compris.
+   *
+   * Le rafraichissement de dix secondes finit par la montrer, mais sans rien
+   * dire : un marchand qui ne regarde pas l'ecran ne voit rien venir. Cette
+   * alerte n'existait que sur l'ancien ecran, celui qui n'etait pas au menu.
+   *
+   * Le filtre par boutique est pose explicitement. RLS interdit deja de lire
+   * les commandes d'un autre — c'est verifie — mais un abonnement sans filtre
+   * reveille la page pour rien des qu'un marchand quelconque vend, et un
+   * compte qui tient deux boutiques verrait sonner l'une pour l'autre.
+   */
+  useEffect(() => {
+    if (!pret) return;
+
+    let annule = false;
+    let canal: ReturnType<typeof supabase.channel> | null = null;
+
+    void (async () => {
+      const uuid = await uuidBoutiqueCourante(boutiqueId);
+      if (!uuid || annule) return;
+
+      canal = supabase
+        .channel(`commandes-${uuid}`)
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'commandes',
+            filter: `boutique_id=eq.${uuid}`,
+          },
+          (payload) => {
+            const n = payload.new as { client_nom?: string; total?: number; statut?: string };
+            // Un panier n'est pas une commande : il s'ecrit des que le client
+            // ajoute un article, et sonnerait a chaque geste.
+            if (n.statut === 'panier') return;
+
+            window.addNotification?.({
+              id: `cmd-${Date.now()}`,
+              type: 'new-order',
+              title: 'Nouvelle commande !',
+              message: `${n.client_nom || 'Client'} — ${Number(n.total || 0).toLocaleString('fr-FR')} FCFA`,
+            });
+            void charger();
+          },
+        )
+        .subscribe();
+    })();
+
+    return () => {
+      annule = true;
+      if (canal) void supabase.removeChannel(canal);
+    };
   }, [pret, boutiqueId]);
 
   const agir = async (order_id: string, action: 'acceptee' | 'route' | 'livree') => {
@@ -90,6 +168,15 @@ export default function Page() {
 
   // Filtres classiques (livraison) + filtres confirmation
   const filtrées = cmds.filter(c => {
+    // Le marchand cherche une commande dont un client lui parle au telephone :
+    // il a sa reference, ou juste son nom, ou juste son numero. Les trois
+    // doivent repondre.
+    const q = recherche.trim().toLowerCase();
+    if (q) {
+      const cible = `${c.order_id} ${c.customer_name} ${c.phone} ${c.address}`.toLowerCase();
+      if (!cible.includes(q)) return false;
+    }
+
     if (filtre === 'tous') return true;
     if (filtre === 'attente') return !c.nom_livreur && !/livr|route/i.test(c.statut_livraison);
     if (filtre === 'route') return /route|part|cours/i.test(c.statut_livraison) && !!c.nom_livreur;
@@ -157,7 +244,18 @@ export default function Page() {
               <h1 className="mt-2 font-display text-3xl font-black">Commandes · {nomBoutique}</h1>
               <p className="mt-1 text-sm text-chaux-600">{cmds.length} commandes · {filtrées.length} affichées · refresh 10s</p>
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-col gap-3 md:items-end">
+              <label className="relative w-full md:w-72">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-chaux-600" />
+                <input
+                  type="search"
+                  value={recherche}
+                  onChange={(e) => setRecherche(e.target.value)}
+                  placeholder="Référence, nom, téléphone…"
+                  className="w-full rounded-full border border-[var(--hairline)] bg-white/80 py-2 pl-9 pr-4 text-sm text-nuit-900 placeholder:text-chaux-600 focus:border-nuit-400 focus:outline-none"
+                />
+              </label>
+              <div className="flex flex-wrap gap-2">
               {[
                 ['tous', 'Toutes', cmds.length],
                 ['attente', 'En attente', cmds.filter(c => !c.nom_livreur).length],
@@ -171,6 +269,7 @@ export default function Page() {
                   {l} · {n}
                 </button>
               ))}
+              </div>
             </div>
           </header>
 
@@ -301,6 +400,9 @@ export default function Page() {
           </div>
         </main>
       </div>
+
+      {/* Recoit les alertes posees par l'abonnement temps reel ci-dessus. */}
+      <NotificationToast />
     </div>
   );
 }

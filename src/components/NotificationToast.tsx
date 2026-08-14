@@ -102,7 +102,7 @@ export default function NotificationToast() {
               <div className="px-4 pb-3">
                 <button 
                   onClick={() => {
-                    window.location.href = '/dashboard/orders';
+                    window.location.href = '/dashboard/commandes';
                   }}
                   className="w-full py-2 bg-white text-mangue-600 rounded-lg text-xs font-bold hover:bg-mangue-50 transition"
                 >

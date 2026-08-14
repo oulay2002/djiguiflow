@@ -170,7 +170,7 @@ export default function CustomersPage() {
               </button>
               {/* Navigation, pas action : le bissap reste réservé au geste
                   qui engage. */}
-              <Link href="/dashboard/orders" className={classesBouton('calme')}>
+              <Link href="/dashboard/commandes" className={classesBouton('calme')}>
                 Commandes récentes
                 <ArrowRight className="h-4 w-4" />
               </Link>
