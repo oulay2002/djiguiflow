@@ -51,3 +51,7 @@ next-env.d.ts
 
 # graphify : graphe de connaissance regenerable via `graphify update .`
 /graphify-out/
+
+# supabase : etat de travail de la CLI, propre a la machine.
+# Les migrations, elles, restent versionnees.
+/supabase/.temp/
