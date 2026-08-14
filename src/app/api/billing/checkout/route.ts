@@ -170,7 +170,7 @@ export async function POST(request: Request) {
     mois,
     montant_fcfa: montant,
     statut: 'en_attente',
-  } as never);
+  });
 
   if (erreurInsert) {
     console.error('Checkout — enregistrement de l intention impossible :', erreurInsert);
@@ -187,7 +187,7 @@ export async function POST(request: Request) {
   });
 
   if ('erreur' in resultat) {
-    await admin.from('paiements').update({ statut: 'echoue' } as never).eq('reference', reference);
+    await admin.from('paiements').update({ statut: 'echoue' }).eq('reference', reference);
 
     // Prestataire injoignable, ou en panne chez lui : le marchand n'a rien a
     // corriger. Il lisait jusqu'ici le message brut de la couche reseau —
