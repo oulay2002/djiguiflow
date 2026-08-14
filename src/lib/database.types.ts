@@ -1,6 +1,3 @@
-// Genere depuis le schema Supabase. Ne pas editer a la main.
-// Regenerer avec : npm run types:db
-
 export type Json =
   | string
   | number
@@ -142,6 +139,8 @@ export type Database = {
           client_adresse: string
           client_nom: string
           client_telephone: string
+          confirmation_heure: string | null
+          confirmation_statut: string | null
           created_at: string | null
           heure_livraison: string | null
           heure_prise_en_charge: string | null
@@ -163,6 +162,8 @@ export type Database = {
           client_adresse: string
           client_nom: string
           client_telephone: string
+          confirmation_heure?: string | null
+          confirmation_statut?: string | null
           created_at?: string | null
           heure_livraison?: string | null
           heure_prise_en_charge?: string | null
@@ -184,6 +185,8 @@ export type Database = {
           client_adresse?: string
           client_nom?: string
           client_telephone?: string
+          confirmation_heure?: string | null
+          confirmation_statut?: string | null
           created_at?: string | null
           heure_livraison?: string | null
           heure_prise_en_charge?: string | null
@@ -392,57 +395,6 @@ export type Database = {
           },
         ]
       }
-      produits: {
-        Row: {
-          boutique_id: string
-          categorie: string | null
-          created_at: string | null
-          description: string | null
-          disponible: boolean | null
-          id: string
-          menu_du_jour: boolean
-          nom: string | null
-          photo_url: string | null
-          prix: number | null
-          reference: string | null
-          seuil_alerte: number | null
-          stock: number | null
-          stock_initial: number | null
-        }
-        Insert: {
-          boutique_id?: string
-          categorie?: string | null
-          created_at?: string | null
-          description?: string | null
-          disponible?: boolean | null
-          id?: string
-          menu_du_jour?: boolean
-          nom?: string | null
-          photo_url?: string | null
-          prix?: number | null
-          reference?: string | null
-          seuil_alerte?: number | null
-          stock?: number | null
-          stock_initial?: number | null
-        }
-        Update: {
-          boutique_id?: string
-          categorie?: string | null
-          created_at?: string | null
-          description?: string | null
-          disponible?: boolean | null
-          id?: string
-          menu_du_jour?: boolean
-          nom?: string | null
-          photo_url?: string | null
-          prix?: number | null
-          reference?: string | null
-          seuil_alerte?: number | null
-          stock?: number | null
-          stock_initial?: number | null
-        }
-        Relationships: []
-      }
       paiements: {
         Row: {
           created_at: string
@@ -479,6 +431,60 @@ export type Database = {
           reference?: string
           statut?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      produits: {
+        Row: {
+          boutique_id: string
+          categorie: string | null
+          created_at: string | null
+          description: string | null
+          disponible: boolean | null
+          id: string
+          menu_du_jour: boolean
+          nom: string | null
+          photo_url: string | null
+          prix: number | null
+          quantite_stock: number | null
+          reference: string | null
+          seuil_alerte: number | null
+          stock: number | null
+          stock_initial: number | null
+        }
+        Insert: {
+          boutique_id?: string
+          categorie?: string | null
+          created_at?: string | null
+          description?: string | null
+          disponible?: boolean | null
+          id?: string
+          menu_du_jour?: boolean
+          nom?: string | null
+          photo_url?: string | null
+          prix?: number | null
+          quantite_stock?: number | null
+          reference?: string | null
+          seuil_alerte?: number | null
+          stock?: number | null
+          stock_initial?: number | null
+        }
+        Update: {
+          boutique_id?: string
+          categorie?: string | null
+          created_at?: string | null
+          description?: string | null
+          disponible?: boolean | null
+          id?: string
+          menu_du_jour?: boolean
+          nom?: string | null
+          photo_url?: string | null
+          prix?: number | null
+          quantite_stock?: number | null
+          reference?: string | null
+          seuil_alerte?: number | null
+          stock?: number | null
+          stock_initial?: number | null
         }
         Relationships: []
       }
@@ -564,7 +570,64 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      borne_periode: { Args: { p_periode: string }; Returns: string }
       bytea_to_text: { Args: { data: string }; Returns: string }
+      canaux_par_commande: {
+        Args: { p_commande: string }
+        Returns: {
+          boutique_id: string
+          groupe_livreurs: string
+          nom: string
+          sheet_commandes: string
+          sheet_menu: string
+          slug: string
+          telegram_marchand: string
+          telephone: string
+        }[]
+      }
+      canaux_par_session: {
+        Args: { p_session_id: string }
+        Returns: {
+          boutique_id: string
+          groupe_livreurs: string
+          nom: string
+          sheet_commandes: string
+          sheet_menu: string
+          slug: string
+          telegram_marchand: string
+          telephone: string
+        }[]
+      }
+      canaux_par_slug: {
+        Args: { p_slug: string }
+        Returns: {
+          boutique_id: string
+          groupe_livreurs: string
+          nom: string
+          sheet_commandes: string
+          sheet_menu: string
+          slug: string
+          telegram_marchand: string
+          telephone: string
+        }[]
+      }
+      definir_jeton_canal: {
+        Args: { p_canal: string; p_jeton: string; p_slug: string }
+        Returns: undefined
+      }
+      definir_secret_webhook: {
+        Args: { p_secret: string; p_slug: string }
+        Returns: undefined
+      }
+      definir_secret_webhook_telegram: {
+        Args: { p_secret: string; p_slug: string }
+        Returns: undefined
+      }
+      definir_session_wasender: {
+        Args: { p_slug: string; p_token: string }
+        Returns: undefined
+      }
+      empreinte_session: { Args: { p_valeur: string }; Returns: string }
       http: {
         Args: { request: Database["public"]["CompositeTypes"]["http_request"] }
         Returns: Database["public"]["CompositeTypes"]["http_response"]
@@ -690,6 +753,82 @@ export type Database = {
         Args: { curlopt: string; value: string }
         Returns: boolean
       }
+      jeton_canal: {
+        Args: { p_boutique: string; p_canal: string }
+        Returns: string
+      }
+      prolonger_acces: {
+        Args: {
+          p_mois: number
+          p_plan_key: string
+          p_reference: string
+          p_user_id: string
+        }
+        Returns: string
+      }
+      rapport_activite: {
+        Args: { p_periode?: string }
+        Returns: {
+          annulees: number
+          avis: number
+          boutique_nom: string
+          ca: number
+          commandes: number
+          livrees: number
+          note_moyenne: number
+          panier_moyen: number
+          slug: string
+        }[]
+      }
+      rapport_clients: {
+        Args: { p_periode?: string }
+        Returns: {
+          boutique_nom: string
+          client: string
+          commandes: number
+          slug: string
+          telephone: string
+          total: number
+        }[]
+      }
+      rapport_retards: {
+        Args: never
+        Returns: {
+          boutique_nom: string
+          client_adresse: string
+          client_nom: string
+          client_telephone: string
+          minutes: number
+          nom_livreur: string
+          order_id: string
+          slug: string
+          statut: string
+          statut_livraison: string
+        }[]
+      }
+      rapport_stocks: {
+        Args: never
+        Returns: {
+          boutique_nom: string
+          niveau: string
+          produit: string
+          restant: number
+          seuil: number
+          slug: string
+          stock_initial: number
+          vendus: number
+        }[]
+      }
+      rapport_top_plats: {
+        Args: { p_periode?: string }
+        Returns: {
+          boutique_nom: string
+          produit: string
+          quantite: number
+          slug: string
+        }[]
+      }
+      secret_webhook_n8n: { Args: never; Returns: string }
       text_to_bytea: { Args: { data: string }; Returns: string }
       urlencode:
         | { Args: { data: Json }; Returns: string }
@@ -705,6 +844,48 @@ export type Database = {
               error: true
             } & "Could not choose the best candidate function between: public.urlencode(string => bytea), public.urlencode(string => varchar). Try renaming the parameters or the function itself in the database so function overloading can be resolved"
           }
+      vitrine_boutique: {
+        Args: { p_ref: string }
+        Returns: {
+          categorie: string
+          description: string
+          emoji: string
+          id: string
+          logo_url: string
+          nom: string
+          slug: string
+          telephone: string
+          zone: string
+        }[]
+      }
+      vitrine_boutiques: {
+        Args: never
+        Returns: {
+          articles: number
+          avis: number
+          categorie: string
+          commandes_livrees: number
+          description: string
+          id: string
+          logo_url: string
+          nom: string
+          note_moyenne: number
+          slug: string
+          zone: string
+        }[]
+      }
+      vitrine_produits: {
+        Args: { p_ref: string }
+        Returns: {
+          categorie: string
+          description: string
+          id: string
+          menu_du_jour: boolean
+          nom: string
+          photo_url: string
+          prix: number
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
