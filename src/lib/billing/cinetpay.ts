@@ -1,12 +1,20 @@
 /**
  * Encaissement Mobile Money via CinetPay.
  *
- * ⚠ CODE NON VERIFIE CONTRE LA DOCUMENTATION. Ecrit le 13 aout 2026 alors que
- * `docs.cinetpay.com` etait injoignable depuis l'environnement de
- * developpement (DNS muet, `cinetpay.com` en 403). Le contrat ci-dessous suit
- * l'API v2 telle qu'elle est documentee publiquement, mais AUCUN appel n'a pu
- * etre teste. A valider par un paiement en mode test avant toute mise en
- * production, et a corriger sur pieces si les noms de champs different.
+ * ⚠ NE PAS REECRIRE CE CONTRAT. Verifie le 14 aout 2026 contre deux
+ * implementations reelles independantes et 431 depots publics : l'hote, les
+ * noms de champs et la lecture de la reponse sont bons. Ce qui bloque est
+ * ailleurs — `api-checkout.cinetpay.com` repond NXDOMAIN sur tous les types
+ * d'enregistrement, depuis Cloudflare qui fait autorite sur la zone. Le
+ * sous-domaine a disparu de leur zone, comme `docs.cinetpay.com`, ce qui
+ * explique que leur propre lien de documentation soit mort.
+ *
+ * `api.cinetpay.com` existe et expose une ancienne API v1 par methode. Ce
+ * n'est PAS le produit Checkout : ne pas y migrer.
+ *
+ * Pour savoir si c'est retabli : `dns.google/resolve?name=api-checkout
+ * .cinetpay.com&type=A`, `Status=0` = revenu. Puis derouler
+ * `/api/internal/billing/diagnostic`.
  *
  * Pourquoi CinetPay plutot que Stripe : Stripe n'accepte pas les entreprises
  * etablies en Cote d'Ivoire, et les marchands d'ici n'ont pas de carte. Une
@@ -19,11 +27,42 @@
 
 import { lookup } from 'node:dns/promises';
 
-const BASE = 'https://api-checkout.cinetpay.com/v2';
+/**
+ * Hote de l'API, change le 14 aout 2026 sur indication du support CinetPay,
+ * qui a renvoye le gerant vers `panel.cinetpay.net`.
+ *
+ * Ce qui est ETABLI par sondage : `api.cinetpay.net` est vivant, et il repond
+ * 404 sur une route inconnue mais 422 sur une route existante — ce qui permet
+ * de cartographier sa surface sans clé. Deux routes seulement existent :
+ * `/v1/payment` et `/v1/transfer`.
+ *
+ * Ce qui NE L'EST PAS : qu'il s'agisse bien du Checkout. Il authentifie avant
+ * de lire la requete (`1002 INVALID_TOKEN` sur tout POST, corps vide compris),
+ * donc seule une vraie clé peut le prouver — par la sonde
+ * `/api/internal/billing/diagnostic`.
+ *
+ * ⚠ ET SURTOUT : `/v1/payment/check` N'EXISTE PAS sur cet hote. La
+ * verification, seule chose qui ouvre les droits, n'a donc pas de route connue.
+ * `verifierPaiement` rend « indetermine » dans ce cas, et le webhook laisse la
+ * reference EN ATTENTE — jamais « echoue ». Tant que la bonne route n'est pas
+ * connue, un paiement reel ne sera pas enterre, mais il n'ouvrira rien non
+ * plus. C'est la question a poser a CinetPay.
+ */
+const BASE = 'https://api.cinetpay.net/v1';
 
 export type ResultatVerification = {
   /** Vrai seulement si le prestataire confirme un paiement accepte. */
   accepte: boolean;
+  /**
+   * Le prestataire n'a pas repondu, ou pas repondu un statut.
+   *
+   * A distinguer absolument d'un refus. Un refus est une reponse : la
+   * transaction n'a pas abouti, le dossier est clos. Un indetermine veut dire
+   * qu'on NE SAIT PAS — endpoint absent, panne reseau, corps illisible — et
+   * l'argent peut tres bien avoir ete preleve. Classer ce cas en « echoue »
+   * enterre un paiement encaisse.
+   */
+  indetermine: boolean;
   /** Montant reellement encaisse, en FCFA. A confronter a l'attendu. */
   montant: number | null;
   operateur: string | null;
@@ -63,7 +102,7 @@ export async function initialiserPaiement(params: {
   urlRetour: string;
   nomClient: string;
   telephoneClient?: string;
-}): Promise<{ url: string } | { erreur: string }> {
+}): Promise<{ url: string } | { erreur: string; injoignable?: boolean }> {
   const c = config();
   if (!c) return { erreur: 'Paiement non configuré sur ce déploiement.' };
 
@@ -95,7 +134,13 @@ export async function initialiserPaiement(params: {
       }),
     });
   } catch (e) {
-    return { erreur: e instanceof Error ? e.message : 'Prestataire injoignable.' };
+    // Node enveloppe toute panne reseau dans un « fetch failed » sans
+    // information, et ce texte remontait TEL QUEL au marchand, en pleine page :
+    // il lisait « fetch failed » et concluait que DjiguiFlow etait casse. La
+    // cause reelle — ENOTFOUND, certificat, delai — part au journal, ou elle
+    // sert a quelqu'un ; lui recoit une phrase qui lui dit quoi faire.
+    console.error('CinetPay — prestataire injoignable :', detailErreur(e));
+    return { erreur: 'Prestataire injoignable.', injoignable: true };
   }
 
   const corps = (await reponse.json().catch(() => null)) as
@@ -107,7 +152,12 @@ export async function initialiserPaiement(params: {
     // Le message du prestataire est journalise tel quel : c'est lui qui dit
     // « site_id inconnu » ou « montant invalide », et le deviner coute cher.
     console.error('CinetPay — initialisation refusée :', reponse.status, corps);
-    return { erreur: corps?.description || corps?.message || `Initialisation refusée (${reponse.status}).` };
+    return {
+      erreur: corps?.description || corps?.message || `Initialisation refusée (${reponse.status}).`,
+      // Une panne CHEZ eux n'est pas un refus : le marchand n'a rien a
+      // corriger et ne doit pas lire un jargon de prestataire.
+      injoignable: reponse.status >= 500,
+    };
   }
 
   return { url };
@@ -285,10 +335,16 @@ export async function sonderInitialisation(
  * signal « va verifier cette reference ».
  */
 export async function verifierPaiement(reference: string): Promise<ResultatVerification> {
-  const vide: ResultatVerification = { accepte: false, montant: null, operateur: null, statutBrut: null };
+  const inconnu = (statutBrut: string): ResultatVerification => ({
+    accepte: false,
+    indetermine: true,
+    montant: null,
+    operateur: null,
+    statutBrut,
+  });
 
   const c = config();
-  if (!c) return vide;
+  if (!c) return inconnu('CLES_ABSENTES');
 
   let reponse: Response;
   try {
@@ -298,8 +354,20 @@ export async function verifierPaiement(reference: string): Promise<ResultatVerif
       body: JSON.stringify({ ...c, transaction_id: reference }),
     });
   } catch (e) {
-    console.error('CinetPay — vérification injoignable :', e);
-    return vide;
+    console.error(`CinetPay — vérification de ${reference} injoignable :`, detailErreur(e));
+    return inconnu('INJOIGNABLE');
+  }
+
+  // Une route absente n'est pas un refus. Elle le devenait : un 404 ne porte
+  // aucun `data.status`, le statut tombait a null, `accepte` a faux, et le
+  // paiement etait classe « echoue ». Un marchand ayant reellement payé se
+  // serait vu refuser son acces, sans que rien ne le signale.
+  if (!reponse.ok) {
+    console.error(
+      `CinetPay — vérification de ${reference} : HTTP ${reponse.status} sur ${BASE}/payment/check.`
+      + ' Route de vérification introuvable ou en panne — le paiement reste EN ATTENTE.',
+    );
+    return inconnu(`HTTP_${reponse.status}`);
   }
 
   const corps = (await reponse.json().catch(() => null)) as
@@ -307,12 +375,21 @@ export async function verifierPaiement(reference: string): Promise<ResultatVerif
     | null;
 
   const statut = corps?.data?.status ?? null;
+
+  // Repondu, mais sans statut : contrat different de celui qu'on attend. On ne
+  // conclut rien plutot que de conclure « refusé ».
+  if (!statut) {
+    console.error(`CinetPay — vérification de ${reference} : réponse sans statut.`, corps);
+    return inconnu('SANS_STATUT');
+  }
+
   const montantBrut = corps?.data?.amount;
   const montant =
     montantBrut === undefined || montantBrut === null ? null : Number(montantBrut);
 
   return {
     accepte: statut === 'ACCEPTED',
+    indetermine: false,
     montant: Number.isFinite(montant) ? montant : null,
     operateur: corps?.data?.payment_method ?? null,
     statutBrut: statut,

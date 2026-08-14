@@ -92,6 +92,20 @@ export async function POST(req: Request) {
 
   const verdict = await verifierPaiement(reference);
 
+  // On NE SAIT PAS. Route de vérification absente, prestataire injoignable,
+  // contrat different : l'argent peut avoir ete preleve. Classer ce cas en
+  // « echoue » enterrerait un paiement encaisse, et le marchand n'aurait ni
+  // son acces ni trace de sa demande. On laisse donc la reference EN ATTENTE
+  // et on repond 503 : le prestataire rejouera sa notification, et la panne
+  // remonte au canal d'alerte au lieu de se ranger dans les refus.
+  if (verdict.indetermine) {
+    console.error(
+      `Paiement ${reference} — vérification impossible (${verdict.statutBrut}).`
+      + ' Laissé en attente : ne pas le compter comme refusé.',
+    );
+    return NextResponse.json({ error: 'Vérification impossible.' }, { status: 503 });
+  }
+
   if (!verdict.accepte) {
     await sb
       .from('paiements')

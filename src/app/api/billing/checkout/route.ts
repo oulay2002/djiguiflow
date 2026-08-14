@@ -21,6 +21,18 @@ type CorpsRequete = {
   mois?: number;
 };
 
+/**
+ * Ce que lit le marchand quand l'encaissement ne peut pas s'ouvrir — que les
+ * cles manquent ou que le prestataire soit injoignable.
+ *
+ * Les deux cas se ressemblent de son point de vue : il veut payer, il ne peut
+ * pas, et il n'y est pour rien. Une seule phrase, definie une seule fois, pour
+ * que les deux chemins ne divergent pas.
+ */
+const PAIEMENT_INDISPONIBLE =
+  "Le paiement en ligne n'est pas encore ouvert. Écrivez-nous et nous "
+  + 'activons votre formule à la main, sans attendre.';
+
 function getBearerToken(request: Request): string | null {
   const authHeader = request.headers.get('authorization');
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -139,14 +151,7 @@ export async function POST(request: Request) {
     // configure sur ce deploiement » etait exact et inutile : il ne lui disait
     // ni que ca allait s'ouvrir, ni quoi faire en attendant, et le laissait
     // penser que la panne venait de lui.
-    return NextResponse.json(
-      {
-        error:
-          "Le paiement en ligne n'est pas encore ouvert. Écrivez-nous et nous "
-          + 'activons votre formule à la main, sans attendre.',
-      },
-      { status: 503 },
-    );
+    return NextResponse.json({ error: PAIEMENT_INDISPONIBLE }, { status: 503 });
   }
 
   const admin = getSupabaseAdmin();
@@ -183,6 +188,17 @@ export async function POST(request: Request) {
 
   if ('erreur' in resultat) {
     await admin.from('paiements').update({ statut: 'echoue' } as never).eq('reference', reference);
+
+    // Prestataire injoignable, ou en panne chez lui : le marchand n'a rien a
+    // corriger. Il lisait jusqu'ici le message brut de la couche reseau —
+    // « fetch failed » — en pleine page, ce qui lui faisait croire que le
+    // defaut venait de DjiguiFlow ou de lui.
+    if (resultat.injoignable) {
+      return NextResponse.json({ error: PAIEMENT_INDISPONIBLE }, { status: 503 });
+    }
+
+    // Un vrai refus, lui, se dit tel quel : « montant invalide », « site_id
+    // inconnu » nomment la cause, et la deviner couterait cher.
     return NextResponse.json({ error: resultat.erreur }, { status: 502 });
   }
 
