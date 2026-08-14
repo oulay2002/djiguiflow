@@ -149,6 +149,7 @@ export type Database = {
           instructions: string | null
           nom_livreur: string | null
           note_client: number | null
+          note_heure: string | null
           position_livreur: string | null
           reference: string | null
           statut: string | null
@@ -169,6 +170,7 @@ export type Database = {
           instructions?: string | null
           nom_livreur?: string | null
           note_client?: number | null
+          note_heure?: string | null
           position_livreur?: string | null
           reference?: string | null
           statut?: string | null
@@ -189,6 +191,7 @@ export type Database = {
           instructions?: string | null
           nom_livreur?: string | null
           note_client?: number | null
+          note_heure?: string | null
           position_livreur?: string | null
           reference?: string | null
           statut?: string | null

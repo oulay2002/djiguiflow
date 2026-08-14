@@ -14,7 +14,7 @@ export const dynamic = 'force-dynamic';
  * Passer par ici evite le probleme et aligne ce flux sur tous les autres :
  * n8n demande, le serveur ecrit.
  *
- * LA PREMIERE NOTE FAIT FOI.
+ * LA PREMIERE NOTE FAIT FOI, PASSE UNE HEURE.
  *
  * Les boutons de notation restent cliquables indefiniment dans l'historique
  * Telegram du client — le workflow qui les emet le documente lui-meme. Rien
@@ -22,15 +22,19 @@ export const dynamic = 'force-dynamic';
  * apres : un 5/5 devenait un 1/5, ou l'inverse, sans trace et sans que le
  * gerant l'apprenne. Le contraire d'un avis.
  *
- * La garde est portee par le `.is('note_client', null)` de la mise a jour, et
- * non par une lecture prealable : une lecture suivie d'une ecriture laisserait
- * passer deux clics simultanes. Une seule instruction, donc un seul verrou.
+ * L'inverse — figer des le premier clic — punissait la faute de frappe : un
+ * client visant 5 et touchant 4 restait avec 4. Une heure de battement
+ * rattrape le doigt qui glisse sans rouvrir la porte.
  *
- * Ce choix rend la note DEFINITIVE, y compris pour une faute de frappe du
- * client. C'est assume : l'avis appartient au moment ou il est donne. Pour
- * autoriser une correction breve, il suffirait de remplacer la condition par
- * une fenetre de temps sur la date de notation.
+ * La garde est portee par la mise a jour ELLE-MEME, et non par une lecture
+ * prealable : une lecture suivie d'une ecriture laisserait passer deux clics
+ * simultanes. Une seule instruction, donc un seul verrou.
+ *
+ * Les commandes notees avant l'ajout de `note_heure` ont un instant inconnu :
+ * la condition de fenetre est alors fausse et leur note reste definitive. Leur
+ * inventer un horodatage rouvrirait une correction sur des avis anciens.
  */
+const FENETRE_CORRECTION_MS = 60 * 60 * 1000;
 export async function POST(req: Request) {
   const secret = req.headers.get('x-sync-secret');
   if (!process.env.SYNC_SECRET || secret !== process.env.SYNC_SECRET) {
@@ -57,14 +61,17 @@ export async function POST(req: Request) {
   const sb = getSupabaseAdmin();
   if (!sb) return NextResponse.json({ error: 'Base indisponible' }, { status: 503 });
 
-  // `.is('note_client', null)` est la garde : seule une commande pas encore
-  // notee est touchee. Deux clics simultanes ne peuvent donc pas se doubler,
-  // le filtre etant evalue par la base au moment de l'ecriture.
+  const maintenant = new Date();
+  const limite = new Date(maintenant.getTime() - FENETRE_CORRECTION_MS).toISOString();
+
+  // La garde : pas encore notee, OU notee il y a moins d'une heure. Le filtre
+  // est evalue par la base au moment de l'ecriture, donc deux clics simultanes
+  // ne peuvent pas se doubler.
   const { data, error } = await sb
     .from('commandes')
-    .update({ note_client: note })
+    .update({ note_client: note, note_heure: maintenant.toISOString() })
     .eq('reference', reference)
-    .is('note_client', null)
+    .or(`note_client.is.null,note_heure.gte.${limite}`)
     .select('id');
 
   if (error) {
@@ -81,7 +88,7 @@ export async function POST(req: Request) {
   // mais seulement sur ce chemin-la.
   const { data: existantes, error: erreurLecture } = await sb
     .from('commandes')
-    .select('note_client')
+    .select('note_client, note_heure')
     .eq('reference', reference)
     .limit(1);
 
@@ -96,15 +103,20 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true, reference, lignes: 0, etat: 'commande_inconnue' });
   }
 
-  // Deja notee : un bouton rejoue. On le dit, on n'ecrase pas.
+  // Notee il y a plus d'une heure : la fenetre de correction est passee. Un
+  // vieux bouton rejoue ne reecrit rien, et on le dit plutot que de laisser
+  // l'appelant croire son envoi pris en compte.
+  const ligne = existantes[0];
   console.log(
-    `Note client — ${reference} deja notee ${existantes[0].note_client}/5, rejeu a ${note}/5 ignore.`,
+    `Note client — ${reference} deja notee ${ligne.note_client}/5`
+    + ` (${ligne.note_heure ?? 'instant inconnu'}), rejeu a ${note}/5 hors fenetre, ignore.`,
   );
   return NextResponse.json({
     ok: true,
     reference,
     lignes: 0,
-    etat: 'deja_notee',
-    note_existante: existantes[0].note_client,
+    etat: 'fenetre_close',
+    note_existante: ligne.note_client,
+    note_heure: ligne.note_heure ?? null,
   });
 }
