@@ -1,6 +1,9 @@
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
+import type { Database } from '@/lib/database.types';
 
 export const dynamic = 'force-dynamic';
+
+type MajCommande = Database['public']['Tables']['commandes']['Update'];
 
 export async function POST(req: Request) {
   const secret = req.headers.get('x-sync-secret');
@@ -35,8 +38,10 @@ export async function POST(req: Request) {
     return t === '' ? undefined : t;
   };
 
-  const payload: Record<string, unknown> = {};
-  const poser = (colonne: string, valeur: string | undefined) => {
+  // Le nom de colonne etait un `string` libre : une colonne renommee ou mal
+  // orthographiee partait vers PostgREST et n echouait qu a l execution.
+  const payload: MajCommande = {};
+  const poser = <K extends keyof MajCommande>(colonne: K, valeur: MajCommande[K] | undefined) => {
     if (valeur !== undefined) payload[colonne] = valeur;
   };
 
@@ -65,17 +70,47 @@ export async function POST(req: Request) {
     }
     const { error } = await sb
       .from('commandes')
-      .update(payload as never)
+      .update(payload)
       .eq('reference', reference);
     if (error) return Response.json({ error: 'UPDATE: ' + error.message }, { status: 500 });
   } else {
-    // A la creation seulement, l'etat de depart est connu.
-    payload.statut = 'en_attente';
-    if (!payload.client_nom) payload.client_nom = 'Client';
-    if (!payload.canal) payload.canal = 'whatsapp';
-    const { error } = await sb
-      .from('commandes')
-      .insert({ ...payload, reference, boutique_id } as never);
+    // A LA CREATION, les colonnes NOT NULL doivent etre garanties ICI.
+    //
+    // Elles ne l'etaient pas : seuls `client_nom` et `canal` avaient un
+    // defaut. Un corps sans telephone, sans adresse ou sans total partait
+    // quand meme, et c'est Postgres qui le refusait — l'appelant recevait un
+    // « INSERT: null value in column ... violates not-null constraint », la
+    // commande n'existait nulle part, et le message ne disait pas quel champ
+    // manquait dans SA requete. Le compilateur a revele le trou une fois la
+    // table typee.
+    const telephone = payload.client_telephone;
+    const adresse = payload.client_adresse;
+    const montant = payload.total;
+
+    const manquants: string[] = [];
+    if (!telephone) manquants.push('phone');
+    if (!adresse) manquants.push('address');
+    if (typeof montant !== 'number') manquants.push('total_price');
+
+    if (!telephone || !adresse || typeof montant !== 'number') {
+      return Response.json(
+        { error: `Creation impossible, champs requis absents : ${manquants.join(', ')}` },
+        { status: 400 },
+      );
+    }
+
+    const { error } = await sb.from('commandes').insert({
+      ...payload,
+      reference,
+      boutique_id,
+      // L'etat de depart n'est connu qu'a la creation.
+      statut: 'en_attente',
+      client_nom: payload.client_nom || 'Client',
+      canal: payload.canal || 'whatsapp',
+      client_telephone: telephone,
+      client_adresse: adresse,
+      total: montant,
+    });
     if (error) return Response.json({ error: 'INSERT: ' + error.message }, { status: 500 });
   }
 
@@ -165,7 +200,7 @@ export async function POST(req: Request) {
       prix_unitaire: priceMap.get(p.nom.toLowerCase()) ?? 0,
     }));
 
-    const { error: errItems } = await sb.from('commande_items').insert(rows as never);
+    const { error: errItems } = await sb.from('commande_items').insert(rows);
     if (errItems) return Response.json({ error: 'ITEMS: ' + errItems.message }, { status: 500 });
   }
 

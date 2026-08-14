@@ -102,7 +102,7 @@ export async function PATCH(req: Request) {
   // Remet le statut à null (pour que le badge redevienne "à confirmer")
   await sb
     .from('commandes')
-    .update({ confirmation_statut: null, confirmation_heure: null } as never)
+    .update({ confirmation_statut: null, confirmation_heure: null })
     .eq('reference', reference);
 
   const n8n = process.env.N8N_CONFIRMATION_URL;

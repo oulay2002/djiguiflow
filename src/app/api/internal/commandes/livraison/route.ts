@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
+import type { Database } from '@/lib/database.types';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,13 +17,19 @@ export const dynamic = 'force-dynamic';
  * propres chemins d'ecriture, et les ecraser depuis ici creerait des courses
  * de mise a jour.
  */
-type Champs = {
-  statut_livraison?: string;
-  nom_livreur?: string;
-  position_livreur?: string;
-  heure_prise_en_charge?: string;
-  heure_livraison?: string;
-};
+type MajCommande = Database['public']['Tables']['commandes']['Update'];
+
+/**
+ * Les colonnes de livraison, DERIVEES de la table.
+ *
+ * Elles etaient reecrites a la main : une colonne renommee en base laissait ce
+ * type inchange, et la mise a jour partait vers une colonne disparue. `Pick`
+ * les fait echouer a la compilation.
+ */
+type Champs = Pick<
+  MajCommande,
+  'statut_livraison' | 'nom_livreur' | 'position_livreur' | 'heure_prise_en_charge' | 'heure_livraison'
+>;
 
 /**
  * Neutralise les jokers d'un motif LIKE.
@@ -63,7 +70,7 @@ export async function POST(req: Request) {
 
   // Une chaine vide vaut « pas de changement » : la feuille en envoie pour les
   // colonnes qu'une etape ne renseigne pas.
-  const maj: Champs = {};
+  const maj: MajCommande = {};
   for (const champ of CHAMPS) {
     const valeur = String(corps[champ] ?? '').trim();
     if (valeur) maj[champ] = valeur;
@@ -86,7 +93,7 @@ export async function POST(req: Request) {
    * commande ouverte sans que rien ne le signale, derriere un 200 ok.
    */
   if (/^livr/i.test(maj.statut_livraison ?? '')) {
-    (maj as Record<string, string>).statut = 'livree';
+    maj.statut = 'livree';
   }
 
   const sb = getSupabaseAdmin();
@@ -94,7 +101,7 @@ export async function POST(req: Request) {
 
   const { data, error } = await sb
     .from('commandes')
-    .update(maj as never)
+    .update(maj)
     .ilike('reference', motifExact(reference))
     .select('id');
 

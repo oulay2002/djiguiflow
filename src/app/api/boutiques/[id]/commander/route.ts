@@ -166,7 +166,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
         total,
         canal: 'app',
         statut: 'en_attente',
-      } as never)
+      })
       .select('id')
       .single();
 
@@ -185,7 +185,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
         nom_produit: l.plat,
         quantite: l.quantite,
         prix_unitaire: l.prixUnitaire,
-      })) as never,
+      })),
     );
 
     if (errArticles) {

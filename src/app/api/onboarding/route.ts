@@ -5,6 +5,8 @@ import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import { brancherBotTelegram } from '@/lib/telegramBranchement';
 import type { Database } from '@/lib/database.types';
 
+type MajBoutique = Database['public']['Tables']['boutiques']['Update'];
+
 export const dynamic = 'force-dynamic';
 
 async function ficheDuConnecte(req: Request) {
@@ -175,11 +177,15 @@ export async function PATCH(req: Request) {
     faits.push('Bot Telegram branché');
   }
 
+  // `satisfies` verifie que chacun de ces noms est bien une colonne de
+  // `boutiques`. La liste etait de simples chaines : une colonne renommee y
+  // serait restee, et la mise a jour aurait echoue a l'execution.
   const autorises = [
     'telephone', 'telegram_marchand', 'groupe_livreurs',
     'sheet_commandes', 'sheet_menu', 'sheet_notes',
-  ];
-  const updates: Record<string, unknown> = {};
+  ] as const satisfies readonly (keyof MajBoutique)[];
+
+  const updates: MajBoutique = {};
   for (const k of autorises) {
     if (k in body && typeof body[k] === 'string') updates[k] = body[k].trim();
   }
@@ -202,7 +208,7 @@ export async function PATCH(req: Request) {
 
   const { data, error } = await r.sb
     .from('boutiques')
-    .update(updates as never)
+    .update(updates)
     .eq('id', r.boutique.id)
     .select()
     .single();

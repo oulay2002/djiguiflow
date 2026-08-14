@@ -123,7 +123,7 @@ export async function POST(req: Request) {
       statut_livraison: statutLivraison,
       ...(action === 'acceptee' ? { heure_prise_en_charge: maintenant } : {}),
       ...(action === 'livree' ? { heure_livraison: maintenant } : {}),
-    } as never)
+    })
     .eq('id', commande.id);
 
   if (errEcriture) {

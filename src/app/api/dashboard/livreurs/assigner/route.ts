@@ -60,15 +60,15 @@ export async function POST(req: Request) {
   // ---- 1. Les trois ecritures, comme les faisait l'ecran.
   const { error: errLivraison } = await sb
     .from('livraisons')
-    .insert({ commande_id: commandeId, livreur_id: livreurId, statut: 'assignee' } as never);
+    .insert({ commande_id: commandeId, livreur_id: livreurId, statut: 'assignee' });
 
   if (errLivraison) {
     console.error(`Assignation ${commande.reference} — livraison refusee :`, errLivraison);
     return Response.json({ error: 'Assignation impossible, réessayez' }, { status: 503 });
   }
 
-  await sb.from('commandes').update({ statut: 'en_livraison' } as never).eq('id', commandeId);
-  await sb.from('livreurs').update({ statut: 'en_livraison' } as never).eq('id', livreurId);
+  await sb.from('commandes').update({ statut: 'en_livraison' }).eq('id', commandeId);
+  await sb.from('livreurs').update({ statut: 'en_livraison' }).eq('id', livreurId);
 
   // ---- 2. Prevenir, ce qui n'etait jamais fait.
   //

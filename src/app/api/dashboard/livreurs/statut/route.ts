@@ -77,7 +77,7 @@ export async function POST(req: Request) {
     .update({
       statut,
       date_livraison: statut === 'livree' ? new Date().toISOString() : null,
-    } as never)
+    })
     .eq('id', livraisonId);
 
   if (errMaj) {
@@ -98,7 +98,7 @@ export async function POST(req: Request) {
   if (statutCommande[statut] && commandeId) {
     await sb
       .from('commandes')
-      .update({ statut: statutCommande[statut] } as never)
+      .update({ statut: statutCommande[statut] })
       .eq('id', commandeId);
   }
 

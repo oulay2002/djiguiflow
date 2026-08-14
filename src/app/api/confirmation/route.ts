@@ -163,7 +163,7 @@ export async function POST(req: Request) {
   const statut = r === 'oui' ? 'confirmee' : 'refusee';
   const { error: errUpd } = await sb
     .from('commandes')
-    .update({ confirmation_statut: statut, confirmation_heure: new Date().toISOString() } as never)
+    .update({ confirmation_statut: statut, confirmation_heure: new Date().toISOString() })
     .eq('reference', ligne.reference);
   if (errUpd) return reponseHtml('⏳', 'Erreur technique', 'Réessayez dans quelques secondes.', 503);
 
