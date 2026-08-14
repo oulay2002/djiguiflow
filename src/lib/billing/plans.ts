@@ -116,12 +116,30 @@ export const BILLING_PLANS: BillingPlan[] = [
  * contrainte, on en fait un argument — le marchand achete plusieurs mois d'un
  * coup et paie moins cher. On encaisse d'avance, et le « il a oublie de
  * payer » disparait avec elle.
+ *
+ * L'echelle etait 10 / 15 / 20 %. Elle a ete ramenee a 5 / 8 / 10 le 14 aout
+ * 2026, quand le cout WhatsApp est devenu connu : wasenderapi facture 6 USD
+ * par mois et par marchand actif, soit environ 3 600 F. Sur un Pro a 10 000 F,
+ * une remise de 20 % ne laissait plus que 4 400 F par mois pour payer n8n,
+ * Vercel, Supabase, Mistral et la commission Mobile Money — et cette remise se
+ * prenait entierement sur la marge, le cout wasender ne baissant pas d'un
+ * franc sur douze mois. A 10 %, il reste 5 400 F.
+ *
+ * L'echelle doit rester CROISSANTE. Plafonner la seule remise annuelle aurait
+ * rendu le douze mois moins avantageux que le six mois : le marchand aurait eu
+ * interet a acheter six mois deux fois, et le cas tendu se serait simplement
+ * deplace d'un palier.
+ *
+ * Et des pourcentages ENTIERS : la page Paiements affiche
+ * `Math.round(remise * 100)`. Un taux a 7,5 % s'annoncerait « −8 % » tout en
+ * debitant 7,5, ce qui est exactement l'ecart entre l'annonce et le debit que
+ * `montantPrepaye` s'applique a eviter.
  */
 export const DUREES_PREPAYEES = [
   { mois: 1, remise: 0, label: '1 mois' },
-  { mois: 3, remise: 0.1, label: '3 mois' },
-  { mois: 6, remise: 0.15, label: '6 mois' },
-  { mois: 12, remise: 0.2, label: '12 mois' },
+  { mois: 3, remise: 0.05, label: '3 mois' },
+  { mois: 6, remise: 0.08, label: '6 mois' },
+  { mois: 12, remise: 0.1, label: '12 mois' },
 ] as const;
 
 export type DureePrepayee = (typeof DUREES_PREPAYEES)[number];
