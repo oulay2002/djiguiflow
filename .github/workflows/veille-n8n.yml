@@ -1,0 +1,51 @@
+# Sonde externe : verifie que n8n execute encore.
+#
+# Elle tourne chez GitHub, et non sur Vercel ni dans n8n, pour ne partager
+# aucun point de defaillance avec ce qu'elle surveille. Voir l'en-tete de
+# scripts/veille-n8n.mjs pour la panne du 15 aout qui l'a motivee.
+name: Veille n8n
+
+on:
+  schedule:
+    # Abidjan ne change jamais d'heure : UTC = heure locale.
+    # Le temoin passe a l'heure pile de 7h a 21h ; on le controle a HH:20,
+    # ce qui laisse le temps a son execution de se terminer.
+    - cron: '20 7-21 * * *'
+  workflow_dispatch:
+    inputs:
+      forcer_alerte:
+        description: "Envoyer un message de test au groupe technique au lieu de verifier n8n"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+# Deux sondes en parallele n'apprendraient rien de plus et doubleraient l'alerte.
+concurrency:
+  group: veille-n8n
+  cancel-in-progress: false
+
+jobs:
+  sonder:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      # Le script sort en erreur uniquement s'il n'a PAS pu faire son travail
+      # (secret absent, Telegram injoignable). Une panne n8n detectee et
+      # signalee est un succes : l'action reste verte, et le message est parti.
+      - name: Verifier que n8n execute encore
+        run: node scripts/veille-n8n.mjs
+        env:
+          N8N_API_KEY: ${{ secrets.N8N_API_KEY }}
+          TELEGRAM_ALERTE_TOKEN: ${{ secrets.TELEGRAM_ALERTE_TOKEN }}
+          # Facultatifs : le script porte des valeurs par defaut.
+          N8N_API_URL: ${{ vars.N8N_API_URL }}
+          TELEGRAM_ALERTE_CHAT_ID: ${{ vars.TELEGRAM_ALERTE_CHAT_ID }}
+          VEILLE_FORCER_ALERTE: ${{ inputs.forcer_alerte == true && '1' || '0' }}
