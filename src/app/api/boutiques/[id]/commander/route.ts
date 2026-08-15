@@ -164,7 +164,15 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
         instructions: String(instructions || ''),
         chat_id: phone,
         total,
-        canal: 'app',
+        // `canal` dit COMMENT JOINDRE le client, pas d'ou vient la commande.
+        // Il a longtemps valu 'app', que ni `/api/canaux/envoyer` ni le routeur
+        // de « Envoyer reponse client » ne connaissent : les cinq notifications
+        // de livraison — acceptee, partie, en route, livree, demande de note —
+        // echouaient toutes en « Envoi impossible », sans que rien ne le
+        // signale. Le livreur et le gerant, eux, etaient bien prevenus, ce qui
+        // rendait la panne invisible. Un client de la vitrine laisse son
+        // numero : c'est sur WhatsApp qu'on le joint.
+        canal: 'whatsapp',
         statut: 'en_attente',
       })
       .select('id')
@@ -230,7 +238,11 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     statut_livraison: '',
     position_livreur: '',
     heure_livraison: '',
-    canal: 'app',
+    // Meme valeur qu'en base, et pour la meme raison : c'est cette colonne que
+    // « Acceptation Livraison » relit pour savoir ou joindre le client, et son
+    // aiguillage compare a 'whatsapp'. Les deux ecritures doivent rester
+    // d'accord, sinon la feuille et Supabase racontent deux histoires.
+    canal: 'whatsapp',
   };
 
   try {
