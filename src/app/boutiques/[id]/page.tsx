@@ -130,6 +130,7 @@ export default function Page() {
   const [instructions, setInstructions] = useState('');
   const [envoi, setEnvoi] = useState(false);
   const [confirmation, setConfirmation] = useState('');
+  const [echec, setEchec] = useState('');
   const [telBoutique, setTelBoutique] = useState('');
 
   useEffect(() => {
@@ -235,6 +236,9 @@ export default function Page() {
   const commander = async () => {
     if (estMarchandSheets) {
       setEnvoi(true);
+      // Une nouvelle tentative efface le verdict de la precedente : sans cela,
+      // un refus resterait affiche sous une commande qui vient de passer.
+      setEchec('');
       try {
         const res = await fetch(`/api/boutiques/${slug}/commander`, {
           method: 'POST',
@@ -248,7 +252,20 @@ export default function Page() {
         if (d.ok) {
           setConfirmation(d.order_id);
           setPanier({}); setNom(''); setTel(''); setAdresse(''); setInstructions('');
+        } else {
+          // Il n'y avait pas de `else` : quand l'API refusait, la page ne
+          // disait RIEN. Le bouton se reactivait, et le client repartait sans
+          // savoir si sa commande etait passee. Le panier est conserve, pour
+          // qu'il n'ait qu'a recommencer.
+          setEchec(
+            typeof d.error === 'string' && d.error
+              ? d.error
+              : 'Commande non enregistree, merci de reessayer.',
+          );
         }
+      } catch {
+        // Reseau coupe ou reponse illisible : meme regle, on ne se tait pas.
+        setEchec('Commande non envoyee, verifiez votre connexion et reessayez.');
       } finally { setEnvoi(false); }
     } else {
       const lignesTexte = lignes.map(l => `- ${l.q}x ${l.prod.nom} (${fcfa(l.q * l.prod.prix)} FCFA)`).join('\n');
@@ -365,6 +382,21 @@ export default function Page() {
               >
                 Suivre ma commande
               </Link>
+            </p>
+          </div>
+        )}
+
+        {/* Le pendant du bandeau « REÇUE ». Une commande refusee doit se voir
+            autant qu'une commande passee : c'est son absence qui a laisse un
+            client croire, le 15 aout, qu'il avait commande. */}
+        {echec && (
+          <div
+            role="alert"
+            className="mb-8 flex flex-wrap items-center gap-4 border border-red-200 bg-red-50 p-5"
+          >
+            <span className="stamp font-mono text-xs font-bold text-red-700">REFUSÉE</span>
+            <p className="text-sm text-red-800">
+              {echec} Votre panier est conservé.
             </p>
           </div>
         )}

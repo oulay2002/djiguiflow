@@ -208,10 +208,31 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
       );
     }
   } else {
-    // Environnement sans cle service_role (preview, local). On n'echoue pas :
-    // c'est une configuration absente, pas une ecriture qui rate.
-    console.warn(
-      `Commande ${order_id} — Supabase non configure, ecriture en feuille seule`,
+    // Sans client admin, RIEN n'est ecrit — et rien n'est signale non plus, le
+    // secret des webhooks se lisant lui aussi dans le coffre Supabase. Cette
+    // branche rendait pourtant `ok`, avec un numero de commande : le client
+    // voyait « REÇUE » et un lien de suivi qui repondait « Commande
+    // introuvable », le marchand ne voyait rien, et personne n'etait livre.
+    //
+    // Constate le 15 aout sur `ZAH-1786793412887-4521` : reference emise par
+    // cette route a 11h30, introuvable en base comme au suivi, et aucune
+    // execution n8n. Le mot « ecriture en feuille seule » decrivait une
+    // intention de la periode de double ecriture ; la feuille ne fait plus foi
+    // depuis, et le repli s'etait transforme en perte silencieuse.
+    //
+    // On echoue donc, bruyamment. Un client qui voit une erreur et recommence
+    // coute moins cher qu'un client qui croit avoir commande.
+    console.error(
+      `Commande ${order_id} — client admin Supabase indisponible, commande refusee`,
+    );
+    return Response.json(
+      {
+        error: 'Commande non enregistree, merci de reessayer',
+        // Nomme la cause pour que l'exploitant la distingue d'un refus
+        // d'insertion, sans rien exposer de la configuration.
+        raison: 'supabase_indisponible',
+      },
+      { status: 503 },
     );
   }
 
@@ -283,8 +304,13 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
           groupeLivreurs: m.groupeLivreurs,
         }),
       });
-    } catch {
-      // n8n injoignable : la commande est en base, le marchand la voit.
+    } catch (e) {
+      // n8n injoignable : la commande est en base, le marchand la voit. Non
+      // bloquant, donc — mais journalise. Ce `catch` etait vide, et il avalait
+      // aussi l'echec de `secretWebhookN8n()`, qui lit le coffre Supabase :
+      // quand Supabase manquait, les livreurs n'etaient jamais alertes et rien
+      // n'en gardait trace.
+      console.error(`Commande ${order_id} — webhook commande n8n injoignable :`, e);
     }
   }
 
@@ -309,7 +335,11 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
           boutique_id: m.boutiqueId,
         }),
       });
-    } catch { /* non bloquant */ }
+    } catch (e) {
+      // Non bloquant : la commande est en base. Mais journalise, pour la meme
+      // raison que ci-dessus — un `catch` muet cache un coffre injoignable.
+      console.error(`Commande ${order_id} — demande de confirmation injoignable :`, e);
+    }
   }
 
   return Response.json({ ok: true, order_id });
