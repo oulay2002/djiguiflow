@@ -26,7 +26,12 @@
 const ZONE = 'Africa/Abidjan';
 
 const conf = {
-  apiUrl: process.env.N8N_API_URL || 'https://oulai2002.app.n8n.cloud/api/v1',
+  // Migre le 16 aout 2026 de n8n Cloud vers le VPS auto-heberge. Les valeurs
+  // par defaut doivent TOUJOURS designer l'instance vivante : une sonde pointee
+  // sur l'ancienne surveillerait un serveur mort et se tairait — ou hurlerait —
+  // pour de mauvaises raisons. Elle donnerait dans les deux cas l'illusion
+  // d'une surveillance, ce qui est pire que pas de sonde du tout.
+  apiUrl: process.env.N8N_API_URL || 'https://n8n.djiguiflow.com/api/v1',
   apiKey: process.env.N8N_API_KEY,
   botToken: process.env.TELEGRAM_ALERTE_TOKEN,
   // Le groupe technique DjiguiFlow-Technique, volontairement distinct de tout
@@ -35,7 +40,12 @@ const conf = {
   // Alerte Retard Livraison. Temoin ideal : il tourne a cadence connue (toutes
   // les heures de 7h a 21h) et il REUSSIT meme quand il n'a rien a signaler,
   // ce qui en fait un battement de coeur propre.
-  canari: process.env.VEILLE_CANARI || 'hgAo49I79mGHgH65',
+  // L'identifiant est propre a CHAQUE instance : la migration en attribue un
+  // nouveau. Celui du Cloud etait `hgAo49I79mGHgH65`. Le conserver aurait
+  // interroge le VPS sur un workflow inexistant — donc « aucune execution
+  // reussie », donc une fausse alerte a chaque passage, jusqu'a ce que
+  // plus personne ne les lise.
+  canari: process.env.VEILLE_CANARI || 'xOTEplx2HMFYyPNx',
   nomCanari: 'Alerte Retard Livraison',
   // Le temoin passe a l'heure pile, la sonde a HH:20. Une reussite de moins de
   // 70 minutes tolere donc un passage manque et un retard d'ordonnancement.
@@ -194,9 +204,13 @@ async function main() {
         : 'Aucune execution reussie trouvee.',
       ...(cause ? ['', `Derniere erreur (execution ${cause.id}) :`, cause.message] : []),
       '',
+      // Le quota n'existe plus depuis le passage a l'auto-hebergement : le
+      // conseil ne vaut que si l'on etait revenu sur une offre managee. On
+      // garde la detection — elle ne coute rien et l'histoire montre qu'on
+      // regrette les garde-fous retires trop tot.
       quota
-        ? "👉 Le quota d'executions du plan est epuise. Releve le plan sur app.n8n.cloud — rien ne repartira sans cela."
-        : "👉 Ouvre les executions n8n : la cause y est nommee.",
+        ? "👉 Un quota d'executions est epuise. Sur une offre managee, releve le plan ; en auto-heberge, ce message ne devrait pas apparaitre."
+        : "👉 Ouvre les executions n8n : la cause y est nommee. Si l'API ne repond pas du tout, verifie le conteneur sur le VPS (docker ps, docker logs n8n-n8n-1).",
       '',
       "Tant que ceci dure, AUCUNE commande n'est traitee et aucun livreur n'est alerte.",
     ]);
