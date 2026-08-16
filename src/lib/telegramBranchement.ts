@@ -16,10 +16,23 @@ import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
  * passer pour un autre.
  */
 
-/** Racine du routeur Telegram n8n ; le slug du marchand y est ajoute. */
+/**
+ * Racine du routeur Telegram n8n ; le slug du marchand y est ajoute.
+ *
+ * La valeur par defaut doit TOUJOURS designer l'instance vivante. Elle a pointe
+ * sur `oulai2002.app.n8n.cloud` jusqu'au 16 aout 2026, date de la migration
+ * vers le VPS auto-heberge : un defaut laisse sur l'ancienne instance aurait
+ * branche chaque nouveau marchand sur un serveur arrete, en silence, le jour ou
+ * la variable d'environnement viendrait a manquer.
+ *
+ * Le segment en uuid n'est pas decoratif : n8n sert un webhook a la fois sous
+ * `/webhook/<chemin>` et sous `/webhook/<id du noeud>/<chemin>`, et c'est la
+ * seconde forme qui est enregistree ici. Sonder la premiere rend 404 et fait
+ * croire, a tort, que le routeur ne repond pas.
+ */
 export const URL_ROUTEUR_TELEGRAM =
   process.env.N8N_TELEGRAM_WEBHOOK_URL?.trim() ||
-  'https://oulai2002.app.n8n.cloud/webhook/c66464e0-8c2a-4c86-8d4f-36e126bfc108/telegram';
+  'https://n8n.djiguiflow.com/webhook/c66464e0-8c2a-4c86-8d4f-36e126bfc108/telegram';
 
 export type ResultatBranchement =
   | { ok: true; url: string }
