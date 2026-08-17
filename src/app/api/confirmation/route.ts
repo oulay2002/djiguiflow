@@ -54,6 +54,50 @@ function echapper(valeur: unknown): string {
 }
 
 /**
+ * Le bouton qui donne au livreur la porte exacte, et non le quartier.
+ *
+ * A Abidjan l'adresse est un repere : « akouedo », « pharmacie livie ». Un lien
+ * Maps bati sur ce texte ouvre le quartier. Le geocodage automatique rend
+ * souvent un point faux — et un point faux est PIRE que pas de point, parce que
+ * le livreur lui fait confiance et se perd avec assurance.
+ *
+ * Ici, le client vient de confirmer : il est dans un navigateur, en HTTPS, et
+ * son telephone sait donner une position au metre pres. Un appui suffit. C'est
+ * le seul chemin qui ne demande rien a copier et ne depend d'aucune passerelle
+ * tierce — une position partagee sur WhatsApp, elle, n'a jamais atteint nos
+ * webhooks.
+ *
+ * La reference passe par un attribut `data-`, echappe comme le reste de la
+ * page, et non par une interpolation dans le script : rien de ce qui vient du
+ * client ne doit devenir du code.
+ */
+function blocPosition(reference: string): string {
+  const style =
+    'background:#0f172a;color:#fff;border:0;border-radius:12px;padding:14px 20px;'
+    + 'font-size:15px;font-weight:600;cursor:pointer;width:100%';
+  return (
+    `<div id="pos" data-ref="${echapper(reference)}" style="margin-top:24px">`
+    + `<button id="btn-pos" style="${style}">📍 Indiquer ma position exacte</button>`
+    + '<p style="font-size:13px;color:#94a3b8;margin:10px 0 0">'
+    + 'Le livreur ira droit à votre porte, sans vous appeler.</p></div>'
+    + '<script>(function(){'
+    + "var z=document.getElementById('pos'),b=document.getElementById('btn-pos');"
+    + "function dire(t,c){z.innerHTML='<p style=\"margin:24px 0 0;font-size:14px;color:'+c+'\">'+t+'</p>';}"
+    + 'b.onclick=function(){'
+    + "if(!navigator.geolocation){dire('Votre téléphone ne partage pas sa position.','#b45309');return;}"
+    + "b.disabled=true;b.textContent='Localisation…';"
+    + 'navigator.geolocation.getCurrentPosition(function(p){'
+    + "fetch('/api/confirmation/position',{method:'POST',headers:{'Content-Type':'application/json'},"
+    + "body:JSON.stringify({ref:z.getAttribute('data-ref'),latitude:p.coords.latitude,longitude:p.coords.longitude})})"
+    + '.then(function(r){return r.json();}).then(function(j){'
+    + "dire(j&&j.ok?'✅ Merci, votre position est enregistrée.':'⚠️ Position non enregistrée.',j&&j.ok?'#15803d':'#b45309');})"
+    + "['catch'](function(){dire('⚠️ Position non enregistrée.','#b45309');});"
+    + "},function(){dire('Position refusée. Vous pouvez l’autoriser dans les réglages de votre navigateur.','#b45309');},"
+    + '{enableHighAccuracy:true,timeout:10000});};})();</script>'
+  );
+}
+
+/**
  * Neutralise les jokers d'un motif LIKE.
  *
  * La reference vient de la query string : « ? ref=% » ferait correspondre la
@@ -198,7 +242,15 @@ export async function POST(req: Request) {
     }
   }
 
+  // La position n'est proposee qu'apres une confirmation : demander a quelqu'un
+  // qui vient d'annuler ou se trouve sa porte n'a aucun sens.
   return statut === 'confirmee'
-    ? reponseHtml('✅', 'Commande confirmée !', 'Le commerçant prépare votre commande. Merci !')
+    ? reponseHtml(
+        '✅',
+        'Commande confirmée !',
+        'Le commerçant prépare votre commande. Merci !',
+        200,
+        blocPosition(ligne.reference),
+      )
     : reponseHtml('❌', 'Commande annulée', 'Le commerçant a été prévenu. Aucune somme ne sera due.');
 }
