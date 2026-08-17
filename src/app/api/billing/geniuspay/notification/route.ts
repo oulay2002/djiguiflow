@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import { verifierPaiement } from '@/lib/billing/geniuspay';
-import { prolongerAcces } from '@/lib/billing/periode';
+import { honorerPaiement } from '@/lib/billing/encaissement';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -202,95 +202,65 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true, ignore: 'référence inconnue' });
   }
 
-  // Idempotence : le prestataire rejoue ses notifications. Sans cette sortie,
-  // deux appels prolongeraient l'acces deux fois pour un seul paiement.
-  if (paiement.statut === 'paye') {
-    return NextResponse.json({ ok: true, deja: true });
-  }
-
-  // ---- LE VERDICT. Il ne vient pas de la notification mais de l'API.
-  // Deja obtenu si l'on a du passer par le recours ci-dessus.
-  const verdict = verdictObtenu ?? (await verifierPaiement(refPrestataire));
-
-  if (verdict.indetermine) {
-    // On NE SAIT PAS : prestataire injoignable, corps illisible, ou statut
-    // `pending`/`processing`. L'argent peut avoir ete preleve. Classer ce cas
-    // en « echoue » enterrerait un paiement encaisse. On laisse EN ATTENTE et
-    // on repond 503 : GeniusPay rejouera, et la panne remonte au canal
-    // d'alerte au lieu de se ranger dans les refus.
-    console.error(
-      `Paiement ${paiement.reference} — vérification indéterminée (${verdict.statutBrut}).`
-      + ' Laissé en attente : ne pas le compter comme refusé.',
-    );
-    return NextResponse.json({ error: 'Vérification impossible.' }, { status: 503 });
-  }
-
-  if (!verdict.accepte) {
-    await sb
-      .from('paiements')
-      .update({ statut: 'echoue', operateur: verdict.operateur })
-      .eq('reference', paiement.reference);
-
-    console.error(`Paiement ${paiement.reference} refusé : ${verdict.statutBrut ?? 'inconnu'}`);
-    return NextResponse.json({ ok: true, accepte: false });
-  }
-
-  // Le montant encaisse doit etre celui qu'on a demande.
-  if (verdict.montant !== null && verdict.montant !== paiement.montant_fcfa) {
-    await sb
-      .from('paiements')
-      .update({ statut: 'echoue', operateur: verdict.operateur })
-      .eq('reference', paiement.reference);
-
-    console.error(
-      `Paiement ${paiement.reference} — montant inattendu : encaissé ${verdict.montant},`
-      + ` attendu ${paiement.montant_fcfa}.`,
-    );
-    return NextResponse.json({ ok: true, accepte: false, motif: 'montant' });
-  }
-
-  // Une transaction simulee est reussie par construction : l'honorer donnerait
-  // un acces que personne n'a paye. Le paiement reste EN ATTENTE, jamais
-  // « echoue » — il n'a rien fait de mal.
-  const sandbox = verdict.environnement === 'sandbox';
-  if (sandbox && process.env.GENIUSPAY_ACCEPTE_SANDBOX !== '1') {
-    console.error(
-      `Paiement ${paiement.reference} — transaction de BAC A SABLE, accès non ouvert.`
-      + ' Posez GENIUSPAY_ACCEPTE_SANDBOX=1 pour éprouver la chaîne complète.',
-    );
-    return NextResponse.json({ ok: true, accepte: true, ouvert: false, motif: 'sandbox' });
-  }
-
-  const prolongation = await prolongerAcces({
-    userId: paiement.user_id,
-    planKey: paiement.plan_key,
-    mois: paiement.mois,
+  // ---- LE VERDICT ET L'OUVERTURE, par la MEME fonction que le rattrapage
+  // planifie. Ecrire deux fois les memes gardes sur de l'argent, c'est se
+  // garantir qu'elles divergeront : on corrigerait un jour le controle de
+  // montant d'un cote et pas de l'autre, et plus personne ne saurait lequel
+  // fait foi. L'idempotence, le montant confronte a l'attendu, le refus du bac
+  // a sable et le traitement de l'indetermine vivent tous la-bas.
+  const issue = await honorerPaiement({
     reference: paiement.reference,
+    refPrestataire,
+    verdictConnu: verdictObtenu,
   });
 
-  if (!prolongation.ok) {
-    // Le paiement est encaisse mais l'acces n'est pas ouvert : le seul cas ou
-    // l'on VEUT que le prestataire reessaie, et qu'une alerte parte.
-    console.error(
-      `Paiement ${paiement.reference} encaissé mais accès non ouvert : ${prolongation.erreur}`,
-    );
-    return NextResponse.json({ error: 'Prolongation impossible.' }, { status: 503 });
+  switch (issue.etat) {
+    case 'honore':
+      console.log(
+        `Paiement ${paiement.reference} encaissé (${issue.montant} XOF, ${issue.operateur})`
+        + ' — accès prolongé.',
+      );
+      return NextResponse.json({ ok: true, accepte: true, ouvert: true });
+
+    case 'deja':
+      return NextResponse.json({ ok: true, deja: true });
+
+    case 'indetermine':
+      // On NE SAIT PAS : prestataire injoignable, corps illisible, ou statut
+      // `pending`/`processing`. L'argent peut avoir ete preleve. On laisse EN
+      // ATTENTE et on repond 503 : GeniusPay rejouera, et la panne remonte au
+      // canal d'alerte au lieu de se ranger dans les refus.
+      console.error(
+        `Paiement ${paiement.reference} — vérification indéterminée (${issue.statutBrut}).`
+        + ' Laissé en attente : ne pas le compter comme refusé.',
+      );
+      return NextResponse.json({ error: 'Vérification impossible.' }, { status: 503 });
+
+    case 'refuse':
+      console.error(
+        `Paiement ${paiement.reference} refusé (${issue.motif}) : ${issue.statutBrut ?? 'inconnu'}`,
+      );
+      return NextResponse.json({ ok: true, accepte: false, motif: issue.motif });
+
+    case 'sandbox':
+      console.error(
+        `Paiement ${paiement.reference} — transaction de BAC A SABLE, accès non ouvert.`
+        + ' Posez GENIUSPAY_ACCEPTE_SANDBOX=1 pour éprouver la chaîne complète.',
+      );
+      return NextResponse.json({ ok: true, accepte: true, ouvert: false, motif: 'sandbox' });
+
+    case 'acces_non_ouvert':
+      // Encaisse mais acces ferme : le seul cas ou l'on VEUT que le prestataire
+      // reessaie, et qu'une alerte parte.
+      console.error(
+        `Paiement ${paiement.reference} encaissé mais accès non ouvert : ${issue.erreur}`,
+      );
+      return NextResponse.json({ error: 'Prolongation impossible.' }, { status: 503 });
+
+    default:
+      // `introuvable` ou `sans_jeton` : la ligne a bouge entre-temps, ou nous
+      // n'avons rien a interroger. Le rattrapage planifie reprendra la main.
+      console.error(`Paiement ${paiement.reference} — non honoré (${issue.etat}).`);
+      return NextResponse.json({ ok: true, ignore: issue.etat });
   }
-
-  await sb
-    .from('paiements')
-    .update({
-      statut: 'paye',
-      operateur: verdict.operateur,
-      paye_le: new Date().toISOString(),
-      jeton_prestataire: refPrestataire,
-    })
-    .eq('reference', paiement.reference);
-
-  console.log(
-    `Paiement ${paiement.reference} encaissé (${verdict.montant} XOF, ${verdict.operateur},`
-    + ` frais ${verdict.frais}, net ${verdict.net}) — accès prolongé.`,
-  );
-
-  return NextResponse.json({ ok: true, accepte: true, ouvert: true });
 }
