@@ -3,7 +3,9 @@ import { createClient } from '@supabase/supabase-js';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import { getBillingPlan, montantPrepaye, DUREES_PREPAYEES } from '@/lib/billing/plans';
 import { isMockBillingMode } from '@/lib/billing/mode';
-import { cinetpayConfigure, initialiserPaiement } from '@/lib/billing/cinetpay';
+import { initialiserPaiement as initialiserCinetpay } from '@/lib/billing/cinetpay';
+import { initialiserPaiement as initialiserGeniuspay } from '@/lib/billing/geniuspay';
+import { paiementConfigure, prestataireActif } from '@/lib/billing/prestataire';
 
 export const runtime = 'nodejs';
 
@@ -146,7 +148,7 @@ export async function POST(request: Request) {
     });
   }
 
-  if (!cinetpayConfigure()) {
+  if (!paiementConfigure()) {
     // Ce texte s'affiche tel quel au marchand, en pleine page. « Paiement non
     // configure sur ce deploiement » etait exact et inutile : il ne lui disait
     // ni que ca allait s'ouvrir, ni quoi faire en attendant, et le laissait
@@ -177,14 +179,31 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Enregistrement impossible.' }, { status: 503 });
   }
 
-  const resultat = await initialiserPaiement({
-    reference,
-    montantFcfa: montant,
-    description: `DjiguiFlow ${plan.name} — ${mois} mois`,
-    urlNotification: `${baseUrl}/api/billing/cinetpay/notification`,
-    urlRetour: `${baseUrl}/dashboard/paiements?reference=${reference}`,
-    nomClient: user.email ?? 'Marchand DjiguiFlow',
-  });
+  const description = `DjiguiFlow ${plan.name} — ${mois} mois`;
+  const urlRetour = `${baseUrl}/dashboard/paiements?reference=${reference}`;
+
+  // GeniusPay ne prend pas d'URL de notification dans la requete : elle se
+  // declare une fois pour toutes dans son tableau de bord. CinetPay, lui,
+  // l'attend a chaque appel — d'ou les deux formes.
+  const resultat =
+    prestataireActif() === 'geniuspay'
+      ? await initialiserGeniuspay({
+          reference,
+          montantFcfa: montant,
+          description,
+          urlRetour,
+          urlEchec: `${baseUrl}/dashboard/paiements?reference=${reference}&echec=1`,
+          nomClient: user.email ?? 'Marchand DjiguiFlow',
+          emailClient: user.email ?? undefined,
+        })
+      : await initialiserCinetpay({
+          reference,
+          montantFcfa: montant,
+          description,
+          urlNotification: `${baseUrl}/api/billing/cinetpay/notification`,
+          urlRetour,
+          nomClient: user.email ?? 'Marchand DjiguiFlow',
+        });
 
   if ('erreur' in resultat) {
     await admin.from('paiements').update({ statut: 'echoue' }).eq('reference', reference);
@@ -200,6 +219,27 @@ export async function POST(request: Request) {
     // Un vrai refus, lui, se dit tel quel : « montant invalide », « site_id
     // inconnu » nomment la cause, et la deviner couterait cher.
     return NextResponse.json({ error: resultat.erreur }, { status: 502 });
+  }
+
+  // SANS CETTE LIGNE, RIEN N'EST VERIFIABLE ENSUITE. GeniusPay emet sa propre
+  // reference, et c'est elle — pas la notre — qui interroge
+  // `GET /payments/{reference}`. Ne pas la conserver reviendrait a encaisser
+  // sans jamais pouvoir confirmer, donc sans jamais ouvrir d'acces.
+  const refPrestataire =
+    'referencePrestataire' in resultat ? String(resultat.referencePrestataire ?? '').trim() : '';
+
+  if (refPrestataire) {
+    const { error: erreurJeton } = await admin
+      .from('paiements')
+      .update({ jeton_prestataire: refPrestataire })
+      .eq('reference', reference);
+
+    if (erreurJeton) {
+      console.error(
+        `Checkout ${reference} — référence prestataire non conservée`
+        + ` (${refPrestataire}) : ${erreurJeton.message}`,
+      );
+    }
   }
 
   return NextResponse.json({ url: resultat.url, reference, montant });
