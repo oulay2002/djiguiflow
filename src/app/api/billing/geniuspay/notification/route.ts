@@ -146,7 +146,7 @@ export async function POST(req: Request) {
     .from('paiements')
     .select('reference, user_id, plan_key, mois, montant_fcfa, statut');
 
-  const { data: paiement, error } = refInterne
+  const { data: trouve, error } = refInterne
     ? await requete.eq('reference', refInterne).maybeSingle()
     : await requete.eq('jeton_prestataire', refPrestataire).maybeSingle();
 
@@ -155,8 +155,48 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Lecture impossible.' }, { status: 503 });
   }
 
+  let paiement = trouve;
+
+  // DERNIER RECOURS AVANT DE CLASSER « INCONNUE », et il compte parce que la
+  // branche d'a cote repond 200 : GeniusPay considere alors la notification
+  // delivree et ARRETE de reessayer. Se tromper ici, c'est de l'argent encaisse
+  // dont l'acces ne s'ouvrira jamais, avec pour seule trace une ligne de log.
+  //
+  // Le cas se produit sur double defaut : leur charge ne porte pas notre
+  // `metadata.reference`, ET `jeton_prestataire` n'a pas ete conserve a
+  // l'initialisation — le checkout journalise cet echec sans interrompre la
+  // vente, donc le marchand paie quand meme.
+  //
+  // L'API, elle, sait a qui appartient sa reference : elle rend notre propre
+  // reference telle qu'elle etait partie dans `metadata`. On la lui demande
+  // plutot que d'abandonner. Le verdict obtenu ici est conserve : le rappeler
+  // plus bas ferait deux appels pour une seule notification.
+  let verdictObtenu: Awaited<ReturnType<typeof verifierPaiement>> | null = null;
+
+  if (!paiement && !refInterne) {
+    verdictObtenu = await verifierPaiement(refPrestataire);
+
+    if (verdictObtenu.referenceInterne) {
+      const secours = await sb
+        .from('paiements')
+        .select('reference, user_id, plan_key, mois, montant_fcfa, statut')
+        .eq('reference', verdictObtenu.referenceInterne)
+        .maybeSingle();
+
+      if (secours.data) {
+        paiement = secours.data;
+        console.warn(
+          `GeniusPay webhook — paiement retrouvé par l’API et non par la base`
+          + ` (${verdictObtenu.referenceInterne}) : jeton_prestataire manquant à`
+          + ' l’initialisation, à vérifier.',
+        );
+      }
+    }
+  }
+
   // Reference inconnue : appel forge, ou transaction d'un autre site. On ne
-  // cree JAMAIS un droit a partir d'une notification.
+  // cree JAMAIS un droit a partir d'une notification. Ici le 200 est le bon
+  // choix — il n'y a rien a rejouer, et l'API elle-meme ne l'a pas reconnue.
   if (!paiement) {
     console.error(`GeniusPay webhook — référence inconnue : ${refInterne ?? refPrestataire}`);
     return NextResponse.json({ ok: true, ignore: 'référence inconnue' });
@@ -169,7 +209,8 @@ export async function POST(req: Request) {
   }
 
   // ---- LE VERDICT. Il ne vient pas de la notification mais de l'API.
-  const verdict = await verifierPaiement(refPrestataire);
+  // Deja obtenu si l'on a du passer par le recours ci-dessus.
+  const verdict = verdictObtenu ?? (await verifierPaiement(refPrestataire));
 
   if (verdict.indetermine) {
     // On NE SAIT PAS : prestataire injoignable, corps illisible, ou statut

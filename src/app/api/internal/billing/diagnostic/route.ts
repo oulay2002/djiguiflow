@@ -1,6 +1,12 @@
 import { NextResponse } from 'next/server';
 import { cinetpayConfigure, sonderInitialisation } from '@/lib/billing/cinetpay';
+import {
+  geniuspayBacASable,
+  geniuspayClesCoherentes,
+  geniuspayConfigure,
+} from '@/lib/billing/geniuspay';
 import { isMockBillingMode } from '@/lib/billing/mode';
+import { paiementConfigure, prestataireActif } from '@/lib/billing/prestataire';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -54,8 +60,15 @@ export async function GET(req: Request) {
   // Les noms seuls : de quoi reperer un `CINETPAY_APIKEY` mal orthographie ou
   // un `CINETPAY_SITE_ID ` avec une espace finale, invisibles dans l'interface
   // de Vercel.
+  // GENIUSPAY manquait a ce filtre : le diagnostic ne montrait donc AUCUNE
+  // variable du prestataire reellement en service, et une faute de frappe sur
+  // `GENIUSPAY_API_SECRET` y restait invisible — l'inverse de ce que cette
+  // route existe pour faire.
   const nomsVus = Object.keys(process.env)
-    .filter((n) => n.toUpperCase().includes('CINETPAY') || n.toUpperCase().includes('BILLING'))
+    .filter((n) => {
+      const N = n.toUpperCase();
+      return N.includes('CINETPAY') || N.includes('GENIUSPAY') || N.includes('BILLING');
+    })
     .sort();
 
   return NextResponse.json({
@@ -75,8 +88,26 @@ export async function GET(req: Request) {
       // qui nous parle : elle signe la notification de paiement. Son absence
       // n'empeche donc rien d'encaisser — voir la note du webhook.
       CINETPAY_SECRET_KEY: longueur(process.env.CINETPAY_SECRET_KEY),
+      GENIUSPAY_API_KEY: longueur(process.env.GENIUSPAY_API_KEY),
+      GENIUSPAY_API_SECRET: longueur(process.env.GENIUSPAY_API_SECRET),
     },
-    pretAEncaisser: cinetpayConfigure() && !isMockBillingMode(),
+    // Qui encaisse sur CE deploiement. Sans cette ligne, il fallait deviner
+    // lequel des deux prestataires repondait, alors que c'est la premiere
+    // question qu'on se pose devant un paiement qui n'aboutit pas.
+    prestataire: {
+      actif: prestataireActif(),
+      geniuspayConfigure: geniuspayConfigure(),
+      geniuspayBacASable: geniuspayBacASable(),
+      // null quand on ne peut pas conclure : la documentation de GeniusPay ment
+      // sur le prefixe des cles, donc l'incoherence n'est pas toujours decidable.
+      geniuspayClesCoherentes: geniuspayClesCoherentes(),
+      cinetpayConfigure: cinetpayConfigure(),
+    },
+    // Repondait sur CINETPAY seul : avec GeniusPay en service et CinetPay non
+    // configure, cette ligne annoncait « false » alors que la plateforme
+    // encaissait parfaitement. Un diagnostic qui se trompe envoie chercher la
+    // panne au mauvais endroit, ce qui est pire que pas de diagnostic.
+    pretAEncaisser: paiementConfigure() && !isMockBillingMode(),
     commentSonder:
       'POST sur cette meme route, avec un corps JSON optionnel {"surcharges": {...}} ' +
       'pour essayer d autres champs sans redeployer.',

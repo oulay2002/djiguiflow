@@ -1,3 +1,5 @@
+import { PRESTATAIRES } from '@/lib/billing/prestataires-connus';
+
 /**
  * Le tunnel de paiement est-il simule ?
  *
@@ -10,8 +12,15 @@
  * comme tel, quel que soit NODE_ENV. `cinetpay` manquait a l'appel, et un
  * `BILLING_MODE=cinetpay` pose en developpement basculait en simule sans rien
  * dire — le contraire de ce que la variable annonce.
+ *
+ * `geniuspay` manquait a son tour, pour la meme raison : la liste etait ecrite a
+ * la main ici, loin de l'endroit ou l'on ajoute un prestataire. Elle vient
+ * desormais de `PRESTATAIRES`, la source unique — ajouter un prestataire suffit
+ * a le faire reconnaitre ici. `stripe` reste cite a part : il n'est pas un
+ * prestataire du selecteur, mais un mode historique qu'un deploiement peut
+ * encore porter, et le retirer basculerait ce deploiement en simule.
  */
-const MODES_REELS = new Set(['cinetpay', 'stripe']);
+const MODES_REELS = new Set<string>([...PRESTATAIRES, 'stripe']);
 
 export function isMockBillingMode(): boolean {
   const serverMode = process.env.BILLING_MODE?.trim().toLowerCase();

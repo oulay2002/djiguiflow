@@ -19,7 +19,26 @@ import { geniuspayConfigure } from '@/lib/billing/geniuspay';
  * verification fonctionne, et la verification est la seule chose qui ouvre des
  * droits.
  */
-export type Prestataire = 'geniuspay' | 'cinetpay';
+/**
+ * La liste est une valeur, pas seulement un type, et c'est delibere.
+ *
+ * `mode.ts` doit connaitre tous les prestataires pour reconnaitre
+ * `BILLING_MODE=<nom>` comme un mode REEL. Quand la liste n'existait qu'en type,
+ * l'oubli etait invisible : `cinetpay` y a manque une premiere fois, puis
+ * `geniuspay` a l'ajout du second prestataire. Les deux fois, le symptome etait
+ * le meme — la variable annonce un prestataire, le code simule. Une seule liste
+ * partagee rend l'oubli impossible plutot que rare.
+ *
+ * Elle vit dans `prestataires-connus.ts`, un fichier SANS AUCUN IMPORT, et non
+ * ici : `mode.ts` tourne dans le navigateur, et la lire d'ici y entrainait
+ * `cinetpay.ts` avec son `node:dns/promises`. Le build cassait ; le typecheck ne
+ * voyait rien. On la re-exporte pour que les appelants n'aient pas a connaitre
+ * ce detail d'empaquetage.
+ */
+export { PRESTATAIRES } from '@/lib/billing/prestataires-connus';
+export type { Prestataire } from '@/lib/billing/prestataires-connus';
+
+import type { Prestataire } from '@/lib/billing/prestataires-connus';
 
 export function prestataireActif(): Prestataire | null {
   if (geniuspayConfigure()) return 'geniuspay';
