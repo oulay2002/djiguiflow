@@ -149,10 +149,13 @@ export type Database = {
           heure_prise_en_charge: string | null
           id: string
           instructions: string | null
+          latitude: number | null
+          longitude: number | null
           nom_livreur: string | null
           note_client: number | null
           note_heure: string | null
           position_livreur: string | null
+          position_recue_le: string | null
           reference: string | null
           statut: string | null
           statut_livraison: string | null
@@ -172,10 +175,13 @@ export type Database = {
           heure_prise_en_charge?: string | null
           id?: string
           instructions?: string | null
+          latitude?: number | null
+          longitude?: number | null
           nom_livreur?: string | null
           note_client?: number | null
           note_heure?: string | null
           position_livreur?: string | null
+          position_recue_le?: string | null
           reference?: string | null
           statut?: string | null
           statut_livraison?: string | null
@@ -195,10 +201,13 @@ export type Database = {
           heure_prise_en_charge?: string | null
           id?: string
           instructions?: string | null
+          latitude?: number | null
+          longitude?: number | null
           nom_livreur?: string | null
           note_client?: number | null
           note_heure?: string | null
           position_livreur?: string | null
+          position_recue_le?: string | null
           reference?: string | null
           statut?: string | null
           statut_livraison?: string | null
