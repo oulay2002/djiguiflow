@@ -78,6 +78,15 @@ type Livreur = {
 type Invitation = {
   chargement?: boolean;
   lien?: string;
+  /**
+   * Le code nu, pour composer « /start <code> » a la main.
+   *
+   * Necessaire des que le livreur a DEJA une conversation avec le bot :
+   * Telegram n'affiche alors plus de bouton DEMARRER, et ouvrir le lien ne
+   * transmet rien. Sans cette porte de secours, le rattachement est impossible
+   * — constate le 17 aout par le gerant sur son propre compte.
+   */
+  code?: string;
   erreur?: string;
 };
 
@@ -196,7 +205,10 @@ export default function LivreursPage() {
         return;
       }
 
-      setInvitations((etat) => ({ ...etat, [livreur.id]: { lien: rep.lien } }));
+      setInvitations((etat) => ({
+        ...etat,
+        [livreur.id]: { lien: rep.lien, code: rep.code },
+      }));
       // Un lien regenere detache le compte : la fiche affichee doit suivre,
       // sinon l'ecran continue d'annoncer un rattachement qui n'existe plus.
       if (regenerer) loadLivreurs();
@@ -427,15 +439,49 @@ export default function LivreursPage() {
                             className="flex-1 min-w-0 px-2 py-1.5 text-xs bg-chaux-50 border border-chaux-200 rounded-lg text-nuit-700"
                           />
                           <button
-                            onClick={() => copier(livreur.id, invitations[livreur.id].lien!)}
+                            onClick={() => copier(`${livreur.id}:lien`, invitations[livreur.id].lien!)}
                             title="Copier le lien"
                             className="p-2 text-nuit-600 hover:bg-nuit-50 rounded-lg transition shrink-0"
                           >
-                            {copie === livreur.id
+                            {copie === `${livreur.id}:lien`
                               ? <Check className="w-4 h-4 text-accent-600" />
                               : <Copy className="w-4 h-4" />}
                           </button>
                         </div>
+
+                        {/* Porte de secours. Si le livreur a deja discute avec
+                            le bot, Telegram n'affiche plus de bouton DEMARRER :
+                            ouvrir le lien n'envoie alors rien du tout, et le
+                            rattachement devient impossible sans cette commande
+                            toute prete. */}
+                        {invitations[livreur.id].code && (
+                          <details className="text-xs">
+                            <summary className="cursor-pointer text-chaux-600 hover:text-nuit-900">
+                              Le lien n’affiche pas de bouton « DÉMARRER » ?
+                            </summary>
+                            <p className="mt-2 text-chaux-600">
+                              C’est qu’une conversation existe déjà avec le bot. Collez plutôt
+                              cette commande dans la discussion :
+                            </p>
+                            <div className="mt-2 flex items-center gap-2">
+                              <input
+                                readOnly
+                                value={`/start ${invitations[livreur.id].code}`}
+                                onFocus={(e) => e.currentTarget.select()}
+                                className="flex-1 min-w-0 px-2 py-1.5 font-mono bg-chaux-50 border border-chaux-200 rounded-lg text-nuit-700"
+                              />
+                              <button
+                                onClick={() => copier(`${livreur.id}:cmd`, `/start ${invitations[livreur.id].code}`)}
+                                title="Copier la commande"
+                                className="p-2 text-nuit-600 hover:bg-nuit-50 rounded-lg transition shrink-0"
+                              >
+                                {copie === `${livreur.id}:cmd`
+                                  ? <Check className="w-4 h-4 text-accent-600" />
+                                  : <Copy className="w-4 h-4" />}
+                              </button>
+                            </div>
+                          </details>
+                        )}
                       </div>
                     ) : (
                       <>
