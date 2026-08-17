@@ -122,6 +122,21 @@ export async function POST(req: Request) {
     }
   }
 
+  // ---- L'EVENEMENT DE TEST. GeniusPay propose un bouton « Tester » qui envoie
+  // un `webhook.test` sans transaction — donc sans consommer de jeton de bac a
+  // sable, qui sont comptes (50 en tout). C'est le seul moyen de verifier
+  // gratuitement, et autant de fois qu'on veut, que l'URL est joignable ET que
+  // le secret concorde.
+  //
+  // Il arrive ICI, apres la verification de signature et avant la recherche de
+  // reference : un test n'en porte aucune, et le rejeter en 400 afficherait un
+  // echec dans leur tableau de bord alors que tout va bien.
+  const typeEvenement = String(charge.event ?? evenement ?? '');
+  if (typeEvenement === 'webhook.test') {
+    console.log('GeniusPay webhook — événement de test reçu et signature acceptée.');
+    return NextResponse.json({ ok: true, test: true });
+  }
+
   // ---- Retrouver de quoi on parle. Leur reference interroge l'API ; la notre
   // designe l'abonnement. On accepte plusieurs profondeurs : leur charge n'est
   // pas documentee, et supposer une forme unique casserait au premier envoi.
