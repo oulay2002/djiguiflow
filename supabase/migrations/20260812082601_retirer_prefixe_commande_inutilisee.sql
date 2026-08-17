@@ -1,0 +1,13 @@
+-- `boutiques.prefixe_commande` visait a deduire la boutique du prefixe d'une
+-- reference de commande. Le suivi ne procede plus ainsi : la reference est
+-- unique, la ligne de commande porte deja `boutique_id`, et l'on cherche donc
+-- la commande avant de lire sa boutique. Voir src/app/api/suivi/route.ts.
+--
+-- Verifie avant suppression le 12 aout 2026 : aucune reference dans le code
+-- applicatif, aucune vue, fonction, index, contrainte ni policy ne la cite, et
+-- aucun des vingt workflows n8n — dont « Cerveau marchand », qui fabrique les
+-- references — ne la lit. Elle n'apparaissait pas non plus dans l'historique
+-- des migrations : elle avait ete ajoutee a la main.
+--
+-- Une seule valeur y etait posee, conservee ici au cas ou : zahara = 'ZH'.
+alter table public.boutiques drop column if exists prefixe_commande;

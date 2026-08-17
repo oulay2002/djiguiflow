@@ -181,7 +181,17 @@ connecté, la lecture publique ne valant que pour `anon`.
 
 ### R6 — Le dépôt n'est plus la source de vérité du schéma
 
-**C'est le constat le plus lourd de cet audit**, et il n'est ni une faille ni un bug : c'est
+> **CORRIGÉ le 17 août 2026** — les 38 fichiers sont reconstitués depuis
+> `supabase_migrations.schema_migrations.statements`, donc fidèles au texte exact appliqué,
+> commentaires compris. Vérifié : 38 fichiers ↔ 38 migrations, aucun écart, aucun orphelin.
+> Les 8 fichiers à préfixe 8 chiffres, que la CLI lisait comme non appliqués, sont remplacés
+> après contrôle d'identité de contenu. **Une limite subsiste, documentée dans
+> `supabase/migrations/README.md` : l'historique n'est pas rejouable depuis zéro**, car
+> `20260805224907` déclare `public.http_response` alors qu'aucune migration ne crée
+> l'extension `http` — supprimée par F2. La suite propre est une migration de référence, pas
+> une retouche de l'historique.
+
+**C'était le constat le plus lourd de cet audit**, et il n'était ni une faille ni un bug :
 une perte de reproductibilité.
 
 ```
@@ -326,7 +336,8 @@ commande par téléphone** — les deux pièges qui ont déjà coûté cher ici.
 | # | Action | Effort | Ce que ça ferme | État |
 |---|---|---|---|---|
 | 1 | `drop extension http` (F2) | minutes | SSRF anonyme depuis la base | **fait le 17 août** |
-| 2 | Reconstituer les 30 migrations manquantes (R6) | ~1 h, SQL récupérable verbatim | schéma non reproductible, DDL sensible jamais relu | à faire **en premier** |
+| 2 | Reconstituer les 30 migrations manquantes (R6) | fait | schéma non reproductible, DDL sensible jamais relu | **fait le 17 août** |
+| 2bis | Migration de référence pour rejouer depuis zéro (R6) | ~1 h | un environnement neuf ne se reconstruit pas | à faire |
 | 3 | Refus par défaut si empreinte absente (R1) | ~30 min | forge de webhook sur un marchand mal provisionné | à faire |
 | 4 | Plafond sur `/api/assistant` (R2) | ~1 h | budget Mistral ouvert | à faire |
 | 5 | Retirer `retryOnFail` de l'envoi Telegram (R3) | minutes | messages clients en double | à faire |

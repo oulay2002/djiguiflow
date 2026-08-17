@@ -7,12 +7,10 @@
 --
 -- Elles sont SECURITY DEFINER a dessein : elles doivent lire les boutiques
 -- par-dessus la RLS. Mais leur seul appelant legitime est l'application, qui
--- passe par le role de service (SUPABASE_SERVICE_ROLE_KEY, cf.
--- src/lib/supabaseAdmin.ts). On calque donc jeton_canal, deja durcie.
+-- passe par le role de service. On calque donc jeton_canal, deja durcie.
 --
 -- Les fonctions vitrine_* gardent volontairement leur acces public : c'est par
--- elles que la vitrine s'affiche, connecte ou non. Voir la note memoire
--- « RLS : lecture publique = anon seulement ».
+-- elles que la vitrine s'affiche, connecte ou non.
 
 revoke execute on function public.canaux_par_commande(text) from public, anon, authenticated;
 revoke execute on function public.canaux_par_session(text)  from public, anon, authenticated;

@@ -24,8 +24,4 @@
 -- `drop extension` et non `revoke` : retirer la surface vaut mieux que la
 -- garder en esperant que personne ne la re-accorde. Les types composites
 -- `http_header`, `http_request` et `http_response` partent avec elle.
---
--- Verifie apres application : extension absente, les six fonctions `http_*`
--- disparues, `pg_net` intact, trigger `on_new_commande` sur `commandes`
--- toujours en place.
 drop extension if exists http;
