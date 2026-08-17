@@ -15,17 +15,24 @@ délicats — isolation multi-marchand, vérification des webhooks, notification
 sont non seulement corrects mais **argumentés dans le code**, et plusieurs d'entre eux
 résistent à des attaques auxquelles ils n'étaient pas censés répondre.
 
-Les vraies failles ne sont pas dans ce qui a été pensé. Elles sont dans **deux portes
-ouvertes par défaut que personne n'a refermées** : une politique de lecture publique trop
-large sur `boutiques`, et une extension Postgres exécutable par les visiteurs. Aucune des
-deux n'est un défaut de conception — les deux sont des réglages hérités.
+La seule faille exploitable trouvée est **une porte ouverte par défaut que personne n'avait
+refermée** : une extension Postgres exécutable par les visiteurs. Ce n'est pas un défaut de
+conception, c'est un réglage hérité. Elle est corrigée (§1).
 
 | | Ce que l'audit a trouvé |
 |---|---|
-| Failles exploitables | **2** (fuite de colonnes sensibles, SSRF depuis la base) |
-| Risques réels non exploitables aujourd'hui | 4 |
-| Faux positifs levés après vérification | 11 |
-| Mécanismes vérifiés sains | 8 familles |
+| Failles exploitables | **1** — SSRF depuis la base (**corrigée le 17 août**) |
+| Risques réels non exploitables aujourd'hui | 6 — dont **R6, une perte de reproductibilité du schéma**, le point le plus lourd du rapport |
+| Faux positifs levés après vérification | 12 |
+| Mécanismes vérifiés sains | 9 familles |
+
+> **Correction du 17 août, après vérification.** La première version de ce rapport
+> annonçait une seconde faille : `boutiques` lisible en entier par `anon`, du fait de la
+> politique `public_read_boutiques USING (true)`. **C'était faux, et l'erreur méritait
+> d'être comprise** — elle est décrite en §4, parce qu'elle porte une leçon utile sur la
+> lecture de RLS. `anon` n'a pas le privilège `SELECT` au niveau table sur `boutiques` : il
+> a un `SELECT` **par colonne** sur exactement les neuf champs de la vitrine. La défense
+> était déjà là. Ce qui reste vrai, sous une forme bien plus faible, est en R5.
 
 Le point le plus important de ce rapport n'est pas une faille : c'est la **§4**, qui liste ce
 qu'il ne faut PAS « corriger ». Plusieurs constats d'un analyseur générique visent du code
@@ -35,53 +42,18 @@ délibérément écrit ainsi, pour une raison documentée sur place.
 
 ## 1. Failles exploitables
 
-### F1 — `boutiques` est lisible en entier par n'importe quel visiteur
+### F1 — retirée : c'était une erreur de lecture
 
-**Gravité : haute.** La politique `public_read_boutiques` accorde `SELECT` au rôle `anon`
-avec `USING (true)` — donc **toutes les colonnes, toutes les lignes**, à qui détient la clé
-`anon`. Cette clé est publique par construction : elle est dans le paquet servi au
-navigateur.
-
-La table contient :
-
-| Colonne | Ce qu'elle donne à un tiers |
-|---|---|
-| `webhook_secret_hash`, `telegram_webhook_secret_hash` | empreintes des secrets d'entrée de chaque canal |
-| `wasender_session_hash` | empreinte de la session WhatsApp |
-| `wasender_secret_id`, `telegram_secret_id` | pointeurs vers les entrées du coffre |
-| `telegram_marchand` | l'identifiant de conversation du gérant |
-| `groupe_livreurs` | l'identifiant du groupe Telegram des livreurs |
-| `sheet_document_id`, `sheet_commandes`, `sheet_menu`, `sheet_notes` | le classeur des commandes et ses onglets |
-| `telephone` | le numéro du marchand |
-
-Ce qui rend le constat net, c'est la comparaison avec `/api/internal/fiche` : cette route
-retire **explicitement** `webhook_secret_hash`, `telegram_webhook_secret_hash`,
-`wasender_session_hash`, `wasender_secret_id` et `telegram_secret_id` avant de servir la
-fiche à n8n, avec ce commentaire — « n8n conserve ses données d'exécution : tout ce qui
-touche aux secrets resterait lisible dans ses journaux ». La précaution est juste. Elle est
-contournée par une politique RLS qui distribue les mêmes colonnes à tout l'internet.
-
-`sheet_document_id` est le plus concret : si le classeur d'un marchand est partagé « toute
-personne disposant du lien », il donne l'historique complet des commandes.
-
-**Correction.** Les RPC `vitrine_boutiques()`, `vitrine_boutique(p_ref)` et
-`vitrine_produits(p_ref)` existent déjà et sont faites pour la vitrine publique. La
-politique `USING (true)` est donc probablement devenue redondante. Deux voies :
-
-1. supprimer `public_read_boutiques` et vérifier que la vitrine passe bien par les RPC ;
-2. si une lecture directe reste nécessaire, la restreindre à une vue ne portant que le
-   public (`slug, nom, description, logo_url, zone, categorie, emoji, actif`) et donner la
-   politique à la vue, pas à la table.
-
-La voie 1 est préférable : elle retire la surface au lieu de la déplacer.
-
-**Attention en corrigeant** — une page publique qui lit la table en direct se vide dès qu'on
-est connecté, parce que la politique publique ne vaut que pour `anon`. Tester déconnecté
-**et** connecté.
+Voir la correction en tête de document et la leçon en §4. Le résidu réel, de gravité bien
+moindre, est traité en **R5**.
 
 ### F2 — Un visiteur peut faire émettre des requêtes HTTP par la base
 
-**Gravité : haute.** L'extension `http` est installée dans le schéma `public`, et le rôle
+> **CORRIGÉE le 17 août 2026** — migration `retirer_extension_http_non_utilisee`.
+> Vérifié après application : extension absente, les six fonctions `http_*` ont disparu,
+> `pg_net` intact, et le trigger `on_new_commande` sur `commandes` toujours en place.
+
+**Gravité : haute.** L'extension `http` était installée dans le schéma `public`, et le rôle
 `anon` détient `EXECUTE` sur `http_post`, `http_get`, `http_put`, `http_delete`,
 `http_patch`, `http_head`. Le schéma `public` étant exposé par PostgREST, ces fonctions sont
 atteignables en `POST /rest/v1/rpc/http_post` avec la clé publique.
@@ -175,6 +147,82 @@ signal. Ici il n'y en a aucun — c'est une écriture, pas un envoi, et rien ne 
 **Correction.** Câbler la seconde sortie de ces deux nœuds vers un nœud qui lève, comme
 `Signaler l echec` le fait pour les envois.
 
+### R5 — Huit tables sur dix laissent à `anon` le `SELECT` au niveau table
+
+C'est ce qui reste, en défense en profondeur, de ce que la première version appelait à tort
+F1. Deux tables ont été **délibérément durcies** par des `GRANT` de colonnes :
+
+| Table | `SELECT` table pour `anon` | Colonnes lisibles par `anon` |
+|---|---|---|
+| `boutiques` | **non** | les 9 champs de la vitrine, et eux seuls |
+| `produits` | **non** | les 9 champs du menu, et eux seuls |
+| les 8 autres | **oui** | toutes |
+
+Pour `commandes`, `commande_items`, `livraisons`, `livreurs`, `notification_settings`,
+`paiements`, `push_subscriptions` et `subscriptions`, la seule chose qui arrête un anonyme
+est donc **RLS seule**. Aujourd'hui elle tient, et j'ai vérifié pourquoi, table par table :
+six n'ont de politique que pour `{authenticated}`, donc aucune ligne ne sort pour `anon` ;
+les deux dernières — `paiements_select_own` et `push_subscriptions_select_own` — visent le
+rôle `public`, qui inclut `anon`, mais leur prédicat est `auth.uid() = user_id` et
+`auth.uid()` vaut `NULL` pour un anonyme, ce qui ne rend aucune ligne.
+
+**Rien n'est donc exploitable.** Ce qui est fragile, c'est que la protection tienne à un seul
+mécanisme, sur des tables qui portent `push_subscriptions.auth_secret`,
+`paiements.jeton_prestataire`, `livreurs.telephone` et `commandes.client_telephone`. Une
+future politique écrite un peu vite — le genre de `USING (true)` qu'on ajoute pour une page
+de suivi publique — suffirait alors à tout ouvrir. Sur `boutiques`, la même erreur ne
+donnerait rien : les `GRANT` de colonnes tiennent le second verrou.
+
+**Correction.** Étendre aux huit autres le standard déjà appliqué à `boutiques` et
+`produits` : `revoke select on <table> from anon` là où aucune lecture anonyme n'est prévue,
+et un `grant select (colonnes)` explicite là où elle l'est. Aucun effet fonctionnel attendu
+— aucune page publique ne lit ces tables directement — mais à tester déconnecté **et**
+connecté, la lecture publique ne valant que pour `anon`.
+
+### R6 — Le dépôt n'est plus la source de vérité du schéma
+
+**C'est le constat le plus lourd de cet audit**, et il n'est ni une faille ni un bug : c'est
+une perte de reproductibilité.
+
+```
+fichiers dans supabase/migrations : 8
+migrations appliquées en base     : 38
+appliquées SANS fichier local     : 30
+```
+
+Un environnement reconstruit depuis le dépôt n'aurait donc **aucun** des durcissements dont
+ce rapport constate qu'ils tiennent : `restrict_anon_column_access`,
+`restreindre_colonnes_internes_boutiques_anon`, `restreindre_definir_secret_webhook`,
+`durcir_rls_et_integrite_reference`, `durcir_fonctions_utilitaires`,
+`fermer_canaux_par_aux_roles_publics`, `secret_webhook_n8n_source_unique`… Les politiques
+RLS, les `GRANT` de colonnes et les `REVOKE` sur les fonctions `SECURITY DEFINER` n'existent
+que dans la base de production.
+
+Trois conséquences concrètes :
+
+1. **Aucune relecture possible** du DDL le plus sensible du projet : il n'est pas passé par
+   un commit, donc il n'a jamais été relu ni comparé.
+2. **Un environnement de recette serait silencieusement plus ouvert que la production** —
+   des tests y passeraient qui devraient échouer.
+3. **Une restauration reconstruirait une base sans ses verrous.** C'est le scénario qui
+   transforme un incident en fuite.
+
+**Correction — le SQL est intégralement récupérable, verbatim.** Supabase conserve les
+instructions de chaque migration :
+
+```sql
+select version, name, statements
+from supabase_migrations.schema_migrations
+order by version;
+```
+
+Il suffit d'écrire un fichier `supabase/migrations/<version>_<name>.sql` par ligne
+manquante, puis de comparer. `supabase db pull` fait un travail voisin mais rend un schéma
+aplati, qui perd le découpage et les commentaires d'intention — or sur ce projet les
+commentaires portent le raisonnement, et c'est ce qui a le plus de valeur ici.
+
+À faire **avant** les corrections R1 à R5 : sans ça, chaque correctif suivant creuse l'écart.
+
 ---
 
 ## 3. Points d'hygiène
@@ -226,6 +274,24 @@ auth.uid())` — jamais par une colonne dénormalisée, et jamais avec l'hypoth�
 boutique par compte. `commande_items` et `livraisons` passent par la commande, ce qui reste
 juste à deux niveaux.
 
+**`boutiques` et `produits` sont déjà protégées par des `GRANT` de colonnes — et c'est là
+que je me suis trompé.** J'ai lu `pg_policies`, vu `public_read_boutiques ... USING (true)`
+pour le rôle `anon`, et conclu que toutes les colonnes sortaient. C'est faux, et l'erreur
+vaut d'être retenue : **une politique RLS ne donne jamais accès à ce que les privilèges
+refusent.** Les deux conditions se cumulent. Ici `anon` n'a pas `SELECT` au niveau table :
+
+```sql
+select has_table_privilege('anon','public.boutiques','SELECT');           -- false
+-- et, par colonne :  categorie, description, emoji, id, logo_url, nom, slug, telephone, zone
+select has_column_privilege('anon','public.boutiques','webhook_secret_hash','SELECT'); -- false
+select has_column_privilege('anon','public.boutiques','sheet_document_id','SELECT');   -- false
+```
+
+Les neuf colonnes accordées correspondent exactement à ce que rendent les RPC `vitrine_*`.
+La précaution de `/api/internal/fiche` n'est donc pas contournée du tout : elle est doublée.
+`pg_policies` seul ne suffit pas à juger une lecture — il faut lire `has_column_privilege`
+avec.
+
 **Les fonctions porteuses de secrets sont fermées.** `jeton_canal`, `definir_jeton_canal`,
 `secret_webhook_n8n`, `definir_secret_webhook*`, `canaux_*`, `rapport_*` : `EXECUTE` refusé
 à `anon` **et** à `authenticated`, `search_path` fixé. Seules les trois `vitrine_*` sont
@@ -257,16 +323,20 @@ commande par téléphone** — les deux pièges qui ont déjà coûté cher ici.
 
 ## 5. Ordre de traitement conseillé
 
-| # | Action | Effort | Ce que ça ferme |
-|---|---|---|---|
-| 1 | `drop extension http` (F2) | minutes | SSRF anonyme depuis la base |
-| 2 | Restreindre `public_read_boutiques` (F1) | ~1 h avec test connecté/déconnecté | fuite des empreintes, du classeur et des identifiants Telegram |
-| 3 | Refus par défaut si empreinte absente (R1) | ~30 min | forge de webhook sur un marchand mal provisionné |
-| 4 | Plafond sur `/api/assistant` (R2) | ~1 h | budget Mistral ouvert |
-| 5 | Retirer `retryOnFail` de l'envoi Telegram (R3) | minutes | messages clients en double |
-| 6 | Câbler l'échec des deux `Copier note dans Supabase` (R4) | ~30 min | notes clients perdues en silence |
-| 7 | Trancher Stripe vs CinetPay, aligner les politiques `public` | à décider | deux sources de vérité |
+| # | Action | Effort | Ce que ça ferme | État |
+|---|---|---|---|---|
+| 1 | `drop extension http` (F2) | minutes | SSRF anonyme depuis la base | **fait le 17 août** |
+| 2 | Reconstituer les 30 migrations manquantes (R6) | ~1 h, SQL récupérable verbatim | schéma non reproductible, DDL sensible jamais relu | à faire **en premier** |
+| 3 | Refus par défaut si empreinte absente (R1) | ~30 min | forge de webhook sur un marchand mal provisionné | à faire |
+| 4 | Plafond sur `/api/assistant` (R2) | ~1 h | budget Mistral ouvert | à faire |
+| 5 | Retirer `retryOnFail` de l'envoi Telegram (R3) | minutes | messages clients en double | à faire |
+| 6 | Câbler l'échec des deux `Copier note dans Supabase` (R4) | ~30 min | notes clients perdues en silence | à faire |
+| 7 | Étendre les `GRANT` de colonnes aux 8 autres tables (R5) | ~1 h avec test connecté/déconnecté | second verrou si une policy est écrite trop large | à faire |
+| 8 | Trancher Stripe vs CinetPay, aligner les politiques `public` | à décider | deux sources de vérité | à décider |
 
-Les deux premières lignes sont celles qui changent la posture de sécurité. Les suivantes
-suppriment des pannes silencieuses, qui sont le mode de défaillance dominant de cette
-plateforme : rien ne casse visiblement, et un client ne reçoit rien.
+La seule ligne qui changeait la posture de sécurité immédiate est faite. La ligne 2 est
+maintenant la plus importante : sans elle, chaque correctif suivant creuse l'écart entre le
+dépôt et la production. **Tout le reste supprime des pannes silencieuses** — le mode de
+défaillance dominant de cette plateforme : rien ne casse visiblement, et un client ne reçoit
+rien. Les lignes 5 et 6 sont les moins chères et touchent le chemin par lequel passent tous
+les messages clients.

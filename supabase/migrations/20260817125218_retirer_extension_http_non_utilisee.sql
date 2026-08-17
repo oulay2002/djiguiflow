@@ -1,0 +1,31 @@
+-- Retrait de l'extension `http` (client HTTP SYNCHRONE), installee dans `public`.
+--
+-- Pourquoi c'etait une faille : le role `anon` detenait EXECUTE sur
+-- `http_post`, `http_get`, `http_put`, `http_delete`, `http_patch` et
+-- `http_head`. Le schema `public` etant expose par PostgREST, n'importe quel
+-- visiteur muni de la cle publique — qui est dans le paquet servi au
+-- navigateur — pouvait faire emettre a la base une requete sortante
+-- arbitraire, et lire la reponse avec `http_get`. La base devenait un relais
+-- pour atteindre ce qu'elle voit et que l'internet ne voit pas, et pour
+-- attaquer un tiers depuis l'adresse du projet.
+--
+-- Pourquoi le retrait ne casse rien, verifie avant d'agir :
+--   - aucun objet ne depend de l'extension (`pg_depend`, deptype 'n' : 0) ;
+--   - aucune fonction n'appelle `http_get`/`http_post` synchrone — la seule
+--     occurrence dans le code des fonctions est `net.http_post`, qui
+--     appartient a `pg_net` ;
+--   - `net.http_request_queue` appartient bien a `pg_net`, schema `net` :
+--     il n'est pas touche ;
+--   - aucune migration ne cree ni n'utilise cette extension. Elle avait ete
+--     posee a la main, du temps ou les triggers de notification etaient
+--     synchrones. Ils sont passes a `pg_net` le 6 aout 2026, precisement
+--     parce qu'un n8n injoignable faisait alors echouer la transaction.
+--
+-- `drop extension` et non `revoke` : retirer la surface vaut mieux que la
+-- garder en esperant que personne ne la re-accorde. Les types composites
+-- `http_header`, `http_request` et `http_response` partent avec elle.
+--
+-- Verifie apres application : extension absente, les six fonctions `http_*`
+-- disparues, `pg_net` intact, trigger `on_new_commande` sur `commandes`
+-- toujours en place.
+drop extension if exists http;
