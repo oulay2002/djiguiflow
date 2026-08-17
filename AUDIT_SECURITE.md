@@ -253,10 +253,39 @@ commentaires portent le raisonnement, et c'est ce qui a le plus de valeur ici.
   conséquence est acceptée mais réelle : si l'alerte elle-même tombe, plus rien n'alerte. La
   panne de quota du 15 août l'a montré. Une sonde extérieure au n8n — même minimale — est le
   seul moyen de couvrir ce cas.
-- **Deux systèmes de facturation coexistent** — `billing/webhook` (Stripe, signature
-  vérifiée par `constructEvent`, table `subscriptions`) et `billing/cinetpay/notification`
-  (table `paiements`). Deux sources de vérité pour un même droit d'accès. À trancher : si
-  Stripe n'est plus utilisé, retirer la route et ses variables, sinon dire lequel arbitre.
+- **Facturation — tranché le 17 août : GeniusPay est le prestataire maintenu.** Il n'y avait
+  pas trois sources de vérité comme je l'avais écrit : `prestataireActif()` choisit GeniusPay
+  dès qu'il est configuré et retombe sur CinetPay sinon, et **un seul** point ouvre des
+  droits, `prolongerAcces()`. CinetPay reste volontairement en place — il est *injoignable*,
+  pas mauvais (`api-checkout.cinetpay.com` répond NXDOMAIN), et on y revient en retirant deux
+  variables, sans redéploiement. C'est une porte de sortie assumée, pas une hésitation.
+  Stripe (`billing/webhook`, signature vérifiée par `constructEvent`, table `subscriptions`)
+  est le seul reliquat à trancher un jour.
+
+  Trois défauts trouvés en vérifiant ce choix, tous corrigés le 17 août :
+
+  1. **`mode.ts` ne reconnaissait pas `geniuspay` comme un mode réel.** `MODES_REELS` était
+     écrit à la main et listait `cinetpay` et `stripe`. Un `BILLING_MODE=geniuspay` hors
+     production basculait donc en **simulé** — le tunnel ouvre l'accès sans qu'un franc
+     circule, en silence. Le commentaire du fichier documentait déjà cette panne exacte
+     pour `cinetpay` : elle s'était répétée à l'ajout du prestataire suivant. Corrigé à la
+     cause : la liste vient maintenant de `PRESTATAIRES`, source unique dans
+     `prestataire.ts`, si bien qu'ajouter un prestataire suffit à le faire reconnaître.
+  2. **Le diagnostic mentait.** `pretAEncaisser` valait `cinetpayConfigure() && !simulé` :
+     avec GeniusPay en service et CinetPay non configuré, il annonçait `false` alors que la
+     plateforme encaissait parfaitement. Le filtre des variables ignorait `GENIUSPAY_*`,
+     donc une faute de frappe sur `GENIUSPAY_API_SECRET` y était invisible. C'est l'outil
+     qu'on ouvre pendant un incident de paiement : il envoyait chercher au mauvais endroit.
+  3. **Un double défaut pouvait enterrer un paiement encaissé.** La notification cherchait
+     le paiement par `jeton_prestataire`, colonne écrite à l'initialisation — mais dont
+     l'échec est seulement journalisé, la vente continuant. Si en plus la charge de
+     GeniusPay ne portait pas notre `metadata.reference`, la route répondait **200**
+     `référence inconnue` : GeniusPay considère alors la notification délivrée et **arrête
+     de réessayer**. Argent encaissé, accès jamais ouvert, une ligne de log pour seule
+     trace. Le secours existait déjà sans être branché — `verifierPaiement()` rend
+     `referenceInterne`, notre propre référence lue dans le `metadata` côté API. On la
+     demande désormais avant de conclure, et le verdict obtenu est réutilisé pour ne pas
+     faire deux appels.
 - **Extensions dans `public`** — `http` (voir F2) et `pg_net`. `pg_net` est utilisé ; le
   déplacer dans son propre schéma reste souhaitable.
 - **Protection contre les mots de passe compromis désactivée** dans Supabase Auth. Un
@@ -343,7 +372,8 @@ commande par téléphone** — les deux pièges qui ont déjà coûté cher ici.
 | 5 | Retirer `retryOnFail` de l'envoi Telegram (R3) | minutes | messages clients en double | à faire |
 | 6 | Câbler l'échec des deux `Copier note dans Supabase` (R4) | ~30 min | notes clients perdues en silence | à faire |
 | 7 | Étendre les `GRANT` de colonnes aux 8 autres tables (R5) | ~1 h avec test connecté/déconnecté | second verrou si une policy est écrite trop large | à faire |
-| 8 | Trancher Stripe vs CinetPay, aligner les politiques `public` | à décider | deux sources de vérité | à décider |
+| 8 | Facturation : GeniusPay maintenu, 3 défauts corrigés | fait | mode simulé silencieux, diagnostic faux, paiement enterré | **fait le 17 août** |
+| 9 | Retirer le reliquat Stripe, aligner les politiques `public` | à décider | dernière source de vérité concurrente | à décider |
 
 La seule ligne qui changeait la posture de sécurité immédiate est faite. La ligne 2 est
 maintenant la plus importante : sans elle, chaque correctif suivant creuse l'écart entre le
