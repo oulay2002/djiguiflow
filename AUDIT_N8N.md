@@ -5,6 +5,12 @@
 **Périmètre :** 26 workflows (17 actifs)
 **Méthode :** lecture du JSON déployé + analyse de 131 exécutions en erreur
 
+> **Mise à jour du 17 août 2026 — l'instance auditée n'existe plus.** La production tourne
+> sur `n8n.djiguiflow.com` (VPS auto-hébergé) depuis le 16 août 2026. Ce document reste le
+> compte rendu du 6 août : il décrit un état passé, pas l'état courant. Les écarts connus
+> sont signalés par une note datée à l'endroit concerné — voir §3, §4 et §6ter pour les
+> deux webhooks de livraison qui ont depuis disparu.
+
 ---
 
 ## Verdict
@@ -217,6 +223,9 @@ Telegram échoue, la commande disparaît sans trace.
   `nouvelle-livraison`, `statut-livraison`, `whatsapp-zahara` acceptent n'importe quel
   POST. Un tiers peut déclencher des envois WhatsApp vers des clients arbitraires.
   `wasenderapi` envoie bien `x-webhook-signature`, mais **rien ne la vérifie**.
+
+  > **17 août 2026 — il ne reste que 3 de ces webhooks.** `nouvelle-livraison` et
+  > `statut-livraison` n'existent plus comme points d'entrée : voir la note de §6ter.
 - **Aucune validation de charge utile.** `$json.body.id.toString()` dans
   `Nouvelle Commande → WhatsApp` lève une `TypeError` sur un body sans `id`.
 - **`responseMode: immediate` partout.** L'app Next.js reçoit toujours
@@ -232,6 +241,10 @@ Telegram échoue, la commande disparaît sans trace.
   personne.
 - **4 copies de la logique d'envoi WhatsApp** : `Envoyer réponse client`,
   `Assignation Livreur`, `Statut Livraison`, `Nouvelle Commande → WhatsApp`.
+
+  > **17 août 2026 — la duplication est résorbée.** `Assignation Livreur` et
+  > `Statut Livraison` sont archivés (voir §6ter) ; tous les envois passent désormais par
+  > le seul sous-workflow `Envoyer réponse client`.
 - **Doublon fonctionnel** : `Commande App` et `Nouvelle Commande → WhatsApp` traitent le
   même événement métier via deux webhooks distincts.
 
@@ -362,6 +375,23 @@ Coût : une lecture Sheets supplémentaire par callback livreur (quelques-unes p
 
 Les 5 webhooks acceptaient n'importe quel POST. Qui connaissait l'URL pouvait déclencher
 des envois WhatsApp vers des clients arbitraires, ou injecter de fausses commandes.
+
+> **Mise à jour du 17 août 2026 — deux de ces cinq webhooks n'existent plus.** Les tableaux
+> de cette section décrivent l'état du 6-7 août. `nouvelle-livraison` et `statut-livraison`
+> y figurent comme protégés et alimentés par un trigger Postgres : **ce n'est plus vrai**.
+>
+> - Les fonctions `notify_n8n_new_livraison` et `notify_n8n_statut_livraison` ont été
+>   supprimées de la base. Vérifié le 17 août : `pg_trigger` ne porte plus qu'un seul
+>   trigger métier, `on_new_commande` sur `commandes`, qui appelle
+>   `notify_n8n_new_commande` vers `https://n8n.djiguiflow.com/webhook/nouvelle-commande`.
+>   La phrase « les 3 triggers sont actifs », plus bas, ne vaut donc que pour le 7 août.
+> - Les workflows `Assignation Livreur` et `Statut Livraison` qui les recevaient sont
+>   **archivés** (17 août 2026). Rien ne les appelait plus : ni trigger en base, ni code
+>   applicatif.
+> - La capacité n'est pas perdue. `Acceptation Livraison` prévient le client à chaque
+>   étape — accepté, parti, en route, livré — et le groupe livreurs en parallèle. C'est ce
+>   qu'il fallait vérifier avant d'archiver : un webhook mort dont personne ne reprend la
+>   fonction, ce n'est pas du nettoyage, c'est une panne silencieuse.
 
 **Qui appelle quoi** (établi, pas supposé) :
 
