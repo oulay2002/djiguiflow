@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import { resoudreMarchand } from '@/lib/marchands';
+import { pointValide, positionDansMessage } from '@/lib/position';
 
 export const dynamic = 'force-dynamic';
 
@@ -56,22 +57,32 @@ export async function POST(req: Request) {
   const slug = String(corps.boutique ?? '').trim();
   const identifiant = String(corps.chat_id ?? corps.destinataire ?? '').trim();
   const telephone = String(corps.telephone ?? '').trim();
-  const latitude = Number(corps.latitude);
-  const longitude = Number(corps.longitude);
+  let latitude = Number(corps.latitude);
+  let longitude = Number(corps.longitude);
 
   if (!slug || (!identifiant && !telephone)) {
     return NextResponse.json({ error: 'boutique et chat_id (ou telephone) requis' }, { status: 400 });
   }
 
-  // Un point hors bornes, ou le fameux (0, 0) au large du golfe de Guinee, est
-  // un capteur qui n'a rien capte. L'enregistrer enverrait le livreur en mer.
-  const valide =
-    Number.isFinite(latitude) && Number.isFinite(longitude)
-    && Math.abs(latitude) <= 90 && Math.abs(longitude) <= 180
-    && !(latitude === 0 && longitude === 0);
+  // DEUX ENTREES, VOLONTAIREMENT. L'epingle native quand le canal la transmet —
+  // Telegram le fait proprement. Et le lien colle dans la conversation sinon :
+  // une position partagee sur WhatsApp n'a jamais atteint notre webhook, et une
+  // fonction dont dependent les livraisons ne peut pas reposer sur ce qu'un
+  // tiers veut bien transmettre. Le lien, lui, est du texte : il arrive
+  // toujours.
+  if (!pointValide(latitude, longitude)) {
+    const trouve = await positionDansMessage(corps.texte);
+    if (trouve) {
+      latitude = trouve.latitude;
+      longitude = trouve.longitude;
+    }
+  }
 
-  if (!valide) {
-    return NextResponse.json({ error: 'latitude et longitude valides requises' }, { status: 400 });
+  // Illisible n'est pas une erreur de l'appelant : un client peut coller
+  // n'importe quoi. On repond 200 avec la raison, plutot qu'un 4xx qui
+  // teindrait l'execution n8n en rouge et masquerait les vraies pannes.
+  if (!pointValide(latitude, longitude)) {
+    return NextResponse.json({ ok: true, trouve: false, etat: 'illisible' });
   }
 
   const marchand = await resoudreMarchand(slug);
@@ -114,7 +125,7 @@ export async function POST(req: Request) {
   // sa position spontanement, avant de commander ou apres livraison. On le dit
   // a l'appelant, qui saura quoi repondre.
   if (!cible) {
-    return NextResponse.json({ ok: true, trouve: false });
+    return NextResponse.json({ ok: true, trouve: false, etat: 'commande_introuvable' });
   }
 
   const { error: erreurMaj } = await sb
@@ -134,6 +145,7 @@ export async function POST(req: Request) {
   return NextResponse.json({
     ok: true,
     trouve: true,
+    etat: 'enregistree',
     reference: String(cible.reference ?? ''),
     client_nom: String(cible.client_nom ?? ''),
     latitude,
