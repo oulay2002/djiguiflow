@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { LienRetour, classesBouton } from '@/components/ui/Bouton';
 import { TuileStat } from '@/components/ui/Etat';
 import { supabase } from '@/lib/supabase';
+import { fetchDashboard } from '@/lib/apiClient';
 import { useBoutique, uuidBoutiqueCourante } from '@/lib/boutique';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -26,6 +27,9 @@ import {
   Bike,
   Car,
   Navigation,
+  Link2,
+  Copy,
+  Check,
   type LucideIcon,
   X
 } from 'lucide-react';
@@ -62,6 +66,19 @@ type Livreur = {
   gain_total: number;
   latitude?: number;
   longitude?: number;
+  /**
+   * Compte Telegram du livreur, pose automatiquement quand il ouvre son lien
+   * d'invitation. Jamais saisi a la main : Telegram n'identifie ses
+   * utilisateurs que par ce numero interne, revele au moment du premier clic.
+   */
+  telegram_id?: string | null;
+};
+
+/** Ce que l'ecran sait du lien d'invitation d'un livreur, le temps de la visite. */
+type Invitation = {
+  chargement?: boolean;
+  lien?: string;
+  erreur?: string;
 };
 
 export default function LivreursPage() {
@@ -73,6 +90,8 @@ export default function LivreursPage() {
   const [statutFilter] = useState<'tous' | 'disponible' | 'en_livraison' | 'indisponible'>('tous');
   const [search, setSearch] = useState('');
   const [showModal, setShowModal] = useState(false);
+  const [invitations, setInvitations] = useState<Record<string, Invitation>>({});
+  const [copie, setCopie] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     nom: '',
     telephone: '',
@@ -149,6 +168,55 @@ export default function LivreursPage() {
     const newStatut = livreur.statut === 'disponible' ? 'indisponible' : 'disponible';
     await supabase.from('livreurs').update({ statut: newStatut }).eq('id', livreur.id);
     loadLivreurs();
+  };
+
+  /**
+   * Lien a envoyer au livreur pour qu'il rattache son compte Telegram.
+   *
+   * Le code est fabrique par le serveur, jamais ici : le presenter suffit a se
+   * declarer livreur de cette boutique. `regenerer` sert quand le livreur change
+   * de telephone — il detache le compte actuel et invalide l'ancien lien, qui a
+   * pu etre transfere entre-temps.
+   */
+  const obtenirLien = async (livreur: Livreur, regenerer = false) => {
+    setInvitations((etat) => ({ ...etat, [livreur.id]: { chargement: true } }));
+    try {
+      const res = await fetchDashboard('/api/dashboard/livreurs/invitation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ livreur_id: livreur.id, boutique: boutiqueId, regenerer }),
+      });
+      const rep = await res.json();
+
+      if (!res.ok || !rep.ok) {
+        setInvitations((etat) => ({
+          ...etat,
+          [livreur.id]: { erreur: rep.raison || rep.error || 'Lien indisponible.' },
+        }));
+        return;
+      }
+
+      setInvitations((etat) => ({ ...etat, [livreur.id]: { lien: rep.lien } }));
+      // Un lien regenere detache le compte : la fiche affichee doit suivre,
+      // sinon l'ecran continue d'annoncer un rattachement qui n'existe plus.
+      if (regenerer) loadLivreurs();
+    } catch (e) {
+      setInvitations((etat) => ({
+        ...etat,
+        [livreur.id]: { erreur: e instanceof Error ? e.message : 'Lien indisponible.' },
+      }));
+    }
+  };
+
+  const copier = async (id: string, lien: string) => {
+    try {
+      await navigator.clipboard.writeText(lien);
+      setCopie(id);
+      window.setTimeout(() => setCopie(null), 2000);
+    } catch {
+      // Le presse-papiers est refuse hors HTTPS et sur certains navigateurs.
+      // Le lien reste selectionnable a la main : ne rien casser pour si peu.
+    }
   };
 
   const filteredLivreurs = livreurs.filter(l => {
@@ -276,7 +344,7 @@ export default function LivreursPage() {
                       <div>
                         <h3 className="font-bold text-nuit-900">{livreur.nom}</h3>
                         <div className="flex items-center gap-2 mt-1">
-                          <span className={`px-2 py-0.5 rounded-full text-xs font-semibold border ${typeConfig}`}>
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-semibold border ${typeConfig.color}`}>
                             {typeConfig.label}
                           </span>
                           <span className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${statutConfig.color}`}>
@@ -327,6 +395,67 @@ export default function LivreursPage() {
                       <p className="font-bold text-nuit-900">{livreur.gain_total.toLocaleString()}F</p>
                       <p className="text-xs text-chaux-600 mt-1">Gains</p>
                     </div>
+                  </div>
+
+                  {/* Rattachement Telegram. Sans lui, le livreur reste anonyme
+                      pour la plateforme : le client apprend qu'une commande
+                      part, mais pas qui la lui apporte ni comment le joindre. */}
+                  <div className="mb-4 pb-4 border-b border-chaux-200">
+                    {livreur.telegram_id ? (
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="flex items-center gap-1.5 text-xs font-semibold text-accent-700">
+                          <Check className="w-3.5 h-3.5" />
+                          Compte Telegram rattaché
+                        </span>
+                        <button
+                          onClick={() => obtenirLien(livreur, true)}
+                          className="text-xs text-chaux-600 hover:text-nuit-900 underline"
+                        >
+                          Changer de compte
+                        </button>
+                      </div>
+                    ) : invitations[livreur.id]?.lien ? (
+                      <div className="space-y-2">
+                        <p className="text-xs text-chaux-600">
+                          Envoyez ce lien à {livreur.nom}. Il l’ouvre une fois, et c’est réglé.
+                        </p>
+                        <div className="flex items-center gap-2">
+                          <input
+                            readOnly
+                            value={invitations[livreur.id].lien}
+                            onFocus={(e) => e.currentTarget.select()}
+                            className="flex-1 min-w-0 px-2 py-1.5 text-xs bg-chaux-50 border border-chaux-200 rounded-lg text-nuit-700"
+                          />
+                          <button
+                            onClick={() => copier(livreur.id, invitations[livreur.id].lien!)}
+                            title="Copier le lien"
+                            className="p-2 text-nuit-600 hover:bg-nuit-50 rounded-lg transition shrink-0"
+                          >
+                            {copie === livreur.id
+                              ? <Check className="w-4 h-4 text-accent-600" />
+                              : <Copy className="w-4 h-4" />}
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <button
+                          onClick={() => obtenirLien(livreur)}
+                          disabled={invitations[livreur.id]?.chargement}
+                          className="w-full flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-semibold bg-nuit-50 text-nuit-700 hover:bg-nuit-100 transition disabled:opacity-60"
+                        >
+                          {invitations[livreur.id]?.chargement
+                            ? <Loader2 className="w-4 h-4 animate-spin" />
+                            : <Link2 className="w-4 h-4" />}
+                          Lien d’invitation Telegram
+                        </button>
+                        {invitations[livreur.id]?.erreur && (
+                          <p className="mt-2 text-xs text-bissap-600">
+                            {invitations[livreur.id].erreur}
+                          </p>
+                        )}
+                      </>
+                    )}
                   </div>
 
                   <div className="flex items-center justify-between gap-2">

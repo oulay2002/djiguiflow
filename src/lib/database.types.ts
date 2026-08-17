@@ -29,6 +29,7 @@ export type Database = {
           sheet_menu: string | null
           sheet_notes: string | null
           slug: string | null
+          telegram_bot_username: string | null
           telegram_marchand: string | null
           telegram_secret_id: string | null
           telegram_webhook_secret_hash: string | null
@@ -53,6 +54,7 @@ export type Database = {
           sheet_menu?: string | null
           sheet_notes?: string | null
           slug?: string | null
+          telegram_bot_username?: string | null
           telegram_marchand?: string | null
           telegram_secret_id?: string | null
           telegram_webhook_secret_hash?: string | null
@@ -77,6 +79,7 @@ export type Database = {
           sheet_menu?: string | null
           sheet_notes?: string | null
           slug?: string | null
+          telegram_bot_username?: string | null
           telegram_marchand?: string | null
           telegram_secret_id?: string | null
           telegram_webhook_secret_hash?: string | null
@@ -274,6 +277,7 @@ export type Database = {
       livreurs: {
         Row: {
           boutique_id: string | null
+          code_invitation: string | null
           created_at: string | null
           email: string | null
           gain_total: number | null
@@ -282,8 +286,10 @@ export type Database = {
           longitude: number | null
           nom: string
           note_moyenne: number | null
+          rattache_le: string | null
           statut: string | null
           taux_commission: number | null
+          telegram_id: string | null
           telephone: string
           total_livraisons: number | null
           type: string
@@ -293,6 +299,7 @@ export type Database = {
         }
         Insert: {
           boutique_id?: string | null
+          code_invitation?: string | null
           created_at?: string | null
           email?: string | null
           gain_total?: number | null
@@ -301,8 +308,10 @@ export type Database = {
           longitude?: number | null
           nom: string
           note_moyenne?: number | null
+          rattache_le?: string | null
           statut?: string | null
           taux_commission?: number | null
+          telegram_id?: string | null
           telephone: string
           total_livraisons?: number | null
           type: string
@@ -312,6 +321,7 @@ export type Database = {
         }
         Update: {
           boutique_id?: string | null
+          code_invitation?: string | null
           created_at?: string | null
           email?: string | null
           gain_total?: number | null
@@ -320,8 +330,10 @@ export type Database = {
           longitude?: number | null
           nom?: string
           note_moyenne?: number | null
+          rattache_le?: string | null
           statut?: string | null
           taux_commission?: number | null
+          telegram_id?: string | null
           telephone?: string
           total_livraisons?: number | null
           type?: string
