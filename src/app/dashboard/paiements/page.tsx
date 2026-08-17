@@ -307,7 +307,14 @@ export default function PaiementsPage() {
           </div>
           <div className="hidden rounded-2xl border border-primary-200 bg-white/70 px-4 py-3 shadow-sm md:flex md:items-center md:gap-2">
             <ShieldCheck className="h-5 w-5 text-primary-700" />
-            <span className="text-sm font-semibold text-nuit-700">Paiement securise avec Stripe</span>
+            {/* Stripe n'a jamais encaisse un franc ici : il n'accepte pas les
+                entreprises etablies en Cote d'Ivoire, et les marchands d'ici
+                n'ont pas de carte. Annoncer son nom sur la page de paiement
+                promettait un moyen qui n'existe pas, et taisait les seuls qui
+                existent. */}
+            <span className="text-sm font-semibold text-nuit-700">
+              Mobile Money et carte bancaire — paiement sécurisé
+            </span>
           </div>
         </div>
 

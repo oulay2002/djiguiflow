@@ -35,6 +35,24 @@ const PAIEMENT_INDISPONIBLE =
   "Le paiement en ligne n'est pas encore ouvert. Écrivez-nous et nous "
   + 'activons votre formule à la main, sans attendre.';
 
+/**
+ * Et ce qu'il lit quand le prestataire, lui, ne repond pas.
+ *
+ * LES DEUX CAS SE RESSEMBLAIENT, ET C'ETAIT UNE ERREUR. Ils portaient la meme
+ * phrase, au motif que le marchand veut payer, ne peut pas, et n'y est pour
+ * rien. Mais « le paiement n'est pas encore ouvert » decrit un etat DEFINITIF :
+ * le marchand renonce et ecrit au support. Or le 17 aout 2026, GeniusPay est
+ * devenu injoignable quelques heures — leur page d'accueil elle-meme expirait a
+ * 25 secondes — et le tableau de bord annoncait un service jamais ouvert alors
+ * qu'il avait encaisse le matin meme.
+ *
+ * Une panne passagere se dit comme telle : elle appelle un reessai, pas une
+ * lettre.
+ */
+const PAIEMENT_INJOIGNABLE =
+  'Le service de paiement ne répond pas pour le moment. Réessayez dans '
+  + 'quelques minutes — votre formule et vos données ne changent pas.';
+
 function getBearerToken(request: Request): string | null {
   const authHeader = request.headers.get('authorization');
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -213,7 +231,7 @@ export async function POST(request: Request) {
     // « fetch failed » — en pleine page, ce qui lui faisait croire que le
     // defaut venait de DjiguiFlow ou de lui.
     if (resultat.injoignable) {
-      return NextResponse.json({ error: PAIEMENT_INDISPONIBLE }, { status: 503 });
+      return NextResponse.json({ error: PAIEMENT_INJOIGNABLE }, { status: 503 });
     }
 
     // Un vrai refus, lui, se dit tel quel : « montant invalide », « site_id
