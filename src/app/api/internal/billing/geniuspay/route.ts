@@ -4,6 +4,7 @@ import {
   geniuspayClesCoherentes,
   geniuspayConfigure,
   initialiserPaiement,
+  listerWebhooks,
   verifierPaiement,
 } from '@/lib/billing/geniuspay';
 
@@ -102,12 +103,24 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   if (!autorise(req)) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
 
-  let corps: { montant?: number; reference?: string } = {};
+  let corps: { montant?: number; reference?: string; webhooks?: boolean } = {};
   try {
     const brut = await req.text();
     if (brut.trim()) corps = JSON.parse(brut) as typeof corps;
   } catch {
     return NextResponse.json({ error: 'Corps JSON invalide.' }, { status: 400 });
+  }
+
+  // La question qu'on se pose quand aucune notification n'arrive : y a-t-il un
+  // webhook declare, et vers quelle URL ? Lecture seule — la creation reste un
+  // geste du gerant, parce que le secret `whsec_…` n'est rendu qu'a ce
+  // moment-la et ne doit traverser aucun journal.
+  if (corps.webhooks) {
+    return NextResponse.json({
+      deploiement: deploiement(),
+      etape: 'webhooks',
+      resultat: await listerWebhooks(),
+    });
   }
 
   if (corps.reference) {

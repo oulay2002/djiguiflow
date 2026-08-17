@@ -251,6 +251,48 @@ export async function initialiserPaiement(params: {
 }
 
 /**
+ * Liste les webhooks declares chez GeniusPay.
+ *
+ * VOLONTAIREMENT EN LECTURE SEULE. Creer un webhook depuis ici serait plus
+ * commode, mais leur secret `whsec_…` n'est rendu QU'A LA CREATION : il
+ * traverserait alors nos journaux et ceux de n8n, ou personne ne devrait
+ * pouvoir le lire. La creation reste donc un geste du gerant, dans son
+ * terminal ou son tableau de bord, la ou le secret ne laisse pas de trace.
+ *
+ * La liste, elle, ne contient pas de secret — et elle repond a la seule
+ * question qui compte quand aucune notification n'arrive : y a-t-il un webhook
+ * declare, et vers quelle URL ?
+ */
+export async function listerWebhooks(): Promise<
+  { ok: true; webhooks: unknown } | { ok: false; raison: string }
+> {
+  const c = config();
+  if (!c) return { ok: false, raison: 'Clés absentes.' };
+
+  let reponse: Response;
+  try {
+    reponse = await fetch(`${BASE}/webhooks`, {
+      method: 'GET',
+      headers: entetes(c),
+      signal: AbortSignal.timeout(DELAI_MS),
+    });
+  } catch (e) {
+    return { ok: false, raison: `Injoignable : ${detailErreur(e)}` };
+  }
+
+  const brut = await reponse.text().catch(() => '');
+  try {
+    const json = JSON.parse(brut) as Record<string, unknown>;
+    if (!reponse.ok || json.success !== true) {
+      return { ok: false, raison: `HTTP ${reponse.status} — ${brut.slice(0, 200)}` };
+    }
+    return { ok: true, webhooks: json.data ?? [] };
+  } catch {
+    return { ok: false, raison: `Corps illisible (HTTP ${reponse.status})` };
+  }
+}
+
+/**
  * Statuts de GeniusPay, ranges en trois familles.
  *
  * `pending` et `processing` ne sont PAS des refus : la transaction est en
