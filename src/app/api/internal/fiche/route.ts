@@ -17,18 +17,33 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
  * le bon endroit — c'est le seul appel qui connait deja de quel marchand on
  * parle, et le secret n'a plus a quitter la base.
  *
- * `webhook_secret_hash` a NULL vaut « marchand pas encore migre » : on sert la
- * fiche sans second facteur, comme avant. La route reste protegee par
- * SYNC_SECRET dans tous les cas.
+ * UNE EMPREINTE ABSENTE VAUT REFUS, ET C'EST UN CHANGEMENT DU 17 AOUT 2026.
+ * Elle valait auparavant acceptation, au titre de « marchand pas encore
+ * migre ». Le repli penchait donc du mauvais cote : tout marchand sans
+ * empreinte voyait son webhook accepter n'importe quel POST forge — commandes
+ * fictives, faux `callback_query` faisant defiler une livraison jusqu'a
+ * « livree », et messages sortants emis par son propre bot vers des
+ * destinataires choisis par l'attaquant.
+ *
+ * Ce qui rendait le defaut dangereux, c'est qu'il etait SILENCIEUX : l'empreinte
+ * est posee par `brancherBotTelegram` apres un `setWebhook` reussi, et si cette
+ * pose echoue, le canal fonctionne tout en n'etant plus protege, sans qu'aucun
+ * signal ne le dise. Verifie avant de changer : zero marchand dans ce cas, les
+ * deux empreintes de la seule boutique existante etant posees. Le refus ne
+ * ferme donc aucun canal en service.
+ *
+ * La route reste protegee par SYNC_SECRET dans tous les cas — le secret de canal
+ * est un SECOND facteur, qui prouve de quel marchand vient le message.
  */
-function secretWebhookValide(recu: string | null, empreinteAttendue: unknown): boolean {
+type VerdictSecret = 'valide' | 'invalide' | 'empreinte_absente';
+
+function verifierSecretWebhook(recu: string, empreinteAttendue: unknown): VerdictSecret {
   const attendu = String(empreinteAttendue ?? '').trim();
-  if (!attendu) return true;
-  if (!recu) return false;
+  if (!attendu) return 'empreinte_absente';
 
   const a = Buffer.from(createHash('sha256').update(recu, 'utf8').digest('hex'), 'utf8');
   const b = Buffer.from(attendu, 'utf8');
-  return a.length === b.length && timingSafeEqual(a, b);
+  return a.length === b.length && timingSafeEqual(a, b) ? 'valide' : 'invalide';
 }
 
 export async function GET(req: Request) {
@@ -91,7 +106,22 @@ export async function GET(req: Request) {
     const recu = req.headers.get(entete);
     if (recu === null) continue;
     secretPresente = true;
-    if (!secretWebhookValide(recu, empreinte)) {
+
+    const verdict = verifierSecretWebhook(recu, empreinte);
+
+    // Deux refus distincts, journalises distinctement : sans cette distinction,
+    // un provisionnement inachevé se lit comme une tentative d'intrusion, et on
+    // cherche au mauvais endroit.
+    if (verdict === 'empreinte_absente') {
+      console.error(
+        `Fiche — « ${slug} » présente un ${entete} mais AUCUNE empreinte n'est enregistrée.`
+        + ' Canal refusé. Rebranchez le bot depuis /onboarding pour reposer l’empreinte'
+        + ' (POST /api/internal/telegram/brancher).',
+      );
+      return NextResponse.json({ error: 'Canal non provisionné' }, { status: 401 });
+    }
+
+    if (verdict === 'invalide') {
       console.warn(`Fiche — secret ${entete} invalide pour « ${slug} »`);
       return NextResponse.json({ error: 'Secret webhook invalide' }, { status: 401 });
     }

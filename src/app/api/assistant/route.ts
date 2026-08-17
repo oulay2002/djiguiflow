@@ -1,5 +1,38 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import {
+  adresseAppelante,
+  plafondJournalierDepasse,
+  rafaleDepassee,
+  secondesAvantMinuitAbidjan,
+} from '@/lib/limiteur';
+
+/**
+ * PLAFONDS. Ce point d'entree appelle Mistral sans authentification : il est
+ * ouvert a l'internet et chaque appel coute. Sans plafond, une boucle depuis
+ * n'importe ou consomme le budget du projet, et rien ne le signale avant la
+ * facture.
+ *
+ * Les valeurs sont reglables par variable d'environnement pour pouvoir serrer
+ * en cas d'abus sans redeployer de code.
+ */
+const RAFALE_LIMITE = Number(process.env.ASSISTANT_RAFALE_LIMITE ?? 8);
+const RAFALE_FENETRE_MS = 60_000;
+const PLAFOND_JOURNALIER = Number(process.env.ASSISTANT_PLAFOND_JOURNALIER ?? 500);
+
+/**
+ * `sanitizeMessages` borne le NOMBRE de messages, jamais leur TAILLE : un seul
+ * message de 500 ko partait tel quel chez Mistral, ou le cout suit le nombre de
+ * jetons. Douze messages bornes en nombre mais pas en longueur ne bornent donc
+ * rien du tout.
+ */
+const MAX_CARACTERES_PAR_MESSAGE = 2_000;
+const MAX_CARACTERES_TOTAL = 8_000;
+
+/** Message unique : le visiteur n'a pas a savoir lequel des plafonds a parle. */
+const TROP_DE_DEMANDES =
+  "L'assistant reçoit trop de demandes en ce moment. Réessayez dans un instant, "
+  + 'ou écrivez-nous directement.';
 
 type IncomingMessage = {
   role: 'user' | 'assistant';
@@ -51,13 +84,27 @@ type TariffRow = {
 };
 
 function sanitizeMessages(messages: IncomingMessage[]): IncomingMessage[] {
-  return messages
+  const bornes = messages
     .filter((message) => typeof message.content === 'string' && message.content.trim().length > 0)
     .slice(-12)
     .map((message) => ({
       role: message.role,
-      content: message.content.trim(),
+      // Tronquer plutot que refuser : une question longue reste une question
+      // legitime, et la couper garde la conversation utilisable.
+      content: message.content.trim().slice(0, MAX_CARACTERES_PAR_MESSAGE),
     }));
+
+  // Puis un plafond sur l'ENSEMBLE, en gardant les messages les plus recents :
+  // douze messages de 2 000 caracteres feraient encore une charge de 24 ko.
+  const retenus: IncomingMessage[] = [];
+  let total = 0;
+  for (let i = bornes.length - 1; i >= 0; i -= 1) {
+    total += bornes[i].content.length;
+    if (total > MAX_CARACTERES_TOTAL && retenus.length > 0) break;
+    retenus.unshift(bornes[i]);
+  }
+
+  return retenus;
 }
 
 function normalizeText(value: string): string {
@@ -152,6 +199,18 @@ export async function POST(request: Request) {
     );
   }
 
+  // La rafale d'abord, et AVANT de lire le corps : c'est le controle le moins
+  // cher, et le refuser tot evite de payer l'analyse d'une charge envoyee en
+  // boucle.
+  const appelant = adresseAppelante(request);
+  const rafale = rafaleDepassee(`assistant:${appelant}`, RAFALE_LIMITE, RAFALE_FENETRE_MS);
+  if (rafale.depassee) {
+    return NextResponse.json(
+      { error: TROP_DE_DEMANDES },
+      { status: 429, headers: { 'Retry-After': String(rafale.attendreSecondes) } },
+    );
+  }
+
   let body: RequestBody;
 
   try {
@@ -174,6 +233,20 @@ export async function POST(request: Request) {
       reply:
         'Je ne peux pas confirmer ce tarif pour le moment. Je vous recommande de contacter un conseiller DjiguiFlow pour la grille officielle.',
     });
+  }
+
+  // Le plafond partage se decompte ICI, et pas plus haut : au-dessus, la
+  // question de tarif sans source officielle repond sans appeler Mistral. Ne
+  // compter que ce qui coute reellement garde le compteur honnete.
+  const plafond = await plafondJournalierDepasse('assistant', PLAFOND_JOURNALIER);
+  if (plafond.depasse) {
+    return NextResponse.json(
+      { error: TROP_DE_DEMANDES },
+      {
+        status: plafond.indisponible ? 503 : 429,
+        headers: { 'Retry-After': String(secondesAvantMinuitAbidjan()) },
+      },
+    );
   }
 
   const payload = {
@@ -200,9 +273,16 @@ export async function POST(request: Request) {
     });
 
     if (!mistralResponse.ok) {
-      const errorText = await mistralResponse.text();
+      // Le corps d'erreur du fournisseur partait tel quel au visiteur : il peut
+      // nommer l'organisation, un quota, un modele indisponible. Il va
+      // desormais dans les journaux, ou il sert au diagnostic, et pas dans une
+      // reponse publique.
+      const detail = await mistralResponse.text().catch(() => '(corps illisible)');
+      console.error(
+        `Assistant — Mistral a répondu ${mistralResponse.status} : ${detail.slice(0, 500)}`,
+      );
       return NextResponse.json(
-        { error: "L'API Mistral a renvoyé une erreur.", details: errorText },
+        { error: "L'assistant est momentanément indisponible." },
         { status: 502 },
       );
     }

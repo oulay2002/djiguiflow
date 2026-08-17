@@ -89,6 +89,13 @@ l'exposition du schéma `public` par PostgREST.*
 
 ### R1 — Une empreinte absente vaut acceptation
 
+> **CORRIGÉ le 17 août 2026.** `secretWebhookValide` devient `verifierSecretWebhook` et rend
+> un verdict à trois valeurs : `valide`, `invalide`, `empreinte_absente`. L'absence vaut
+> désormais **refus** (401 « Canal non provisionné »), et les deux refus sont journalisés
+> distinctement — sans quoi un provisionnement inachevé se lit comme une tentative
+> d'intrusion et on cherche au mauvais endroit. Le journal nomme la manœuvre de réparation.
+> Vérifié avant d'agir : **0 marchand** concerné, donc aucun canal en service n'est fermé.
+
 `src/app/api/internal/fiche/route.ts:26` — `if (!attendu) return true;`. Un marchand dont
 `telegram_webhook_secret_hash` est `NULL` voit son webhook accepter **n'importe quel** POST
 forgé : commandes fictives, faux `callback_query` faisant défiler une livraison jusqu'à
@@ -106,6 +113,35 @@ celle des identifiants Google — rendrait l'état visible au lieu de dormir.
 
 ### R2 — Le point d'entrée de l'assistant IA est ouvert et sans plafond
 
+> **CORRIGÉ le 17 août 2026**, en trois étages plus une fuite fermée au passage.
+>
+> 1. **Rafale par appelant**, en mémoire du processus (`src/lib/limiteur.ts`) : 8 appels par
+>    minute, contrôlée **avant** de lire le corps. Elle ne voit qu'une instance — c'est un
+>    plancher, pas un plafond, et le code le dit. La clé vient de `x-real-ip` puis
+>    `x-vercel-forwarded-for` ; `x-forwarded-for`, que le client peut forger, n'est qu'un
+>    dernier recours.
+> 2. **Plafond journalier partagé**, en base (migration `plafond_journalier_assistant`) :
+>    500 appels/jour par défaut, réglable sans redéploiement. C'est lui qui protège
+>    réellement la dépense, un compteur en mémoire repartant de zéro dans chaque instance.
+>    L'incrément et le verdict tiennent dans une seule opération atomique
+>    (`insert … on conflict … returning`), sinon deux appels simultanés dépasseraient le
+>    plafond — exactement ce qu'un plafond doit empêcher. Le décompte a lieu juste avant
+>    l'appel à Mistral, pas plus haut : la question de tarif sans source officielle répond
+>    sans rien dépenser, et ne doit donc rien consommer.
+> 3. **Borne de taille.** `sanitizeMessages` bornait le *nombre* de messages, jamais leur
+>    *longueur* : un seul message de 500 ko partait tel quel, or le coût suit les jetons.
+>    Désormais 2 000 caractères par message, 8 000 au total, en tronquant plutôt qu'en
+>    refusant.
+>
+> **Choix assumé : fermé en cas de doute.** Si la base ne répond pas, on ne peut plus
+> compter, donc plus protéger la dépense — le point d'entrée refuse (503). C'est la règle que
+> `mode.ts` posait déjà pour la facturation : « le repli doit toujours pencher du côté qui
+> n'offre rien ».
+>
+> **Fuite fermée au passage** : la route renvoyait `details: errorText`, le corps d'erreur de
+> Mistral, au client public — il peut nommer l'organisation, un quota, un modèle. Il va
+> maintenant dans les journaux.
+
 `src/app/api/assistant/route.ts` (225 lignes) appelle Mistral. Aucune authentification,
 aucune limitation de débit, aucun contrôle d'origine, aucun quota : ni `429`, ni
 `Retry-After`, ni compteur par adresse. Une boucle depuis n'importe où consomme le budget
@@ -119,6 +155,26 @@ n'empêche ni l'abus de volume, ni une réponse hors sujet.
 dégrade proprement (réponse fixe renvoyant vers la page tarifs) au lieu de couper.
 
 ### R3 — Un réessai posé directement sur l'envoi Telegram
+
+> **CORRIGÉ le 17 août 2026 — et mon constat était incomplet.** Ce ne sont pas un mais
+> **trois** nœuds d'envoi qui portaient `retryOnFail: true, maxTries: 3` dans
+> `Envoyer réponse client` : `Send a text message` (Telegram), `HTTP Request` (wasender) et
+> `Envoi via DjiguiFlow`. Mon analyseur n'avait retenu que le premier — son heuristique
+> reconnaissait le type Telegram, pas un nœud HTTP au nom générique. Les trois sont des
+> envois **non idempotents**, donc les trois dupliquaient au même titre.
+>
+> Ce qui a tranché n'est pas un principe général — la règle usuelle recommande au contraire
+> `retryOnFail` sur un nœud réseau — mais **la règle que le projet a déjà écrite**, dans le
+> nœud `Verdict` : « un doute ne doit jamais coûter un doublon chez le client ». Et deux
+> constats : les sorties erreur des trois nœuds sont **déjà câblées** vers `Log échec` →
+> `Verdict` → `Signaler l echec`, qui lève et déclenche `Alerte Erreurs` ; et sur 90
+> exécutions (16-17 août) il y a **89 succès et 1 erreur**, celle-ci datant de la fenêtre de
+> dépannage de la migration. Retirer le réessai ne crée donc pas une panne silencieuse : il
+> transforme un doublon silencieux en échec bruyant.
+>
+> `Écrire log` garde son réessai : journaliser deux fois est sans conséquence, et ce n'est pas
+> un envoi client. **Amélioration durable restant à faire** : une clé d'idempotence sur
+> `/api/canaux/envoyer`, qui permettrait de rétablir le réessai sans risque de doublon.
 
 `Envoyer réponse client` / `Send a text message` : `retryOnFail = true`, `maxTries = 3`,
 `waitBetweenTries = 2000`. Si l'API Telegram délivre le message puis échoue à répondre
@@ -134,6 +190,26 @@ placer sur une tentative *idempotente* seulement, ou faire porter la reprise par
 avec une clé de déduplication.
 
 ### R4 — Une note client peut disparaître sans trace
+
+> **CORRIGÉ le 17 août 2026, mais pas par le correctif que j'avais annoncé.** J'avais écrit
+> « câbler la seconde sortie vers un nœud qui lève ». En regardant le graphe, c'était le
+> mauvais geste : dans `Routeur WhatsApp`, `Enregistrer note` alimente **trois** enfants en
+> parallèle — `Alerte si mauvaise note`, `Call 'Envoyer réponse client'` (la confirmation au
+> client) et `Copier note dans Supabase`. Faire lever ce dernier peut préempter les deux
+> autres, et le client ne reçoit plus sa confirmation. C'est le piège déjà rencontré ici :
+> rendre un nœud bruyant fait tomber les branches parallèles de son voisin.
+>
+> Le correctif retenu est plus simple : `onError` repasse de `continueRegularOutput` au défaut
+> `stopWorkflow`, sans ajouter de nœud, et `retryOnFail: true, maxTries: 3` absorbe d'abord le
+> passager. Un échec **persistant** fait donc échouer l'exécution, ce qui déclenche
+> `Alerte Erreurs` — les deux workflows le déclarent déjà comme workflow d'erreur.
+>
+> **Dépendance à l'ordre, explicite plutôt qu'implicite.** Ce correctif est sûr parce que
+> `Copier note dans Supabase` est **le dernier de ses frères** : position 3/3 sous
+> `Enregistrer note` dans `Routeur WhatsApp`, et seul enfant de `Référence réelle ?` — lui-même
+> second — dans `Reception Notes Clients`. Leurs frères ont donc déjà tourné quand il lève.
+> **Réordonner ces connexions réintroduirait le risque en silence.** Je n'ai pas pu l'observer
+> sur une exécution réelle : aucune n'est conservée pour ces chemins.
 
 `Routeur WhatsApp` / `Copier note dans Supabase` et `Reception Notes Clients` /
 `Copier note dans Supabase` portent `onError: continueRegularOutput` et sont **en fin de
@@ -367,10 +443,11 @@ commande par téléphone** — les deux pièges qui ont déjà coûté cher ici.
 | 1 | `drop extension http` (F2) | minutes | SSRF anonyme depuis la base | **fait le 17 août** |
 | 2 | Reconstituer les 30 migrations manquantes (R6) | fait | schéma non reproductible, DDL sensible jamais relu | **fait le 17 août** |
 | 2bis | Migration de référence pour rejouer depuis zéro (R6) | ~1 h | un environnement neuf ne se reconstruit pas | à faire |
-| 3 | Refus par défaut si empreinte absente (R1) | ~30 min | forge de webhook sur un marchand mal provisionné | à faire |
-| 4 | Plafond sur `/api/assistant` (R2) | ~1 h | budget Mistral ouvert | à faire |
-| 5 | Retirer `retryOnFail` de l'envoi Telegram (R3) | minutes | messages clients en double | à faire |
-| 6 | Câbler l'échec des deux `Copier note dans Supabase` (R4) | ~30 min | notes clients perdues en silence | à faire |
+| 3 | Refus par défaut si empreinte absente (R1) | fait | forge de webhook sur un marchand mal provisionné | **fait le 17 août** |
+| 4 | Plafond sur `/api/assistant` (R2) | fait | budget Mistral ouvert, fuite du corps d'erreur | **fait le 17 août** |
+| 5 | Retirer `retryOnFail` des **trois** envois (R3) | fait | messages clients en double | **fait le 17 août** |
+| 6 | Retirer l'avalement des deux `Copier note dans Supabase` (R4) | fait | notes clients perdues en silence | **fait le 17 août** |
+| 6bis | Clé d'idempotence sur `/api/canaux/envoyer` (suite de R3) | ~1 h | permettrait de rétablir le réessai sans risque de doublon | à faire |
 | 7 | Étendre les `GRANT` de colonnes aux 8 autres tables (R5) | ~1 h avec test connecté/déconnecté | second verrou si une policy est écrite trop large | à faire |
 | 8 | Facturation : GeniusPay maintenu, 3 défauts corrigés | fait | mode simulé silencieux, diagnostic faux, paiement enterré | **fait le 17 août** |
 | 9 | Retirer le reliquat Stripe, aligner les politiques `public` | à décider | dernière source de vérité concurrente | à décider |
