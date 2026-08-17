@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import {
   geniuspayBacASable,
+  geniuspayClesCoherentes,
   geniuspayConfigure,
   initialiserPaiement,
   verifierPaiement,
@@ -80,14 +81,10 @@ export async function GET(req: Request) {
     // Un desaccord entre les deux cles trahit un copier-coller partiel : une
     // publique de bac a sable avec une secrete de production authentifie mal, et
     // le message d'erreur ne le dira pas.
-    clesCoherentes:
-      !cle || !secret
-        ? null
-        : (cle.startsWith('pk_sandbox_') && secret.startsWith('sk_sandbox_'))
-          || (cle.startsWith('pk_live_') && secret.startsWith('sk_live_')),
+    clesCoherentes: geniuspayClesCoherentes(),
     commentSonder:
       'POST {"montant": 1000} pour ouvrir une transaction et obtenir sa page de paiement. '
-      + 'POST {"reference": "MTX-…"} pour verifier une transaction existante.',
+      + 'POST {"reference": "SANDBOX_…"} pour verifier une transaction existante.',
   });
 }
 

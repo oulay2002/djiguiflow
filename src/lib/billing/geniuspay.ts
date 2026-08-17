@@ -89,13 +89,45 @@ export function geniuspayConfigure(): boolean {
 }
 
 /**
- * Sommes-nous en bac a sable ? Lu sur le prefixe de la cle, pas devine.
+ * Le monde auquel appartient une cle : `sandbox`, `live`, ou rien.
+ *
+ * ⚠ LA DOCUMENTATION DE GENIUSPAY EST FAUSSE SUR CE POINT. Elle annonce
+ * `pk_sandbox_…` pour la cle publique et `sk_sandbox_…` pour la secrete. Les
+ * cles reellement emises, verifiees le 17 aout 2026, sont `sk_sandbox_…` et
+ * `ss_sandbox_…`. Un test sur `pk_` declarait donc la production alors qu'on
+ * etait en bac a sable — l'inverse exact de la protection recherchee.
+ *
+ * On ne lit donc plus le prefixe entier mais le SEGMENT DU MILIEU, qui seul
+ * porte le sens, et qui survivra a leur prochain changement de nommage.
+ */
+function environnementDeCle(valeur: string | undefined): 'sandbox' | 'live' | null {
+  const m = (valeur ?? '').trim().match(/^[a-z]{2}_(sandbox|live)_/i);
+  return m ? (m[1].toLowerCase() as 'sandbox' | 'live') : null;
+}
+
+/**
+ * Sommes-nous en bac a sable ? Lu sur la cle, pas devine.
  *
  * Sert a interdire qu'une transaction simulee ouvre un acces reel, et a
  * l'afficher clairement dans le tableau de bord.
  */
 export function geniuspayBacASable(): boolean {
-  return (process.env.GENIUSPAY_API_KEY?.trim() ?? '').startsWith('pk_sandbox_');
+  return environnementDeCle(process.env.GENIUSPAY_API_KEY) === 'sandbox';
+}
+
+/**
+ * Les deux cles appartiennent-elles au meme monde ?
+ *
+ * Une publique de bac a sable avec une secrete de production authentifie mal, et
+ * le message d'erreur du prestataire ne dira jamais pourquoi. `null` quand une
+ * cle manque ou n'a pas un format reconnu : on ne prononce pas un verdict qu'on
+ * n'a pas les moyens de rendre.
+ */
+export function geniuspayClesCoherentes(): boolean | null {
+  const a = environnementDeCle(process.env.GENIUSPAY_API_KEY);
+  const b = environnementDeCle(process.env.GENIUSPAY_API_SECRET);
+  if (!a || !b) return null;
+  return a === b;
 }
 
 function entetes(c: { cle: string; secret: string }): Record<string, string> {
