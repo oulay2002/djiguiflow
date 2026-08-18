@@ -33,6 +33,19 @@ const FENETRE_JOURS = 7;
 /** Filet : on ne veut pas cent appels au prestataire dans une seule execution. */
 const MAX_PAR_PASSAGE = 25;
 
+/**
+ * Au-dela de ce delai, un paiement encore en attente doit REVEILLER QUELQU'UN.
+ *
+ * Le rattrapage rate en silence : il rend `honores: 0` et l'execution n8n reste
+ * verte. Or un paiement bloque, c'est un marchand qui a peut-etre paye et qui
+ * n'a pas son acces — le pire etat possible, et celui que personne ne voit.
+ *
+ * Deux heures laissent passer ce qui est normal : une transaction `pending` que
+ * le client n'a pas encore validee sur son telephone, ou une passerelle Mobile
+ * Money lente. Au-dela, ce n'est plus de la patience, c'est de l'aveuglement.
+ */
+const SEUIL_ALERTE_H = 2;
+
 function autorise(req: Request): boolean {
   const secret = req.headers.get('x-sync-secret');
   return Boolean(process.env.SYNC_SECRET) && secret === process.env.SYNC_SECRET;
@@ -64,15 +77,24 @@ export async function POST(req: Request) {
   }
 
   const lignes = enAttente ?? [];
-  const resultats: { reference: string; etat: IssueEncaissement['etat'] }[] = [];
+  const resultats: {
+    reference: string;
+    etat: IssueEncaissement['etat'];
+    heures: number;
+  }[] = [];
   let honores = 0;
 
   for (const ligne of lignes) {
     const reference = String(ligne.reference ?? '');
     if (!reference) continue;
 
+    const naissance = Date.parse(String(ligne.created_at ?? ''));
+    const heures = Number.isFinite(naissance)
+      ? Math.round((Date.now() - naissance) / 3600_000)
+      : 0;
+
     const issue = await honorerPaiement({ reference });
-    resultats.push({ reference, etat: issue.etat });
+    resultats.push({ reference, etat: issue.etat, heures });
 
     if (issue.etat === 'honore') {
       honores++;
@@ -86,12 +108,31 @@ export async function POST(req: Request) {
     }
   }
 
+  // CE QUI DOIT REVEILLER QUELQU'UN. Un paiement que le rattrapage n'arrive pas
+  // a honorer depuis plus de deux heures, c'est un marchand qui a peut-etre
+  // paye et qui n'a pas son acces. `deja` et `honore` sont des succes ; tout le
+  // reste, passe ce delai, est un dossier ouvert que personne ne regarde.
+  const bloques = resultats.filter(
+    (r) => r.etat !== 'honore' && r.etat !== 'deja' && r.heures >= SEUIL_ALERTE_H,
+  );
+
+  if (bloques.length > 0) {
+    console.error(
+      `Rattrapage — ${bloques.length} paiement(s) bloqué(s) depuis plus de ${SEUIL_ALERTE_H}h : `
+      + bloques.map((b) => `${b.reference} (${b.etat}, ${b.heures}h)`).join(', '),
+    );
+  }
+
   // Toujours 200 : c'est un balayage, pas une transaction. Un paiement encore
   // `pending` chez le prestataire n'est pas une panne, et repondre en erreur
-  // ferait rougir une execution n8n parfaitement normale.
+  // ferait rougir une execution n8n parfaitement normale. L'alerte se declenche
+  // sur `bloques`, que l'appelant n8n teste — pas sur le code HTTP.
   return NextResponse.json({
     examines: lignes.length,
     honores,
+    bloques: bloques.length,
+    detailBloques: bloques,
+    seuilAlerteH: SEUIL_ALERTE_H,
     fenetreJours: FENETRE_JOURS,
     resultats,
   });
