@@ -81,11 +81,23 @@ const ACCROCHES = [
   (nom: string) => `${nom} — le palmarès de la semaine`,
 ];
 
-const CLOTURES = [
-  'Commandez sur WhatsApp, on livre.',
-  'Un message, et c’est chez vous.',
-  'Livraison dans votre zone, commandez maintenant.',
-  'Écrivez-nous, on s’occupe du reste.',
+/**
+ * L'appel a l'action, qui porte la zone ET le lien.
+ *
+ * Il a remplace une liste de clotures — « Commandez sur WhatsApp, on livre »,
+ * « Livraison dans votre zone, commandez maintenant » — qui disaient la meme
+ * chose SANS donner d'adresse. Les garder toutes les deux produisait un doublon
+ * ridicule : « Livraison dans votre zone, commandez maintenant. » suivi de
+ * « Livraison a Abidjan — commandez ici ». Deux invitations a la suite se
+ * neutralisent ; une seule, qui mene quelque part, agit.
+ *
+ * La rotation reste, pour la meme raison qu'ailleurs : un marchand qui lit la
+ * meme phrase chaque lundi cesse de la lire.
+ */
+const APPELS = [
+  (zone: string) => (zone ? `📍 Livraison à ${zone} — commandez ici :` : '📍 Commandez ici :'),
+  (zone: string) => (zone ? `📍 On livre à ${zone}. C’est par ici :` : '📍 C’est par ici :'),
+  (zone: string) => (zone ? `📍 ${zone} — commandez en deux minutes :` : '📍 Commandez en deux minutes :'),
 ];
 
 /**
@@ -139,7 +151,7 @@ function composer(
   const i = indexSemaine();
 
   const accroche = ACCROCHES[i % ACCROCHES.length](nom);
-  const cloture = CLOTURES[i % CLOTURES.length];
+  const appelDeLaSemaine = APPELS[i % APPELS.length];
 
   const listeCourte = vedettes
     .map((v) => (v.prix !== null ? `${v.nom} — ${fcfa(v.prix)}` : v.nom))
@@ -164,11 +176,9 @@ function composer(
    * pose.
    */
   const lien = `${baseUrl}/boutiques/${encodeURIComponent(slug)}`;
-  const appel = zone
-    ? `📍 Livraison à ${zone} — commandez ici :\n${lien}`
-    : `📍 Commandez ici :\n${lien}`;
+  const appel = `${appelDeLaSemaine(zone)}\n${lien}`;
 
-  const legende = `${accroche} 👇\n\n• ${listeCourte}${satisfaction}\n\n${cloture}\n\n${appel}`;
+  const legende = `${accroche} 👇\n\n• ${listeCourte}${satisfaction}\n\n${appel}`;
 
   // Hashtags : locaux d'abord, c'est ce qui touche un client livrable. Le nom
   // de la boutique est nettoye de tout ce qui n'est pas alphanumerique. La zone
@@ -198,7 +208,7 @@ function composer(
     `CHUTE : « Commandez sur WhatsApp — lien en bio. »\n`
     + `LIEN À METTRE EN BIO : ${lien}\n\n${hashtags}`;
 
-  const statutWhatsApp = `${accroche} :\n• ${listeCourte}\n\n${cloture}\n\n${appel}`;
+  const statutWhatsApp = `${accroche} :\n• ${listeCourte}\n\n${appel}`;
 
   return {
     slug,
