@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useBoutique, avecBoutique } from '@/lib/boutique';
 import {
   AlertTriangle,
+  Pencil,
   Plus,
   RefreshCw,
   UtensilsCrossed,
@@ -36,6 +37,16 @@ export default function Page() {
   const [fSeuil, setFSeuil] = useState('5');
   const [envoi, setEnvoi] = useState(false);
   const [msg, setMsg] = useState('');
+
+  // Modal de modification de la fiche : nom, categorie, prix, description, photo.
+  const [fiche, setFiche] = useState<Prod | null>(null);
+  const [gNom, setGNom] = useState('');
+  const [gCat, setGCat] = useState('');
+  const [gPrix, setGPrix] = useState('');
+  const [gDesc, setGDesc] = useState('');
+  const [gFile, setGFile] = useState<File | null>(null);
+  const [gMsg, setGMsg] = useState('');
+  const [gEnvoi, setGEnvoi] = useState(false);
 
   // Modal de gestion de stock
   const [editProd, setEditProd] = useState<Prod | null>(null);
@@ -108,6 +119,59 @@ export default function Page() {
     } catch (e) {
       setMsg('❌ ' + (e instanceof Error ? e.message : 'Erreur inconnue'));
     } finally { setEnvoi(false); }
+  };
+
+  const ouvrirFiche = (p: Prod) => {
+    setFiche(p);
+    setGNom(p.nom);
+    setGCat(p.categorie);
+    setGPrix(String(p.prix ?? ''));
+    setGDesc(p.description ?? '');
+    setGFile(null);
+    setGMsg('');
+  };
+
+  const sauvegarderFiche = async () => {
+    if (!fiche) return;
+    if (!gNom.trim()) { setGMsg('⚠️ Le nom ne peut pas être vide.'); return; }
+    setGEnvoi(true); setGMsg('');
+    try {
+      // La photo suit le meme chemin qu'a la creation : le serveur la redresse,
+      // la recadre et l'allege. On ne l'envoie que si le marchand en a choisi
+      // une nouvelle — sinon `image` reste absent et l'ancienne est conservee.
+      let image: string | undefined;
+      if (gFile) {
+        const formulaire = new FormData();
+        formulaire.append('fichier', gFile);
+        formulaire.append('boutique_id', boutiqueId);
+        const rep = await fetchDashboard('/api/dashboard/produits/photo', {
+          method: 'POST',
+          body: formulaire,
+        });
+        const d = await rep.json();
+        if (!rep.ok) throw new Error(d?.error || `Envoi de la photo échoué (${rep.status})`);
+        image = d.url;
+      }
+
+      const res = await fetchDashboard(avecBoutique('/api/dashboard/produits', boutiqueId), {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          reference: fiche.id,
+          nom: gNom.trim(),
+          categorie: gCat,
+          prix: Number(gPrix) || 0,
+          description: gDesc,
+          ...(image ? { image } : {}),
+        }),
+      });
+      const d = await res.json();
+      if (!res.ok || !d.ok) throw new Error(d?.error || `HTTP ${res.status}`);
+      setFiche(null);
+      await charger();
+    } catch (e) {
+      setGMsg('❌ ' + (e instanceof Error ? e.message : 'Erreur inconnue'));
+    } finally { setGEnvoi(false); }
   };
 
   const ouvrirStock = (p: Prod) => {
@@ -232,12 +296,26 @@ export default function Page() {
                       <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${st.color}`}>
                         {st.label}
                       </span>
-                      <button
-                        onClick={() => ouvrirStock(p)}
-                        className="rounded-full bg-chaux-100 px-3 py-1 text-xs font-semibold text-nuit-700 transition hover:bg-chaux-200"
-                      >
-                        📦 Gérer le stock
-                      </button>
+                      <div className="flex items-center gap-2">
+                        {/* Le marchand pouvait creer un produit et regler son
+                            stock, jamais corriger son nom, son prix ni sa
+                            photo. Une faute de frappe etait definitive — et
+                            elle ne fait pas que deparer : les rapports
+                            rattachent prix et photo au produit PAR SON NOM. */}
+                        <button
+                          onClick={() => ouvrirFiche(p)}
+                          className="rounded-full bg-nuit-50 px-3 py-1 text-xs font-semibold text-nuit-700 transition hover:bg-nuit-100"
+                        >
+                          <Pencil className="mr-1 inline h-3 w-3" />
+                          Modifier
+                        </button>
+                        <button
+                          onClick={() => ouvrirStock(p)}
+                          className="rounded-full bg-chaux-100 px-3 py-1 text-xs font-semibold text-nuit-700 transition hover:bg-chaux-200"
+                        >
+                          📦 Stock
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -307,6 +385,62 @@ export default function Page() {
       )}
 
       {/* Modal de gestion de stock */}
+      {fiche && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="max-h-[90vh] w-full max-w-md space-y-4 overflow-y-auto rounded-[1.5rem] bg-white p-6 shadow-2xl">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-black text-nuit-900">Modifier la fiche</h2>
+                <p className="text-sm text-chaux-600">{fiche.nom}</p>
+              </div>
+              <button onClick={() => setFiche(null)} className="rounded-full p-2 hover:bg-chaux-100"><X className="h-5 w-5" /></button>
+            </div>
+
+            <div>
+              <label className="mb-1 block text-sm font-semibold text-nuit-700">Nom du produit</label>
+              <input value={gNom} onChange={x => setGNom(x.target.value)} className="w-full rounded-lg border p-2" />
+              {/* Le nom est la cle qui relie les ventes au catalogue : il vaut
+                  la peine d'avertir avant qu'un renommage ne scinde un
+                  historique. */}
+              {gNom.trim() !== fiche.nom && (
+                <p className="mt-1 text-xs text-mangue-700">
+                  Renommer un produit sépare ses ventes passées des nouvelles dans les rapports.
+                </p>
+              )}
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div>
+                <label className="mb-1 block text-sm font-semibold text-nuit-700">Catégorie</label>
+                <input value={gCat} onChange={x => setGCat(x.target.value)} className="w-full rounded-lg border p-2" />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-semibold text-nuit-700">Prix (FCFA)</label>
+                <input type="number" min="0" value={gPrix} onChange={x => setGPrix(x.target.value)} className="w-full rounded-lg border p-2" />
+              </div>
+            </div>
+
+            <div>
+              <label className="mb-1 block text-sm font-semibold text-nuit-700">Description</label>
+              <textarea rows={2} value={gDesc} onChange={x => setGDesc(x.target.value)} className="w-full rounded-lg border p-2" />
+            </div>
+
+            <div>
+              <label className="mb-1 block text-sm font-semibold text-nuit-700">Remplacer la photo</label>
+              <input type="file" accept="image/*" onChange={x => setGFile(x.target.files?.[0] ?? null)} className="w-full rounded-lg border p-2 text-sm" />
+              <p className="mt-1 text-xs text-chaux-600">Laissez vide pour garder la photo actuelle.</p>
+            </div>
+
+            {gMsg && <p className="text-sm text-nuit-700">{gMsg}</p>}
+
+            <div className="flex gap-2 pt-1">
+              <Bouton variante="calme" onClick={() => setFiche(null)} className="flex-1">Annuler</Bouton>
+              <Bouton onClick={sauvegarderFiche} chargement={gEnvoi} className="flex-1">Enregistrer</Bouton>
+            </div>
+          </div>
+        </div>
+      )}
+
       {editProd && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="w-full max-w-md space-y-4 rounded-[1.5rem] bg-white p-6 shadow-2xl">
