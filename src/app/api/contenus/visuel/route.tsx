@@ -72,6 +72,18 @@ export async function GET(req: Request) {
 
   const photo = await chargerPhoto(contenu.photoVedette?.url);
 
+  /**
+   * Avec une photo, on ne montre que DEUX plats. Le carre fait 1080 pixels et
+   * ne s'etire pas : trois cartouches, leurs sous-titres et une photo digne de
+   * ce nom n'y tiennent pas. Le troisieme plat passait sous l'image, purement
+   * et simplement recouvert.
+   *
+   * Entre montrer trois plats dont un cache et deux plats plus une photo de
+   * nourriture, le choix est vite fait : c'est la photo qui arrete le
+   * defilement. Et la legende, elle, cite toujours les trois.
+   */
+  const platsAffiches = photo ? contenu.vedettes.slice(0, 2) : contenu.vedettes;
+
   return new ImageResponse(
     (
       <div
@@ -107,7 +119,7 @@ export async function GET(req: Request) {
             flex: 1,
           }}
         >
-          {contenu.vedettes.map((v, i) => (
+          {platsAffiches.map((v, i) => (
             <div
               key={v.nom}
               style={{
