@@ -182,7 +182,15 @@ export async function GET(req: Request) {
               alt=""
               width={936}
               height={260}
-              style={{ position: 'absolute', top: 0, left: 0, objectFit: 'cover' }}
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                objectFit: 'cover',
+                // `overflow: hidden` du parent ne rogne pas un enfant absolu
+                // dans Satori : les coins restaient carres.
+                borderRadius: '28px',
+              }}
             />
 
             {/* Le nom du plat est ECRIT SUR la photo : ce n'est pas forcement
@@ -198,6 +206,8 @@ export async function GET(req: Request) {
                 fontSize: '38px',
                 fontWeight: 700,
                 background: 'rgba(19, 28, 61, 0.82)',
+                borderBottomLeftRadius: '28px',
+                borderBottomRightRadius: '28px',
               }}
             >
               {contenu.photoVedette.nom}
