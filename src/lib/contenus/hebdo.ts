@@ -48,6 +48,18 @@ export type ContenuHebdo = {
   vedettes: Vedette[];
   note: number | null;
   avis: number;
+  /**
+   * La note DEJA MISE EN FORME, ou `null` si elle ne doit pas paraitre.
+   *
+   * LA DECISION SE PREND ICI, UNE SEULE FOIS. Le visuel refaisait le test de
+   * son cote, avec l'ancienne regle : le texte taisait « 3,7/5 sur 3 avis » et
+   * l'image l'affichait quand meme, en gros, sur la publication du marchand.
+   * Une regle recopiee est une regle qui divergera — c'est deja ce qui avait
+   * fait perdre une note client.
+   */
+  mentionNote: string | null;
+  /** Adresse de la vitrine, seule et meme source pour le texte et l'image. */
+  lien: string;
   /** Vrai si la semaine est trop maigre pour publier quoi que ce soit. */
   vide: boolean;
   legende: string;
@@ -157,10 +169,12 @@ function composer(
     .map((v) => (v.prix !== null ? `${v.nom} — ${fcfa(v.prix)}` : v.nom))
     .join('\n• ');
 
-  const satisfaction =
+  const mentionNote =
     note !== null && avis >= SEUIL_AVIS_PUBLIABLE && note >= NOTE_MINIMALE_PUBLIABLE
-      ? `\n\n⭐ ${String(note).replace('.', ',')}/5 sur ${avis} avis cette semaine.`
-      : '';
+      ? `${String(note).replace('.', ',')}/5 · ${avis} avis`
+      : null;
+
+  const satisfaction = mentionNote ? `\n\n⭐ ${mentionNote} cette semaine.` : '';
 
   /**
    * LA LIGNE QUI MANQUAIT, ET C'ETAIT LA PLUS IMPORTANTE.
@@ -216,6 +230,8 @@ function composer(
     vedettes,
     note,
     avis,
+    mentionNote,
+    lien,
     vide: false,
     legende,
     hashtags,

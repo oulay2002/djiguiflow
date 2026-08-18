@@ -112,12 +112,24 @@ export async function GET(req: Request) {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '48px' }}>
+          {/* La note vient DEJA DECIDEE et mise en forme par `contenusHebdo`.
+              Ce test etait refait ici, avec l'ancienne regle : le texte taisait
+              « 3,7/5 sur 3 avis » et l'image l'affichait quand meme, en gros,
+              sur la publication du marchand. Une regle recopiee diverge.
+
+              Plus d'etoile non plus : la police de rendu ne la possede pas et
+              l'affichait en carre vide — un defaut que tout lecteur voit. */}
           <div style={{ display: 'flex', fontSize: '34px', color: MANGUE }}>
-            {contenu.note !== null && contenu.avis >= 3
-              ? `★ ${String(contenu.note).replace('.', ',')}/5 · ${contenu.avis} avis`
-              : 'Commandez sur WhatsApp'}
+            {contenu.mentionNote ? `Noté ${contenu.mentionNote}` : 'Commandez sur WhatsApp'}
           </div>
-          <div style={{ display: 'flex', fontSize: '30px', opacity: 0.6 }}>djiguiflow.com</div>
+
+          {/* L'adresse de la BOUTIQUE, pas seulement notre marque. L'image
+              circule souvent seule, detachee de sa legende : si elle ne porte
+              qu'un nom de plateforme, elle fait notre publicite et pas celle du
+              marchand, et personne ne sait ou commander. */}
+          <div style={{ display: 'flex', fontSize: '28px', opacity: 0.65 }}>
+            {contenu.lien.replace(/^https?:\/\/(www\.)?/, '')}
+          </div>
         </div>
       </div>
     ),
