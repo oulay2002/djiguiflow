@@ -110,7 +110,7 @@ export async function GET(req: Request) {
             display: 'flex',
             flexDirection: 'column',
             gap: '28px',
-            marginTop: '72px',
+            marginTop: '56px',
             // La liste absorbe l'espace restant, la photo garde une hauteur
             // FIXE. Laisser la photo prendre ce qui reste la reduisait a une
             // bande de cent pixels des que deux plats affichaient leur nombre
@@ -164,9 +164,9 @@ export async function GET(req: Request) {
               justifyContent: 'flex-end',
               // Hauteur FIXE, et jamais compressible : une photo de nourriture
               // n'a d'interet que si on distingue le plat.
-              height: '300px',
+              height: '260px',
               flexShrink: 0,
-              marginTop: '40px',
+              marginTop: '36px',
               borderRadius: '28px',
               overflow: 'hidden',
               position: 'relative',
@@ -181,7 +181,7 @@ export async function GET(req: Request) {
               src={photo}
               alt=""
               width={936}
-              height={300}
+              height={260}
               style={{ position: 'absolute', top: 0, left: 0, objectFit: 'cover' }}
             />
 
@@ -205,7 +205,7 @@ export async function GET(req: Request) {
           </div>
         )}
 
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '48px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '36px' }}>
           {/* La note vient DEJA DECIDEE et mise en forme par `contenusHebdo`.
               Ce test etait refait ici, avec l'ancienne regle : le texte taisait
               « 3,7/5 sur 3 avis » et l'image l'affichait quand meme, en gros,
