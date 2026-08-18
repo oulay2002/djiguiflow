@@ -99,11 +99,12 @@ export async function GET(req: Request) {
             flexDirection: 'column',
             gap: '28px',
             marginTop: '72px',
-            // Sans photo, la liste absorbe l'espace restant et le pied de page
-            // reste en bas. Avec photo, c'est la photo qui le remplit — sinon
-            // les deux se le partageraient et le trou resterait au milieu,
-            // exactement le defaut qu'on cherche a supprimer.
-            flex: photo ? '0 0 auto' : 1,
+            // La liste absorbe l'espace restant, la photo garde une hauteur
+            // FIXE. Laisser la photo prendre ce qui reste la reduisait a une
+            // bande de cent pixels des que deux plats affichaient leur nombre
+            // de ventes : le poisson devenait illisible, ce qui est pire que
+            // pas de photo du tout.
+            flex: 1,
           }}
         >
           {contenu.vedettes.map((v, i) => (
@@ -147,34 +148,44 @@ export async function GET(req: Request) {
           <div
             style={{
               display: 'flex',
-              flex: 1,
+              flexDirection: 'column',
+              justifyContent: 'flex-end',
+              // Hauteur FIXE, et jamais compressible : une photo de nourriture
+              // n'a d'interet que si on distingue le plat.
+              height: '300px',
+              flexShrink: 0,
               marginTop: '40px',
               borderRadius: '28px',
               overflow: 'hidden',
               position: 'relative',
             }}
           >
+            {/* L'image est posee en fond, en position absolue et aux dimensions
+                explicites : Satori ne deduit pas les tailles comme un
+                navigateur, et un `height: 100%` y donnait un cadrage flottant.
+                936 = 1080 moins les deux marges de 72. */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={photo}
               alt=""
               width={936}
-              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              height={300}
+              style={{ position: 'absolute', top: 0, left: 0, objectFit: 'cover' }}
             />
+
             {/* Le nom du plat est ECRIT SUR la photo : ce n'est pas forcement
                 la meilleure vente, et une image de nourriture sans legende
-                laisse le lecteur deviner ce qu'on lui montre. */}
+                laisse le lecteur deviner ce qu'on lui montre. Pose en dernier
+                enfant d'une colonne alignee en bas — plus sur qu'un
+                positionnement absolu, que Satori ancre mal. */}
             <div
               style={{
                 display: 'flex',
-                position: 'absolute',
-                left: 0,
-                right: 0,
-                bottom: 0,
-                padding: '28px 36px',
-                fontSize: '40px',
+                width: '936px',
+                padding: '22px 32px',
+                fontSize: '38px',
                 fontWeight: 700,
-                background: 'rgba(19, 28, 61, 0.78)',
+                background: 'rgba(19, 28, 61, 0.82)',
               }}
             >
               {contenu.photoVedette.nom}
