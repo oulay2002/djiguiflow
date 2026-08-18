@@ -81,6 +81,37 @@ function nettoyer(texte, max = 600) {
     .slice(0, max);
 }
 
+/**
+ * Combien de fois insister avant de crier, et a quel rythme.
+ *
+ * Trois tentatives espacees de vingt secondes absorbent une coupure passagere
+ * sans retarder une vraie panne de plus d'une minute. Une sonde qui crie au
+ * loup est PIRE que pas de sonde : on apprend a l'ignorer, et on rate le jour
+ * ou elle a raison.
+ */
+const ESSAIS = 3;
+const ATTENTE_MS = 20000;
+
+const patienter = (ms) => new Promise((r) => setTimeout(r, ms));
+
+/**
+ * Deuxieme avis, par un chemin different.
+ *
+ * `/healthz` ne demande pas de cle et ne touche pas la base : il repond des que
+ * le service est debout. Le confronter a l'API separe deux pannes que l'alerte
+ * confondait, et qui n'appellent pas le meme geste — un serveur a relancer, ou
+ * une cle a renouveler.
+ */
+async function sonderSante() {
+  const racine = conf.apiUrl.replace(/\/api\/v1\/?$/, '');
+  try {
+    const r = await fetch(`${racine}/healthz`, { signal: AbortSignal.timeout(10000) });
+    return { ok: r.ok, statut: r.status };
+  } catch (e) {
+    return { ok: false, statut: null, erreur: e.message };
+  }
+}
+
 async function n8n(chemin) {
   const reponse = await fetch(`${conf.apiUrl}${chemin}`, {
     headers: { 'X-N8N-API-KEY': conf.apiKey, accept: 'application/json' },
@@ -174,17 +205,52 @@ async function main() {
   // 4. n8n repond-il seulement ? Une instance injoignable, une cle d'API
   //    revoquee ou un domaine expire tombent ici.
   let derniere;
-  try {
-    const { data } = await n8n(`/executions?workflowId=${conf.canari}&status=success&limit=1`);
-    derniere = data?.[0];
-  } catch (e) {
-    await alerter("n8n est injoignable", [
-      "L'API ne repond pas. L'instance est peut-etre arretee, ou la cle d'API revoquee.",
-      '',
-      `Cause : ${nettoyer(e.message)}`,
-      '',
-      "Tant que ceci dure, AUCUNE commande n'est traitee.",
-    ]);
+  let echec = null;
+
+  // UNE SEULE TENTATIVE RATEE N'EST PAS UNE PANNE. Le 17 aout a 19h45 cette
+  // alerte est partie alors que n8n tournait parfaitement : l'execution 298 a
+  // reussi a la seconde meme, et aucune des 250 executions suivantes n'a
+  // echoue. C'etait le reseau entre GitHub et le VPS qui avait lache un
+  // instant.
+  for (let essai = 1; essai <= ESSAIS; essai++) {
+    try {
+      const { data } = await n8n(`/executions?workflowId=${conf.canari}&status=success&limit=1`);
+      derniere = data?.[0];
+      echec = null;
+      break;
+    } catch (e) {
+      echec = e;
+      if (essai < ESSAIS) await patienter(ATTENTE_MS);
+    }
+  }
+
+  if (echec) {
+    // Deuxieme avis avant d'accuser. `/healthz` separe deux pannes que le
+    // message confondait — « le serveur est arrete » et « ma cle ne passe
+    // plus » — et elles n'appellent ni la meme urgence ni le meme geste.
+    const sante = await sonderSante();
+
+    await alerter(
+      sante.ok ? "la sonde n'a plus acces a l'API n8n" : 'n8n est injoignable depuis la sonde',
+      sante.ok
+        ? [
+            'Le service est VIVANT — /healthz repond — mais l API rejette la sonde.',
+            "La cle d API est probablement revoquee, expiree, ou absente du depot.",
+            '',
+            `Cause : ${nettoyer(echec.message)}`,
+            '',
+            "LES COMMANDES CONTINUENT D ETRE TRAITEES. C est la surveillance qui est aveugle.",
+          ]
+        : [
+            `Aucune reponse apres ${ESSAIS} tentatives espacees de ${Math.round(ATTENTE_MS / 1000)}s.`,
+            `/healthz ne repond pas non plus${sante.erreur ? ` (${nettoyer(sante.erreur, 80)})` : ''}.`,
+            '',
+            `Cause : ${nettoyer(echec.message)}`,
+            '',
+            "SI le serveur est bien arrete, aucune commande n est traitee.",
+            "Mais cette sonde ne sait pas distinguer un serveur arrete d une coupure reseau chez GitHub. Ouvrez le lien avant de conclure.",
+          ],
+    );
     return;
   }
 
