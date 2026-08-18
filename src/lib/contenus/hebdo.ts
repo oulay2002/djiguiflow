@@ -25,6 +25,21 @@ import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
  */
 export const SEUIL_QUANTITE_PUBLIABLE = 5;
 
+/**
+ * Une note ne se publie que si elle PLAIDE.
+ *
+ * L'ancien filtre ne regardait que le nombre d'avis, et jamais leur valeur : un
+ * 2,5/5 partait donc sur la publication promotionnelle du marchand lui-meme,
+ * signee de son nom. Aucun commercant n'afficherait cela sur sa devanture.
+ *
+ * Le nombre compte aussi. « 4,3/5 sur 3 avis » se lit « personne ne vient
+ * ici » : le chiffre censé rassurer inquiete. En dessous des deux seuils, la
+ * ligne disparait — le produit se defend seul, ce qui ne ment pas et vend
+ * mieux. Meme regle que pour les quantites.
+ */
+export const SEUIL_AVIS_PUBLIABLE = 5;
+export const NOTE_MINIMALE_PUBLIABLE = 4;
+
 export type Vedette = { nom: string; prix: number | null; quantite: number };
 
 export type ContenuHebdo = {
@@ -78,11 +93,28 @@ const CLOTURES = [
  * raconter : mieux vaut ne rien publier qu'un post creux, qui coute la
  * credibilite du marchand.
  */
+/**
+ * « ABIDJAN » saisi par le marchand devient « Abidjan ».
+ *
+ * Une zone en capitales dans une phrase donne l'air d'un message automatique,
+ * et c'est exactement ce qu'on essaie de ne pas avoir l'air d'etre.
+ */
+function joliZone(brut: unknown): string {
+  const z = String(brut ?? '').trim();
+  if (!z) return '';
+  return z
+    .toLocaleLowerCase('fr-FR')
+    .split(/(\s|-)/)
+    .map((m) => (/^[\s-]$/.test(m) ? m : m.charAt(0).toLocaleUpperCase('fr-FR') + m.slice(1)))
+    .join('');
+}
+
 function composer(
   activite: LigneActivite,
   plats: LignePlat[],
   prix: Map<string, number>,
   baseUrl: string,
+  zone: string,
 ): ContenuHebdo | null {
   const slug = String(activite.slug ?? '').trim();
   const nom = String(activite.boutique_nom ?? '').trim();
@@ -114,16 +146,39 @@ function composer(
     .join('\n• ');
 
   const satisfaction =
-    note !== null && avis >= 3
+    note !== null && avis >= SEUIL_AVIS_PUBLIABLE && note >= NOTE_MINIMALE_PUBLIABLE
       ? `\n\n⭐ ${String(note).replace('.', ',')}/5 sur ${avis} avis cette semaine.`
       : '';
 
-  const legende = `${accroche} 👇\n\n• ${listeCourte}${satisfaction}\n\n${cloture}`;
+  /**
+   * LA LIGNE QUI MANQUAIT, ET C'ETAIT LA PLUS IMPORTANTE.
+   *
+   * La publication disait « commandez maintenant » sans dire OU. Un lecteur
+   * conquis devait chercher la boutique lui-meme, sur une plateforme qu'il ne
+   * connait pas. Une publication sans lien ne convertit rien : tout le travail
+   * de la semaine — les ventes reelles, les prix justes, la mise en page —
+   * s'arretait a un pas de la commande.
+   *
+   * La zone y figure aussi, parce que « livraison dans votre zone » ne dit pas
+   * au lecteur s'il est couvert, et que c'est la premiere question qu'il se
+   * pose.
+   */
+  const lien = `${baseUrl}/boutiques/${encodeURIComponent(slug)}`;
+  const appel = zone
+    ? `📍 Livraison à ${zone} — commandez ici :\n${lien}`
+    : `📍 Commandez ici :\n${lien}`;
 
-  // Hashtags : locaux d'abord, c'est ce qui touche un client d'Abidjan. Le
-  // nom de la boutique est nettoye de tout ce qui n'est pas alphanumerique.
+  const legende = `${accroche} 👇\n\n• ${listeCourte}${satisfaction}\n\n${cloture}\n\n${appel}`;
+
+  // Hashtags : locaux d'abord, c'est ce qui touche un client livrable. Le nom
+  // de la boutique est nettoye de tout ce qui n'est pas alphanumerique. La zone
+  // vient en tete quand elle est connue — et on la dedoublonne, une boutique
+  // dont la zone est deja « Abidjan » n'a pas besoin du tag deux fois.
   const tagBoutique = nom.normalize('NFD').replace(/[^A-Za-z0-9]/g, '');
-  const hashtags = `#Abidjan #CotedIvoire #225 #LivraisonAbidjan #${tagBoutique}`;
+  const tagZone = zone.normalize('NFD').replace(/[^A-Za-z0-9]/g, '');
+  const tags = ['Abidjan', 'CotedIvoire', '225', 'LivraisonAbidjan', tagBoutique];
+  if (tagZone) tags.unshift(tagZone);
+  const hashtags = [...new Set(tags.filter(Boolean))].map((t) => `#${t}`).join(' ');
 
   const meilleure = vedettes[0];
   const accrocheTikTok =
@@ -137,9 +192,13 @@ function composer(
     `PLAN 2 : la préparation, ou la main qui emballe.\n` +
     `PLAN 3 : la remise au livreur.\n` +
     `TEXTE À L'ÉCRAN : ${meilleure.prix !== null ? fcfa(meilleure.prix) : 'votre prix'} — livré chez vous.\n` +
-    `CHUTE : « Commandez sur WhatsApp. »\n\n${hashtags}`;
+    // TikTok ne rend pas les liens cliquables dans une legende : la convention
+    // y est de renvoyer vers la bio. On donne donc l'adresse a coller, plutot
+    // qu'un lien mort dans le texte.
+    `CHUTE : « Commandez sur WhatsApp — lien en bio. »\n`
+    + `LIEN À METTRE EN BIO : ${lien}\n\n${hashtags}`;
 
-  const statutWhatsApp = `${accroche} :\n• ${listeCourte}\n\n${cloture}`;
+  const statutWhatsApp = `${accroche} :\n• ${listeCourte}\n\n${cloture}\n\n${appel}`;
 
   return {
     slug,
@@ -186,10 +245,16 @@ export async function contenusHebdo(baseUrl: string): Promise<ContenuHebdo[]> {
   // Les prix vivent dans `produits`, pas dans le rapport. On les rattache par
   // nom : c'est la seule cle commune, le rapport ne portant pas d'identifiant
   // de produit.
-  const { data: boutiques } = await sb.from('boutiques').select('id, slug');
+  // `zone` voyage avec : elle nomme la livraison dans l'appel a l'action et
+  // fournit le hashtag le plus cible. Aucune requete de plus — elle tient dans
+  // celle-ci.
+  const { data: boutiques } = await sb.from('boutiques').select('id, slug, zone');
   const idParSlug = new Map<string, string>();
+  const zoneParSlug = new Map<string, string>();
   for (const b of boutiques ?? []) {
-    if (b.slug) idParSlug.set(b.slug, b.id);
+    if (!b.slug) continue;
+    idParSlug.set(b.slug, b.id);
+    zoneParSlug.set(b.slug, joliZone(b.zone));
   }
 
   const { data: produits } = await sb.from('produits').select('boutique_id, nom, prix');
@@ -205,7 +270,13 @@ export async function contenusHebdo(baseUrl: string): Promise<ContenuHebdo[]> {
     const slug = String(a.slug ?? '').trim();
     const boutiqueId = idParSlug.get(slug);
     const prix = (boutiqueId && prixParBoutique.get(boutiqueId)) || new Map<string, number>();
-    const contenu = composer(a, platsParSlug.get(slug) ?? [], prix, baseUrl);
+    const contenu = composer(
+      a,
+      platsParSlug.get(slug) ?? [],
+      prix,
+      baseUrl,
+      zoneParSlug.get(slug) ?? '',
+    );
     if (contenu) sorties.push(contenu);
   }
 
