@@ -118,6 +118,12 @@ export default function Page() {
   // vit dans Supabase et ne doit jamais être lu depuis le navigateur.
   const [estMarchandSheets, setEstMarchandSheets] = useState(false);
 
+  // Ouvert ou ferme, decide par le SERVEUR avec la meme fonction que celle qui
+  // refuse la commande. La vitrine ne recalcule rien : deux calculs finiraient
+  // par diverger, et le client verrait « ouvert » sur un commerce qui refuse.
+  const [ouvert, setOuvert] = useState(true);
+  const [messageHoraire, setMessageHoraire] = useState('');
+
   const [header, setHeader] = useState({ nom: 'Boutique', secteur: 'Commerce', emoji: '🏪' });
   const [zone, setZone] = useState('');
   const [produits, setProduits] = useState<Produit[]>([]);
@@ -148,6 +154,8 @@ export default function Page() {
           if (annule) return;
           setEstMarchandSheets(true);
           setHeader({ nom: m.nom, secteur: m.secteur, emoji: m.emoji });
+          setOuvert(m.ouvert !== false);
+          setMessageHoraire(String(m.messageHoraire ?? ''));
 
           const rm = await fetch(`/api/boutiques/${slug}/menu`);
           const d = rm.ok ? await rm.json() : [];
@@ -355,6 +363,21 @@ export default function Page() {
               <p className="mt-2 max-w-md text-sm text-chaux-300 sm:mt-3">
                 Composez votre commande, elle part directement au commerçant.
               </p>
+
+              {/* L'etat d'ouverture se lit AVANT le menu, pas au moment de
+                  valider. Un client qui remplit son panier a 3 h du matin pour
+                  s'entendre dire non a la derniere seconde ne revient pas — et
+                  c'est le commerce qu'il juge, pas l'heure. */}
+              {messageHoraire && (
+                <p
+                  className={`mt-3 inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold ${
+                    ouvert ? 'bg-accent-500/20 text-accent-200' : 'bg-bissap-500/20 text-bissap-200'
+                  }`}
+                >
+                  <span className={`h-2 w-2 rounded-full ${ouvert ? 'bg-accent-400' : 'bg-bissap-400'}`} />
+                  {messageHoraire}
+                </p>
+              )}
             </div>
 
             <Link
@@ -554,14 +577,20 @@ export default function Page() {
 
                     <button
                       onClick={commander}
-                      disabled={envoi || !nom || !telOk || !adresse}
+                      // Le bouton grise n'est qu'une politesse : c'est le
+                      // serveur qui refuse pour de bon. Un onglet reste ouvert
+                      // toute la nuit, et un client ne doit pas decouvrir la
+                      // fermeture apres avoir tout saisi.
+                      disabled={envoi || !ouvert || !nom || !telOk || !adresse}
                       className={`${classesBouton('action', 'md', 'carree')} w-full`}
                     >
                       {envoi
                         ? 'Envoi…'
-                        : estMarchandSheets
-                          ? 'Envoyer la commande'
-                          : 'Commander sur WhatsApp'}
+                        : !ouvert
+                          ? messageHoraire || 'Fermé actuellement'
+                          : estMarchandSheets
+                            ? 'Envoyer la commande'
+                            : 'Commander sur WhatsApp'}
                     </button>
                   </div>
                 </>

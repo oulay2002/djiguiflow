@@ -2,6 +2,7 @@ import { readSheet, readHeaders, appendRow } from '@/lib/googleSheets';
 import { getMarchand, prefixeReference, type Marchand } from '@/lib/marchands';
 import { resoudreBoutiqueUuid } from '@/lib/boutiques';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
+import { etatBoutique } from '@/lib/horaires';
 import { secretWebhookN8n } from '@/lib/secretN8n';
 
 /**
@@ -133,6 +134,33 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
 
   const sb = getSupabaseAdmin();
   const boutiqueUuid = sb ? await resoudreBoutiqueUuid(sb, m) : null;
+
+  // ---- La boutique est-elle ouverte ?
+  //
+  // LE REFUS SE PRONONCE ICI, PAS SEULEMENT DANS LA VITRINE. Un bouton grise
+  // dans le navigateur n'empeche rien : un onglet reste ouvert toute la nuit,
+  // un lien se rejoue, un appel se forge. Et une commande passee a 3 h du matin
+  // ne coute pas une vente — elle coute un client, qui n'aura aucune reponse et
+  // s'en prendra au restaurant, pas a l'heure.
+  //
+  // Une boutique sans horaires reste ouverte : c'est le cas de toutes celles
+  // deja en service, et les fermer d'office ferait plus de degats que le
+  // probleme qu'on corrige.
+  if (sb && boutiqueUuid) {
+    const { data: fiche } = await sb
+      .from('boutiques')
+      .select('horaires')
+      .eq('id', boutiqueUuid)
+      .maybeSingle();
+
+    const etat = etatBoutique(fiche?.horaires);
+    if (!etat.ouvert) {
+      return Response.json(
+        { error: `${m.nom} n’accepte pas de commande pour le moment. ${etat.message ?? ''}`.trim() },
+        { status: 409 },
+      );
+    }
+  }
 
   const lignes = await tariferPanier(m, panier, sb, boutiqueUuid);
   if (!lignes.length) return Response.json({ error: 'Panier vide' }, { status: 400 });
