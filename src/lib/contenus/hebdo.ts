@@ -40,7 +40,13 @@ export const SEUIL_QUANTITE_PUBLIABLE = 5;
 export const SEUIL_AVIS_PUBLIABLE = 5;
 export const NOTE_MINIMALE_PUBLIABLE = 4;
 
-export type Vedette = { nom: string; prix: number | null; quantite: number };
+export type Vedette = {
+  nom: string;
+  prix: number | null;
+  quantite: number;
+  /** Photo du catalogue, si le marchand en a mis une. */
+  photo: string | null;
+};
 
 export type ContenuHebdo = {
   slug: string;
@@ -60,6 +66,16 @@ export type ContenuHebdo = {
   mentionNote: string | null;
   /** Adresse de la vitrine, seule et meme source pour le texte et l'image. */
   lien: string;
+  /**
+   * La photo a mettre en avant, et le plat qu'elle illustre.
+   *
+   * PAS FORCEMENT LE PREMIER DU CLASSEMENT. Chez zahara, la meilleure vente
+   * n'a pas de photo et le troisieme plat en a une. Exiger la photo du numero
+   * un aurait laisse l'image vide dans la plupart des cas ; prendre la
+   * premiere disponible remplit le cadre, et le nom ecrit dessus empeche toute
+   * confusion sur ce qu'on montre.
+   */
+  photoVedette: { nom: string; url: string } | null;
   /** Vrai si la semaine est trop maigre pour publier quoi que ce soit. */
   vide: boolean;
   legende: string;
@@ -136,7 +152,7 @@ function joliZone(brut: unknown): string {
 function composer(
   activite: LigneActivite,
   plats: LignePlat[],
-  prix: Map<string, number>,
+  catalogue: Map<string, { prix: number | null; photo: string | null }>,
   baseUrl: string,
   zone: string,
 ): ContenuHebdo | null {
@@ -151,7 +167,8 @@ function composer(
       const nomProduit = String(p.produit).trim();
       return {
         nom: nomProduit,
-        prix: prix.get(nomProduit.toLowerCase()) ?? null,
+        prix: catalogue.get(nomProduit.toLowerCase())?.prix ?? null,
+        photo: catalogue.get(nomProduit.toLowerCase())?.photo ?? null,
         quantite: Number(p.quantite ?? 0),
       };
     });
@@ -189,6 +206,10 @@ function composer(
    * au lecteur s'il est couvert, et que c'est la premiere question qu'il se
    * pose.
    */
+  // La premiere vedette QUI A une photo, pas forcement la premiere tout court.
+  const avecPhoto = vedettes.find((v) => v.photo);
+  const photoVedette = avecPhoto ? { nom: avecPhoto.nom, url: avecPhoto.photo! } : null;
+
   const lien = `${baseUrl}/boutiques/${encodeURIComponent(slug)}`;
   const appel = `${appelDeLaSemaine(zone)}\n${lien}`;
 
@@ -232,6 +253,7 @@ function composer(
     avis,
     mentionNote,
     lien,
+    photoVedette,
     vide: false,
     legende,
     hashtags,
@@ -283,23 +305,38 @@ export async function contenusHebdo(baseUrl: string): Promise<ContenuHebdo[]> {
     zoneParSlug.set(b.slug, joliZone(b.zone));
   }
 
-  const { data: produits } = await sb.from('produits').select('boutique_id, nom, prix');
-  const prixParBoutique = new Map<string, Map<string, number>>();
+  const { data: produits } = await sb
+    .from('produits')
+    .select('boutique_id, nom, prix, photo_url');
+  const catalogueParBoutique = new Map<
+    string,
+    Map<string, { prix: number | null; photo: string | null }>
+  >();
   for (const p of produits ?? []) {
-    if (!p.boutique_id || !p.nom || p.prix === null) continue;
-    if (!prixParBoutique.has(p.boutique_id)) prixParBoutique.set(p.boutique_id, new Map());
-    prixParBoutique.get(p.boutique_id)!.set(String(p.nom).trim().toLowerCase(), Number(p.prix));
+    // Le prix peut manquer sans que la photo manque : on n'ecarte plus la
+    // ligne pour un prix absent, sinon un plat photographie mais non tarife
+    // perdrait aussi son image.
+    if (!p.boutique_id || !p.nom) continue;
+    if (!catalogueParBoutique.has(p.boutique_id)) {
+      catalogueParBoutique.set(p.boutique_id, new Map());
+    }
+    catalogueParBoutique.get(p.boutique_id)!.set(String(p.nom).trim().toLowerCase(), {
+      prix: p.prix === null ? null : Number(p.prix),
+      photo: String(p.photo_url ?? '').trim() || null,
+    });
   }
 
   const sorties: ContenuHebdo[] = [];
   for (const a of lignesActivite) {
     const slug = String(a.slug ?? '').trim();
     const boutiqueId = idParSlug.get(slug);
-    const prix = (boutiqueId && prixParBoutique.get(boutiqueId)) || new Map<string, number>();
+    const catalogue =
+      (boutiqueId && catalogueParBoutique.get(boutiqueId))
+      || new Map<string, { prix: number | null; photo: string | null }>();
     const contenu = composer(
       a,
       platsParSlug.get(slug) ?? [],
-      prix,
+      catalogue,
       baseUrl,
       zoneParSlug.get(slug) ?? '',
     );

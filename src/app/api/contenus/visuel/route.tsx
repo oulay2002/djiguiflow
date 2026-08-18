@@ -24,6 +24,32 @@ const CHAUX = '#f8f7f3';
 const BISSAP = '#c4123f';
 const MANGUE = '#e9a23b';
 
+/**
+ * Recupere la photo du plat et la rend en data URI.
+ *
+ * POURQUOI NE PAS LAISSER FAIRE ImageResponse. Il va chercher les images
+ * lui-meme, et une URL qui ne repond pas fait echouer TOUT le rendu : on
+ * perdrait le visuel entier — le nom, les plats, les prix — pour une photo
+ * manquante. On la charge donc nous-memes, avec un delai court et un plafond
+ * de taille, et on s'en passe au moindre doute. Une image sans photo reste une
+ * bonne image ; une image absente n'est rien.
+ */
+async function chargerPhoto(url: string | undefined): Promise<string | null> {
+  if (!url) return null;
+  try {
+    const r = await fetch(url, { signal: AbortSignal.timeout(6000) });
+    if (!r.ok) return null;
+    const type = r.headers.get('content-type') ?? '';
+    if (!type.startsWith('image/')) return null;
+    const octets = Buffer.from(await r.arrayBuffer());
+    // Au-dela, le rendu devient lent et la memoire de la fonction serree.
+    if (octets.length > 3_000_000) return null;
+    return `data:${type};base64,${octets.toString('base64')}`;
+  } catch {
+    return null;
+  }
+}
+
 export async function GET(req: Request) {
   const url = new URL(req.url);
   const slug = (url.searchParams.get('boutique') ?? '').trim();
@@ -43,6 +69,8 @@ export async function GET(req: Request) {
   if (!contenu) {
     return new Response('Aucun contenu pour cette boutique cette semaine', { status: 404 });
   }
+
+  const photo = await chargerPhoto(contenu.photoVedette?.url);
 
   return new ImageResponse(
     (
@@ -71,7 +99,11 @@ export async function GET(req: Request) {
             flexDirection: 'column',
             gap: '28px',
             marginTop: '72px',
-            flex: 1,
+            // Sans photo, la liste absorbe l'espace restant et le pied de page
+            // reste en bas. Avec photo, c'est la photo qui le remplit — sinon
+            // les deux se le partageraient et le trou resterait au milieu,
+            // exactement le defaut qu'on cherche a supprimer.
+            flex: photo ? '0 0 auto' : 1,
           }}
         >
           {contenu.vedettes.map((v, i) => (
@@ -110,6 +142,45 @@ export async function GET(req: Request) {
             </div>
           ))}
         </div>
+
+        {photo && contenu.photoVedette && (
+          <div
+            style={{
+              display: 'flex',
+              flex: 1,
+              marginTop: '40px',
+              borderRadius: '28px',
+              overflow: 'hidden',
+              position: 'relative',
+            }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={photo}
+              alt=""
+              width={936}
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            />
+            {/* Le nom du plat est ECRIT SUR la photo : ce n'est pas forcement
+                la meilleure vente, et une image de nourriture sans legende
+                laisse le lecteur deviner ce qu'on lui montre. */}
+            <div
+              style={{
+                display: 'flex',
+                position: 'absolute',
+                left: 0,
+                right: 0,
+                bottom: 0,
+                padding: '28px 36px',
+                fontSize: '40px',
+                fontWeight: 700,
+                background: 'rgba(19, 28, 61, 0.78)',
+              }}
+            >
+              {contenu.photoVedette.nom}
+            </div>
+          </div>
+        )}
 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '48px' }}>
           {/* La note vient DEJA DECIDEE et mise en forme par `contenusHebdo`.
