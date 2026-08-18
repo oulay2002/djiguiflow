@@ -163,10 +163,25 @@ export async function POST(req: Request) {
         const j: unknown = JSON.parse(s);
         const articles = (Array.isArray(j) ? j : [j])
           .map((x) =>
-            x && typeof x === 'object' ? depuisObjet(x as Record<string, unknown>) : null,
+            // UN TABLEAU PEUT CONTENIR DES TEXTES, PAS SEULEMENT DES OBJETS.
+            // `["Burger Classique"]` rendait `null` pour chacun de ses
+            // elements, la liste sortait vide, et on retombait sur le
+            // decoupage par virgules — qui rangeait la chaine ENTIERE, crochets
+            // et guillemets compris, dans `nom_produit`. Constate le 18 aout
+            // chez zahara : un article nomme `["Burger Classique"]` figurait
+            // dans le palmarès de la semaine, a un rang de la publication.
+            x && typeof x === 'object'
+              ? depuisObjet(x as Record<string, unknown>)
+              : depuisTexte(String(x)),
           )
-          .filter((a): a is Article => Boolean(a));
-        if (articles.length) return articles;
+          .filter((a): a is Article => Boolean(a?.nom));
+
+        // On rend le resultat du JSON MEME S'IL EST VIDE. Le decoupage par
+        // virgules d'une chaine JSON valide ne produit jamais rien de bon : il
+        // vaut mieux zero article qu'un nom de produit fabrique a partir de
+        // ponctuation, qui polluerait les rapports du marchand et pourrait
+        // paraitre sur sa publication.
+        return articles;
       } catch {
         // Pas du JSON valide : on retombe sur la lecture en texte.
       }
