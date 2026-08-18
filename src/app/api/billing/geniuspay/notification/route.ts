@@ -46,10 +46,12 @@ function egales(a: string, b: string): boolean {
  *
  * Leur exemple PHP signe `json_encode($request->all())`, c'est-a-dire la charge
  * RE-SERIALISEE, pas les octets recus. Deux langages ne re-serialisent pas
- * forcement pareil — espaces, ordre des cles, echappement de l'unicode. On
- * accepte donc les deux candidats : les octets bruts, et notre propre
- * re-serialisation. Refuser une notification legitime pour une virgule
- * d'encodage couterait un acces non ouvert sur un paiement encaisse.
+ * forcement pareil. On essaie donc TROIS candidats, du plus probable au plus
+ * exotique : les octets bruts, notre propre re-serialisation, et celle de PHP.
+ *
+ * Refuser une notification legitime pour une virgule d'encodage couterait un
+ * acces non ouvert sur un paiement encaisse. Essayer trois formes ne coute que
+ * deux HMAC, calcules seulement quand la premiere echoue.
  */
 function signatureValide(
   secret: string,
@@ -59,7 +61,20 @@ function signatureValide(
 ): boolean {
   const candidats = [brut];
   try {
-    candidats.push(JSON.stringify(JSON.parse(brut)));
+    const objet = JSON.parse(brut);
+    candidats.push(JSON.stringify(objet));
+    // TROISIEME CANDIDAT, ET LE PLUS PROBABLE SI LEUR EXEMPLE DIT VRAI.
+    // `json_encode` de PHP echappe par defaut DEUX choses que JSON.stringify
+    // laisse telles quelles : les barres obliques, et tout caractere non-ASCII.
+    // Une adresse « https://... » y devient « https:\/\/... », et un prenom
+    // accentue part en sequences d'echappement.
+    //
+    // Leur charge porte justement des URL (success_url, error_url) et des noms
+    // de clients. Les deux serialisations produisent donc des octets
+    // differents pour le meme contenu, donc deux signatures differentes — et le
+    // symptome est exactement celui du 18 aout : « Signature invalide » alors
+    // que le secret est le bon.
+    candidats.push(jsonStylePhp(objet));
   } catch {
     /* charge non-JSON : seul le brut sera essaye */
   }
@@ -67,6 +82,13 @@ function signatureValide(
   return candidats.some((charge) =>
     egales(createHmac('sha256', secret).update(`${timestamp}.${charge}`).digest('hex'), signature),
   );
+}
+
+/** `JSON.stringify` avec les echappements que PHP applique par defaut. */
+function jsonStylePhp(valeur: unknown): string {
+  return JSON.stringify(valeur)
+    .replace(/\//g, '\\/')
+    .replace(/[\u0080-\uFFFF]/g, (c) => `\\u${c.charCodeAt(0).toString(16).padStart(4, '0')}`);
 }
 
 /** Cherche une valeur a plusieurs profondeurs plausibles, sans rien supposer. */
