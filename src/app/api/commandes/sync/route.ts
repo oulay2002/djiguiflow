@@ -134,6 +134,13 @@ export async function POST(req: Request) {
       boutique_id,
       // L'etat de depart n'est connu qu'a la creation.
       statut: 'en_attente',
+      // LE MARQUEUR VAUT AUSSI A LA CREATION.
+      //
+      // Il n'etait pose que sur une commande DEJA EN BASE. Or l'assistante fait
+      // naitre la commande par ce meme appel : le marqueur n'etait donc jamais
+      // pose sur les commandes qu'il devait justement suivre, et un panier
+      // abandonne sur WhatsApp restait invisible.
+      ...(marquerDemandee ? { confirmation_statut: 'demandee' } : {}),
       client_nom: payload.client_nom || 'Client',
       canal: payload.canal || 'whatsapp',
       client_telephone: telephone,
