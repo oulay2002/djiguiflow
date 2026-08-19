@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import CompteurQuota from '@/components/dashboard/CompteurQuota';
+import ReglagePush from '@/components/pwa/ReglagePush';
 
 type Stats = {
   caTotal: number; caJour: number; nbCommandes: number; nbJour: number;
@@ -101,6 +102,16 @@ export default function Page() {
               </Link>
             </div>
           </header>
+
+          {/* L'invitation aux alertes, posee sur l'ACCUEIL et non dans un
+              sous-menu de reglages. Toute la mecanique existait depuis
+              longtemps — zero appareil etait abonne, parce que le reglage
+              vivait a trois clics de profondeur. Une fonction qu'on ne trouve
+              pas n'existe pas.
+
+              Le composant se tait de lui-meme quand il n'y a rien a demander :
+              deja actif, navigateur incapable, ou « plus tard » recent. */}
+          <ReglagePush variante="invitation" />
 
           <CompteurQuota />
 

@@ -60,7 +60,25 @@ async function declarerAuServeur(
  * l'activer sur les deux. Le texte le dit explicitement, faute de quoi
  * « active » sur un appareil laisse croire que l'autre l'est aussi.
  */
-export default function ReglagePush() {
+/**
+ * Combien de temps un « plus tard » vaut silence.
+ *
+ * Zero appareil abonne au 19 aout 2026, alors que toute la mecanique existait :
+ * le reglage vivait a trois clics de profondeur, dans un ecran ou personne ne
+ * va. Une fonction que l'on ne trouve pas n'existe pas.
+ *
+ * L'invitation reparait donc au bout d'une semaine. Harceler un marchand est
+ * mauvais ; le laisser rater des commandes parce qu'il a ferme un bandeau une
+ * fois l'est davantage — un marchand qui rate une commande ne perd pas une
+ * vente, il perd le client.
+ */
+const OUBLI_JOURS = 7;
+const CLE_OUBLI = 'djiguiflow.alertes.plus-tard';
+
+type Variante = 'complet' | 'invitation';
+
+export default function ReglagePush({ variante = 'complet' }: { variante?: Variante } = {}) {
+  const [remisAPlusTard, setRemisAPlusTard] = useState(false);
   const { boutiqueId, pret } = useBoutique();
   const [etat, setEtat] = useState<Etat>('chargement');
   const [occupe, setOccupe] = useState(false);
@@ -139,6 +157,24 @@ export default function ReglagePush() {
     // contexte soit charge le rattacherait au marchand par defaut.
   }, [pret, boutiqueId]);
 
+  useEffect(() => {
+    if (variante !== 'invitation') return;
+    try {
+      const jusqua = Number(window.localStorage.getItem(CLE_OUBLI) || 0);
+      setRemisAPlusTard(Number.isFinite(jusqua) && Date.now() < jusqua);
+    } catch {
+      // Navigation privee ou stockage refuse : on montre l'invitation, ce qui
+      // est le comportement sur — au pire le marchand la ferme a nouveau.
+    }
+  }, [variante]);
+
+  const plusTard = () => {
+    try {
+      window.localStorage.setItem(CLE_OUBLI, String(Date.now() + OUBLI_JOURS * 86400_000));
+    } catch { /* sans stockage, l'invitation reparaitra au prochain chargement */ }
+    setRemisAPlusTard(true);
+  };
+
   const activer = useCallback(async () => {
     if (!clePublique) return;
 
@@ -209,6 +245,65 @@ export default function ReglagePush() {
       setOccupe(false);
     }
   }, [boutiqueId]);
+
+
+  // ---- L'invitation, posee sur l'accueil du tableau de bord.
+  //
+  // Elle se TAIT quand il n'y a rien a demander : deja actif, navigateur
+  // incapable, ou etat encore inconnu. Un bandeau qui parle pour ne rien dire
+  // apprend a ne plus etre lu.
+  if (variante === 'invitation') {
+    if (etat === 'actif' || etat === 'non-supporte' || etat === 'chargement') return null;
+    if (remisAPlusTard) return null;
+
+    return (
+      <div className="mb-6 rounded-[1.5rem] border border-mangue-200 bg-mangue-50 p-5">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex min-w-0 items-start gap-3">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-mangue-100 text-mangue-700">
+              <BellOff className="h-5 w-5" />
+            </span>
+            <div className="min-w-0">
+              <p className="font-bold text-nuit-900">Vous pouvez rater une commande</p>
+              <p className="mt-1 text-sm leading-snug text-chaux-700">
+                {etat === 'refuse'
+                  ? 'Les notifications sont bloquées pour ce site. Réautorisez-les dans les réglages de votre navigateur pour être prévenu.'
+                  : 'Cet appareil ne sonne pas quand une commande arrive. Activez les alertes — elles fonctionnent même application fermée.'}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex shrink-0 items-center gap-2">
+            {etat === 'inactif' && (
+              <button
+                type="button"
+                onClick={activer}
+                disabled={occupe}
+                className="inline-flex min-h-[2.75rem] items-center justify-center gap-2 rounded-full bg-bissap-500 px-5 py-2.5 text-sm font-bold text-white transition active:bg-bissap-600 disabled:opacity-60"
+              >
+                {occupe && <Loader2 className="h-4 w-4 animate-spin" />}
+                Activer les alertes
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={plusTard}
+              className="rounded-full px-3 py-2 text-sm font-semibold text-chaux-600 hover:text-nuit-900"
+            >
+              Plus tard
+            </button>
+          </div>
+        </div>
+
+        {erreur && (
+          <p className="mt-3 flex items-start gap-2 rounded-2xl bg-bissap-50 px-3 py-2.5 text-sm font-semibold text-bissap-700">
+            <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" />
+            {erreur}
+          </p>
+        )}
+      </div>
+    );
+  }
 
   if (etat === 'chargement') return null;
 
