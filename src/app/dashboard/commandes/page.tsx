@@ -38,6 +38,8 @@ import {
 type Cmd = {
   order_id: string; customer_name: string; phone: string; address: string;
   items: string; total_price: number; timestamp: string; canal: string;
+  /** `null` tant que le livreur n'a rien annonce. Jamais 0 par defaut. */
+  frais_livraison?: number | null;
   nom_livreur: string; statut_livraison: string;
   heure_prise_en_charge: string; heure_livraison: string;
   confirmation_statut: string | null;
@@ -342,6 +344,16 @@ export default function Page() {
                   </div>
                   <div className="text-right">
                     <p className="text-2xl font-black text-mangue-700">{c.total_price.toLocaleString('fr-FR')} F</p>
+                    {/* Les frais du livreur, SOUS le total et jamais dedans :
+                        le total est ce que le marchand encaisse, les frais vont
+                        au livreur. Les additionner fausserait son chiffre
+                        d'affaires. La ligne ne parait que si le livreur s'est
+                        prononce — un « 0 F » se lirait « livraison offerte ». */}
+                    {c.frais_livraison !== null && c.frais_livraison !== undefined && (
+                      <p className="text-xs text-chaux-600">
+                        🛵 Livraison {Number(c.frais_livraison).toLocaleString('fr-FR')} F
+                      </p>
+                    )}
                     {c.heure_livraison && <p className="text-xs text-accent-700">✅ {new Date(c.heure_livraison).toLocaleTimeString('fr-FR')}</p>}
                   </div>
                 </div>

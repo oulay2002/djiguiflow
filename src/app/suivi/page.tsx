@@ -26,6 +26,8 @@ type Suivi = {
   nom_livreur: string;
   statut_livraison: string;
   heure_livraison: string;
+  /** `null` tant que le livreur n'a rien annonce. Jamais 0 par defaut. */
+  frais_livraison?: number | null;
 };
 
 const FOND_PAGE = '#eeece5';
@@ -278,6 +280,28 @@ function Suivre() {
                 <span className="ml-1 text-xs font-semibold text-chaux-600">FCFA</span>
               </span>
             </div>
+
+            {/* Les frais NE SONT PAS ajoutes au total : ils vont au livreur,
+                le total va au commercant. Les additionner tromperait le client
+                sur ce qu'il doit a qui.
+
+                Et la ligne ne parait QUE si le livreur a annonce un montant :
+                tant qu'il ne s'est pas prononce, la valeur est nulle et un
+                « 0 FCFA » ferait croire a une livraison offerte que personne
+                n'a promise. */}
+            {suivi.frais_livraison !== null && suivi.frais_livraison !== undefined && (
+              <div className="mt-3 flex items-baseline justify-between">
+                <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-chaux-600">
+                  Livraison
+                </span>
+                <span className="font-mono text-sm font-bold text-nuit-800">
+                  {Number(suivi.frais_livraison).toLocaleString('fr-FR')}
+                  <span className="ml-1 text-xs font-semibold text-chaux-600">
+                    FCFA — à régler au livreur
+                  </span>
+                </span>
+              </div>
+            )}
           </article>
         )}
 

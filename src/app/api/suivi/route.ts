@@ -58,6 +58,7 @@ export async function GET(req: Request) {
     .from('commandes')
     .select(
       'reference, client_nom, client_adresse, total, created_at, nom_livreur, statut_livraison,' +
+        ' frais_livraison,' +
         ' heure_prise_en_charge, heure_livraison, boutique_id,' +
         ' commande_items(nom_produit, quantite, prix_unitaire)',
     )
@@ -76,6 +77,7 @@ export async function GET(req: Request) {
   const c = data as unknown as {
     reference: string; client_nom: string | null; client_adresse: string | null;
     total: number | null; created_at: string | null; nom_livreur: string | null;
+    frais_livraison: number | null;
     statut_livraison: string | null; heure_prise_en_charge: string | null;
     heure_livraison: string | null; boutique_id: string;
     commande_items: LigneItem[] | null;
@@ -96,6 +98,10 @@ export async function GET(req: Request) {
     customer_name: c.client_nom ?? '',
     address: c.client_adresse ?? '',
     total_price: String(c.total ?? 0),
+    // NULL veut dire « pas encore annonce », jamais « gratuit » : on le rend
+    // tel quel plutot qu'en zero, pour que l'ecran puisse se taire au lieu
+    // d'afficher une livraison offerte que personne n'a promise.
+    frais_livraison: c.frais_livraison === null ? null : Number(c.frais_livraison),
     items: (c.commande_items ?? []).map((i) => ({
       plat: i.nom_produit ?? '',
       quantite: i.quantite ?? 1,

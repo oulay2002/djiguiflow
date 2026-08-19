@@ -12,6 +12,8 @@ type LigneCommande = {
   chat_id: string | null;
   client_adresse: string | null;
   total: number | null;
+  /** Ce que le client règle au LIVREUR. Jamais compris dans `total`. */
+  frais_livraison: number | null;
   created_at: string | null;
   canal: string | null;
   nom_livreur: string | null;
@@ -36,6 +38,7 @@ export async function GET(req: Request) {
     .from('commandes')
     .select(
       'reference, client_nom, client_telephone, chat_id, client_adresse, total, created_at, canal,' +
+        ' frais_livraison,' +
         ' nom_livreur, statut_livraison, heure_prise_en_charge, heure_livraison,' +
         ' confirmation_statut, confirmation_heure,' +
         ' commande_items(nom_produit, quantite, prix_unitaire)',
@@ -62,6 +65,10 @@ export async function GET(req: Request) {
       })),
     ),
     total_price: Number(c.total ?? 0),
+    // NULL conserve : « pas encore annonce » ne se confond pas avec « offerte ».
+    frais_livraison: c.frais_livraison === null || c.frais_livraison === undefined
+      ? null
+      : Number(c.frais_livraison),
     timestamp: c.created_at ?? '',
     canal: String(c.canal ?? '').toLowerCase(),
     nom_livreur: c.nom_livreur ?? '',
