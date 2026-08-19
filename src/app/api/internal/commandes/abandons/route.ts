@@ -164,8 +164,18 @@ export async function POST(req: Request) {
     .lt('created_at', seuilFermeture)
     .select('reference');
 
+  // L'ERREUR REMONTE, ELLE N'EST PLUS SEULEMENT JOURNALISEE.
+  //
+  // Au premier essai, la contrainte CHECK refusait 'abandonnee' et cet UPDATE
+  // echouait — mais la route rendait « fermees: 0 » comme si tout allait bien.
+  // Sans la verification en base, la panne serait passee pour un « rien a
+  // fermer ». Une tache planifiee qui ment sur son resultat ne sert a rien.
   if (errFermeture) {
     console.error('Abandons — fermeture impossible :', errFermeture.message);
+    return Response.json(
+      { ok: false, relancees, fermees: 0, refusees, erreur: errFermeture.message },
+      { status: 500 },
+    );
   }
 
   return Response.json({

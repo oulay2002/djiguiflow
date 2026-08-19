@@ -27,7 +27,7 @@ export const dynamic = 'force-dynamic';
  */
 
 const FENETRE_H = 24;
-const TERMINEES = new Set(['livree', 'annulee']);
+const TERMINEES = new Set(['livree', 'annulee', 'abandonnee']);
 
 /** Voir `motifExact` dans la route voisine : « % » ferait correspondre la premiere commande venue. */
 function motifExact(valeur: string): string {

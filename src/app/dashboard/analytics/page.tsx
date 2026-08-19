@@ -122,6 +122,9 @@ export default function AnalyticsPage() {
       `)
       .eq('boutique_id', uuid)
       .neq('statut', 'annulee')
+      // Une commande jamais confirmee n'est pas une vente : l'inclure gonflerait
+      // le chiffre d'affaires d'un panier que personne n'a valide.
+      .neq('statut', 'abandonnee')
       .order('created_at', { ascending: true });
 
     if (!commandes) {

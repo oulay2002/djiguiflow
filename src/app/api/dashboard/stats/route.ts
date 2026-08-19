@@ -27,7 +27,9 @@ export async function GET(req: Request) {
     .select('total, created_at, canal, statut, statut_livraison, note_client, commande_items(nom_produit, quantite)')
     .eq('boutique_id', m.boutiqueId)
     // Un panier en collecte n'est pas une vente : l'inclure gonflait le CA.
-    .neq('statut', 'panier');
+    .neq('statut', 'panier')
+    // Ni une commande dont la confirmation n'est jamais revenue.
+    .neq('statut', 'abandonnee');
 
   if (error) {
     console.error(`Stats — lecture Supabase impossible (${m.id}) :`, error);

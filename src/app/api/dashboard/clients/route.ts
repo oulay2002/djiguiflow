@@ -30,7 +30,7 @@ export type Client = {
 };
 
 /** Les commandes annulées ne représentent ni un achat ni une habitude. */
-const STATUTS_EXCLUS = new Set(['panier', 'annulee']);
+const STATUTS_EXCLUS = new Set(['panier', 'annulee', 'abandonnee']);
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);

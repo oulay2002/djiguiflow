@@ -33,7 +33,7 @@ export const dynamic = 'force-dynamic';
  */
 
 const FENETRE_H = 24;
-const TERMINEES = new Set(['livree', 'annulee', 'panier']);
+const TERMINEES = new Set(['livree', 'annulee', 'panier', 'abandonnee']);
 
 /** Les huit derniers chiffres : ce qui reste identique d'une notation a l'autre. */
 function empreinteTelephone(brut: unknown): string {
