@@ -204,6 +204,28 @@ async function reserverRelance(
   }
 }
 
+/**
+ * Retire le gras Markdown d'un message qui part en TEXTE BRUT.
+ *
+ * Le modele de langage ecrit spontanement `**15 000 FCFA**`. Ces messages
+ * partent sans `parse_mode` — a dessein, un texte analyse echoue des qu'il
+ * contient une esperluette — et le client lit donc les asterisques en clair.
+ * Vu par un vrai client le 19 aout 2026.
+ *
+ * ON NETTOIE ICI PLUTOT QUE DANS LE PROMPT. Une consigne au modele n'est pas un
+ * verrou : Mistral a deja ignore une « REGLE ABSOLUE ». Ce nettoyage-ci tient,
+ * quoi qu'ecrive le modele et quel que soit le marchand.
+ *
+ * Seules les formes DOUBLES sont retirees. Une seule etoile est le gras natif de
+ * WhatsApp, et un marchand peut legitimement l'employer : y toucher abimerait sa
+ * mise en forme au lieu de la reparer.
+ */
+function sansGrasMarkdown(texte: string): string {
+  return texte
+    .replace(/\*\*([^*]+)\*\*/g, '$1')
+    .replace(/__([^_]+)__/g, '$1');
+}
+
 export async function envoyerMessage(params: {
   boutique: string;
   canal: Canal;
@@ -259,6 +281,10 @@ export async function envoyerMessage(params: {
     }
   }
 
+  // Le texte analyse (HTML) garde ses balises : ses appelants les composent
+  // volontairement et echappent ce qu'ils y inserent.
+  const texte = html === true ? message : sansGrasMarkdown(message);
+
   const jeton = await resoudreJeton(boutique, canal);
   if (!jeton) {
     // Ni jeton marchand ni jeton plateforme : envoyer serait impossible, le
@@ -274,8 +300,8 @@ export async function envoyerMessage(params: {
   try {
     const envoi =
       canal === 'whatsapp'
-        ? await envoyerWhatsApp(jeton.jeton, destinataire, message)
-        : await envoyerTelegram(jeton.jeton, destinataire, message, clavier, html === true);
+        ? await envoyerWhatsApp(jeton.jeton, destinataire, texte)
+        : await envoyerTelegram(jeton.jeton, destinataire, texte, clavier, html === true);
 
     if (!envoi.ok) {
       console.error(`Canaux — envoi ${canal} refuse (${boutique}) :`, envoi.raison);
