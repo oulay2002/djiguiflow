@@ -148,6 +148,8 @@ export type Database = {
           confirmation_heure: string | null
           confirmation_statut: string | null
           created_at: string | null
+          frais_annonces_le: string | null
+          frais_livraison: number | null
           heure_livraison: string | null
           heure_prise_en_charge: string | null
           id: string
@@ -174,6 +176,8 @@ export type Database = {
           confirmation_heure?: string | null
           confirmation_statut?: string | null
           created_at?: string | null
+          frais_annonces_le?: string | null
+          frais_livraison?: number | null
           heure_livraison?: string | null
           heure_prise_en_charge?: string | null
           id?: string
@@ -200,6 +204,8 @@ export type Database = {
           confirmation_heure?: string | null
           confirmation_statut?: string | null
           created_at?: string | null
+          frais_annonces_le?: string | null
+          frais_livraison?: number | null
           heure_livraison?: string | null
           heure_prise_en_charge?: string | null
           id?: string
