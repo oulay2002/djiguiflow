@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { fetchDashboard } from '@/lib/apiClient';
+import { useBoutique, avecBoutique } from '@/lib/boutique';
 import { classesBouton } from '@/components/ui/Bouton';
 
 /**
@@ -80,6 +81,10 @@ const CHAMP =
   'transition focus:border-nuit-400';
 
 export default function OnboardingPage() {
+  // La boutique du selecteur, et rien d'autre. Sans elle, la page branchait
+  // « la premiere du registre » : le 19 aout, les reglages d'une nouvelle
+  // enseigne sont partis chez une autre, deja en service.
+  const { boutiqueId, pret } = useBoutique();
   const [boutique, setBoutique] = useState<Boutique | null>(null);
   const [chargement, setChargement] = useState(true);
   const [message, setMessage] = useState<{ ton: 'ok' | 'erreur' | 'attente'; texte: string } | null>(
@@ -87,9 +92,13 @@ export default function OnboardingPage() {
   );
 
   useEffect(() => {
+    // Sans attendre le selecteur, la page chargerait « la boutique par defaut »
+    // et l'on rebranche alors la mauvaise enseigne — c'est exactement ce qui
+    // s'est produit le 19 aout.
+    if (!pret) return;
     (async () => {
       try {
-        const r = await fetchDashboard('/api/onboarding');
+        const r = await fetchDashboard(avecBoutique('/api/onboarding', boutiqueId));
         if (r.ok) {
           setBoutique(await r.json());
         } else {
@@ -104,12 +113,12 @@ export default function OnboardingPage() {
       }
       setChargement(false);
     })();
-  }, []);
+  }, [pret, boutiqueId]);
 
   const enregistrer = async (champ: string, valeur: string) => {
     setMessage({ ton: 'attente', texte: 'Enregistrement…' });
     try {
-      const r = await fetchDashboard('/api/onboarding', {
+      const r = await fetchDashboard(avecBoutique('/api/onboarding', boutiqueId), {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ [champ]: valeur }),

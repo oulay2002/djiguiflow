@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
-import { estAdmin } from '@/lib/adminAuth';
-import { resoudreMarchand } from '@/lib/marchands';
+import { exigerAccesMarchand } from '@/lib/dashboardAuth';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import { brancherBotTelegram } from '@/lib/telegramBranchement';
 import type { Database } from '@/lib/database.types';
@@ -9,57 +8,64 @@ type MajBoutique = Database['public']['Tables']['boutiques']['Update'];
 
 export const dynamic = 'force-dynamic';
 
+/**
+ * Sur QUELLE boutique on travaille — et jamais une devinette.
+ *
+ * CE QUE CETTE FONCTION FAISAIT, ET CE QUE CA A COUTE. Elle cherchait la
+ * boutique du compte avec `.maybeSingle()` sur `user_id`. Des qu'un compte en
+ * possede DEUX, cette requete echoue et rend `null` — silencieusement. On
+ * retombait alors sur « la premiere boutique du registre ».
+ *
+ * Le 19 aout 2026, un marchand a branche sa deuxieme boutique : jeton Telegram,
+ * groupe de livreurs, identifiant du gerant. TOUT est parti chez la premiere.
+ * Le groupe de livreurs de la boutique en service a ete ecrase par celui de la
+ * nouvelle — ses vrais livreurs ne recevaient plus rien — et le nouveau bot
+ * repondait aux clients avec le catalogue et le nom de l'autre enseigne.
+ *
+ * DEUX CHANGEMENTS. La boutique visee arrive desormais en parametre, comme sur
+ * toutes les routes du tableau de bord, et le controle de propriete est celui
+ * de `exigerAccesMarchand` — le meme pour tout le monde.
+ *
+ * Et quand le compte possede plusieurs boutiques sans qu'on precise laquelle,
+ * ON REFUSE. Choisir a la place du marchand, c'est ce qui a ecrit ses reglages
+ * chez sa voisine.
+ */
 async function ficheDuConnecte(req: Request) {
   const sb = getSupabaseAdmin();
   if (!sb) return { sb: null as never, erreur: 'Base indisponible', statut: 503 };
 
-  const entete = req.headers.get('authorization') ?? '';
-  const token = entete.toLowerCase().startsWith('bearer ') ? entete.slice(7).trim() : '';
-  if (!token) return { sb, erreur: 'Authentification requise.', statut: 401 };
+  const slug = new URL(req.url).searchParams.get('boutique_id');
 
-  const { data, error } = await sb.auth.getUser(token);
-  const utilisateur = data?.user;
-  if (error || !utilisateur) return { sb, erreur: 'Session invalide ou expiree.', statut: 401 };
+  const acces = await exigerAccesMarchand(req, slug);
+  if (!acces.ok) return { sb, erreur: acces.message, statut: acces.statut };
 
-  // 1) La boutique POSSEDÉE par ce compte
-  const { data: possedee } = await sb
-    .from('boutiques')
-    .select('*')
-    .eq('user_id', utilisateur.id)
-    .maybeSingle();
-  if (possedee) return { sb, boutique: possedee, admin: estAdmin(utilisateur.email) };
+  // Sans boutique nommee, on verifie qu'il n'y a pas d'ambiguite AVANT
+  // d'ecrire quoi que ce soit.
+  if (!String(slug ?? '').trim()) {
+    const { data: siennes } = await sb
+      .from('boutiques')
+      .select('slug, nom')
+      .eq('user_id', acces.userId);
 
-  // 2) Admin sans boutique propre → boutique par défaut, sinon la 1ère
-  if (estAdmin(utilisateur.email)) {
-    let def: { id: string } | null = null;
-
-    const marchand = await resoudreMarchand(null);
-    if (marchand) {
-      const r1 = await sb
-        .from('boutiques')
-        .select('id')
-        .eq('id', marchand.boutiqueId)
-        .maybeSingle();
-      def = r1.data;
-    }
-
-    if (!def) {
-      const r2 = await sb
-        .from('boutiques')
-        .select('id')
-        .order('nom')
-        .limit(1)
-        .maybeSingle();
-      def = r2.data;
-    }
-
-    if (def) {
-      const r3 = await sb.from('boutiques').select('*').eq('id', def.id).maybeSingle();
-      if (r3.data) return { sb, boutique: r3.data, admin: true };
+    if ((siennes?.length ?? 0) > 1) {
+      return {
+        sb,
+        erreur:
+          'Vous avez plusieurs boutiques : choisissez laquelle brancher dans le sélecteur en haut de page.',
+        statut: 409,
+      };
     }
   }
 
-  return { sb, erreur: 'Aucune boutique liee a ce compte.', statut: 404 };
+  const { data: boutique } = await sb
+    .from('boutiques')
+    .select('*')
+    .eq('id', acces.marchand.boutiqueId)
+    .maybeSingle();
+
+  if (!boutique) return { sb, erreur: 'Aucune boutique liee a ce compte.', statut: 404 };
+
+  return { sb, boutique, admin: acces.admin };
 }
 
 /**
