@@ -1,6 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import {
+  lireHoraires,
+  NOMS_JOURS,
+  SEMAINE,
+  type Creneau,
+  type Horaires,
+  type Jour,
+} from '@/lib/horaires';
 import { LienRetour, classesBouton } from '@/components/ui/Bouton';
 import { supabase } from '@/lib/supabase';
 import { BUCKET_IMAGES, dossierMarchand, nomFichierSain } from '@/lib/storage';
@@ -18,6 +26,18 @@ import {
   CheckCircle,
   AlertCircle
 } from 'lucide-react';
+
+
+/**
+ * Ce qu'on propose quand le marchand active ses horaires pour la premiere fois.
+ *
+ * Sept jours ouverts de 8 h a 20 h : un point de depart plausible qu'il ajuste,
+ * plutot qu'une grille vide ou tout serait ferme — ce qui fermerait sa boutique
+ * a la seconde ou il coche la case.
+ */
+const HORAIRES_PAR_DEFAUT: Horaires = Object.fromEntries(
+  SEMAINE.map((j) => [j, { ouvre: '08:00', ferme: '20:00' }]),
+) as Horaires;
 
 export default function MaBoutiquePage() {
   const router = useRouter();
@@ -42,6 +62,24 @@ export default function MaBoutiquePage() {
     telephone: '',
     logo_url: ''
   });
+  /**
+   * Horaires en cours d'edition. `null` signifie TOUJOURS OUVERT, et c'est
+   * l'etat de toutes les boutiques deja en service : la case reste decochee
+   * tant que le marchand n'a rien decide.
+   */
+  const [horaires, setHoraires] = useState<Horaires | null>(null);
+
+  const majJour = (jour: Jour, creneau: Creneau | null) =>
+    setHoraires((h) => ({ ...(h ?? {}), [jour]: creneau }));
+
+  // La plupart des commerces ouvrent pareil tous les jours : recopier le lundi
+  // evite quatorze champs a remplir a la main sur un telephone.
+  const appliquerLundiPartout = () =>
+    setHoraires((h) => {
+      const lundi = h?.lun ?? null;
+      return Object.fromEntries(SEMAINE.map((j) => [j, lundi])) as Horaires;
+    });
+
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string>('');
 
@@ -82,11 +120,13 @@ export default function MaBoutiquePage() {
           logo_url: data.logo_url || ''
         });
         setLogoPreview(data.logo_url || '');
+        setHoraires(lireHoraires(data.horaires));
       } else {
         // Aucune boutique : formulaire vierge de creation.
         setBoutiqueEditee(null);
         setFormData({ nom: '', description: '', zone: '', categorie: 'Restaurant', telephone: '', logo_url: '' });
         setLogoPreview('');
+        setHoraires(null);
       }
       setLoading(false);
     };
@@ -158,6 +198,9 @@ export default function MaBoutiquePage() {
       categorie: formData.categorie,
       telephone: formData.telephone,
       logo_url: finalLogoUrl,
+      // `null` est enregistre tel quel : c'est ainsi que se dit « toujours
+      // ouvert », et non par un objet vide qui se lirait « ferme partout ».
+      horaires,
     };
 
     let error;
@@ -348,6 +391,92 @@ export default function MaBoutiquePage() {
                   />
                 </div>
               </div>
+            </div>
+
+            {/* ---- Horaires d'ouverture.
+                Tant que rien n'est defini, la boutique est TOUJOURS OUVERTE :
+                c'est l'etat de toutes celles deja en service, et les fermer
+                d'office ferait plus de degats que le probleme qu'on corrige.
+                Le marchand ouvre ses horaires quand il le decide. */}
+            <div className="bg-white rounded-2xl border border-chaux-200 p-6 space-y-4">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h2 className="font-bold text-nuit-900">Horaires d’ouverture</h2>
+                  <p className="text-sm text-chaux-600 mt-1">
+                    Hors de ces heures, la boutique refuse les commandes et le dit au client.
+                  </p>
+                </div>
+                <label className="flex shrink-0 items-center gap-2 text-sm font-semibold text-nuit-700">
+                  <input
+                    type="checkbox"
+                    checked={horaires !== null}
+                    onChange={(e) => setHoraires(e.target.checked ? HORAIRES_PAR_DEFAUT : null)}
+                    className="h-4 w-4"
+                  />
+                  Définir des horaires
+                </label>
+              </div>
+
+              {horaires === null ? (
+                <p className="rounded-lg bg-chaux-50 px-4 py-3 text-sm text-chaux-600">
+                  Aucun horaire défini : votre boutique accepte les commandes <strong>à toute heure</strong>.
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {SEMAINE.map((jour) => {
+                    const c = horaires[jour] ?? null;
+                    return (
+                      <div key={jour} className="flex flex-wrap items-center gap-3 rounded-lg bg-chaux-50 px-3 py-2">
+                        <label className="flex w-40 items-center gap-2 text-sm font-semibold text-nuit-800">
+                          <input
+                            type="checkbox"
+                            checked={c !== null}
+                            onChange={(e) =>
+                              majJour(jour, e.target.checked ? { ouvre: '08:00', ferme: '20:00' } : null)
+                            }
+                            className="h-4 w-4"
+                          />
+                          {NOMS_JOURS[jour]}
+                        </label>
+
+                        {c ? (
+                          <div className="flex items-center gap-2 text-sm">
+                            <input
+                              type="time"
+                              value={c.ouvre}
+                              onChange={(e) => majJour(jour, { ...c, ouvre: e.target.value })}
+                              className="rounded-lg border border-chaux-200 px-2 py-1"
+                            />
+                            <span className="text-chaux-600">à</span>
+                            <input
+                              type="time"
+                              value={c.ferme}
+                              onChange={(e) => majJour(jour, { ...c, ferme: e.target.value })}
+                              className="rounded-lg border border-chaux-200 px-2 py-1"
+                            />
+                            {/* Un maquis ouvert jusqu'a 2 h du matin est le cas
+                                courant, pas l'exception : on le dit plutot que
+                                de laisser le marchand croire a une erreur. */}
+                            {c.ferme <= c.ouvre && (
+                              <span className="text-xs text-mangue-700">ferme le lendemain</span>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-sm text-chaux-500">Fermé</span>
+                        )}
+                      </div>
+                    );
+                  })}
+
+                  <button
+                    type="button"
+                    onClick={appliquerLundiPartout}
+                    className="text-sm font-semibold text-nuit-700 underline hover:text-nuit-900"
+                  >
+                    Appliquer les horaires du lundi à toute la semaine
+                  </button>
+                </div>
+              )}
             </div>
 
             <button
