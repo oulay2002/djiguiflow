@@ -16,6 +16,8 @@ type Produit = {
   description: string;
   image?: string;
   duJour?: boolean;
+  /** `null` = le marchand ne compte pas ce produit. Jamais confondu avec zero. */
+  stock?: number | null;
 };
 
 const fcfa = (n: number) => n.toLocaleString('fr-FR');
@@ -192,6 +194,11 @@ export default function Page() {
           nom: String(p.nom ?? 'Produit'),
           categorie: String(p.categorie ?? ''),
           prix: Number(p.prix ?? 0),
+          // La RPC vitrine ne rend pas le stock : ces boutiques ne sont pas au
+          // registre Marchands et commandent par message WhatsApp pre-rempli,
+          // sans route serveur qui puisse refuser. Laisser `undefined` fait
+          // simplement que « Épuisé » ne s'affiche pas — plutot que d'afficher
+          // « Épuisé » a tort sur un catalogue dont on ignore le stock.
           description: String(p.description ?? ''),
           image: String(p.photo_url ?? ''),
           duJour: Boolean(p.menu_du_jour),
@@ -327,6 +334,15 @@ export default function Page() {
                     <Plus className="h-4 w-4" />
                   </button>
                 </div>
+              ) : p.stock === 0 ? (
+                /* Epuise : on le DIT plutot que de masquer le plat. Le client
+                   voit qu'il existe et reviendra le chercher ; un plat disparu
+                   donne l'impression d'une carte pauvre.
+                   Le serveur refuse de toute facon la commande — cet affichage
+                   evite au client de composer un panier pour rien. */
+                <span className="border border-[var(--hairline)] bg-chaux-100 px-3 py-2 font-mono text-[11px] font-bold uppercase tracking-[0.15em] text-chaux-600">
+                  Épuisé
+                </span>
               ) : (
                 <button
                   onClick={() => ajouter(p.id)}

@@ -14,7 +14,7 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }
     // photo_url et menu_du_jour manquaient : les photos televersees par le
     // marchand n'atteignaient jamais la vitrine, et le menu du jour qu'il
     // compose restait invisible.
-    .select('reference, id, nom, categorie, prix, description, photo_url, menu_du_jour')
+    .select('reference, id, nom, categorie, prix, description, photo_url, menu_du_jour, stock')
     .eq('boutique_id', m.boutiqueId)
     .eq('disponible', true)
     .order('categorie', { ascending: true })

@@ -658,6 +658,10 @@ export type Database = {
           telephone: string
         }[]
       }
+      decrementer_stock: {
+        Args: { p_produit: string; p_quantite: number }
+        Returns: number
+      }
       definir_jeton_canal: {
         Args: { p_canal: string; p_jeton: string; p_slug: string }
         Returns: undefined

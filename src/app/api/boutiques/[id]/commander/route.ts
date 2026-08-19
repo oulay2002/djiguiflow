@@ -27,6 +27,9 @@ type LigneCommande = {
   plat: string;
   quantite: number;
   prixUnitaire: number;
+  /** `null` = le marchand ne compte pas ce produit. Jamais confondu avec zero. */
+  stock: number | null;
+  disponible: boolean;
 };
 
 type Admin = NonNullable<ReturnType<typeof getSupabaseAdmin>>;
@@ -59,7 +62,7 @@ async function tariferPanier(
   if (sb && boutiqueUuid) {
     const { data, error } = await sb
       .from('produits')
-      .select('id, nom, prix, reference')
+      .select('id, nom, prix, reference, stock, disponible')
       .eq('boutique_id', boutiqueUuid);
 
     if (error) {
@@ -87,6 +90,8 @@ async function tariferPanier(
         plat: String(p.nom ?? ''),
         quantite: demande.quantite,
         prixUnitaire: Number(p.prix) || 0,
+        stock: p.stock === null || p.stock === undefined ? null : Number(p.stock),
+        disponible: p.disponible !== false,
       });
     }
   }
@@ -102,6 +107,11 @@ async function tariferPanier(
           produitId: null,
           plat: String(p.nom ?? ''),
           quantite: d.quantite,
+          // La feuille est un repli pour les marchands pas encore migres : on
+          // n'y cherche pas de stock, et on ne refuse donc pas leurs commandes
+          // faute d'une information qu'ils ne tiennent pas.
+          stock: null,
+          disponible: true,
           // La feuille ecrit les prix en « 2 500 FCFA » : on ne garde que les
           // chiffres.
           prixUnitaire: Number(String(p.prix).replace(/\D/g, '')) || 0,
@@ -164,6 +174,32 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
 
   const lignes = await tariferPanier(m, panier, sb, boutiqueUuid);
   if (!lignes.length) return Response.json({ error: 'Panier vide' }, { status: 400 });
+
+  // ---- Ce qui est demande existe-t-il encore ?
+  //
+  // LA VITRINE NE SUFFIT PAS. Elle masque deja les produits indisponibles, mais
+  // elle le fait AU CHARGEMENT : un onglet ouvert il y a vingt minutes propose
+  // encore le plat epuise entre-temps. Le client commande, le marchand
+  // decouvre en cuisine, rappelle pour s'excuser — et ne revoit pas ce client.
+  //
+  // ON REFUSE LA COMMANDE ENTIERE, ET ON DIT QUOI. Retirer la ligne en silence
+  // livrerait autre chose que ce qui a ete commande ; refuser sans preciser
+  // laisserait le client deviner. Il ajuste lui-meme, en connaissance de cause.
+  const refus = lignes
+    .filter((l) => !l.disponible || (l.stock !== null && l.stock < l.quantite))
+    .map((l) => {
+      if (!l.disponible) return `${l.plat} n’est plus disponible`;
+      return l.stock === 0
+        ? `${l.plat} est épuisé`
+        : `${l.plat} — il n’en reste que ${l.stock}`;
+    });
+
+  if (refus.length) {
+    return Response.json(
+      { error: `Votre panier a changé depuis son ouverture. ${refus.join('. ')}.` },
+      { status: 409 },
+    );
+  }
 
   const total = lignes.reduce((s, l) => s + l.quantite * l.prixUnitaire, 0);
 
@@ -234,6 +270,35 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
         { error: 'Commande non enregistree, merci de reessayer' },
         { status: 503 },
       );
+    }
+
+    // ---- Retirer du stock ce qui vient d'etre vendu.
+    //
+    // APRES la commande, et volontairement : si l'ecriture avait echoue, on
+    // aurait decompte des plats que personne n'a achetes, et le marchand se
+    // serait cru en rupture sans l'etre.
+    //
+    // JAMAIS BLOQUANT. La commande est prise, le marchand est prevenu, le
+    // livreur part : un decompte rate ne doit pas defaire tout cela. Il est
+    // journalise, parce qu'un stock qui derive sans qu'on sache pourquoi finit
+    // par n'etre plus consulte du tout.
+    //
+    // Reste une fenetre etroite entre le controle plus haut et ce decompte :
+    // deux clients qui commandent le dernier plat a la meme seconde passent
+    // tous les deux. Le plancher a zero empeche le nombre negatif, et le
+    // marchand tranche — ce qu'il fait deja aujourd'hui, sans aucun controle.
+    const aDecompter = lignes.filter((l) => l.produitId && l.stock !== null);
+    for (const l of aDecompter) {
+      const { error: errStock } = await sb.rpc('decrementer_stock', {
+        p_produit: l.produitId as string,
+        p_quantite: l.quantite,
+      });
+      if (errStock) {
+        console.error(
+          `Commande ${order_id} — stock non decompte pour « ${l.plat} » :`,
+          errStock.message,
+        );
+      }
     }
   } else {
     // Sans client admin, RIEN n'est ecrit — et rien n'est signale non plus, le
