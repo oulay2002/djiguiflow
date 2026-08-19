@@ -29,7 +29,15 @@ export async function GET(req: Request) {
     // Un panier en collecte n'est pas une vente : l'inclure gonflait le CA.
     .neq('statut', 'panier')
     // Ni une commande dont la confirmation n'est jamais revenue.
-    .neq('statut', 'abandonnee');
+    .neq('statut', 'abandonnee')
+    // NI UNE COMMANDE ANNULEE, et ce n'etait pas le cas.
+    //
+    // Cet ecran comptait les annulations dans « Ventes du jour », alors que la
+    // page Analyses les excluait deja : deux ecrans, deux chiffres, et aucun
+    // moyen pour le marchand de savoir lequel croire. Une annulation gonflait
+    // aussi « en cours », qui vaut `total - livrees` : une commande annulee y
+    // etait presentee comme une commande a preparer.
+    .neq('statut', 'annulee');
 
   if (error) {
     console.error(`Stats — lecture Supabase impossible (${m.id}) :`, error);
