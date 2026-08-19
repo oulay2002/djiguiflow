@@ -113,5 +113,21 @@ for (const [brut, attendu] of [['11:00', '11h'], ['11:30', '11h30'], ['02:00', '
   console.log(`  ${ok ? 'ok   ' : 'RATE '} ${brut} -> ${enHeure(brut)}`);
 }
 
-console.log(ko === 0 ? '\nTOUS LES CAS PASSENT' : `\n${ko} CAS EN ECHEC`);
+// ---- La pause immediate. Elle prime sur les horaires : une boutique ouverte
+// sur le papier mais en pause est fermee, et une pause expiree ne dit plus rien.
+console.log('\n--- pause immediate ---');
+for (const [titre, horaires, iso, pause, attendu] of [
+  ['en pause pendant les heures d ouverture', MAQUIS, '2026-08-17T12:00:00', '2026-08-17T14:00:00Z', false],
+  ['pause expiree, on rouvre', MAQUIS, '2026-08-17T15:00:00', '2026-08-17T14:00:00Z', true],
+  ['pause sans horaires du tout', null, '2026-08-17T03:00:00', '2026-08-17T05:00:00Z', false],
+  ['pause nulle, rien ne change', MAQUIS, '2026-08-17T12:00:00', null, true],
+  ['pause illisible, rien ne change', MAQUIS, '2026-08-17T12:00:00', 'n importe quoi', true],
+]) {
+  const r = etatBoutique(horaires, instant(iso), pause);
+  const ok = r.ouvert === attendu;
+  if (!ok) ko++;
+  console.log(`  ${ok ? 'ok   ' : 'RATE '} ${titre.padEnd(42)} ${r.ouvert ? 'OUVERT' : 'ferme '}  « ${r.message ?? '(rien)'} »`);
+}
+
+console.log(ko === 0 ? '\nTOUS LES CAS PASSENT (pause comprise)' : `\n${ko} CAS EN ECHEC`);
 process.exit(ko === 0 ? 0 : 1);

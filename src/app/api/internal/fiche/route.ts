@@ -192,7 +192,10 @@ export async function GET(req: Request) {
   // Le champ sert de VERROU, pas d'indication. Une consigne au modele de
   // langage ne tient pas — Mistral a deja ignore une « REGLE ABSOLUE ». C'est
   // au routeur de s'arreter avant d'appeler l'assistante.
-  const etat = etatBoutique(publique.horaires);
+  // La pause immediate passe par le meme champ : le routeur n8n qui teste
+  // `ouvert` n'a rien a apprendre de nouveau, et le marchand qui appuie sur
+  // « Je ferme » coupe d'un coup la vitrine ET l'assistante WhatsApp.
+  const etat = etatBoutique(publique.horaires, new Date(), publique.pause_jusqua);
   publique.ouvert = etat.ouvert;
   publique.message_horaires = etat.message ?? '';
 

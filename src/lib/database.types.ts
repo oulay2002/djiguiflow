@@ -22,6 +22,7 @@ export type Database = {
           emoji: string | null
           groupe_livreurs: string | null
           horaires: Json | null
+          pause_jusqua: string | null
           id: string
           logo_url: string | null
           nom: string | null
@@ -48,6 +49,7 @@ export type Database = {
           emoji?: string | null
           groupe_livreurs?: string | null
           horaires?: Json | null
+          pause_jusqua?: string | null
           id?: string
           logo_url?: string | null
           nom?: string | null
@@ -74,6 +76,7 @@ export type Database = {
           emoji?: string | null
           groupe_livreurs?: string | null
           horaires?: Json | null
+          pause_jusqua?: string | null
           id?: string
           logo_url?: string | null
           nom?: string | null

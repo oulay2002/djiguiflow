@@ -29,10 +29,10 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }
       if (uuid) {
         const { data } = await sb
           .from('boutiques')
-          .select('horaires')
+          .select('horaires, pause_jusqua')
           .eq('id', uuid)
           .maybeSingle();
-        const etat = etatBoutique(data?.horaires);
+        const etat = etatBoutique(data?.horaires, new Date(), data?.pause_jusqua);
         ouvert = etat.ouvert;
         messageHoraire = etat.message;
       }

@@ -12,6 +12,7 @@ import {
 import { supabase } from '@/lib/supabase';
 import CompteurQuota from '@/components/dashboard/CompteurQuota';
 import ReglagePush from '@/components/pwa/ReglagePush';
+import BoutonPause from '@/components/dashboard/BoutonPause';
 
 type Stats = {
   caTotal: number; caJour: number; nbCommandes: number; nbJour: number;
@@ -112,6 +113,10 @@ export default function Page() {
               Le composant se tait de lui-meme quand il n'y a rien a demander :
               deja actif, navigateur incapable, ou « plus tard » recent. */}
           <ReglagePush variante="invitation" />
+
+          {/* La fermeture d'urgence est ici, en haut, parce qu'on ne la cherche
+              pas : on en a besoin tout de suite, four en panne ou riz fini. */}
+          <BoutonPause />
 
           <CompteurQuota />
 

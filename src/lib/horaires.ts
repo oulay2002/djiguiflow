@@ -118,7 +118,26 @@ function dansLeCreneau(c: Creneau, minute: number): boolean {
  *   dependre de l'heure qu'il est — une regle horaire testee « quand ca tombe
  *   bien » n'est pas testee.
  */
-export function etatBoutique(brut: unknown, maintenant: Date = new Date()): EtatBoutique {
+export function etatBoutique(
+  brut: unknown,
+  maintenant: Date = new Date(),
+  pauseJusqua?: unknown,
+): EtatBoutique {
+  // ---- LA PAUSE PASSE AVANT TOUT LE RESTE.
+  //
+  // Elle dit « pas maintenant », quels que soient les horaires : le four est en
+  // panne, le riz est fini, la cuisine ne suit plus. Une boutique en pause dans
+  // ses heures d'ouverture est fermee, sans discussion.
+  //
+  // Elle se leve d'elle-meme. Un drapeau oublie fermerait la boutique des
+  // jours, et la panne serait alors causee par le remede.
+  const finPause = Date.parse(String(pauseJusqua ?? ''));
+  if (Number.isFinite(finPause) && finPause > maintenant.getTime()) {
+    const h = new Date(finPause);
+    const hhmm = `${String(h.getUTCHours()).padStart(2, '0')}:${String(h.getUTCMinutes()).padStart(2, '0')}`;
+    return { ouvert: false, message: `Fermé exceptionnellement — reprise vers ${enHeure(hhmm)}` };
+  }
+
   const horaires = lireHoraires(brut);
 
   // Pas d'horaires : toujours ouvert. Les boutiques deja en service n'en ont

@@ -159,11 +159,11 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
   if (sb && boutiqueUuid) {
     const { data: fiche } = await sb
       .from('boutiques')
-      .select('horaires')
+      .select('horaires, pause_jusqua')
       .eq('id', boutiqueUuid)
       .maybeSingle();
 
-    const etat = etatBoutique(fiche?.horaires);
+    const etat = etatBoutique(fiche?.horaires, new Date(), fiche?.pause_jusqua);
     if (!etat.ouvert) {
       return Response.json(
         { error: `${m.nom} n’accepte pas de commande pour le moment. ${etat.message ?? ''}`.trim() },
