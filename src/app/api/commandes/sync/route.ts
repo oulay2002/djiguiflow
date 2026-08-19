@@ -60,11 +60,40 @@ export async function POST(req: Request) {
     .eq('reference', reference)
     .maybeSingle();
 
+  // ---- LE MARQUEUR « on a demande, on attend ».
+  //
+  // `confirmation_statut` valait NULL dans deux cas opposes : « demande sans
+  // reponse » et « jamais demandee ». Impossible de distinguer un panier
+  // abandonne d'une commande qui ne passe pas par la confirmation.
+  //
+  // Il n'est pose QUE sur demande explicite de l'appelant, et JAMAIS par-dessus
+  // une valeur existante — ecraser un 'confirmee' annulerait une confirmation
+  // que le client vient de donner, ce que cette route s'interdit deja pour les
+  // memes raisons.
+  const marquerDemandee =
+    b.confirmation_demandee === true ||
+    String(b.confirmation_demandee ?? '') === '1' ||
+    String(b.confirmation_demandee ?? '').toLowerCase() === 'true';
+
   if (data) {
     // Ni `statut` ni `confirmation_statut` ici : ils appartiennent au cycle de
     // vie reel de la commande. Les forcer remettait a « en attente » une
     // commande deja en livraison, et annulait une confirmation que le client
     // venait de donner — c'est justement cet appel qui suit sa confirmation.
+    if (marquerDemandee) {
+      const { error: errMarque } = await sb
+        .from('commandes')
+        .update({ confirmation_statut: 'demandee' })
+        .eq('reference', reference)
+        .is('confirmation_statut', null);
+
+      if (errMarque) {
+        // Non bloquant : la commande vit sa vie, seule la mesure de l'abandon
+        // s'en trouve amputee.
+        console.error(`Sync ${reference} — marqueur de confirmation refuse :`, errMarque.message);
+      }
+    }
+
     if (Object.keys(payload).length === 0) {
       return Response.json({ ok: true, reference, maj: 'rien a mettre a jour' });
     }

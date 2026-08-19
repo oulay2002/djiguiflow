@@ -172,6 +172,7 @@ async function reserverRelance(
   boutique: string,
   destinataire: string,
   motif: string | undefined,
+  jours: number | undefined,
 ): Promise<{ autorise: true } | { autorise: false; motif: string }> {
   const sb = getSupabaseAdmin();
 
@@ -185,6 +186,7 @@ async function reserverRelance(
       p_boutique: boutique,
       p_telephone: normaliserTelephoneCI(destinataire),
       p_motif: motif,
+      ...(typeof jours === 'number' ? { p_jours: jours } : {}),
     });
 
     if (error) {
@@ -213,6 +215,16 @@ export async function envoyerMessage(params: {
   type?: TypeEnvoi;
   /** Pourquoi cette relance, garde en base pour pouvoir en rendre compte. */
   motif?: string;
+  /**
+   * Espacement minimal entre deux relances au meme client, en jours. 30 par
+   * defaut — c'est la bonne mesure pour du demarchage.
+   *
+   * Le panier abandonne demande moins : le client vient d'ecrire, il a compose
+   * le panier lui-meme, et lui refuser un rappel parce qu'il a hesite trois
+   * semaines plus tot ferait perdre une vente sans rien proteger. La liste STOP
+   * et le plafond du jour continuent de s'appliquer, eux.
+   */
+  jours?: number;
   /** Clavier inline Telegram, ignore sur WhatsApp. */
   clavier?: unknown;
   /**
@@ -225,7 +237,7 @@ export async function envoyerMessage(params: {
    */
   html?: boolean;
 }): Promise<ResultatEnvoi> {
-  const { boutique, canal, destinataire, message, clavier, html, motif } = params;
+  const { boutique, canal, destinataire, message, clavier, html, motif, jours } = params;
   const type: TypeEnvoi = params.type === 'relance' ? 'relance' : 'service';
 
   if (!message?.trim()) {
@@ -241,7 +253,7 @@ export async function envoyerMessage(params: {
   // n'avais pas le droit » sans le confondre avec « mon message etait mal
   // forme », et surtout sans reessayer.
   if (type === 'relance') {
-    const reservation = await reserverRelance(boutique, destinataire, motif);
+    const reservation = await reserverRelance(boutique, destinataire, motif, jours);
     if (!reservation.autorise) {
       return { ok: false, canal, raison: `relance refusee (${reservation.motif})`, statut: 429 };
     }

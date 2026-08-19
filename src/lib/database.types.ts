@@ -165,6 +165,7 @@ export type Database = {
           position_livreur: string | null
           position_recue_le: string | null
           reference: string | null
+          relance_le: string | null
           statut: string | null
           statut_livraison: string | null
           total: number
@@ -193,6 +194,7 @@ export type Database = {
           position_livreur?: string | null
           position_recue_le?: string | null
           reference?: string | null
+          relance_le?: string | null
           statut?: string | null
           statut_livraison?: string | null
           total: number
@@ -221,6 +223,7 @@ export type Database = {
           position_livreur?: string | null
           position_recue_le?: string | null
           reference?: string | null
+          relance_le?: string | null
           statut?: string | null
           statut_livraison?: string | null
           total?: number

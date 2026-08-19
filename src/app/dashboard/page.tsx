@@ -22,6 +22,8 @@ type Stats = {
   produitsVendus: number; panierMoyen: number;
   /** Paniers composes puis abandonnes sur les 7 derniers jours. */
   paniersPerdus?: { nombre: number; valeur: number };
+  /** Commandes WhatsApp dont le client n'a jamais confirme la reception. */
+  confirmationsAttendues?: { nombre: number; valeur: number };
 };
 
 const canalMeta: Record<string, { label: string; icon: ComponentType<{ className?: string }>; txt: string; bar: string }> = {
@@ -83,6 +85,7 @@ export default function Page() {
   // `s` peut encore etre nul au premier rendu : on retient la mesure une fois
   // pour toutes plutot que de la reinterroger a chaque ligne du bloc.
   const perdus = s?.paniersPerdus ?? null;
+  const attendues = s?.confirmationsAttendues ?? null;
 
   const kpis = s ? [
     { label: 'Ventes du jour', value: `${s.caJour.toLocaleString('fr-FR')} F`, sub: `${s.nbJour} commande(s) aujourd'hui`, icon: Wallet, accent: 'bg-mangue-100 text-mangue-700' },
@@ -148,22 +151,41 @@ export default function Page() {
 
               Affiche seulement s'il y en a : annoncer « 0 panier perdu » a un
               marchand qui debute, c'est du bruit deguise en information. */}
-          {perdus && perdus.nombre > 0 && (
+          {((perdus?.nombre ?? 0) > 0 || (attendues?.nombre ?? 0) > 0) && (
             <section className="rounded-[1.5rem] border border-amber-200 bg-amber-50/70 p-5">
-              <div className="flex flex-wrap items-center gap-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-100 text-amber-700">
+              <div className="flex flex-wrap items-start gap-4">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-amber-100 text-amber-700">
                   <ShoppingBag className="h-6 w-6" />
                 </div>
-                <div className="min-w-0">
-                  <p className="font-semibold text-amber-900">
-                    {perdus.nombre} panier{perdus.nombre > 1 ? 's' : ''} laissé
-                    {perdus.nombre > 1 ? 's' : ''} en route cette semaine
-                    {perdus.valeur > 0 && ` — ${perdus.valeur.toLocaleString('fr-FR')} F`}
-                  </p>
-                  <p className="text-sm text-amber-800">
-                    Ces clients ont composé leur commande et laissé leur numéro, sans valider.
-                    Un prix, un délai ou des frais de livraison peuvent expliquer l’hésitation.
-                  </p>
+                <div className="min-w-0 space-y-3">
+                  {/* Deux façons de perdre une vente au tout dernier mètre, et
+                      le marchand ne voyait ni l’une ni l’autre. */}
+                  {perdus && perdus.nombre > 0 && (
+                    <div>
+                      <p className="font-semibold text-amber-900">
+                        {perdus.nombre} panier{perdus.nombre > 1 ? 's' : ''} laissé
+                        {perdus.nombre > 1 ? 's' : ''} en route cette semaine
+                        {perdus.valeur > 0 && ` — ${perdus.valeur.toLocaleString('fr-FR')} F`}
+                      </p>
+                      <p className="text-sm text-amber-800">
+                        Ces clients ont composé leur commande et laissé leur numéro, sans valider.
+                        Un prix, un délai ou des frais de livraison peuvent expliquer l’hésitation.
+                      </p>
+                    </div>
+                  )}
+                  {attendues && attendues.nombre > 0 && (
+                    <div>
+                      <p className="font-semibold text-amber-900">
+                        {attendues.nombre} commande{attendues.nombre > 1 ? 's' : ''} attend
+                        {attendues.nombre > 1 ? 'ent' : ''} la réponse du client
+                        {attendues.valeur > 0 && ` — ${attendues.valeur.toLocaleString('fr-FR')} F`}
+                      </p>
+                      <p className="text-sm text-amber-800">
+                        Le panier est prêt, il ne manque que sa confirmation. Un rappel lui est
+                        envoyé automatiquement ; sans réponse sous 24 h, la commande est annulée.
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             </section>

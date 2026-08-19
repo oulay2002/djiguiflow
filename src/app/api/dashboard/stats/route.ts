@@ -107,9 +107,33 @@ export async function GET(req: Request) {
     console.error(`Stats — paniers perdus illisibles (${m.id}) :`, e);
   }
 
+  // ---- LES COMMANDES QUI ATTENDENT UNE REPONSE DU CLIENT.
+  //
+  // Le pendant WhatsApp du panier abandonne : l'assistante a compris le panier,
+  // ecrit la commande et demande confirmation — et le client n'a jamais
+  // repondu. Ce sont des ventes a un mot pres, que le marchand ne distinguait
+  // pas de ses commandes a preparer.
+  let confirmationsAttendues = { nombre: 0, valeur: 0 };
+  try {
+    const { data: attente } = await sb
+      .from('commandes')
+      .select('total')
+      .eq('boutique_id', m.boutiqueId)
+      .eq('confirmation_statut', 'demandee')
+      .eq('statut', 'en_attente');
+
+    confirmationsAttendues = {
+      nombre: attente?.length ?? 0,
+      valeur: (attente ?? []).reduce((s, c) => s + Number(c.total ?? 0), 0),
+    };
+  } catch (e) {
+    console.error(`Stats — confirmations en attente illisibles (${m.id}) :`, e);
+  }
+
   return Response.json({
     boutique_id: m.id,
     paniersPerdus,
+    confirmationsAttendues,
     caTotal, caJour,
     nbCommandes: commandes.length, nbJour: cmdJour.length,
     livrees, enCours: commandes.length - livrees,
