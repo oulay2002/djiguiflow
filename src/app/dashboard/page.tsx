@@ -6,8 +6,8 @@ import { fetchDashboard } from '@/lib/apiClient';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
-  ArrowRight, Bell, Globe2, Package2, Send, ShoppingCart, ShoppingBag, Smartphone,
-  Star, Trophy, Wallet,
+  AlertTriangle, ArrowRight, Bell, Globe2, Package2, Send, ShoppingCart, ShoppingBag,
+  Smartphone, Star, Trophy, Wallet,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import CompteurQuota from '@/components/dashboard/CompteurQuota';
@@ -24,6 +24,8 @@ type Stats = {
   paniersPerdus?: { nombre: number; valeur: number };
   /** Commandes WhatsApp dont le client n'a jamais confirme la reception. */
   confirmationsAttendues?: { nombre: number; valeur: number };
+  /** Ce qui manque pour que la boutique puisse reellement servir un client. */
+  configuration?: { canalClient: boolean; groupeLivreurs: boolean; catalogue: boolean } | null;
 };
 
 const canalMeta: Record<string, { label: string; icon: ComponentType<{ className?: string }>; txt: string; bar: string }> = {
@@ -86,6 +88,26 @@ export default function Page() {
   // pour toutes plutot que de la reinterroger a chaque ligne du bloc.
   const perdus = s?.paniersPerdus ?? null;
   const attendues = s?.confirmationsAttendues ?? null;
+
+  // Ce qui empeche la boutique de servir, nomme et ordonne par gravite. Un
+  // marchand ne doit pas avoir a deviner pourquoi ses commandes n'aboutissent
+  // pas — ni l'apprendre par un client mecontent.
+  const manques = s?.configuration
+    ? [
+        !s.configuration.canalClient && {
+          titre: 'Aucun canal connecté',
+          detail: 'Vos clients ne recevront ni confirmation, ni suivi de livraison, ni demande d’avis.',
+        },
+        !s.configuration.groupeLivreurs && {
+          titre: 'Aucun groupe de livreurs',
+          detail: 'Les commandes ne seront proposées à personne pour la livraison.',
+        },
+        !s.configuration.catalogue && {
+          titre: 'Aucun article en vente',
+          detail: 'Votre vitrine est visible mais vide.',
+        },
+      ].filter(Boolean as unknown as (v: unknown) => v is { titre: string; detail: string })
+    : [];
 
   const kpis = s ? [
     { label: 'Ventes du jour', value: `${s.caJour.toLocaleString('fr-FR')} F`, sub: `${s.nbJour} commande(s) aujourd'hui`, icon: Wallet, accent: 'bg-mangue-100 text-mangue-700' },
@@ -151,6 +173,38 @@ export default function Page() {
 
               Affiche seulement s'il y en a : annoncer « 0 panier perdu » a un
               marchand qui debute, c'est du bruit deguise en information. */}
+          {/* CE QUI EMPECHE DE VENDRE, AVANT TOUT LE RESTE.
+              Une boutique peut etre en ligne sans etre branchee : vitrine
+              visible, commandes acceptees, et personne au bout. Le marchand
+              voyait une commande arriver et croyait tout en ordre. */}
+          {manques.length > 0 && (
+            <section className="rounded-[1.5rem] border border-red-300 bg-red-50 p-5">
+              <div className="flex flex-wrap items-start gap-4">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-red-100 text-red-700">
+                  <AlertTriangle className="h-6 w-6" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="font-semibold text-red-900">
+                    Votre boutique ne peut pas encore servir une commande
+                  </p>
+                  <ul className="mt-2 space-y-1.5">
+                    {manques.map(m => (
+                      <li key={m.titre} className="text-sm text-red-800">
+                        <span className="font-semibold">{m.titre}</span> — {m.detail}
+                      </li>
+                    ))}
+                  </ul>
+                  <Link
+                    href="/onboarding"
+                    className="mt-3 inline-flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700"
+                  >
+                    Terminer le branchement <ArrowRight className="h-4 w-4" />
+                  </Link>
+                </div>
+              </div>
+            </section>
+          )}
+
           {((perdus?.nombre ?? 0) > 0 || (attendues?.nombre ?? 0) > 0) && (
             <section className="rounded-[1.5rem] border border-amber-200 bg-amber-50/70 p-5">
               <div className="flex flex-wrap items-start gap-4">

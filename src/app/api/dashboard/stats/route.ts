@@ -140,10 +140,51 @@ export async function GET(req: Request) {
     console.error(`Stats — confirmations en attente illisibles (${m.id}) :`, e);
   }
 
+  // ---- LA BOUTIQUE EST-ELLE EN ETAT DE VENDRE ?
+  //
+  // Une boutique peut etre EN LIGNE sans etre BRANCHEE : vitrine visible,
+  // commandes acceptees… et personne au bout. Constate en commandant chez un
+  // marchand de test le 19 aout 2026 — la commande partait, le client n'etait
+  // jamais prevenu faute de canal, les livreurs jamais alertes faute de groupe,
+  // et SEUL LE CANAL TECHNIQUE le savait. Le marchand, lui, voyait une commande
+  // arriver et croyait tout en ordre.
+  //
+  // On le lui dit donc chez lui, avec ce qui manque, plutot que de le laisser
+  // decouvrir la panne par un client mecontent.
+  let configuration: Record<string, boolean> | null = null;
+  try {
+    const [{ data: fiche }, { count: nbProduits }] = await Promise.all([
+      sb
+        .from('boutiques')
+        .select('wasender_secret_id, telegram_secret_id, groupe_livreurs')
+        .eq('id', m.boutiqueId)
+        .maybeSingle(),
+      sb
+        .from('produits')
+        .select('id', { count: 'exact', head: true })
+        .eq('boutique_id', m.boutiqueId)
+        .eq('disponible', true),
+    ]);
+
+    configuration = {
+      // Sans canal, aucune notification ne part au client : ni confirmation,
+      // ni livreur en route, ni demande d'avis.
+      canalClient: Boolean(fiche?.wasender_secret_id || fiche?.telegram_secret_id),
+      // Sans groupe, la course n'est proposee a personne.
+      groupeLivreurs: Boolean(String(fiche?.groupe_livreurs ?? '').trim()),
+      // Sans article disponible, la vitrine est vide.
+      catalogue: (nbProduits ?? 0) > 0,
+    };
+  } catch (e) {
+    // Un diagnostic illisible ne doit pas priver le marchand de ses chiffres.
+    console.error(`Stats — configuration illisible (${m.id}) :`, e);
+  }
+
   return Response.json({
     boutique_id: m.id,
     paniersPerdus,
     confirmationsAttendues,
+    configuration,
     caTotal, caJour,
     nbCommandes: commandes.length, nbJour: cmdJour.length,
     livrees, enCours: commandes.length - livrees,
