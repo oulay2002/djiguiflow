@@ -64,7 +64,7 @@ function messageRelance(l: Ligne): string {
   // message et retrouve les memes liens. Un rappel qui ne ressemble pas a ce
   // qu'il rappelle se lit comme une publicite.
   return [
-    `🍽️ ${prenom}, votre commande ${ref} (${fcfa(Number(l.total ?? 0))} F) chez ${boutique} attend encore votre réponse.`,
+    `🛍️ ${prenom}, votre commande ${ref} (${fcfa(Number(l.total ?? 0))} F) chez ${boutique} attend encore votre réponse.`,
     '',
     '✅ Je confirme :',
     lien('oui'),

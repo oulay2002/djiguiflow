@@ -533,7 +533,7 @@ export default function Page() {
               <div className="border border-dashed border-[var(--hairline)] p-10 text-center">
                 <p className="font-display text-lg font-bold text-nuit-800">Le menu arrive</p>
                 <p className="mt-1 text-sm text-chaux-600">
-                  Ce commerçant n&apos;a pas encore publié de plat.
+                  Ce commerçant n&apos;a pas encore publié d&apos;article.
                 </p>
               </div>
             ) : sectionne ? (
@@ -581,7 +581,7 @@ export default function Page() {
 
               {lignes.length === 0 ? (
                 <p className="mt-3 text-sm text-chaux-600">
-                  Ajoutez un plat, il s&apos;inscrit ici.
+                  Ajoutez un article, il s&apos;inscrit ici.
                 </p>
               ) : (
                 <>

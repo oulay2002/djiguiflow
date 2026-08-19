@@ -81,7 +81,7 @@ async function depuisSupabase(): Promise<Marchand[]> {
   const { data, error } = await sb
     .from('boutiques')
     .select(
-      'id, slug, nom, categorie, emoji, sheet_commandes, sheet_menu, groupe_livreurs, telephone, telegram_marchand',
+      'id, slug, nom, categorie, emoji, sheet_document_id, sheet_commandes, sheet_menu, groupe_livreurs, telephone, telegram_marchand',
     );
 
   if (error) {
@@ -104,7 +104,18 @@ async function depuisSupabase(): Promise<Marchand[]> {
       nom: String(b.nom ?? ''),
       secteur: String(b.categorie ?? ''),
       emoji: String(b.emoji || '🏪'),
-      sheetId: SHEET_ID,
+      // LE DOCUMENT DU MARCHAND, PAS UN SEUL POUR TOUT LE MONDE.
+      //
+      // Ce registre imposait `SHEET_ID` a tous, alors que n8n lit
+      // `sheet_document_id` de la fiche. Tant qu'il n'y avait qu'un marchand,
+      // les deux designaient le meme classeur et rien ne le revelait. Au
+      // deuxieme marchand ayant son propre document, l'application ecrivait sa
+      // commande dans le classeur global pendant que n8n la cherchait dans le
+      // sien : commande introuvable, aucun livreur lance, et pas un message
+      // d'erreur — les deux cotes travaillaient sans se douter de rien.
+      //
+      // Le repli sur `SHEET_ID` garde les marchands existants a l'identique.
+      sheetId: String(b.sheet_document_id || SHEET_ID || ''),
       sheetCommandes: String(b.sheet_commandes || parDefaut.sheetCommandes),
       sheetMenu: String(b.sheet_menu || parDefaut.sheetMenu),
       groupeLivreurs: String(b.groupe_livreurs || ''),

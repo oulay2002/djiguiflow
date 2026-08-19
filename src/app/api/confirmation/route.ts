@@ -32,7 +32,7 @@ type Ligne = {
  * le POST qu'ils declenchent ecrit. Aucun robot d'apercu ne poste.
  */
 function pageHtml(emoji: string, titre: string, detail: string, corps = ''): string {
-  return `<!doctype html><html lang="fr"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>${titre}</title></head><body style="font-family:system-ui,sans-serif;background:#f7f0e7;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0"><div style="background:#fff;border-radius:24px;padding:40px;max-width:420px;text-align:center;box-shadow:0 20px 60px rgba(49,35,20,.12)"><div style="font-size:48px">${emoji}</div><h1 style="font-size:22px;margin:16px 0 8px;color:#0f172a">${titre}</h1><p style="color:#64748b;margin:0">${detail}</p>${corps}<p style="margin-top:24px;font-size:13px;color:#94a3b8">DjiguiFlow 🍽️</p></div></body></html>`;
+  return `<!doctype html><html lang="fr"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>${titre}</title></head><body style="font-family:system-ui,sans-serif;background:#f7f0e7;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0"><div style="background:#fff;border-radius:24px;padding:40px;max-width:420px;text-align:center;box-shadow:0 20px 60px rgba(49,35,20,.12)"><div style="font-size:48px">${emoji}</div><h1 style="font-size:22px;margin:16px 0 8px;color:#0f172a">${titre}</h1><p style="color:#64748b;margin:0">${detail}</p>${corps}<p style="margin-top:24px;font-size:13px;color:#94a3b8">DjiguiFlow</p></div></body></html>`;
 }
 
 /**
@@ -196,7 +196,7 @@ export async function GET(req: Request) {
     `<p style="color:#64748b;margin:0 0 18px">${Number(ligne.total ?? 0).toLocaleString('fr-FR')} FCFA · ${echapper(ligne.client_adresse)}</p>` +
     `<div>${bouton('oui', '✅ Je confirme', '#16a34a')}${bouton('non', "❌ J'annule", '#dc2626')}</div>`;
 
-  return reponseHtml('🍽️', 'Confirmez votre commande', 'Serez-vous disponible pour la réception ?', 200, recap);
+  return reponseHtml('🛍️', 'Confirmez votre commande', 'Serez-vous disponible pour la réception ?', 200, recap);
 }
 
 /** L'ecriture, declenchee par le bouton et par lui seul. */

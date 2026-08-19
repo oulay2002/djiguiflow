@@ -336,12 +336,12 @@ export default function Page() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="max-h-[90vh] w-full max-w-lg space-y-4 overflow-y-auto rounded-[1.5rem] bg-white p-6 shadow-2xl">
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-black text-nuit-900">🍽️ Nouveau produit</h2>
+              <h2 className="text-xl font-black text-nuit-900">🛍️ Nouveau produit</h2>
               <button onClick={() => setOuvert(false)} className="rounded-full p-2 hover:bg-chaux-100"><X className="h-5 w-5" /></button>
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2">
-              <input className="rounded-lg border p-2" placeholder="Nom du plat *" value={fNom} onChange={e => setFNom(e.target.value)} />
+              <input className="rounded-lg border p-2" placeholder="Nom de l’article *" value={fNom} onChange={e => setFNom(e.target.value)} />
               <input className="rounded-lg border p-2" placeholder="Catégorie (ex : Burger)" value={fCat} onChange={e => setFCat(e.target.value)} />
               <input className="rounded-lg border p-2" placeholder="Prix (FCFA) *" type="number" value={fPrix} onChange={e => setFPrix(e.target.value)} />
               <input className="rounded-lg border p-2" placeholder="Description" value={fDesc} onChange={e => setFDesc(e.target.value)} />
@@ -359,7 +359,7 @@ export default function Page() {
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-semibold text-chaux-600">📸 Photo du plat</label>
+              <label className="mb-1 block text-sm font-semibold text-chaux-600">📸 Photo de l’article</label>
               <input type="file" accept="image/*" onChange={e => setFFile(e.target.files?.[0] || null)}
                 className="block w-full text-sm text-chaux-600 file:mr-3 file:rounded-full file:border-0 file:bg-mangue-100 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-mangue-700 hover:file:bg-mangue-200" />
               <p className="mt-2 text-xs text-chaux-600">…ou colle un lien image :</p>
