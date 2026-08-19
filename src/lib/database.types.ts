@@ -485,6 +485,56 @@ export type Database = {
         }
         Relationships: []
       }
+      paniers: {
+        Row: {
+          articles: number
+          boutique_id: string
+          commande_id: string | null
+          converti_le: string | null
+          cree_le: string
+          id: string
+          lignes: Json
+          maj_le: string
+          nom: string | null
+          telephone: string
+          total: number
+        }
+        Insert: {
+          articles?: number
+          boutique_id: string
+          commande_id?: string | null
+          converti_le?: string | null
+          cree_le?: string
+          id?: string
+          lignes?: Json
+          maj_le?: string
+          nom?: string | null
+          telephone: string
+          total?: number
+        }
+        Update: {
+          articles?: number
+          boutique_id?: string
+          commande_id?: string | null
+          converti_le?: string | null
+          cree_le?: string
+          id?: string
+          lignes?: Json
+          maj_le?: string
+          nom?: string | null
+          telephone?: string
+          total?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "paniers_boutique_id_fkey"
+            columns: ["boutique_id"]
+            isOneToOne: false
+            referencedRelation: "boutiques"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       produits: {
         Row: {
           boutique_id: string

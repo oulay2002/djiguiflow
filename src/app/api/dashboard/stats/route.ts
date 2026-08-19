@@ -78,8 +78,38 @@ export async function GET(req: Request) {
     });
   }
 
+  // ---- CE QU'ON A PERDU EN ROUTE, SUR 7 JOURS.
+  //
+  // Un panier compose, un numero saisi, et puis rien. Le marchand n'avait
+  // jusqu'ici aucun moyen de savoir que ces clients-la avaient existe.
+  //
+  // On se limite a sept jours parce que c'est le chiffre sur lequel on peut
+  // encore agir : un panier perdu il y a trois semaines n'apprend plus rien, et
+  // le cumul depuis toujours ne ferait que grossir sans jamais rien dire.
+  //
+  // Lecture separee et non bloquante : cette mesure est un bonus, elle ne doit
+  // pas pouvoir priver le marchand de son chiffre d'affaires.
+  let paniersPerdus = { nombre: 0, valeur: 0 };
+  try {
+    const ilYA7Jours = new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString();
+    const { data: paniers } = await sb
+      .from('paniers')
+      .select('total')
+      .eq('boutique_id', m.boutiqueId)
+      .is('converti_le', null)
+      .gte('maj_le', ilYA7Jours);
+
+    paniersPerdus = {
+      nombre: paniers?.length ?? 0,
+      valeur: (paniers ?? []).reduce((s, p) => s + Number(p.total ?? 0), 0),
+    };
+  } catch (e) {
+    console.error(`Stats — paniers perdus illisibles (${m.id}) :`, e);
+  }
+
   return Response.json({
     boutique_id: m.id,
+    paniersPerdus,
     caTotal, caJour,
     nbCommandes: commandes.length, nbJour: cmdJour.length,
     livrees, enCours: commandes.length - livrees,

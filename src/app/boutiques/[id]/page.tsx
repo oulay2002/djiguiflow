@@ -248,6 +248,47 @@ export default function Page() {
   // « À la carte » chapeauterait la totalité du menu, ce qui n'apprend rien.
   const sectionne = duJour.length > 0 && carte.length > 0;
 
+  // ---- CE QUI SE PERD EN ROUTE.
+  //
+  // Le marchand ne voit que ses ventes, jamais ses quasi-ventes : un client qui
+  // compose un panier, saisit son numero et s'arrete ne laissait aucune trace.
+  // On enregistre donc l'etape juste avant la validation — la seule qui ait de
+  // la valeur, et la seule ou l'on sait qui c'est.
+  //
+  // Attendre que la saisie se pose : sans ce delai, chaque « + » sur un plat
+  // partirait en appel reseau. Le client qui hesite dix fois enverrait dix
+  // ecritures pour un seul panier.
+  //
+  // Rien de tout cela n'est visible ni bloquant. Le client n'a rien demande, et
+  // un echec de mesure ne doit pas peser d'un gramme sur sa commande.
+  useEffect(() => {
+    if (!estMarchandSheets || !telOk || lignes.length === 0) return;
+
+    const minuteur = setTimeout(() => {
+      fetch(`/api/boutiques/${slug}/panier`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tel,
+          nom,
+          lignes: lignes.map(l => ({
+            id: l.prod.id,
+            nom: l.prod.nom,
+            quantite: l.q,
+            prix: l.prod.prix,
+          })),
+        }),
+      }).catch(() => {
+        // Silence volontaire : c'est une mesure, pas une commande.
+      });
+    }, 2500);
+
+    return () => clearTimeout(minuteur);
+    // `lignes` est reconstruit a chaque rendu ; on se declenche donc sur ce qui
+    // change vraiment — le contenu du panier et le numero.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [estMarchandSheets, telOk, tel, nom, slug, JSON.stringify(panier)]);
+
   const commander = async () => {
     if (estMarchandSheets) {
       setEnvoi(true);

@@ -6,8 +6,8 @@ import { fetchDashboard } from '@/lib/apiClient';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
-  ArrowRight, Bell, Globe2, Package2, Send, ShoppingCart, Smartphone, Star,
-  Trophy, Wallet,
+  ArrowRight, Bell, Globe2, Package2, Send, ShoppingCart, ShoppingBag, Smartphone,
+  Star, Trophy, Wallet,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import CompteurQuota from '@/components/dashboard/CompteurQuota';
@@ -20,6 +20,8 @@ type Stats = {
   noteMoyenne: number; nbNotes: number; topPlats: [string, number][];
   serie7j: { jour: string; ca: number; nb: number }[];
   produitsVendus: number; panierMoyen: number;
+  /** Paniers composes puis abandonnes sur les 7 derniers jours. */
+  paniersPerdus?: { nombre: number; valeur: number };
 };
 
 const canalMeta: Record<string, { label: string; icon: ComponentType<{ className?: string }>; txt: string; bar: string }> = {
@@ -78,6 +80,10 @@ export default function Page() {
   const area = pts.length ? `${line} L${pts[pts.length - 1][0]},${H - P} L${pts[0][0]},${H - P} Z` : '';
   const totalCanal = s ? Object.values(s.parCanal).reduce((a, b) => a + b, 0) || 1 : 1;
 
+  // `s` peut encore etre nul au premier rendu : on retient la mesure une fois
+  // pour toutes plutot que de la reinterroger a chaque ligne du bloc.
+  const perdus = s?.paniersPerdus ?? null;
+
   const kpis = s ? [
     { label: 'Ventes du jour', value: `${s.caJour.toLocaleString('fr-FR')} F`, sub: `${s.nbJour} commande(s) aujourd'hui`, icon: Wallet, accent: 'bg-mangue-100 text-mangue-700' },
     { label: 'Commandes', value: String(s.nbCommandes), sub: `${s.enCours} en cours · ${s.livrees} livrées`, icon: ShoppingCart, accent: 'bg-nuit-100 text-nuit-700' },
@@ -135,6 +141,33 @@ export default function Page() {
               );
             })}
           </section>
+
+          {/* CE QU'ON A PERDU EN ROUTE.
+              Un panier compose, un numero saisi, et puis rien. Le marchand
+              n'avait aucun moyen de savoir que ces clients-la avaient existe.
+
+              Affiche seulement s'il y en a : annoncer « 0 panier perdu » a un
+              marchand qui debute, c'est du bruit deguise en information. */}
+          {perdus && perdus.nombre > 0 && (
+            <section className="rounded-[1.5rem] border border-amber-200 bg-amber-50/70 p-5">
+              <div className="flex flex-wrap items-center gap-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-100 text-amber-700">
+                  <ShoppingBag className="h-6 w-6" />
+                </div>
+                <div className="min-w-0">
+                  <p className="font-semibold text-amber-900">
+                    {perdus.nombre} panier{perdus.nombre > 1 ? 's' : ''} laissé
+                    {perdus.nombre > 1 ? 's' : ''} en route cette semaine
+                    {perdus.valeur > 0 && ` — ${perdus.valeur.toLocaleString('fr-FR')} F`}
+                  </p>
+                  <p className="text-sm text-amber-800">
+                    Ces clients ont composé leur commande et laissé leur numéro, sans valider.
+                    Un prix, un délai ou des frais de livraison peuvent expliquer l’hésitation.
+                  </p>
+                </div>
+              </div>
+            </section>
+          )}
 
           <section className="grid gap-6 xl:grid-cols-[1.6fr_1fr]">
             <div className="rounded-[1.75rem] border border-[var(--hairline)] bg-white/80 p-6 shadow-[0_18px_45px_rgba(48,35,20,0.08)] backdrop-blur-sm">

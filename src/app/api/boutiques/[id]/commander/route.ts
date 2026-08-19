@@ -300,6 +300,30 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
         );
       }
     }
+
+    // ---- Le panier de ce client n'est plus un panier perdu.
+    //
+    // Sans cette ligne, le compteur du tableau de bord mesurerait le TRAFIC et
+    // non l'abandon : chaque commande reussie laisserait derriere elle un
+    // panier qu'on presenterait au marchand comme une vente ratee.
+    //
+    // Jamais bloquant : la commande est prise, elle ne se defait pas parce
+    // qu'une mesure n'a pas pu etre mise a jour.
+    // `phone` et la cle du panier sont produits par la meme regle : « 225 »
+    // suivi du numero national. Les apparier sur autre chose reviendrait a ne
+    // jamais solder aucun panier, sans que rien ne le signale.
+    if (phone) {
+      const { error: errPanier } = await sb
+        .from('paniers')
+        .update({ converti_le: new Date().toISOString(), commande_id: creee.id })
+        .eq('boutique_id', boutiqueUuid)
+        .eq('telephone', phone)
+        .is('converti_le', null);
+
+      if (errPanier) {
+        console.error(`Commande ${order_id} — panier non solde :`, errPanier.message);
+      }
+    }
   } else {
     // Sans client admin, RIEN n'est ecrit — et rien n'est signale non plus, le
     // secret des webhooks se lisant lui aussi dans le coffre Supabase. Cette
