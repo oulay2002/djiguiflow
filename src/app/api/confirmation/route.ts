@@ -98,6 +98,30 @@ function blocPosition(reference: string): string {
 }
 
 /**
+ * Le lien de suivi, que le client n'avait JAMAIS recu.
+ *
+ * La page /suivi existe depuis longtemps, elle affiche l'avancement de la
+ * livraison, le livreur et desormais les frais — et rien ne l'envoyait. Un
+ * commentaire de cette meme page annonce pourtant « le lien envoye au client
+ * porte deja sa reference » : l'intention etait ecrite, jamais realisee.
+ *
+ * Le cout de ce silence est paye par le marchand : c'est lui qu'on appelle pour
+ * demander ou en est la commande, en plein coup de feu.
+ *
+ * Pose ICI parce que le client vient de confirmer et qu'il a la page sous les
+ * yeux. Le lien est aussi rappele dans le message « votre commande est en
+ * route », qui est l'instant ou la question se pose vraiment.
+ */
+function blocSuivi(reference: string): string {
+  const url = `/suivi?ref=${encodeURIComponent(reference)}`;
+  return (
+    `<a href="${echapper(url)}" style="display:block;margin-top:14px;padding:13px;`
+    + 'border:1px solid #e2e8f0;border-radius:12px;color:#0f172a;text-decoration:none;'
+    + 'font-size:15px;font-weight:600">🚚 Suivre ma commande</a>'
+  );
+}
+
+/**
  * Neutralise les jokers d'un motif LIKE.
  *
  * La reference vient de la query string : « ? ref=% » ferait correspondre la
@@ -250,7 +274,7 @@ export async function POST(req: Request) {
         'Commande confirmée !',
         'Le commerçant prépare votre commande. Merci !',
         200,
-        blocPosition(ligne.reference),
+        blocPosition(ligne.reference) + blocSuivi(ligne.reference),
       )
     : reponseHtml('❌', 'Commande annulée', 'Le commerçant a été prévenu. Aucune somme ne sera due.');
 }
