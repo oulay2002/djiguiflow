@@ -35,6 +35,16 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }
     description: String(p.description ?? ''),
     image: String(p.photo_url ?? ''),
     duJour: Boolean(p.menu_du_jour),
+    // LE STOCK ETAIT LU MAIS PAS RENDU — c'est tout ce qui manquait.
+    //
+    // Le tableau de bord affichait « Rupture », la vitrine proposait le plat
+    // sans rien dire, et le client ne l'apprenait qu'au dernier clic, une fois
+    // son panier compose et son adresse saisie. La pire facon de l'apprendre.
+    //
+    // `null` veut dire « le marchand ne compte pas ce produit », jamais zero :
+    // confondre les deux epuiserait d'un coup tout le catalogue de ceux qui ne
+    // tiennent pas de stock.
+    stock: p.stock === null || p.stock === undefined ? null : Number(p.stock),
   }));
 
   return Response.json(produits);

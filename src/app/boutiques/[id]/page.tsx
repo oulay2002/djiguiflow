@@ -214,7 +214,19 @@ export default function Page() {
     return () => { annule = true; };
   }, [slug]);
 
-  const ajouter = (pid: string) => setPanier(p => ({ ...p, [pid]: (p[pid] || 0) + 1 }));
+  // On ne laisse pas composer un panier que le serveur refusera. Il le refuse
+  // deja, et avec le motif exact — mais l'apprendre apres avoir saisi son nom,
+  // son telephone et son adresse est la pire facon de l'apprendre.
+  //
+  // `stock` absent ou `null` = le marchand ne compte pas ce produit : aucune
+  // borne, comme avant.
+  const ajouter = (pid: string) => setPanier(p => {
+    const prod = produits.find(x => x.id === pid);
+    const restant = typeof prod?.stock === 'number' ? prod.stock : Infinity;
+    const q = (p[pid] || 0) + 1;
+    if (q > restant) return p;
+    return { ...p, [pid]: q };
+  });
   const retirer = (pid: string) =>
     setPanier(p => {
       const q = (p[pid] || 0) - 1;
@@ -369,8 +381,9 @@ export default function Page() {
                   </span>
                   <button
                     onClick={() => ajouter(p.id)}
+                    disabled={typeof p.stock === 'number' && panier[p.id] >= p.stock}
                     aria-label={`Ajouter un ${p.nom}`}
-                    className="flex h-9 w-9 items-center justify-center bg-bissap-500 text-white transition hover:bg-bissap-600"
+                    className="flex h-9 w-9 items-center justify-center bg-bissap-500 text-white transition hover:bg-bissap-600 disabled:cursor-not-allowed disabled:bg-chaux-300"
                   >
                     <Plus className="h-4 w-4" />
                   </button>
@@ -393,6 +406,14 @@ export default function Page() {
                 </button>
               )}
             </div>
+
+            {/* Un bouton grise sans explication passe pour une panne. On dit ce
+                qui reste, et seulement quand le client bute dessus. */}
+            {typeof p.stock === 'number' && p.stock > 0 && panier[p.id] >= p.stock && (
+              <p className="mt-2 text-right font-mono text-[11px] font-semibold text-chaux-600">
+                Il n’en reste que {p.stock}
+              </p>
+            )}
           </div>
         </article>
       ))}
