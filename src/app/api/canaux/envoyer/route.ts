@@ -1,4 +1,4 @@
-import { envoyerMessage, type Canal } from '@/lib/canaux';
+import { envoyerMessage, type Canal, type TypeEnvoi } from '@/lib/canaux';
 
 export const dynamic = 'force-dynamic';
 
@@ -60,6 +60,13 @@ export async function POST(req: Request) {
   // echoue des qu'il contient une esperluette, et l'envoi entier est perdu.
   const html = String(corps.format ?? '').toLowerCase() === 'html';
 
+  // `type: "relance"` demande explicitement le passage par le frein : liste
+  // STOP, espacement de 30 jours, plafond du jour. Le defaut est `service`,
+  // donc les appels existants de n8n ne changent pas d'un iota — un message que
+  // le client attend ne doit jamais pouvoir etre retenu par un quota.
+  const type: TypeEnvoi = String(corps.type ?? '').toLowerCase() === 'relance' ? 'relance' : 'service';
+  const motif = String(corps.motif ?? '').trim() || undefined;
+
   const resultat = await envoyerMessage({
     boutique,
     canal: canalBrut as Canal,
@@ -67,12 +74,16 @@ export async function POST(req: Request) {
     message,
     clavier,
     html,
+    type,
+    motif,
   });
 
   if (!resultat.ok) {
     // Le code d'origine est repris tel quel : n8n doit pouvoir distinguer un
-    // parametre invalide (400) d'un marchand non equipe (424) ou d'une panne
-    // du fournisseur (502), et ne reessayer que dans le dernier cas.
+    // parametre invalide (400) d'un marchand non equipe (424), d'une relance
+    // refusee (429) ou d'une panne du fournisseur (502) — et ne reessayer que
+    // dans ce dernier cas. Reessayer un 429 serait precisement le comportement
+    // qui fait bannir une session.
     return Response.json(
       { ok: false, canal: resultat.canal, raison: resultat.raison },
       { status: resultat.statut },

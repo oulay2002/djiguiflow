@@ -580,6 +580,70 @@ export type Database = {
           },
         ]
       }
+      relances_envoyees: {
+        Row: {
+          boutique: string
+          canal: string
+          envoye_le: string
+          id: string
+          motif: string | null
+          telephone: string
+        }
+        Insert: {
+          boutique: string
+          canal?: string
+          envoye_le?: string
+          id?: string
+          motif?: string | null
+          telephone: string
+        }
+        Update: {
+          boutique?: string
+          canal?: string
+          envoye_le?: string
+          id?: string
+          motif?: string | null
+          telephone?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "relances_envoyees_boutique_fkey"
+            columns: ["boutique"]
+            isOneToOne: false
+            referencedRelation: "boutiques"
+            referencedColumns: ["slug"]
+          },
+        ]
+      }
+      relances_stop: {
+        Row: {
+          boutique: string
+          cree_le: string
+          motif: string | null
+          telephone: string
+        }
+        Insert: {
+          boutique: string
+          cree_le?: string
+          motif?: string | null
+          telephone: string
+        }
+        Update: {
+          boutique?: string
+          cree_le?: string
+          motif?: string | null
+          telephone?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "relances_stop_boutique_fkey"
+            columns: ["boutique"]
+            isOneToOne: false
+            referencedRelation: "boutiques"
+            referencedColumns: ["slug"]
+          },
+        ]
+      }
       subscriptions: {
         Row: {
           current_period_end: string | null
@@ -763,6 +827,16 @@ export type Database = {
           quantite: number
           slug: string
         }[]
+      }
+      reserver_relance: {
+        Args: {
+          p_boutique: string
+          p_jours?: number
+          p_motif?: string
+          p_plafond_jour?: number
+          p_telephone: string
+        }
+        Returns: Json
       }
       secret_webhook_n8n: { Args: never; Returns: string }
       vitrine_boutique: {

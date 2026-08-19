@@ -15,6 +15,20 @@ import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 
 export type Canal = 'whatsapp' | 'telegram';
 
+/**
+ * A quel titre on ecrit.
+ *
+ * `service` — le client attend ce message : confirmation de commande, frais de
+ * livraison, livreur en route. Rien ne le bloque, jamais.
+ *
+ * `relance` — c'est NOUS qui reprenons la parole. WhatsApp ne bannit pas au
+ * volume, il bannit au premier contact non sollicite ; ce type passe donc par
+ * `reserver_relance`, qui verifie la liste STOP, l'espacement et le plafond du
+ * jour. Le defaut est `service` pour que les quatorze appelants existants
+ * gardent exactement le comportement qu'ils avaient.
+ */
+export type TypeEnvoi = 'service' | 'relance';
+
 export type ResultatEnvoi =
   | { ok: true; canal: Canal; via: 'marchand' | 'plateforme' }
   | { ok: false; canal: Canal; raison: string; statut: number };
@@ -146,11 +160,59 @@ async function envoyerTelegram(
   return { ok: true, statut: 200 };
 }
 
+/**
+ * Reserve le droit d'envoyer une relance, ou dit pourquoi c'est refuse.
+ *
+ * LA RESERVATION PRECEDE L'ENVOI, jamais l'inverse. Un reessai autour d'un
+ * envoi le duplique — un client a deja recu trois fois le meme message. Une
+ * relance reservee puis non partie ne coute rien ; une relance partie deux fois
+ * coute la confiance du client.
+ */
+async function reserverRelance(
+  boutique: string,
+  destinataire: string,
+  motif: string | undefined,
+): Promise<{ autorise: true } | { autorise: false; motif: string }> {
+  const sb = getSupabaseAdmin();
+
+  // Sans base, on REFUSE. Le compteur est le frein : s'il est injoignable, on
+  // ne sait plus a qui ni combien de fois on a deja ecrit, et c'est exactement
+  // la situation ou l'on fait bannir une session.
+  if (!sb) return { autorise: false, motif: 'base_indisponible' };
+
+  try {
+    const { data, error } = await sb.rpc('reserver_relance', {
+      p_boutique: boutique,
+      p_telephone: normaliserTelephoneCI(destinataire),
+      p_motif: motif,
+    });
+
+    if (error) {
+      console.error(`Relance — reservation impossible (${boutique}) :`, error.message);
+      return { autorise: false, motif: 'reservation_impossible' };
+    }
+
+    const r = (data ?? {}) as { autorise?: boolean; motif?: string };
+    return r.autorise === true
+      ? { autorise: true }
+      : { autorise: false, motif: r.motif ?? 'refus' };
+  } catch (e) {
+    console.error(`Relance — reservation impossible (${boutique}) :`, e);
+    return { autorise: false, motif: 'reservation_impossible' };
+  }
+}
+
 export async function envoyerMessage(params: {
   boutique: string;
   canal: Canal;
   destinataire: string;
   message: string;
+  /**
+   * `service` par defaut. Voir `TypeEnvoi` : seul `relance` passe par le frein.
+   */
+  type?: TypeEnvoi;
+  /** Pourquoi cette relance, garde en base pour pouvoir en rendre compte. */
+  motif?: string;
   /** Clavier inline Telegram, ignore sur WhatsApp. */
   clavier?: unknown;
   /**
@@ -163,10 +225,26 @@ export async function envoyerMessage(params: {
    */
   html?: boolean;
 }): Promise<ResultatEnvoi> {
-  const { boutique, canal, destinataire, message, clavier, html } = params;
+  const { boutique, canal, destinataire, message, clavier, html, motif } = params;
+  const type: TypeEnvoi = params.type === 'relance' ? 'relance' : 'service';
 
   if (!message?.trim()) {
     return { ok: false, canal, raison: 'message vide', statut: 400 };
+  }
+
+  // ---- LE FREIN. Il est ICI, dans la sortie unique, et pas dans la route
+  // appelante : c'est ce qui le rend incontournable. Un workflow n8n, une page
+  // du tableau de bord ou un futur appelant qu'on n'a pas encore ecrit passent
+  // tous par cette fonction, donc tous par ce controle.
+  //
+  // 429 est deliberement distinct de 400 : l'appelant doit pouvoir dire « je
+  // n'avais pas le droit » sans le confondre avec « mon message etait mal
+  // forme », et surtout sans reessayer.
+  if (type === 'relance') {
+    const reservation = await reserverRelance(boutique, destinataire, motif);
+    if (!reservation.autorise) {
+      return { ok: false, canal, raison: `relance refusee (${reservation.motif})`, statut: 429 };
+    }
   }
 
   const jeton = await resoudreJeton(boutique, canal);
