@@ -1,3 +1,4 @@
+import { etatBoutique } from '@/lib/horaires';
 import { createHash, timingSafeEqual } from 'node:crypto';
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
@@ -180,6 +181,20 @@ export async function GET(req: Request) {
   if (!String(publique.sheet_notes ?? '').trim()) {
     publique.sheet_notes = 'Notes';
   }
+
+  // L'etat d'ouverture, CALCULE ICI et rendu tout cuit.
+  //
+  // Les routeurs n8n ne savent pas lire un JSON d'horaires ni raisonner sur un
+  // creneau qui enjambe minuit — et on ne veut pas qu'ils apprennent : la regle
+  // vit dans `horaires.ts`, une seule fois, et c'est ce qui l'empeche de
+  // diverger comme l'ont fait le test de la note client puis celui du visuel.
+  //
+  // Le champ sert de VERROU, pas d'indication. Une consigne au modele de
+  // langage ne tient pas — Mistral a deja ignore une « REGLE ABSOLUE ». C'est
+  // au routeur de s'arreter avant d'appeler l'assistante.
+  const etat = etatBoutique(publique.horaires);
+  publique.ouvert = etat.ouvert;
+  publique.message_horaires = etat.message ?? '';
 
   return NextResponse.json(publique);
 }
