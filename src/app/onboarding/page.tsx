@@ -138,6 +138,44 @@ export default function OnboardingPage() {
     setTimeout(() => setMessage(null), 5000);
   };
 
+  /**
+   * Cree les onglets manquants de CETTE boutique.
+   *
+   * Une boutique creee depuis le tableau de bord ne passe jamais par le
+   * provisionnement administrateur : elle n'a donc aucun onglet, et son
+   * assistante ne peut ni lire une carte ni enregistrer une commande. Le
+   * marchand n'a pas a savoir cela, encore moins a creer des onglets a la main.
+   *
+   * L'operation est sans risque : un onglet existant est laisse intact, en-tetes
+   * comprises. On peut donc cliquer deux fois.
+   */
+  const preparerClasseur = async () => {
+    setMessage({ ton: 'attente', texte: 'Préparation du classeur…' });
+    try {
+      const r = await fetchDashboard(avecBoutique('/api/dashboard/boutique/onglets', boutiqueId), {
+        method: 'POST',
+      });
+      const j = await r.json().catch(() => null);
+      if (!r.ok) {
+        setMessage({ ton: 'erreur', texte: j?.error || 'Préparation impossible.' });
+        return;
+      }
+      const crees: string[] = j?.crees ?? [];
+      setMessage({
+        ton: 'ok',
+        texte: crees.length
+          ? `Onglet(s) créé(s) : ${crees.join(', ')}`
+          : 'Vos onglets existaient déjà, rien à créer.',
+      });
+      // La fiche porte les noms retenus : on la recharge pour les afficher.
+      const f = await fetchDashboard(avecBoutique('/api/onboarding', boutiqueId));
+      if (f.ok) setBoutique(await f.json());
+    } catch {
+      setMessage({ ton: 'erreur', texte: 'Connexion impossible.' });
+    }
+    setTimeout(() => setMessage(null), 6000);
+  };
+
   /** Un secret ne se reaffiche pas : le champ se vide une fois envoye. */
   const enregistrerSecret = async (champ: string, e: React.FocusEvent<HTMLInputElement>) => {
     const valeur = e.target.value.trim();
@@ -319,9 +357,9 @@ export default function OnboardingPage() {
               <div className="grid gap-3 sm:grid-cols-3">
                 {(
                   [
-                    ['sheet_commandes', 'Commandes', 'Commandes_Zahara'],
-                    ['sheet_menu', 'Menu', 'Menu'],
-                    ['sheet_notes', 'Notes', 'Notes'],
+                    ['sheet_commandes', 'Commandes', 'Commandes_MaBoutique'],
+                    ['sheet_menu', 'Menu', 'Menu_MaBoutique'],
+                    ['sheet_notes', 'Notes', 'Notes_MaBoutique'],
                   ] as const
                 ).map(([champ, libelle, exemple]) => (
                   <label key={champ} className="block">
@@ -338,6 +376,20 @@ export default function OnboardingPage() {
                   </label>
                 ))}
               </div>
+
+              {/* Le marchand n'a pas a creer ses onglets a la main, ni meme a
+                  savoir qu'ils existent. Un clic, et c'est pret. */}
+              <button
+                type="button"
+                onClick={preparerClasseur}
+                className="mt-4 inline-flex items-center gap-2 rounded-xl bg-nuit-900 px-4 py-2 text-sm font-semibold text-white hover:bg-nuit-800"
+              >
+                Créer mes onglets automatiquement
+              </button>
+              <p className="mt-2 text-sm text-chaux-600">
+                Laissez les champs vides et cliquez : les onglets sont créés à votre nom.
+                Si vous les avez déjà, rien n’est effacé.
+              </p>
             </Etape>
 
             <div className="pt-2">
