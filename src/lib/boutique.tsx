@@ -66,7 +66,24 @@ export function BoutiqueProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let annule = false;
 
+    // LE CHOIX DU MARCHAND EST DEJA CONNU : il est range dans le navigateur.
+    // On le publie tout de suite pour que l ecran lance ses lectures, et on
+    // verifie le registre en arriere-plan. Attendre le registre ajoutait un
+    // aller-retour complet AVANT que la page ne commence seulement a
+    // travailler — sur chacun des onze ecrans, a chaque navigation.
+    //
+    // Si la boutique memorisee a disparu du registre, la verification la
+    // corrige quelques centaines de millisecondes plus tard et les pages,
+    // qui suivent `boutiqueId`, relisent d elles-memes.
     (async () => {
+      // Un rendu de plus, volontairement : il coute infiniment moins que
+      // l'aller-retour qu'il evite.
+      const memoriseAuDepart = localStorage.getItem(CLE_STOCKAGE) || '';
+      if (memoriseAuDepart) {
+        setBoutiqueIdState(memoriseAuDepart);
+        setPret(true);
+      }
+
       try {
         const { data: sessionData } = await supabase.auth.getSession();
         const token = sessionData?.session?.access_token ?? '';
@@ -86,8 +103,15 @@ export function BoutiqueProvider({ children }: { children: ReactNode }) {
           setBoutiqueIdState(memorise);
         } else {
           if (memorise) localStorage.removeItem(CLE_STOCKAGE);
-          // Premier visite : on sélectionne automatiquement la première boutique du registre
-          if (liste.length > 0) setBoutiqueIdState(liste[0].id);
+          // Premiere visite : on retient la premiere boutique du registre — et
+          // on la MEMORISE. Sans cela, chaque ecran devait redemander le
+          // registre avant de pouvoir lire quoi que ce soit : le raccourci
+          // ci-dessus ne servait jamais a un marchand qui ne touche jamais au
+          // selecteur, c est-a-dire a celui qui n a qu une boutique.
+          if (liste.length > 0) {
+            setBoutiqueIdState(liste[0].id);
+            localStorage.setItem(CLE_STOCKAGE, liste[0].id);
+          }
         }
 
       } catch (e) {

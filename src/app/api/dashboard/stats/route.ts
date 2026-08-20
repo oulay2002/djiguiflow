@@ -22,6 +22,49 @@ export async function GET(req: Request) {
   const sb = getSupabaseAdmin();
   if (!sb) return Response.json({ error: 'Statistiques temporairement indisponibles' }, { status: 503 });
 
+  // Les cinq lectures de cet ecran ne dependent que de la boutique. Enchainees,
+  // elles coutaient cinq allers-retours : l'accueil mettait une seconde a
+  // repondre pour sept commandes, et le marchand regardait tourner une roue.
+  //
+  // `Promise.resolve` n est pas decoratif : un constructeur de requete
+  // Supabase est paresseux et ne part sur le reseau qu'au premier `.then()`.
+  // Le ranger dans une variable ne lancerait rien.
+  const ilYA7Jours = new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString();
+
+  const lecturePaniers = Promise.resolve(
+    sb
+      .from('paniers')
+      .select('total')
+      .eq('boutique_id', m.boutiqueId)
+      .is('converti_le', null)
+      .gte('maj_le', ilYA7Jours),
+  );
+
+  const lectureAttente = Promise.resolve(
+    sb
+      .from('commandes')
+      .select('total')
+      .eq('boutique_id', m.boutiqueId)
+      .eq('confirmation_statut', 'demandee')
+      .eq('statut', 'en_attente'),
+  );
+
+  const lectureFiche = Promise.resolve(
+    sb
+      .from('boutiques')
+      .select('wasender_secret_id, telegram_secret_id, groupe_livreurs')
+      .eq('id', m.boutiqueId)
+      .maybeSingle(),
+  );
+
+  const lectureProduits = Promise.resolve(
+    sb
+      .from('produits')
+      .select('id', { count: 'exact', head: true })
+      .eq('boutique_id', m.boutiqueId)
+      .eq('disponible', true),
+  );
+
   const { data, error } = await sb
     .from('commandes')
     .select('total, created_at, canal, statut, statut_livraison, note_client, commande_items(nom_produit, quantite)')
@@ -101,13 +144,7 @@ export async function GET(req: Request) {
   // pas pouvoir priver le marchand de son chiffre d'affaires.
   let paniersPerdus = { nombre: 0, valeur: 0 };
   try {
-    const ilYA7Jours = new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString();
-    const { data: paniers } = await sb
-      .from('paniers')
-      .select('total')
-      .eq('boutique_id', m.boutiqueId)
-      .is('converti_le', null)
-      .gte('maj_le', ilYA7Jours);
+    const { data: paniers } = await lecturePaniers;
 
     paniersPerdus = {
       nombre: paniers?.length ?? 0,
@@ -125,12 +162,7 @@ export async function GET(req: Request) {
   // pas de ses commandes a preparer.
   let confirmationsAttendues = { nombre: 0, valeur: 0 };
   try {
-    const { data: attente } = await sb
-      .from('commandes')
-      .select('total')
-      .eq('boutique_id', m.boutiqueId)
-      .eq('confirmation_statut', 'demandee')
-      .eq('statut', 'en_attente');
+    const { data: attente } = await lectureAttente;
 
     confirmationsAttendues = {
       nombre: attente?.length ?? 0,
@@ -154,16 +186,8 @@ export async function GET(req: Request) {
   let configuration: Record<string, boolean> | null = null;
   try {
     const [{ data: fiche }, { count: nbProduits }] = await Promise.all([
-      sb
-        .from('boutiques')
-        .select('wasender_secret_id, telegram_secret_id, groupe_livreurs')
-        .eq('id', m.boutiqueId)
-        .maybeSingle(),
-      sb
-        .from('produits')
-        .select('id', { count: 'exact', head: true })
-        .eq('boutique_id', m.boutiqueId)
-        .eq('disponible', true),
+      lectureFiche,
+      lectureProduits,
     ]);
 
     configuration = {

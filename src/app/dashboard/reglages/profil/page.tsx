@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { LienRetour, classesBouton } from '@/components/ui/Bouton';
-import { supabase } from '@/lib/supabase';
+import { supabase, utilisateurCourant } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
@@ -38,7 +38,7 @@ export default function ProfilPage() {
 
   useEffect(() => {
     const charger = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = await utilisateurCourant();
       if (!user) {
         router.push('/login');
         return;

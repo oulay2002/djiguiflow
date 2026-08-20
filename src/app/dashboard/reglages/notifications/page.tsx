@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { LienRetour, classesBouton } from '@/components/ui/Bouton';
-import { supabase } from '@/lib/supabase';
+import { supabase, utilisateurCourant } from '@/lib/supabase';
 import { useBoutique, uuidBoutiqueCourante } from '@/lib/boutique';
 import ReglagePush from '@/components/pwa/ReglagePush';
 import { useRouter } from 'next/navigation';
@@ -54,7 +54,7 @@ export default function NotificationsPage() {
   });
 
   const loadSettings = useCallback(async () => {
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await utilisateurCourant();
     if (!user) {
       router.push('/login');
       return;

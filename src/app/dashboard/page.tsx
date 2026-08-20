@@ -9,7 +9,7 @@ import {
   AlertTriangle, ArrowRight, Bell, Globe2, Package2, Send, ShoppingCart, ShoppingBag,
   Smartphone, Star, Trophy, Wallet,
 } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { supabase, utilisateurCourant } from '@/lib/supabase';
 import CompteurQuota from '@/components/dashboard/CompteurQuota';
 import ReglagePush from '@/components/pwa/ReglagePush';
 import BoutonPause from '@/components/dashboard/BoutonPause';
@@ -45,7 +45,7 @@ export default function Page() {
     if (!pret) return;
     let isMounted = true;
     (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = await utilisateurCourant();
       if (!isMounted) return;
       if (!user) { router.push('/login'); return; }
       try {

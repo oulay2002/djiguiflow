@@ -32,13 +32,18 @@ export async function exigerAccesMarchand(
   const sb = getSupabaseAdmin();
   if (!sb) return { ok: false, statut: 503, message: 'Base indisponible.' };
 
-  const { data, error } = await sb.auth.getUser(token);
+  // Les deux lectures partent ensemble : la validation du jeton ne dit rien
+  // de la boutique, et la boutique ne dit rien du jeton.
+  const [{ data, error }, marchand] = await Promise.all([
+    sb.auth.getUser(token),
+    resoudreMarchand(slug),
+  ]);
+
   const utilisateur = data?.user;
   if (error || !utilisateur) {
     return { ok: false, statut: 401, message: 'Session invalide ou expiree.' };
   }
 
-  const marchand = await resoudreMarchand(slug);
   if (!marchand) return { ok: false, statut: 404, message: 'Marchand introuvable.' };
 
   const admin = estAdmin(utilisateur.email);

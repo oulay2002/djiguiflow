@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { LienRetour } from '@/components/ui/Bouton';
-import { supabase } from '@/lib/supabase';
+import { supabase, utilisateurCourant } from '@/lib/supabase';
 import { useBoutique, uuidBoutiqueCourante } from '@/lib/boutique';
 import { useRouter } from 'next/navigation';
 import {
@@ -92,7 +92,7 @@ export default function AnalyticsPage() {
   const [driverPerformance, setDriverPerformance] = useState<DriverPerformance[]>([]);
 
   const loadAnalytics = useCallback(async () => {
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await utilisateurCourant();
     if (!user) {
       router.push('/login');
       return;

@@ -3,7 +3,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { Loader2, LockKeyhole } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { supabase, utilisateurCourant } from '@/lib/supabase';
 import { isMockBillingMode } from '@/lib/billing/mode';
 import { BoutiqueProvider } from '@/lib/boutique';
 import SelecteurBoutique from '@/components/SelecteurBoutique';
@@ -22,6 +22,21 @@ type SubscriptionResponse = {
 };
 const ALLOWED_WITHOUT_SUBSCRIPTION = ['/dashboard/paiements'];
 
+/**
+ * Le verdict d'abonnement, garde quelques secondes.
+ *
+ * Ce controle bloquait CHAQUE page du tableau de bord le temps d un
+ * aller-retour : rien ne s affichait avant lui, et il repartait a chaque
+ * navigation interne. Il partait meme deux fois par page — `useRouter()`
+ * change d identite une fois apres l hydratation, ce qui relancait l effet.
+ *
+ * Un abonnement ne s eteint pas en cours de visite : garder le verdict une
+ * minute suffit a rendre les navigations instantanees, et borne a une minute
+ * ce qu un marchand echu pourrait voir de trop. Le cache meurt avec l onglet.
+ */
+const DUREE_VERDICT_MS = 60_000;
+let verdictAbonnement: { actif: boolean; jusqua: number } | null = null;
+
 function needsSubscription(pathname: string): boolean {
   return !ALLOWED_WITHOUT_SUBSCRIPTION.some((allowedPath) => pathname.startsWith(allowedPath));
 }
@@ -37,9 +52,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
     const enforceAccess = async () => {
       try {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
+        const user = await utilisateurCourant();
 
                 if (!user) {
           const loginNext = encodeURIComponent(pathname || '/dashboard');
@@ -60,6 +73,19 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         }
 
         if (!needsSubscription(pathname)) {
+          if (isMounted) {
+            setAllowed(true);
+          }
+          return;
+        }
+
+        const verdictGarde = verdictAbonnement;
+        if (verdictGarde && verdictGarde.jusqua > Date.now()) {
+          if (!verdictGarde.actif) {
+            const fromPath = encodeURIComponent(pathname || '/dashboard');
+            router.replace(`/dashboard/paiements?required=1&from=${fromPath}`);
+            return;
+          }
           if (isMounted) {
             setAllowed(true);
           }
@@ -90,6 +116,8 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         // compte de la date de fin de periode. Rejouer la regle ici, c'etait
         // se condamner a l'oublier — ce qui est arrive : le statut suffisait,
         // et un acces echu restait ouvert.
+        verdictAbonnement = { actif: Boolean(data.actif), jusqua: Date.now() + DUREE_VERDICT_MS };
+
         if (!data.actif) {
           const fromPath = encodeURIComponent(pathname || '/dashboard');
           router.replace(`/dashboard/paiements?required=1&from=${fromPath}`);

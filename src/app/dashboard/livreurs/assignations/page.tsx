@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { LienRetour, classesBouton } from '@/components/ui/Bouton';
 import { TuileStat } from '@/components/ui/Etat';
-import { supabase } from '@/lib/supabase';
+import { supabase, utilisateurCourant } from '@/lib/supabase';
 import { fetchDashboard } from '@/lib/apiClient';
 import { useBoutique, uuidBoutiqueCourante } from '@/lib/boutique';
 import { useRouter } from 'next/navigation';
@@ -77,7 +77,7 @@ export default function AssignationsPage() {
   const [message, setMessage] = useState('');
 
   const loadData = useCallback(async () => {
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await utilisateurCourant();
     if (!user) {
       router.push('/login');
       return;

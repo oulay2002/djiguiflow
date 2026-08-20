@@ -75,3 +75,24 @@ function construireClient() {
 }
 
 export const supabase = construireClient();
+
+/**
+ * L'utilisateur connecte, lu SANS aller sur le reseau.
+ *
+ * `getUser()` fait valider le jeton par Supabase a chaque appel : un
+ * aller-retour de 130 ms sur une bonne ligne, deux secondes a froid — et il
+ * etait pose sur le chemin critique de CHAQUE ecran du tableau de bord,
+ * trois fois par page, en serie. Il ne protegeait rien : le middleware
+ * `proxy.ts` a deja fait valider la session cote serveur avant que la page
+ * n'existe, et chaque route d'API la revalide pour son compte.
+ *
+ * Ici la lecture ne sert qu'a une chose : renvoyer vers /login si la session
+ * a expire pendant la visite. Pour ce seul usage le jeton range localement
+ * suffit — et s'il ment, l'appel suivant se fait refuser par le serveur.
+ */
+export async function utilisateurCourant() {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  return session?.user ?? null;
+}

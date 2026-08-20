@@ -30,7 +30,7 @@ import {
   Users,
   X,
 } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { supabase, utilisateurCourant } from '@/lib/supabase';
 import { fetchDashboard } from '@/lib/apiClient';
 import { useBoutique, avecBoutique } from '@/lib/boutique';
 import { TuileStat } from '@/components/ui/Etat';
@@ -84,7 +84,7 @@ export default function CustomersPage() {
     let isMounted = true;
 
     const charger = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = await utilisateurCourant();
       if (!isMounted) return;
 
       if (!user) {

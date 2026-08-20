@@ -10,7 +10,7 @@ import {
   type Jour,
 } from '@/lib/horaires';
 import { LienRetour, classesBouton } from '@/components/ui/Bouton';
-import { supabase } from '@/lib/supabase';
+import { supabase, utilisateurCourant } from '@/lib/supabase';
 import { BUCKET_IMAGES, dossierMarchand, nomFichierSain } from '@/lib/storage';
 import { useBoutique } from '@/lib/boutique';
 import { useRouter } from 'next/navigation';
@@ -97,7 +97,7 @@ export default function MaBoutiquePage() {
 
   useEffect(() => {
     const checkAuthAndLoadBoutique = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = await utilisateurCourant();
       if (!user) {
         router.push('/login');
         return;

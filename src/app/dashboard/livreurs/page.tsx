@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { LienRetour, classesBouton } from '@/components/ui/Bouton';
 import { TuileStat } from '@/components/ui/Etat';
-import { supabase } from '@/lib/supabase';
+import { supabase, utilisateurCourant } from '@/lib/supabase';
 import { fetchDashboard } from '@/lib/apiClient';
 import { useBoutique, uuidBoutiqueCourante } from '@/lib/boutique';
 import { useRouter } from 'next/navigation';
@@ -111,7 +111,7 @@ export default function LivreursPage() {
   });
 
   const loadLivreurs = useCallback(async () => {
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await utilisateurCourant();
     if (!user) {
       router.push('/login');
       return;
@@ -146,7 +146,7 @@ export default function LivreursPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await utilisateurCourant();
     if (!user) return;
 
     const uuid = await uuidBoutiqueCourante(boutiqueId);

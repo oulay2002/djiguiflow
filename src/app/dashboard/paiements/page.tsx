@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
+import { supabase, utilisateurCourant } from '@/lib/supabase';
 import Link from 'next/link';
 import { ArrowLeft, CheckCircle, CreditCard, Loader2, RefreshCw, ShieldCheck } from 'lucide-react';
 import {
@@ -114,9 +114,7 @@ export default function PaiementsPage() {
 
     const initialize = async () => {
       try {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
+        const user = await utilisateurCourant();
 
         if (!user) {
           router.push('/login?next=/dashboard/paiements');
