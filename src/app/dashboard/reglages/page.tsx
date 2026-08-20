@@ -43,7 +43,7 @@ export default function ReglagesPage() {
     <div className="min-h-screen bg-[var(--background)] p-4 sm:p-6 lg:p-8">
       {/* Header */}
       <div className="mb-8">
-        <LienRetour href="/dashboard">Retour au dashboard</LienRetour>
+        <LienRetour href="/dashboard">Retour au tableau de bord</LienRetour>
         <div>
           <h1 className="font-display text-3xl font-bold text-nuit-900">Réglages</h1>
           <p className="text-chaux-600 mt-1">Votre compte, votre boutique, et ce que vous recevez.</p>

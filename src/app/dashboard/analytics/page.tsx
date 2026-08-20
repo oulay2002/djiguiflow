@@ -272,11 +272,11 @@ export default function AnalyticsPage() {
     <div className="min-h-screen bg-[var(--background)] p-6 lg:p-8">
       {/* Header */}
       <div className="mb-8">
-        <LienRetour href="/dashboard">Retour au dashboard</LienRetour>
+        <LienRetour href="/dashboard">Retour au tableau de bord</LienRetour>
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="font-display text-3xl font-bold text-nuit-900">Analytics</h1>
-            <p className="text-chaux-600 mt-1">Ce que vos chiffres disent de la semaine écoulée.</p>
+            <h1 className="font-display text-3xl font-bold text-nuit-900">Pilotage détaillé</h1>
+            <p className="text-chaux-600 mt-1">Ce que vos chiffres disent de la période choisie.</p>
           </div>
           <div className="flex items-center gap-2">
             <select
@@ -297,7 +297,8 @@ export default function AnalyticsPage() {
         <KPICard
           icon={DollarSign}
           label="Chiffre d'affaires"
-          value={`${stats.totalRevenue.toLocaleString()} FCFA`}
+          value={stats.totalRevenue.toLocaleString('fr-FR')}
+          unite="FCFA"
           growth={stats.revenueGrowth}
           color="mangue"
         />
@@ -316,7 +317,8 @@ export default function AnalyticsPage() {
         <KPICard
           icon={Package}
           label="Panier moyen"
-          value={`${Math.round(stats.avgOrderValue).toLocaleString()} FCFA`}
+          value={Math.round(stats.avgOrderValue).toLocaleString('fr-FR')}
+          unite="FCFA"
           color="nuit"
         />
       </div>
@@ -355,9 +357,17 @@ export default function AnalyticsPage() {
             Top 5 des produits les plus vendus
           </h3>
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={topProducts}>
+            <BarChart data={topProducts} margin={{ bottom: 28 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e0ddd3" />
-              <XAxis dataKey="name" stroke="#837e70" />
+              <XAxis
+                dataKey="name"
+                stroke="#837e70"
+                angle={-25}
+                textAnchor="end"
+                interval={0}
+                height={60}
+                tick={{ fontSize: 12 }}
+              />
               <YAxis stroke="#837e70" />
               <Tooltip 
                 contentStyle={{ backgroundColor: '#f8f7f3', borderRadius: '8px', border: '1px solid #e0ddd3' }}
@@ -454,11 +464,13 @@ type KPICardProps = {
   icon: React.ComponentType<{ className?: string }>;
   label: string;
   value: string | number;
+  /** Detachee du nombre : elle ne doit pas le faire passer a la ligne. */
+  unite?: string;
   growth?: number;
   color: 'mangue' | 'nuit' | 'feuille';
 };
 
-function KPICard({ icon: Icon, label, value, growth, color }: KPICardProps) {
+function KPICard({ icon: Icon, label, value, unite, growth, color }: KPICardProps) {
   // « purple » rendait de l indigo : un nom de couleur qui ment finit par
   // etre choisi pour ce qu il dit, pas pour ce qu il montre.
   const colors: Record<string, string> = {
@@ -472,7 +484,10 @@ function KPICard({ icon: Icon, label, value, growth, color }: KPICardProps) {
       <div className="flex items-start justify-between">
         <div>
           <p className="text-sm text-chaux-600 mb-1">{label}</p>
-          <p className="text-2xl font-bold text-nuit-900">{value}</p>
+          <p className="text-2xl font-bold leading-tight text-nuit-900">
+            {value}
+            {unite && <span className="ml-1 text-sm font-semibold text-chaux-600">{unite}</span>}
+          </p>
           {growth !== undefined && (
             <div className={`flex items-center gap-1 mt-2 text-sm font-medium ${
               growth >= 0 ? 'text-accent-600' : 'text-bissap-600'

@@ -55,3 +55,6 @@ next-env.d.ts
 # supabase : etat de travail de la CLI, propre a la machine.
 # Les migrations, elles, restent versionnees.
 /supabase/.temp/
+
+# session Playwright : contient un jeton d’acces valide
+tests/e2e/.auth/

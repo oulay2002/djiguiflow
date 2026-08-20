@@ -28,10 +28,10 @@ type Stats = {
   configuration?: { canalClient: boolean; groupeLivreurs: boolean; catalogue: boolean } | null;
 };
 
-const canalMeta: Record<string, { label: string; icon: ComponentType<{ className?: string }>; txt: string; bar: string }> = {
-  whatsapp: { label: 'WhatsApp', icon: Smartphone, txt: 'text-accent-700', bar: 'bg-accent-500' },
-  telegram: { label: 'Telegram', icon: Send, txt: 'text-nuit-700', bar: 'bg-nuit-500' },
-  app: { label: 'Application', icon: Globe2, txt: 'text-mangue-700', bar: 'bg-mangue-500' },
+const canalMeta: Record<string, { label: string; icon: ComponentType<{ className?: string }> }> = {
+  whatsapp: { label: 'WhatsApp', icon: Smartphone },
+  telegram: { label: 'Telegram', icon: Send },
+  app: { label: 'Application', icon: Globe2 },
 };
 
 export default function Page() {
@@ -122,7 +122,7 @@ export default function Page() {
         <main className="min-w-0 space-y-6">
           <header className="flex flex-col gap-4 rounded-[2rem] border border-white/70 bg-white/75 p-5 shadow-[0_20px_60px_rgba(49,35,20,0.08)] backdrop-blur-xl md:flex-row md:items-center md:justify-between">
             <div>
-              <p className="text-sm uppercase tracking-[0.2em] text-chaux-600">Tableau de bord · données réelles</p>
+              <p className="text-sm uppercase tracking-[0.2em] text-chaux-600">Votre boutique aujourd’hui</p>
               <h1 className="mt-2 font-display text-3xl font-black">Bonjour, {nomBoutique}</h1>
             </div>
             <div className="flex items-center gap-3">
@@ -289,17 +289,17 @@ export default function Page() {
                 <h3 className="text-xl font-black">Canaux de vente</h3>
                 <div className="mt-4 space-y-4">
                   {s && Object.entries(s.parCanal).map(([canal, nb]) => {
-                    const m = canalMeta[canal] || { label: canal, icon: Globe2, txt: 'text-chaux-600', bar: 'bg-chaux-400' };
+                    const m = canalMeta[canal] || { label: canal, icon: Globe2 };
                     const Icon = m.icon;
                     const pct = Math.round((nb / totalCanal) * 100);
                     return (
                       <div key={canal}>
                         <div className="flex justify-between text-sm">
-                          <span className={`flex items-center gap-2 font-semibold ${m.txt}`}><Icon className="h-4 w-4" />{m.label}</span>
+                          <span className="flex items-center gap-2 font-semibold text-nuit-800"><Icon className="h-4 w-4 text-chaux-600" aria-hidden />{m.label}</span>
                           <span className="font-bold">{nb} · {pct}%</span>
                         </div>
                         <div className="mt-1.5 h-2.5 overflow-hidden rounded-full bg-chaux-100">
-                          <div className={`h-full rounded-full ${m.bar}`} style={{ width: `${pct}%` }} />
+                          <div className="h-full rounded-full bg-bissap-500" style={{ width: `${pct}%` }} />
                         </div>
                       </div>
                     );

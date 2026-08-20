@@ -260,7 +260,7 @@ export default function LivreursPage() {
     <div className="min-h-screen bg-[var(--background)] p-6 lg:p-8">
             {/* Header */}
       <div className="mb-8">
-        <LienRetour href="/dashboard">Retour au dashboard</LienRetour>
+        <LienRetour href="/dashboard">Retour au tableau de bord</LienRetour>
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="font-display text-3xl font-bold text-nuit-900">Livreurs</h1>

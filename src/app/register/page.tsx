@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useSyncExternalStore } from 'react';
 import { LienRetour, classesBouton } from '@/components/ui/Bouton';
 import BoutonGoogle from '@/components/ui/BoutonGoogle';
 import { isSupabaseConfigured, supabase } from '@/lib/supabase';
@@ -26,6 +26,10 @@ const CHAMP =
 const LIBELLE =
   'mb-1.5 block font-mono text-[11px] font-bold uppercase tracking-[0.16em] text-chaux-600';
 
+/** Lu par `useSyncExternalStore` pour savoir si React a repris la main. */
+const SANS_ABONNEMENT = () => () => {};
+const COTE_CLIENT = () => true;
+const COTE_SERVEUR = () => false;
 const TYPES_COMMERCE = [
   { valeur: 'restaurant', libelle: 'Restaurant / Fast-food' },
   { valeur: 'boutique', libelle: 'Boutique / Vêtements' },
@@ -55,8 +59,11 @@ export default function RegisterPage() {
   // /login? et il ne se passe rien. Le marchand croit le bouton casse — et
   // sur un telephone lent, la fenetre dure. On garde donc le bouton inactif
   // jusqu a l hydratation, ou il ne peut plus rien avaler en silence.
-  const [pret, setPret] = useState(false);
-  useEffect(() => setPret(true), []);
+  //
+  // `useSyncExternalStore` et non un effet : il rend `false` cote serveur et
+  // `true` des que le client a pris la main, sans passer par un `setState`
+  // dans un effet — qui declenche un rendu en cascade a chaque montage.
+  const pret = useSyncExternalStore(SANS_ABONNEMENT, COTE_CLIENT, COTE_SERVEUR);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });

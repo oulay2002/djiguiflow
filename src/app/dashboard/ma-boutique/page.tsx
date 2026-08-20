@@ -263,7 +263,7 @@ export default function MaBoutiquePage() {
   return (
     <div className="min-h-screen bg-[var(--background)] p-6 lg:p-8">
       <div className="mb-8">
-        <LienRetour href="/dashboard">Retour au dashboard</LienRetour>
+        <LienRetour href="/dashboard">Retour au tableau de bord</LienRetour>
         <h1 className="font-display text-3xl font-bold text-nuit-900">Ma boutique</h1>
         <p className="text-chaux-600 mt-1">Ce que vos clients voient : nom, quartier, numéro et horaires.</p>
 

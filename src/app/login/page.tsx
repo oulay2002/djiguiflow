@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useState, useSyncExternalStore } from 'react';
 import { LienRetour, classesBouton } from '@/components/ui/Bouton';
 import BoutonGoogle from '@/components/ui/BoutonGoogle';
 import { isSupabaseConfigured, supabase } from '@/lib/supabase';
@@ -26,6 +26,10 @@ import { useSearchParams } from 'next/navigation';
 /** Le fond de page, pour que les encoches du bon soient de vrais trous. */
 const FOND_PAGE = '#eeece5';
 
+/** Lu par `useSyncExternalStore` pour savoir si React a repris la main. */
+const SANS_ABONNEMENT = () => () => {};
+const COTE_CLIENT = () => true;
+const COTE_SERVEUR = () => false;
 const MESSAGES_OAUTH: Record<string, string> = {
   oauth: "La connexion Google n'a pas abouti. Réessayez ou utilisez votre mot de passe.",
   oauth_refuse: 'Connexion Google annulée.',
@@ -50,8 +54,11 @@ function LoginPageContent() {
   // /login? et il ne se passe rien. Le marchand croit le bouton casse — et
   // sur un telephone lent, la fenetre dure. On garde donc le bouton inactif
   // jusqu a l hydratation, ou il ne peut plus rien avaler en silence.
-  const [pret, setPret] = useState(false);
-  useEffect(() => setPret(true), []);
+  //
+  // `useSyncExternalStore` et non un effet : il rend `false` cote serveur et
+  // `true` des que le client a pris la main, sans passer par un `setState`
+  // dans un effet — qui declenche un rendu en cascade a chaque montage.
+  const pret = useSyncExternalStore(SANS_ABONNEMENT, COTE_CLIENT, COTE_SERVEUR);
 
   const erreurOAuth = MESSAGES_OAUTH[searchParams.get('erreur') ?? ''] ?? '';
 

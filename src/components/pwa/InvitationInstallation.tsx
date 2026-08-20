@@ -110,7 +110,7 @@ export default function InvitationInstallation() {
       className="fixed inset-x-3 bottom-24 z-40 rounded-[1.5rem] border border-[var(--hairline)] bg-white p-4 shadow-[0_18px_45px_rgba(12,18,41,0.22)] lg:inset-x-auto lg:right-6 lg:bottom-6 lg:w-96"
     >
       <div className="flex items-start gap-3">
-        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-500 to-accent-600 text-lg font-black text-white">
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-nuit-900 font-display text-lg font-black text-mangue-300">
           D
         </span>
 

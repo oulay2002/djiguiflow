@@ -262,7 +262,7 @@ export default function Page() {
         <main className="min-w-0 space-y-6">
           <header className="flex flex-col gap-4 rounded-[2rem] border border-white/70 bg-white/75 p-5 shadow-[0_20px_60px_rgba(49,35,20,0.08)] backdrop-blur-xl md:flex-row md:items-center md:justify-between">
             <div>
-              <p className="text-sm uppercase tracking-[0.2em] text-chaux-600">Gestion</p>
+              <p className="text-sm uppercase tracking-[0.2em] text-chaux-600">Ce qui arrive</p>
               <h1 className="mt-2 font-display text-3xl font-black">Commandes · {nomBoutique}</h1>
               <p className="mt-1 text-sm text-chaux-600">{cmds.length} commandes · {filtrées.length} affichées · mise à jour toutes les 10 s</p>
             </div>

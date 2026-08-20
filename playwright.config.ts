@@ -1,5 +1,6 @@
 import { defineConfig } from '@playwright/test';
 import { loadEnvConfig } from '@next/env';
+import { FICHIER_SESSION } from './tests/e2e/session';
 
 // Playwright tourne dans son propre processus : il ne lit pas .env.local, que
 // seul Next charge. Sans ces deux lignes, E2E_EMAIL et E2E_PASSWORD restent
@@ -23,6 +24,21 @@ export default defineConfig({
     baseURL: 'http://localhost:3000',
     trace: 'on-first-retry',
   },
+  // Trois projets, parce que la session change ce que les pages montrent.
+  // `public` doit tourner DECONNECTE : une vitrine qui lit les tables en
+  // direct se vide des qu'on est authentifie, et un test connecte ne verrait
+  // jamais ce que voit un client.
+  projects: [
+    { name: 'setup', testMatch: /auth.setup.ts/ },
+    { name: 'public', testMatch: /navigation.spec.ts/ },
+    {
+      name: 'marchand',
+      testMatch: /authenticated-dashboard.spec.ts/,
+      dependencies: ['setup'],
+      use: { storageState: FICHIER_SESSION },
+    },
+  ],
+
   webServer: {
     command: 'npm run dev',
     url: 'http://localhost:3000',

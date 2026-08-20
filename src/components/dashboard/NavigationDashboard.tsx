@@ -78,12 +78,14 @@ function BarreLaterale({ actif }: { actif: string | null }) {
   return (
     <aside className="fixed inset-y-0 left-0 z-30 hidden w-72 flex-col gap-6 overflow-y-auto border-r border-[var(--hairline)] bg-white/80 p-5 backdrop-blur-xl lg:flex">
       <Link href="/dashboard" className="flex items-center gap-3 px-2">
-        <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-500 to-accent-600 text-lg font-black text-white">
+        <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-nuit-900 font-display text-lg font-black text-mangue-300">
           D
         </span>
         <span>
-          <span className="block text-lg font-black">DjiguiFlow</span>
-          <span className="block text-xs uppercase tracking-[0.2em] text-chaux-600">Admin</span>
+          <span className="block font-display text-lg font-black">DjiguiFlow</span>
+          <span className="block font-mono text-[10px] uppercase tracking-[0.2em] text-chaux-600">
+            Espace marchand
+          </span>
         </span>
       </Link>
 
