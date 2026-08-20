@@ -62,13 +62,26 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Lecture impossible' }, { status: 502 });
   }
 
+  // ---- LE CLIENT NE DOIT JAMAIS RESTER SANS PERSONNE A APPELER.
+  //
+  // Un livreur non rattache est un cas NORMAL et frequent : il rejoint le
+  // groupe Telegram du marchand sans jamais ouvrir son lien d'invitation, et
+  // n'existe donc dans aucun annuaire. Le client recevait alors « Livreur :
+  // Jean Paul » — un prenom, parfois orne d'emojis, et rien pour joindre qui
+  // que ce soit si sa commande tarde.
+  //
+  // Le numero de la boutique est un repli legitime : il est deja public sur la
+  // vitrine, et c'est le marchand qui repond de sa livraison.
+  const telephoneBoutique = String(marchand.whatsapp ?? '').trim();
+
   if (!data) {
-    return NextResponse.json({ ok: true, trouve: false });
+    return NextResponse.json({ ok: true, trouve: false, telephone_boutique: telephoneBoutique });
   }
 
   return NextResponse.json({
     ok: true,
     trouve: true,
+    telephone_boutique: telephoneBoutique,
     nom: String(data.nom ?? ''),
     // Le numero est rendu tel que le marchand l'a saisi. Le reformater est le
     // meilleur moyen de casser un numero qui marchait.
