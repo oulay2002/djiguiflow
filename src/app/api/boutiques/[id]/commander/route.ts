@@ -301,6 +301,26 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
       }
     }
 
+    // ---- MARQUER LA COMMANDE COMME DECOMPTEE.
+    //
+    // Le decompte existe desormais AUSSI pour les commandes prises par
+    // l'assistante, par `/api/internal/commandes/stock`. Cette route-la se
+    // reserve sur `stock_decremente_le is null` : sans ce marqueur, elle
+    // decompterait une seconde fois les commandes venues de la vitrine, et le
+    // marchand refuserait des ventes bien reelles.
+    //
+    // Pose meme quand rien n'etait a decompter — « il n'y a rien a faire » doit
+    // se distinguer de « ce n'est pas encore fait ».
+    const { error: errMarque } = await sb
+      .from('commandes')
+      .update({ stock_decremente_le: new Date().toISOString() })
+      .eq('reference', order_id)
+      .is('stock_decremente_le', null);
+
+    if (errMarque) {
+      console.error(`Commande ${order_id} — marqueur de decompte non pose :`, errMarque.message);
+    }
+
     // ---- Le panier de ce client n'est plus un panier perdu.
     //
     // Sans cette ligne, le compteur du tableau de bord mesurerait le TRAFIC et

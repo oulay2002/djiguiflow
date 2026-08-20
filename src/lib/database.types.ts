@@ -166,6 +166,7 @@ export type Database = {
           position_recue_le: string | null
           reference: string | null
           relance_le: string | null
+          stock_decremente_le: string | null
           statut: string | null
           statut_livraison: string | null
           total: number
@@ -195,6 +196,7 @@ export type Database = {
           position_recue_le?: string | null
           reference?: string | null
           relance_le?: string | null
+          stock_decremente_le?: string | null
           statut?: string | null
           statut_livraison?: string | null
           total: number
@@ -224,6 +226,7 @@ export type Database = {
           position_recue_le?: string | null
           reference?: string | null
           relance_le?: string | null
+          stock_decremente_le?: string | null
           statut?: string | null
           statut_livraison?: string | null
           total?: number
