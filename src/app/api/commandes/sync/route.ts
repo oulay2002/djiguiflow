@@ -70,7 +70,19 @@ export async function POST(req: Request) {
       poser('client_telephone', telBrut);
     }
   }
-  poser('chat_id', siFourni(b.chat_id ?? b.phone));
+  // ---- `chat_id` NE SE DEDUIT PAS DU TELEPHONE, SAUF A LA CREATION.
+  //
+  // Le repli `b.chat_id ?? b.phone` violait la regle meme de cette route : un
+  // champ absent veut dire « je n'en sais rien », pas « remplace-le ». Sur une
+  // commande DEJA EN BASE, un appel qui ne portait pas de chat_id ecrasait
+  // l'identifiant de conversation par le numero de telephone — et le client
+  // Telegram devenait injoignable pour toutes ses notifications suivantes,
+  // sans le moindre message d'erreur.
+  //
+  // A la creation seulement, le repli garde son sens : un client venu de la
+  // vitrine n'a pas de conversation, son numero en tient lieu. Il est donc
+  // applique plus bas, dans l'INSERT.
+  poser('chat_id', siFourni(b.chat_id));
   poser('client_adresse', siFourni(b.address));
   poser('canal', siFourni(b.canal));
 
@@ -165,6 +177,9 @@ export async function POST(req: Request) {
       // abandonne sur WhatsApp restait invisible.
       ...(marquerDemandee ? { confirmation_statut: 'demandee' } : {}),
       client_nom: payload.client_nom || 'Client',
+      // Le repli du chat_id vit ICI et nulle part ailleurs : a la creation, un
+      // client venu de la vitrine n'a pas de conversation ouverte.
+      chat_id: payload.chat_id || telephone,
       canal: payload.canal || 'whatsapp',
       client_telephone: telephone,
       client_adresse: adresse,
