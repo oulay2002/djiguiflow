@@ -1,5 +1,6 @@
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import type { Database } from '@/lib/database.types';
+import { normaliserTelephone } from '@/lib/telephone';
 
 export const dynamic = 'force-dynamic';
 
@@ -46,7 +47,29 @@ export async function POST(req: Request) {
   };
 
   poser('client_nom', siFourni(b.customer_name ?? b.nom));
-  poser('client_telephone', siFourni(b.phone));
+  // ---- LE NUMERO SE NORMALISE ICI, POUR TOUT LE MONDE.
+  //
+  // La vitrine validait deja le telephone ; l'assistante, non. Un client a
+  // dicte « 010291886 » — NEUF chiffres — et le numero est parti tel quel en
+  // base. Le marchand qui rappelle depuis son tableau de bord compose alors un
+  // numero qui n'existe pas.
+  //
+  // On NE REFUSE PAS la commande pour autant : un numero douteux vaut mieux
+  // qu'une vente perdue, et le marchand peut toujours joindre son client par la
+  // conversation. On garde donc la saisie telle quelle quand elle est
+  // illisible, mais on la met au format des qu'elle est reconnaissable — c'est
+  // ainsi que « +225 01 02 03 04 05 » et « 0102030405 » cessent de designer
+  // deux clients differents dans la fiche client.
+  const telBrut = siFourni(b.phone);
+  if (telBrut !== undefined) {
+    const lu = normaliserTelephone(telBrut);
+    if (lu.ok) {
+      poser('client_telephone', lu.national);
+    } else {
+      console.error(`Sync ${reference} — telephone non conforme conserve tel quel : ${lu.erreur}`);
+      poser('client_telephone', telBrut);
+    }
+  }
   poser('chat_id', siFourni(b.chat_id ?? b.phone));
   poser('client_adresse', siFourni(b.address));
   poser('canal', siFourni(b.canal));
