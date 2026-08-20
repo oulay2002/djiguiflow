@@ -118,7 +118,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
   if (loading || !allowed) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#f9f4ec] p-6">
+      <div className="flex min-h-screen items-center justify-center bg-[var(--background)] p-6">
         <div className="rounded-3xl border border-white/70 bg-white/80 px-8 py-7 text-center shadow-[0_18px_45px_rgba(49,35,20,0.1)] backdrop-blur-xl">
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-mangue-100 text-mangue-700">
             {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : <LockKeyhole className="h-6 w-6" />}

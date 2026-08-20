@@ -105,7 +105,7 @@ export default function AjouterMarchand() {
 
   return (
     <>
-      <div className="border-b border-mangue-200/70 bg-[#f9f4ec]/95 px-4 py-2">
+      <div className="border-b border-mangue-200/70 bg-chaux-50/95 px-4 py-2">
         <div className="mx-auto flex max-w-6xl justify-end">
           <Bouton
             taille="sm"

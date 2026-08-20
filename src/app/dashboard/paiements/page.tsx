@@ -291,7 +291,7 @@ export default function PaiementsPage() {
     : false;
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(219,149,52,0.12),transparent_26%),linear-gradient(180deg,#fffdf9_0%,#f5efe5_100%)] p-4 sm:p-6 lg:p-8">
+    <div className="min-h-screen bg-[var(--background)] p-4 sm:p-6 lg:p-8">
       <div className="mx-auto max-w-6xl">
         <div className="mb-8 flex items-center justify-between">
           <div>

@@ -16,7 +16,7 @@ export default function SelecteurBoutique() {
   const active = boutiques.find(b => b.id === boutiqueId);
 
   return (
-    <div className="sticky top-0 z-40 border-b border-mangue-200/70 bg-[#f9f4ec]/95 backdrop-blur">
+    <div className="sticky top-0 z-40 border-b border-mangue-200/70 bg-chaux-50/95 backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-2.5">
         <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-mangue-100 text-mangue-700">
           <Store className="h-4 w-4" />

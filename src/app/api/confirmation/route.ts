@@ -31,8 +31,71 @@ type Ligne = {
  * Le GET ne fait plus que montrer la commande et proposer deux boutons ; seul
  * le POST qu'ils declenchent ecrit. Aucun robot d'apercu ne poste.
  */
-function pageHtml(emoji: string, titre: string, detail: string, corps = ''): string {
-  return `<!doctype html><html lang="fr"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>${titre}</title></head><body style="font-family:system-ui,sans-serif;background:#f7f0e7;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0"><div style="background:#fff;border-radius:24px;padding:40px;max-width:420px;text-align:center;box-shadow:0 20px 60px rgba(49,35,20,.12)"><div style="font-size:48px">${emoji}</div><h1 style="font-size:22px;margin:16px 0 8px;color:#0f172a">${titre}</h1><p style="color:#64748b;margin:0">${detail}</p>${corps}<p style="margin-top:24px;font-size:13px;color:#94a3b8">DjiguiFlow</p></div></body></html>`;
+/**
+ * Les couleurs de la maison, en dur : cette page est servie hors de
+ * l'application et n'a acces ni a Tailwind ni aux variables de `globals.css`.
+ * Elles doivent donc rester alignees a la main sur le nuancier « indigo &
+ * ticket » — c'est le prix d'une page autonome, et il vaut mieux que le
+ * client tombe sur un ecran gris ardoise qui ne ressemble a rien.
+ */
+const ENCRE = {
+  fond: '#eeece5',
+  papier: '#f8f7f3',
+  filet: 'rgba(19,28,61,.14)',
+  perfo: 'rgba(19,28,61,.3)',
+  nuit: '#131c3d',
+  gris: '#5f5b50',
+  bissap: '#c4123f',
+  feuille: '#177a5d',
+  mangue: '#7d4b13',
+} as const;
+
+/** La police du produit n'est pas chargee ici : on garde ses replis. */
+const SANS = "system-ui,-apple-system,'Segoe UI',sans-serif";
+const MONO = 'ui-monospace,SFMono-Regular,Menlo,monospace';
+const TITRE = "'Trebuchet MS'," + SANS;
+
+type Ton = 'attente' | 'ok' | 'refus';
+
+const COULEUR_TON: Record<Ton, string> = {
+  attente: ENCRE.mangue,
+  ok: ENCRE.feuille,
+  refus: ENCRE.bissap,
+};
+
+/**
+ * Le bon remis au client, dans la langue visuelle du reste du produit.
+ *
+ * C'etait une carte blanche a coins ronds sur fond creme, titree par un gros
+ * emoji, en `system-ui` et en gris ardoise : la page de confirmation que
+ * produit n'importe quel gabarit. Le client la voit pourtant juste apres avoir
+ * commande, et c'est a elle qu'il juge le serieux du commerce.
+ *
+ * Elle porte donc le meme objet que partout ailleurs — le talon, la
+ * perforation, le tampon — et le tampon remplace l'emoji : il dit l'etat en
+ * un mot, ce que le pictogramme laissait deviner.
+ */
+function pageHtml(tampon: string, ton: Ton, titre: string, detail: string, corps = ''): string {
+  const teinte = COULEUR_TON[ton];
+  return (
+    `<!doctype html><html lang="fr"><head><meta charset="utf-8"/>`
+    + `<meta name="viewport" content="width=device-width, initial-scale=1"/>`
+    + `<title>${titre}</title></head>`
+    + `<body style="font-family:${SANS};background:${ENCRE.fond};margin:0;`
+    + `display:flex;align-items:center;justify-content:center;min-height:100vh;padding:24px">`
+    + `<div style="background:${ENCRE.papier};border:1px solid ${ENCRE.filet};`
+    + `box-shadow:0 18px 44px rgba(19,28,61,.1);padding:26px;max-width:420px;width:100%">`
+    + `<p style="font-family:${MONO};font-size:10px;font-weight:700;text-transform:uppercase;`
+    + `letter-spacing:.28em;color:${ENCRE.gris};margin:0">DjiguiFlow</p>`
+    + `<div style="border-top:1px dashed ${ENCRE.perfo};margin:14px 0 22px"></div>`
+    + `<span style="display:inline-block;border:1.5px solid ${teinte};border-radius:3px;`
+    + `padding:4px 8px;transform:rotate(-5deg);font-family:${MONO};font-size:11px;`
+    + `font-weight:700;letter-spacing:.2em;color:${teinte};opacity:.85">${tampon}</span>`
+    + `<h1 style="font-family:${TITRE};font-size:26px;font-weight:800;line-height:1.15;`
+    + `margin:16px 0 6px;color:${ENCRE.nuit}">${titre}</h1>`
+    + `<p style="color:${ENCRE.gris};margin:0;font-size:15px;line-height:1.5">${detail}</p>`
+    + `${corps}</div></body></html>`
+  );
 }
 
 /**
@@ -73,26 +136,26 @@ function echapper(valeur: unknown): string {
  */
 function blocPosition(reference: string): string {
   const style =
-    'background:#0f172a;color:#fff;border:0;border-radius:12px;padding:14px 20px;'
+    `background:${ENCRE.nuit};color:#fff;border:0;border-radius:0;padding:14px 20px;`
     + 'font-size:15px;font-weight:600;cursor:pointer;width:100%';
   return (
     `<div id="pos" data-ref="${echapper(reference)}" style="margin-top:24px">`
-    + `<button id="btn-pos" style="${style}">📍 Indiquer ma position exacte</button>`
-    + '<p style="font-size:13px;color:#94a3b8;margin:10px 0 0">'
+    + `<button id="btn-pos" style="${style}">Indiquer ma position exacte</button>`
+    + `<p style="font-size:13px;color:${ENCRE.gris};margin:10px 0 0">`
     + 'Le livreur ira droit à votre porte, sans vous appeler.</p></div>'
     + '<script>(function(){'
     + "var z=document.getElementById('pos'),b=document.getElementById('btn-pos');"
     + "function dire(t,c){z.innerHTML='<p style=\"margin:24px 0 0;font-size:14px;color:'+c+'\">'+t+'</p>';}"
     + 'b.onclick=function(){'
-    + "if(!navigator.geolocation){dire('Votre téléphone ne partage pas sa position.','#b45309');return;}"
+    + "if(!navigator.geolocation){dire('Votre téléphone ne partage pas sa position.',ENCRE.mangue);return;}"
     + "b.disabled=true;b.textContent='Localisation…';"
     + 'navigator.geolocation.getCurrentPosition(function(p){'
     + "fetch('/api/confirmation/position',{method:'POST',headers:{'Content-Type':'application/json'},"
     + "body:JSON.stringify({ref:z.getAttribute('data-ref'),latitude:p.coords.latitude,longitude:p.coords.longitude})})"
     + '.then(function(r){return r.json();}).then(function(j){'
-    + "dire(j&&j.ok?'✅ Merci, votre position est enregistrée.':'⚠️ Position non enregistrée.',j&&j.ok?'#15803d':'#b45309');})"
-    + "['catch'](function(){dire('⚠️ Position non enregistrée.','#b45309');});"
-    + "},function(){dire('Position refusée. Vous pouvez l’autoriser dans les réglages de votre navigateur.','#b45309');},"
+    + "dire(j&&j.ok?'✅ Merci, votre position est enregistrée.':'⚠️ Position non enregistrée.',j&&j.ok?ENCRE.feuille:ENCRE.mangue);})"
+    + "['catch'](function(){dire('⚠️ Position non enregistrée.',ENCRE.mangue);});"
+    + "},function(){dire('Position refusée. Vous pouvez l’autoriser dans les réglages de votre navigateur.',ENCRE.mangue);},"
     + '{enableHighAccuracy:true,timeout:10000});};})();</script>'
   );
 }
@@ -116,8 +179,8 @@ function blocSuivi(reference: string): string {
   const url = `/suivi?ref=${encodeURIComponent(reference)}`;
   return (
     `<a href="${echapper(url)}" style="display:block;margin-top:14px;padding:13px;`
-    + 'border:1px solid #e2e8f0;border-radius:12px;color:#0f172a;text-decoration:none;'
-    + 'font-size:15px;font-weight:600">🚚 Suivre ma commande</a>'
+    + `border:1px solid ${ENCRE.filet};color:${ENCRE.nuit};text-decoration:none;`
+    + `font-size:15px;font-weight:600;text-align:center">Suivre ma commande</a>`
   );
 }
 
@@ -132,8 +195,8 @@ function motifExact(valeur: string): string {
   return valeur.replace(/[\\%_]/g, (c) => `\\${c}`);
 }
 
-function reponseHtml(emoji: string, titre: string, detail: string, code = 200, corps = ''): Response {
-  return new Response(pageHtml(emoji, titre, detail, corps), {
+function reponseHtml(tampon: string, ton: Ton, titre: string, detail: string, code = 200, corps = ''): Response {
+  return new Response(pageHtml(tampon, ton, titre, detail, corps), {
     status: code,
     headers: { 'Content-Type': 'text/html; charset=utf-8' },
   });
@@ -161,7 +224,7 @@ function dejaRepondu(ligne: Ligne): Response | null {
     return null;
   }
   const quoi = ligne.confirmation_statut === 'confirmee' ? 'confirmée ✅' : 'annulée ❌';
-  return reponseHtml('ℹ️', 'Déjà répondu', `Cette commande a déjà été ${quoi}.`);
+  return reponseHtml('DÉJÀ RÉPONDU', 'attente', 'Déjà répondu', `Cette commande a déjà été ${quoi}.`);
 }
 
 function articlesDe(ligne: Ligne): string[] {
@@ -174,11 +237,11 @@ function articlesDe(ligne: Ligne): string[] {
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const ref = (searchParams.get('ref') || '').trim();
-  if (!ref) return reponseHtml('❌', 'Lien invalide', 'Ce lien de confirmation est incomplet.', 400);
+  if (!ref) return reponseHtml('LIEN INVALIDE', 'refus', 'Lien invalide', 'Ce lien de confirmation est incomplet.', 400);
 
   const { sb, ligne } = await chargerCommande(ref);
-  if (!sb) return reponseHtml('⏳', 'Service indisponible', 'Réessayez dans quelques secondes.', 503);
-  if (!ligne) return reponseHtml('❌', 'Commande introuvable', 'Vérifiez le lien reçu.', 404);
+  if (!sb) return reponseHtml('INDISPONIBLE', 'attente', 'Service indisponible', 'Réessayez dans quelques secondes.', 503);
+  if (!ligne) return reponseHtml('INTROUVABLE', 'refus', 'Commande introuvable', 'Vérifiez le lien reçu.', 404);
 
   const repondu = dejaRepondu(ligne);
   if (repondu) return repondu;
@@ -187,16 +250,17 @@ export async function GET(req: Request) {
     `<form method="post" style="display:inline-block;margin:6px">` +
     `<input type="hidden" name="ref" value="${echapper(ligne.reference)}"/>` +
     `<input type="hidden" name="r" value="${valeur}"/>` +
-    `<button type="submit" style="border:0;border-radius:12px;padding:14px 22px;font-size:16px;cursor:pointer;color:#fff;background:${fond}">${libelle}</button>` +
+    `<button type="submit" style="border:0;border-radius:0;padding:14px 22px;font-size:16px;font-weight:600;cursor:pointer;color:#fff;background:${fond}">${libelle}</button>` +
     `</form>`;
 
   const articles = articlesDe(ligne).join(', ');
   const recap =
-    `<p style="color:#0f172a;margin:18px 0 4px;font-weight:600">${echapper(articles) || 'Votre commande'}</p>` +
-    `<p style="color:#64748b;margin:0 0 18px">${Number(ligne.total ?? 0).toLocaleString('fr-FR')} FCFA · ${echapper(ligne.client_adresse)}</p>` +
-    `<div>${bouton('oui', '✅ Je confirme', '#16a34a')}${bouton('non', "❌ J'annule", '#dc2626')}</div>`;
+    `<div style="border-top:1px dashed ${ENCRE.perfo};margin:20px 0 14px"></div>` +
+    `<p style="color:${ENCRE.nuit};margin:0 0 4px;font-weight:600">${echapper(articles) || 'Votre commande'}</p>` +
+    `<p style="font-family:${MONO};color:${ENCRE.gris};margin:0 0 18px;font-size:14px">${Number(ligne.total ?? 0).toLocaleString('fr-FR')} FCFA · ${echapper(ligne.client_adresse)}</p>` +
+    `<div>${bouton('oui', 'Je confirme', ENCRE.feuille)}${bouton('non', "J'annule", ENCRE.bissap)}</div>`;
 
-  return reponseHtml('🛍️', 'Confirmez votre commande', 'Serez-vous disponible pour la réception ?', 200, recap);
+  return reponseHtml('À CONFIRMER', 'attente', 'Confirmez votre commande', 'Serez-vous disponible pour la réception ?', 200, recap);
 }
 
 /** L'ecriture, declenchee par le bouton et par lui seul. */
@@ -218,12 +282,12 @@ export async function POST(req: Request) {
   }
 
   if (!ref || (r !== 'oui' && r !== 'non')) {
-    return reponseHtml('❌', 'Lien invalide', 'Ce lien de confirmation est incomplet.', 400);
+    return reponseHtml('LIEN INVALIDE', 'refus', 'Lien invalide', 'Ce lien de confirmation est incomplet.', 400);
   }
 
   const { sb, ligne } = await chargerCommande(ref);
-  if (!sb) return reponseHtml('⏳', 'Service indisponible', 'Réessayez dans quelques secondes.', 503);
-  if (!ligne) return reponseHtml('❌', 'Commande introuvable', 'Vérifiez le lien reçu.', 404);
+  if (!sb) return reponseHtml('INDISPONIBLE', 'attente', 'Service indisponible', 'Réessayez dans quelques secondes.', 503);
+  if (!ligne) return reponseHtml('INTROUVABLE', 'refus', 'Commande introuvable', 'Vérifiez le lien reçu.', 404);
 
   const repondu = dejaRepondu(ligne);
   if (repondu) return repondu;
@@ -233,7 +297,7 @@ export async function POST(req: Request) {
     .from('commandes')
     .update({ confirmation_statut: statut, confirmation_heure: new Date().toISOString() })
     .eq('reference', ligne.reference);
-  if (errUpd) return reponseHtml('⏳', 'Erreur technique', 'Réessayez dans quelques secondes.', 503);
+  if (errUpd) return reponseHtml('PANNE', 'attente', 'Erreur technique', 'Réessayez dans quelques secondes.', 503);
 
   const n8n = process.env.N8N_CONFIRMATION_URL;
   if (n8n) {
@@ -270,11 +334,12 @@ export async function POST(req: Request) {
   // qui vient d'annuler ou se trouve sa porte n'a aucun sens.
   return statut === 'confirmee'
     ? reponseHtml(
-        '✅',
-        'Commande confirmée !',
-        'Le commerçant prépare votre commande. Merci !',
+        'CONFIRMÉE',
+        'ok',
+        'Commande confirmée',
+        'Le commerçant prépare votre commande.',
         200,
         blocPosition(ligne.reference) + blocSuivi(ligne.reference),
       )
-    : reponseHtml('❌', 'Commande annulée', 'Le commerçant a été prévenu. Aucune somme ne sera due.');
+    : reponseHtml('ANNULÉE', 'refus', 'Commande annulée', 'Le commerçant a été prévenu. Aucune somme ne sera due.');
 }

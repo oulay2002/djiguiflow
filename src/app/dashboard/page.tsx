@@ -63,7 +63,7 @@ export default function Page() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#f9f4ec]">
+      <div className="flex min-h-screen items-center justify-center bg-[var(--background)]">
         <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-primary-600" />
       </div>
     );
@@ -117,7 +117,7 @@ export default function Page() {
   ] : [];
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(219,149,52,0.15),transparent_25%),linear-gradient(180deg,#fffdf9_0%,#f7f0e7_100%)] p-4 lg:p-6">
+    <div className="min-h-screen bg-[var(--background)] p-4 lg:p-6">
       <div className="mx-auto max-w-[1600px]">
         <main className="min-w-0 space-y-6">
           <header className="flex flex-col gap-4 rounded-[2rem] border border-white/70 bg-white/75 p-5 shadow-[0_20px_60px_rgba(49,35,20,0.08)] backdrop-blur-xl md:flex-row md:items-center md:justify-between">
@@ -259,25 +259,25 @@ export default function Page() {
               <svg viewBox={`0 0 ${W} ${H}`} className="w-full">
                 <defs>
                   <linearGradient id="gradArea" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#ea580c" stopOpacity="0.30" />
-                    <stop offset="100%" stopColor="#ea580c" stopOpacity="0.02" />
+                    <stop offset="0%" stopColor="#c4123f" stopOpacity="0.30" />
+                    <stop offset="100%" stopColor="#c4123f" stopOpacity="0.02" />
                   </linearGradient>
                   <linearGradient id="gradLine" x1="0" y1="0" x2="1" y2="0">
-                    <stop offset="0%" stopColor="#f59e0b" />
-                    <stop offset="100%" stopColor="#ea580c" />
+                    <stop offset="0%" stopColor="#d85372" />
+                    <stop offset="100%" stopColor="#a50e36" />
                   </linearGradient>
                 </defs>
                 {[0.25, 0.5, 0.75, 1].map(t => (
-                  <line key={t} x1={P} x2={W - P} y1={H - P - t * (H - 2 * P)} y2={H - P - t * (H - 2 * P)} stroke="#e2e8f0" strokeDasharray="4 6" />
+                  <line key={t} x1={P} x2={W - P} y1={H - P - t * (H - 2 * P)} y2={H - P - t * (H - 2 * P)} stroke="#e0ddd3" strokeDasharray="4 6" />
                 ))}
                 <path d={area} fill="url(#gradArea)" />
                 <path d={line} fill="none" stroke="url(#gradLine)" strokeWidth="3" strokeLinecap="round" />
                 {pts.map((p, i) => (
                   <g key={i}>
-                    <circle cx={p[0]} cy={p[1]} r="5" fill="#fff" stroke="#ea580c" strokeWidth="3">
+                    <circle cx={p[0]} cy={p[1]} r="5" fill="#fff" stroke="#c4123f" strokeWidth="3">
                       <title>{serie[i].jour} : {serie[i].ca.toLocaleString('fr-FR')} F · {serie[i].nb} cmd</title>
                     </circle>
-                    <text x={p[0]} y={H - 8} textAnchor="middle" fontSize="11" fill="#94a3b8">{serie[i].jour}</text>
+                    <text x={p[0]} y={H - 8} textAnchor="middle" fontSize="11" fill="#837e70">{serie[i].jour}</text>
                   </g>
                 ))}
               </svg>

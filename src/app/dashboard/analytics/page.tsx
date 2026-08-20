@@ -231,18 +231,21 @@ export default function AnalyticsPage() {
     return () => window.clearTimeout(timerId);
   }, [loadAnalytics, period]);
 
-  const COLORS = ['#f59e0b', '#3b82f6', '#10b981', '#ef4444', '#8b5cf6'];
+  // Cinq familles de la maison, une par part : mangue, indigo, feuille,
+  // bissap, chaux. Elles se distinguent entre elles sans convoquer de
+  // teinte qui ne veut rien dire ici.
+  const COLORS = ['#d1861f', '#364a80', '#1f9a70', '#c4123f', '#837e70'];
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-chaux-50 flex items-center justify-center">
+      <div className="min-h-screen bg-[var(--background)] flex items-center justify-center">
         <Loader2 className="w-10 h-10 animate-spin text-mangue-600" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-chaux-50 p-6 lg:p-8">
+    <div className="min-h-screen bg-[var(--background)] p-6 lg:p-8">
       {/* Header */}
       <div className="mb-8">
         <LienRetour href="/dashboard">Retour au dashboard</LienRetour>
@@ -311,18 +314,18 @@ export default function AnalyticsPage() {
           </h3>
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-              <XAxis dataKey="date" stroke="#9ca3af" />
-              <YAxis stroke="#9ca3af" />
+              <CartesianGrid strokeDasharray="3 3" stroke="#e0ddd3" />
+              <XAxis dataKey="date" stroke="#837e70" />
+              <YAxis stroke="#837e70" />
               <Tooltip 
-                contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #e5e7eb' }}
+                contentStyle={{ backgroundColor: '#f8f7f3', borderRadius: '8px', border: '1px solid #e0ddd3' }}
               />
               <Line 
                 type="monotone" 
                 dataKey="revenue" 
-                stroke="#f59e0b" 
+                stroke="#d1861f" 
                 strokeWidth={3}
-                dot={{ fill: '#f59e0b', r: 4 }}
+                dot={{ fill: '#d1861f', r: 4 }}
               />
             </LineChart>
           </ResponsiveContainer>
@@ -336,13 +339,13 @@ export default function AnalyticsPage() {
           </h3>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={topProducts}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-              <XAxis dataKey="name" stroke="#9ca3af" />
-              <YAxis stroke="#9ca3af" />
+              <CartesianGrid strokeDasharray="3 3" stroke="#e0ddd3" />
+              <XAxis dataKey="name" stroke="#837e70" />
+              <YAxis stroke="#837e70" />
               <Tooltip 
-                contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #e5e7eb' }}
+                contentStyle={{ backgroundColor: '#f8f7f3', borderRadius: '8px', border: '1px solid #e0ddd3' }}
               />
-              <Bar dataKey="ventes" fill="#f59e0b" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="ventes" fill="#d1861f" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -356,13 +359,13 @@ export default function AnalyticsPage() {
         </h3>
         <ResponsiveContainer width="100%" height={200}>
           <BarChart data={hourlyData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-            <XAxis dataKey="hour" stroke="#9ca3af" />
-            <YAxis stroke="#9ca3af" />
+            <CartesianGrid strokeDasharray="3 3" stroke="#e0ddd3" />
+            <XAxis dataKey="hour" stroke="#837e70" />
+            <YAxis stroke="#837e70" />
             <Tooltip 
-              contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #e5e7eb' }}
+              contentStyle={{ backgroundColor: '#f8f7f3', borderRadius: '8px', border: '1px solid #e0ddd3' }}
             />
-            <Bar dataKey="orders" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="orders" fill="#364a80" radius={[4, 4, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </div>

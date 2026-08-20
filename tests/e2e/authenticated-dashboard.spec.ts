@@ -18,7 +18,7 @@ test.describe('Authenticated dashboard navigation', () => {
 
   const routeChecks: Array<{ route: string; heading: RegExp }> = [
     { route: '/dashboard', heading: /tableau de bord/i },
-    { route: '/dashboard/analytics', heading: /tableau de bord analytique/i },
+    { route: '/dashboard/analytics', heading: /analytics/i },
     { route: '/dashboard/commandes', heading: /gestion des commandes/i },
     { route: '/dashboard/livreurs', heading: /gestion des livreurs/i },
     { route: '/dashboard/livreurs/assignations', heading: /assignation des livraisons/i },

@@ -257,7 +257,7 @@ export default function Page() {
   const nbRefusees = cmds.filter(c => c.confirmation_statut === 'refusee').length;
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(219,149,52,0.15),transparent_25%),linear-gradient(180deg,#fffdf9_0%,#f7f0e7_100%)] p-4 lg:p-6">
+    <div className="min-h-screen bg-[var(--background)] p-4 lg:p-6">
       <div className="mx-auto max-w-[1600px]">
         <main className="min-w-0 space-y-6">
           <header className="flex flex-col gap-4 rounded-[2rem] border border-white/70 bg-white/75 p-5 shadow-[0_20px_60px_rgba(49,35,20,0.08)] backdrop-blur-xl md:flex-row md:items-center md:justify-between">

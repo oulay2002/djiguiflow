@@ -1,12 +1,39 @@
 'use client';
 
 import { useState } from 'react';
-import { LienRetour } from '@/components/ui/Bouton';
+import { LienRetour, classesBouton } from '@/components/ui/Bouton';
 import BoutonGoogle from '@/components/ui/BoutonGoogle';
 import { isSupabaseConfigured, supabase } from '@/lib/supabase';
-import { motion } from 'framer-motion';
-import { Eye, EyeOff, Lock, Mail, Phone, Store, User } from 'lucide-react';
+import { Eye, EyeOff } from 'lucide-react';
 import Link from 'next/link';
+
+/**
+ * L'ouverture d'une boutique, en bulletin d'inscription.
+ *
+ * Meme composition que la connexion et que la vitrine : bandeau indigo,
+ * couture, et le bon pose sur le papier. Les champs perdent leurs icones
+ * interieures — elles ne servaient qu'a meubler, et le libelle au-dessus dit
+ * deja ce qu'on attend.
+ */
+
+/** Le fond de page, pour que les encoches du bon soient de vrais trous. */
+const FOND_PAGE = '#eeece5';
+
+const CHAMP =
+  'w-full border border-[var(--hairline)] bg-white px-3 py-3 text-sm text-nuit-800 ' +
+  'outline-none transition placeholder:text-chaux-400 focus:border-nuit-400';
+
+const LIBELLE =
+  'mb-1.5 block font-mono text-[11px] font-bold uppercase tracking-[0.16em] text-chaux-600';
+
+const TYPES_COMMERCE = [
+  { valeur: 'restaurant', libelle: 'Restaurant / Fast-food' },
+  { valeur: 'boutique', libelle: 'Boutique / Vêtements' },
+  { valeur: 'pharmacie', libelle: 'Pharmacie' },
+  { valeur: 'service', libelle: 'Service à domicile' },
+  { valeur: 'epicerie', libelle: 'Épicerie / Supermarché' },
+  { valeur: 'autre', libelle: 'Autre' },
+];
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
@@ -40,13 +67,13 @@ export default function RegisterPage() {
     }
 
     if (formData.password !== formData.confirmPassword) {
-      setError('Les mots de passe ne correspondent pas');
+      setError('Les deux mots de passe ne sont pas identiques.');
       setLoading(false);
       return;
     }
 
     if (formData.password.length < 6) {
-      setError('Le mot de passe doit contenir au moins 6 caractères');
+      setError('Le mot de passe doit faire au moins 6 caractères.');
       setLoading(false);
       return;
     }
@@ -67,118 +94,158 @@ export default function RegisterPage() {
     if (error) {
       setError(error.message);
     } else {
-      setSuccess('Compte créé avec succès ! Vérifiez votre email pour confirmer.');
+      setSuccess('Compte créé. Ouvrez votre email pour confirmer votre adresse.');
     }
 
     setLoading(false);
   };
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[radial-gradient(circle_at_top_left,_rgba(219,149,52,0.18),transparent_25%),linear-gradient(180deg,#fffdf9_0%,#f5efe5_100%)] px-4 py-12">
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="w-full max-w-md">
-        <div className="mb-8">
-          <div className="mb-6">
-            <LienRetour href="/">Retour à l&apos;accueil</LienRetour>
-          </div>
-
-          <div className="text-center">
-            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-500 to-accent-600 text-xl font-black text-white shadow-lg shadow-primary-500/20">D</div>
-            <h1 className="text-3xl font-black tracking-tight text-nuit-900">DjiguiFlow</h1>
-            <p className="mt-2 text-chaux-600">Créez votre compte commerçant</p>
-          </div>
+    <main className="min-h-screen bg-[var(--background)]">
+      <header className="indigo-weave relative bg-nuit-900 px-4 pb-9 pt-6 text-white">
+        <div className="mx-auto max-w-md">
+          <LienRetour href="/">Retour à l&apos;accueil</LienRetour>
+          <p className="mt-6 font-mono text-[10px] uppercase tracking-[0.28em] text-mangue-300 sm:text-[11px]">
+            30 jours offerts · sans carte bancaire
+          </p>
+          <h1 className="mt-1.5 font-display text-3xl font-black leading-[1.05] sm:text-4xl">
+            Ouvrir ma boutique
+          </h1>
         </div>
+        <div className="perf-line absolute inset-x-0 bottom-0 text-white" aria-hidden />
+      </header>
 
-        <div className="rounded-[2rem] border border-white/70 bg-white/75 p-8 shadow-[0_20px_60px_rgba(49,35,20,0.12)] backdrop-blur-xl">
-          <BoutonGoogle libelle="S'inscrire avec Google" />
+      <div className="mx-auto w-full max-w-md px-4 py-8 sm:py-10">
+        <div
+          className="slip-in relative border border-[var(--hairline)] bg-chaux-50 p-6 soft-shadow sm:p-8"
+          style={{ ['--tear-bg' as string]: FOND_PAGE }}
+        >
+          <p className="font-mono text-[10px] font-bold uppercase tracking-[0.28em] text-chaux-600">
+            Bulletin d&apos;inscription
+          </p>
+          <div className="tear absolute inset-x-0 top-14 sm:top-16" />
+
+          <div className="mt-9">
+            <BoutonGoogle libelle="S’inscrire avec Google" forme="carree" />
+          </div>
 
           <p className="mt-3 text-center text-xs text-chaux-600">
             Vous renseignerez votre boutique juste après, dans Réglages → Boutique.
           </p>
 
-          <div className="my-6 flex items-center gap-3">
-            <span className="h-px flex-1 bg-chaux-200" />
-            <span className="text-xs font-semibold uppercase tracking-wide text-chaux-600">ou</span>
-            <span className="h-px flex-1 bg-chaux-200" />
+          {/* La couture entre les deux façons d'entrer. Le mot reste : une
+              perforation separe, elle ne dit pas qu'on choisit. */}
+          <div className="relative my-6 flex items-center justify-center">
+            <div className="perf-line absolute inset-x-0 text-nuit-900" aria-hidden />
+            <span className="relative bg-chaux-50 px-3 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-chaux-600">
+              ou
+            </span>
           </div>
 
           <form onSubmit={handleRegister} className="space-y-4">
             <div>
-              <label htmlFor="fullName" className="mb-1 block text-sm font-semibold text-nuit-700">Nom complet</label>
-              <div className="relative">
-                <User className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-chaux-600" />
-                <input id="fullName" name="fullName" type="text" value={formData.fullName} onChange={handleChange} required className="w-full rounded-xl border border-[var(--hairline)] bg-chaux-50 py-2.5 pl-10 pr-4 text-nuit-700 outline-none transition focus:border-primary-400 focus:ring-2 focus:ring-primary-100" placeholder="Moussa Koné" />
-              </div>
+              <label htmlFor="fullName" className={LIBELLE}>Nom complet</label>
+              <input
+                id="fullName" name="fullName" type="text" autoComplete="name"
+                value={formData.fullName} onChange={handleChange} required
+                className={CHAMP} placeholder="Moussa Koné"
+              />
             </div>
 
             <div>
-              <label htmlFor="email" className="mb-1 block text-sm font-semibold text-nuit-700">Email</label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-chaux-600" />
-                <input id="email" name="email" type="email" value={formData.email} onChange={handleChange} required className="w-full rounded-xl border border-[var(--hairline)] bg-chaux-50 py-2.5 pl-10 pr-4 text-nuit-700 outline-none transition focus:border-primary-400 focus:ring-2 focus:ring-primary-100" placeholder="votre@email.com" />
-              </div>
+              <label htmlFor="email" className={LIBELLE}>Email</label>
+              <input
+                id="email" name="email" type="email" autoComplete="email"
+                value={formData.email} onChange={handleChange} required
+                className={CHAMP} placeholder="vous@exemple.com"
+              />
             </div>
 
             <div>
-              <label htmlFor="phone" className="mb-1 block text-sm font-semibold text-nuit-700">Téléphone</label>
-              <div className="relative">
-                <Phone className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-chaux-600" />
-                <input id="phone" name="phone" type="tel" value={formData.phone} onChange={handleChange} required className="w-full rounded-xl border border-[var(--hairline)] bg-chaux-50 py-2.5 pl-10 pr-4 text-nuit-700 outline-none transition focus:border-primary-400 focus:ring-2 focus:ring-primary-100" placeholder="07 00 00 00 00" />
-              </div>
+              <label htmlFor="phone" className={LIBELLE}>Téléphone</label>
+              <input
+                id="phone" name="phone" type="tel" inputMode="tel" autoComplete="tel"
+                value={formData.phone} onChange={handleChange} required
+                className={CHAMP} placeholder="07 00 00 00 00"
+              />
             </div>
 
             <div>
-              <label htmlFor="businessName" className="mb-1 block text-sm font-semibold text-nuit-700">Nom du commerce</label>
-              <div className="relative">
-                <Store className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-chaux-600" />
-                <input id="businessName" name="businessName" type="text" value={formData.businessName} onChange={handleChange} required className="w-full rounded-xl border border-[var(--hairline)] bg-chaux-50 py-2.5 pl-10 pr-4 text-nuit-700 outline-none transition focus:border-primary-400 focus:ring-2 focus:ring-primary-100" placeholder="Restaurant Le Palmier" />
-              </div>
+              <label htmlFor="businessName" className={LIBELLE}>Nom du commerce</label>
+              <input
+                id="businessName" name="businessName" type="text"
+                value={formData.businessName} onChange={handleChange} required
+                className={CHAMP} placeholder="Restaurant Le Palmier"
+              />
             </div>
 
             <div>
-              <label htmlFor="businessType" className="mb-1 block text-sm font-semibold text-nuit-700">Type de commerce</label>
-              <select id="businessType" name="businessType" value={formData.businessType} onChange={handleChange} className="w-full rounded-xl border border-[var(--hairline)] bg-chaux-50 px-4 py-2.5 text-nuit-700 outline-none transition focus:border-primary-400 focus:ring-2 focus:ring-primary-100">
-                <option value="restaurant">Restaurant / Fast-food</option>
-                <option value="boutique">Boutique / Vêtements</option>
-                <option value="pharmacie">Pharmacie</option>
-                <option value="service">Service à domicile</option>
-                <option value="epicerie">Épicerie / Supermarché</option>
-                <option value="autre">Autre</option>
+              <label htmlFor="businessType" className={LIBELLE}>Type de commerce</label>
+              <select
+                id="businessType" name="businessType"
+                value={formData.businessType} onChange={handleChange}
+                className={CHAMP}
+              >
+                {TYPES_COMMERCE.map((t) => (
+                  <option key={t.valeur} value={t.valeur}>{t.libelle}</option>
+                ))}
               </select>
             </div>
 
             <div>
-              <label htmlFor="password" className="mb-1 block text-sm font-semibold text-nuit-700">Mot de passe</label>
+              <label htmlFor="password" className={LIBELLE}>Mot de passe</label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-chaux-600" />
-                <input id="password" name="password" type={showPassword ? 'text' : 'password'} value={formData.password} onChange={handleChange} required className="w-full rounded-xl border border-[var(--hairline)] bg-chaux-50 py-2.5 pl-10 pr-12 text-nuit-700 outline-none transition focus:border-primary-400 focus:ring-2 focus:ring-primary-100" placeholder="••••••••" />
-                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-chaux-600 transition hover:text-chaux-600">
+                <input
+                  id="password" name="password" autoComplete="new-password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={formData.password} onChange={handleChange} required
+                  className={`${CHAMP} pr-12`} placeholder="••••••••"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+                  className="absolute right-0 top-0 flex h-full w-11 items-center justify-center text-chaux-600 transition hover:text-nuit-800"
+                >
                   {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
               </div>
             </div>
 
             <div>
-              <label htmlFor="confirmPassword" className="mb-1 block text-sm font-semibold text-nuit-700">Confirmer le mot de passe</label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-chaux-600" />
-                <input id="confirmPassword" name="confirmPassword" type={showPassword ? 'text' : 'password'} value={formData.confirmPassword} onChange={handleChange} required className="w-full rounded-xl border border-[var(--hairline)] bg-chaux-50 py-2.5 pl-10 pr-4 text-nuit-700 outline-none transition focus:border-primary-400 focus:ring-2 focus:ring-primary-100" placeholder="••••••••" />
-              </div>
+              <label htmlFor="confirmPassword" className={LIBELLE}>Confirmer le mot de passe</label>
+              <input
+                id="confirmPassword" name="confirmPassword" autoComplete="new-password"
+                type={showPassword ? 'text' : 'password'}
+                value={formData.confirmPassword} onChange={handleChange} required
+                className={CHAMP} placeholder="••••••••"
+              />
             </div>
 
-            {error && <div className="rounded-xl border border-bissap-200 bg-bissap-50 px-4 py-3 text-sm text-bissap-700">{error}</div>}
-            {success && <div className="rounded-xl border border-accent-200 bg-accent-50 px-4 py-3 text-sm text-accent-700">{success}</div>}
+            {error && (
+              <p role="alert" className="border border-bissap-200 bg-bissap-50 px-4 py-3 text-sm text-bissap-700">
+                {error}
+              </p>
+            )}
+            {success && (
+              <p role="status" className="border border-accent-200 bg-accent-50 px-4 py-3 text-sm text-accent-700">
+                {success}
+              </p>
+            )}
 
-            <button type="submit" disabled={loading} className="w-full rounded-full bg-gradient-to-r from-primary-600 to-primary-500 py-3.5 font-semibold text-white shadow-lg shadow-primary-500/30 transition hover:translate-y-[-1px] disabled:opacity-60">
-              {loading ? 'Création...' : 'Créer mon compte'}
+            <button type="submit" disabled={loading} className={`${classesBouton('action', 'md', 'carree')} w-full`}>
+              {loading ? 'Ouverture…' : 'Ouvrir ma boutique'}
             </button>
-
-            <div className="text-center text-sm text-chaux-600">
-              Vous avez déjà un compte ?{' '}
-              <Link href="/login" className="font-bold text-primary-700 transition hover:text-primary-800">Se connecter</Link>
-            </div>
           </form>
         </div>
-      </motion.div>
+
+        <p className="mt-6 text-center text-sm text-chaux-600">
+          Vous avez déjà un compte ?{' '}
+          <Link href="/login" className="font-bold text-bissap-600 underline underline-offset-2 hover:text-bissap-700">
+            Se connecter
+          </Link>
+        </p>
+      </div>
     </main>
   );
 }

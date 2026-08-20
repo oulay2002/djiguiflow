@@ -219,7 +219,7 @@ export default function Page() {
   const filtrés = cat === 'toutes' ? prods : prods.filter(p => p.categorie === cat);
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(219,149,52,0.15),transparent_25%),linear-gradient(180deg,#fffdf9_0%,#f7f0e7_100%)] p-4 lg:p-6">
+    <div className="min-h-screen bg-[var(--background)] p-4 lg:p-6">
       <div className="mx-auto max-w-[1600px]">
         <main className="min-w-0 space-y-6">
           <header className="indigo-weave relative overflow-hidden rounded-[2rem] bg-nuit-900 p-6 text-chaux-50 shadow-xl">

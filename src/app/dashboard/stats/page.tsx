@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type ComponentType } from 'react';
 import { useBoutique, avecBoutique } from '@/lib/boutique';
+import Link from 'next/link';
 import { fetchDashboard } from '@/lib/apiClient';
 import {
   Bike,
@@ -62,18 +63,26 @@ export default function Page() {
   ] : [];
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(219,149,52,0.15),transparent_25%),linear-gradient(180deg,#fffdf9_0%,#f7f0e7_100%)] p-4 lg:p-6">
+    <div className="min-h-screen bg-[var(--background)] p-4 lg:p-6">
       <div className="mx-auto max-w-[1600px]">
         <main className="min-w-0 space-y-6">
           <header className="indigo-weave relative overflow-hidden rounded-[2rem] bg-nuit-900 p-6 text-chaux-50 shadow-xl">
             <div className="relative z-10 flex flex-wrap items-center justify-between gap-4">
               <div>
-                <p className="text-sm uppercase tracking-[0.2em] text-mangue-100">Analytics · données réelles</p>
+                <p className="text-sm uppercase tracking-[0.2em] text-mangue-100">Pilotage · données réelles</p>
                 <h1 className="mt-2 font-display text-3xl font-black">Pilotage · {nomBoutique}</h1>
               </div>
-              <button onClick={charger} className="flex items-center gap-2 rounded-full bg-white/15 px-4 py-2 text-sm font-semibold hover:bg-white/25">
-                <RefreshCw className="h-4 w-4" /> Actualiser
-              </button>
+              <div className="flex flex-wrap items-center gap-2">
+                <Link
+                  href="/dashboard/analytics"
+                  className="flex items-center gap-2 rounded-full border border-white/25 px-4 py-2 text-sm font-semibold transition hover:bg-white/15"
+                >
+                  Détail par période
+                </Link>
+                <button onClick={charger} className="flex items-center gap-2 rounded-full bg-white/15 px-4 py-2 text-sm font-semibold hover:bg-white/25">
+                  <RefreshCw className="h-4 w-4" /> Actualiser
+                </button>
+              </div>
             </div>
             {maj && <p className="relative z-10 mt-3 text-xs text-mangue-100">Dernière mise à jour : {maj} · source : Google Sheets</p>}
           </header>

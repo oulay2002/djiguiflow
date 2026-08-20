@@ -200,6 +200,40 @@ function Suivre() {
           </p>
         )}
 
+        {!suivi && !erreur && (
+          <article
+            className="relative border border-dashed border-[var(--hairline)] bg-chaux-50/60 p-6"
+            style={{ ['--tear-bg' as string]: FOND_PAGE }}
+          >
+            <p className="font-mono text-[10px] font-bold uppercase tracking-[0.28em] text-chaux-600">
+              Bon de suivi
+            </p>
+
+            <p className="mt-4 text-sm text-chaux-600">
+              Votre référence commence par les initiales de la boutique, comme
+              <span className="ml-1 font-mono font-bold text-nuit-800">ZH-1234567890</span>.
+              Elle se trouve dans le message de confirmation que le commerçant vous a envoyé.
+            </p>
+
+            <ol className="mt-6 space-y-3 border-t border-[var(--hairline)] pt-5" aria-hidden>
+              {etapes.map((e, i) => (
+                <li key={e.label} className="flex items-center gap-3 opacity-40">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center border border-[var(--hairline)] font-mono text-xs font-bold text-chaux-600">
+                    {i + 1}
+                  </span>
+                  <span className="text-sm text-chaux-600">{e.label}</span>
+                </li>
+              ))}
+            </ol>
+
+            <div className="perf-line my-5 text-nuit-900" aria-hidden />
+
+            <p className="text-center font-mono text-[11px] uppercase tracking-[0.18em] text-chaux-600">
+              En attente de votre référence
+            </p>
+          </article>
+        )}
+
         {suivi && (
           <article
             className="relative border border-[var(--hairline)] bg-chaux-50 p-6 soft-shadow"
@@ -305,9 +339,11 @@ function Suivre() {
           </article>
         )}
 
-        <p className="mt-8 text-center text-sm text-chaux-600">
-          Un doute sur votre commande ? Répondez au message du commerçant, il vous lit.
-        </p>
+        {suivi && (
+          <p className="mt-8 text-center text-sm text-chaux-600">
+            Un doute sur votre commande ? Répondez au message du commerçant, il vous lit.
+          </p>
+        )}
       </div>
     </main>
   );

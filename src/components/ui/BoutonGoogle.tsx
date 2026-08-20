@@ -42,11 +42,15 @@ function LogoGoogle() {
 export default function BoutonGoogle({
 	suite,
 	libelle = 'Continuer avec Google',
+	forme = 'pilule',
 }: {
 	/** Chemin interne a rejoindre une fois connecte. */
 	suite?: string | null;
 	libelle?: string;
+	/** La silhouette suit l'ecran : pilule dans l'outil, carree sur un bon. */
+	forme?: 'pilule' | 'carree';
 }) {
+	const rayon = forme === 'carree' ? 'rounded-none' : 'rounded-full';
 	const [chargement, setChargement] = useState(false);
 	const [erreur, setErreur] = useState('');
 
@@ -90,14 +94,14 @@ export default function BoutonGoogle({
 				type="button"
 				onClick={connecter}
 				disabled={chargement}
-				className="flex w-full items-center justify-center gap-3 rounded-full border border-[var(--hairline)] bg-white py-3.5 font-semibold text-nuit-700 shadow-sm transition hover:bg-chaux-50 disabled:opacity-60"
+				className={`flex w-full items-center justify-center gap-3 ${rayon} border border-[var(--hairline)] bg-white py-3.5 font-semibold text-nuit-700 shadow-sm transition hover:bg-chaux-50 disabled:opacity-60`}
 			>
 				{chargement ? <Loader2 className="h-5 w-5 animate-spin" /> : <LogoGoogle />}
 				{chargement ? 'Redirection vers Google...' : libelle}
 			</button>
 
 			{erreur && (
-				<div className="rounded-xl border border-bissap-200 bg-bissap-50 px-4 py-3 text-sm text-bissap-700">
+				<div className={`${rayon === 'rounded-none' ? '' : 'rounded-xl'} border border-bissap-200 bg-bissap-50 px-4 py-3 text-sm text-bissap-700`}>
 					{erreur}
 				</div>
 			)}
