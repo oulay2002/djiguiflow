@@ -31,6 +31,20 @@ type Contexte = {
   telegram_marchand: string | null;
 };
 
+/**
+ * Ce que la fiche ne dit pas : de quels canaux le marchand dispose REELLEMENT.
+ *
+ * « Nouvelle Commande → Marchand » prevenait sur WhatsApp ET sur Telegram, sans
+ * demander. Un marchand qui n'a pas connecte WhatsApp — c'est-a-dire tout
+ * nouvel inscrit — declenchait donc une alerte technique A CHAQUE COMMANDE,
+ * alors qu'il etait parfaitement prevenu par Telegram. Cette noyade finit par
+ * masquer les vraies pannes.
+ *
+ * On ne touche pas aux fonctions `canaux_par_*` pour autant : trois signatures
+ * a migrer pour deux booleens, c'est cher paye. Une seconde lecture suffit.
+ */
+type Equipement = { whatsapp_connecte: boolean; telegram_connecte: boolean };
+
 export async function POST(req: Request) {
   const secret = req.headers.get('x-sync-secret');
   if (!process.env.SYNC_SECRET || secret !== process.env.SYNC_SECRET) {
@@ -87,5 +101,25 @@ export async function POST(req: Request) {
     return Response.json({ error: 'Boutique introuvable' }, { status: 404 });
   }
 
-  return Response.json(contexte);
+  // Un echec de cette lecture ne doit pas priver l'appelant de son contexte :
+  // on retombe sur « equipe des deux », c'est-a-dire le comportement d'avant.
+  let equipement: Equipement = { whatsapp_connecte: true, telegram_connecte: true };
+  try {
+    const { data: fiche } = await sb
+      .from('boutiques')
+      .select('wasender_secret_id, telegram_secret_id')
+      .eq('id', contexte.boutique_id)
+      .maybeSingle();
+
+    if (fiche) {
+      equipement = {
+        whatsapp_connecte: Boolean(fiche.wasender_secret_id),
+        telegram_connecte: Boolean(fiche.telegram_secret_id),
+      };
+    }
+  } catch (e) {
+    console.error(`Contexte — equipement illisible (${contexte.slug}) :`, e);
+  }
+
+  return Response.json({ ...contexte, ...equipement });
 }
