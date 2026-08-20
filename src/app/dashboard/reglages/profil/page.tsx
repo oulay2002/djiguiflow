@@ -122,8 +122,8 @@ export default function ProfilPage() {
     <div className="min-h-screen bg-[var(--background)] p-4 sm:p-6 lg:p-8">
       <div className="mb-8">
         <LienRetour href="/dashboard/reglages">Retour aux réglages</LienRetour>
-        <h1 className="text-3xl font-bold text-nuit-900">Profil</h1>
-        <p className="text-chaux-600 mt-1">Modifiez vos informations personnelles</p>
+        <h1 className="font-display text-3xl font-bold text-nuit-900">Profil</h1>
+        <p className="text-chaux-600 mt-1">Votre nom, votre numéro et votre email.</p>
       </div>
 
       <div className="max-w-4xl mx-auto">

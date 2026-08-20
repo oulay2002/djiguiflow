@@ -6,8 +6,14 @@ import { fetchDashboard } from '@/lib/apiClient';
 import { supabase } from '@/lib/supabase';
 import NotificationToast from '@/components/NotificationToast';
 import {
+  Ban,
   CheckCircle2,
   Clock,
+  Globe,
+  HelpCircle,
+  MessageCircle,
+  Send,
+  ShieldCheck,
   Phone,
   MapPin,
   Handshake,
@@ -45,6 +51,23 @@ type Cmd = {
   confirmation_statut: string | null;
   confirmation_heure: string | null;
 };
+
+/**
+ * L'icone du canal par lequel la commande est arrivee.
+ *
+ * Le canal est la seule de ces marques a porter une information que rien
+ * d'autre ne dit. Les autres emojis de cet ecran — le rond vert, la croix, le
+ * bouclier — ne faisaient que repeter ce que la couleur du badge disait deja,
+ * dans un ecran ou tout le reste est en icones lucide.
+ */
+function IconeCanal({ canal }: { canal: string }) {
+  const Icone =
+    canal === 'app' ? Globe :
+    canal === 'whatsapp' ? MessageCircle :
+    canal === 'telegram' ? Send :
+    HelpCircle;
+  return <Icone className="inline h-3 w-3" aria-hidden />;
+}
 
 const parseItems = (s: string) => {
   try {
@@ -189,9 +212,6 @@ export default function Page() {
     return true;
   });
 
-  const canalIcon = (c: string) =>
-    c === 'app' ? '🌐' : c === 'whatsapp' ? '📲' : c === 'telegram' ? '✈️' : '❓';
-
   // Meme coupure que sur l'ecran Commandes : mangue tant que c'est chez le
   // commercant, indigo des que c'est en rue, feuille quand c'est arrive.
   // « Prise par » et « En route » etaient devenues de la meme couleur, alors
@@ -213,21 +233,21 @@ export default function Page() {
     if (c.confirmation_statut === 'confirmee') {
       return (
         <span className="rounded-full bg-accent-50 border border-accent-200 px-2.5 py-1 text-xs font-semibold text-accent-700">
-          ✅ Confirmée
+          Confirmée
         </span>
       );
     }
     if (c.confirmation_statut === 'refusee') {
       return (
         <span className="rounded-full bg-bissap-50 border border-bissap-200 px-2.5 py-1 text-xs font-semibold text-bissap-700">
-          ❌ Refusée
+          Refusée
         </span>
       );
     }
     // Pas encore répondu (ou ancienne commande sans suivi)
     return (
       <span className="rounded-full bg-mangue-50 border border-mangue-200 px-2.5 py-1 text-xs font-semibold text-mangue-700">
-        🟡 À confirmer
+        À confirmer
       </span>
     );
   };
@@ -244,7 +264,7 @@ export default function Page() {
             <div>
               <p className="text-sm uppercase tracking-[0.2em] text-chaux-600">Gestion</p>
               <h1 className="mt-2 font-display text-3xl font-black">Commandes · {nomBoutique}</h1>
-              <p className="mt-1 text-sm text-chaux-600">{cmds.length} commandes · {filtrées.length} affichées · refresh 10s</p>
+              <p className="mt-1 text-sm text-chaux-600">{cmds.length} commandes · {filtrées.length} affichées · mise à jour toutes les 10 s</p>
             </div>
             <div className="flex flex-col gap-3 md:items-end">
               <label className="relative w-full md:w-72">
@@ -279,20 +299,23 @@ export default function Page() {
           {(nbAConfirmer > 0 || nbRefusees > 0) && (
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-mangue-200 bg-mangue-50 p-4">
               <div className="flex flex-wrap items-center gap-3 text-sm">
-                <span className="font-semibold text-mangue-700">🛡️ Anti-retours</span>
+                <span className="flex items-center gap-1.5 font-semibold text-mangue-700">
+                  <ShieldCheck className="h-4 w-4" aria-hidden />
+                  Anti-retours
+                </span>
                 {nbAConfirmer > 0 && (
                   <button onClick={() => setFiltre('aconfirmer')} className="rounded-full bg-mangue-100 px-3 py-1 font-semibold text-mangue-700 hover:bg-mangue-200">
-                    🟡 {nbAConfirmer} à confirmer
+                    {nbAConfirmer} à confirmer
                   </button>
                 )}
                 {nbConfirmees > 0 && (
                   <button onClick={() => setFiltre('confirmees')} className="rounded-full bg-accent-100 px-3 py-1 font-semibold text-accent-800 hover:bg-accent-200">
-                    ✅ {nbConfirmees} confirmées
+                    {nbConfirmees} confirmées
                   </button>
                 )}
                 {nbRefusees > 0 && (
                   <button onClick={() => setFiltre('refusees')} className="rounded-full bg-bissap-100 px-3 py-1 font-semibold text-bissap-800 hover:bg-bissap-200">
-                    ❌ {nbRefusees} refusées
+                    {nbRefusees} refusées
                   </button>
                 )}
               </div>
@@ -322,7 +345,7 @@ export default function Page() {
                       <span className="font-mono text-sm font-bold text-mangue-700">{c.order_id}</span>
                       <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${badgeColor(c)}`}>{statutLabel(c)}</span>
                       {badgeConfirmation(c)}
-                      <span className="text-xs text-chaux-600">{canalIcon(c.canal)} {c.canal}</span>
+                      <span className="text-xs text-chaux-600"><IconeCanal canal={c.canal} /> {c.canal}</span>
                       <span className="text-xs text-chaux-600"><Clock className="inline h-3 w-3" /> {c.timestamp ? new Date(c.timestamp).toLocaleString('fr-FR') : '—'}</span>
                     </div>
                     <p className="text-base font-bold text-nuit-900">{c.customer_name}</p>
@@ -330,7 +353,7 @@ export default function Page() {
                     <p className="flex items-center gap-1 text-sm text-chaux-600"><MapPin className="h-3 w-3" />{c.address}</p>
                     <div className="flex flex-wrap gap-2">
                       {parseItems(c.items).length === 0 ? (
-                        <p className="text-sm text-chaux-600">📦 —</p>
+                        <p className="text-sm text-chaux-600">Aucun article</p>
                       ) : (
                         parseItems(c.items).map((it, i) => (
                           <span key={i} className="inline-flex items-center gap-1.5 rounded-full border border-mangue-200 bg-mangue-50 px-3 py-1 text-sm font-semibold text-mangue-700">
@@ -351,10 +374,11 @@ export default function Page() {
                         prononce — un « 0 F » se lirait « livraison offerte ». */}
                     {c.frais_livraison !== null && c.frais_livraison !== undefined && (
                       <p className="text-xs text-chaux-600">
-                        🛵 Livraison {Number(c.frais_livraison).toLocaleString('fr-FR')} F
+                        <Bike className="inline h-3 w-3" aria-hidden /> Livraison{' '}
+                        {Number(c.frais_livraison).toLocaleString('fr-FR')} F
                       </p>
                     )}
-                    {c.heure_livraison && <p className="text-xs text-accent-700">✅ {new Date(c.heure_livraison).toLocaleTimeString('fr-FR')}</p>}
+                    {c.heure_livraison && <p className="text-xs text-accent-700"><Check className="inline h-3 w-3" aria-hidden /> {new Date(c.heure_livraison).toLocaleTimeString('fr-FR')}</p>}
                   </div>
                 </div>
 
@@ -378,7 +402,8 @@ export default function Page() {
                   {/* Refusée : verrouiller les actions de livraison */}
                   {c.confirmation_statut === 'refusee' && (
                     <span className="flex items-center gap-2 rounded-full bg-bissap-100 px-4 py-2 text-sm font-semibold text-bissap-700">
-                      ❌ Ne pas préparer
+                      <Ban className="h-4 w-4" aria-hidden />
+                      Ne pas préparer
                     </span>
                   )}
 

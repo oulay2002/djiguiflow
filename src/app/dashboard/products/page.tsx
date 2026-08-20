@@ -74,7 +74,7 @@ export default function Page() {
   useEffect(() => { if (pret) charger(); }, [pret, boutiqueId]);
 
   const ajouter = async () => {
-    if (!fNom || !fPrix) { setMsg('⚠️ Nom et prix sont obligatoires.'); return; }
+    if (!fNom || !fPrix) { setMsg('Nom et prix sont obligatoires.'); return; }
     setEnvoi(true); setMsg('');
     try {
       let image = fUrl.trim();
@@ -97,7 +97,7 @@ export default function Page() {
         image = d.url;
         if (d.octetsAvant && d.octets) {
           const ko = (n: number) => `${Math.round(n / 1024)} Ko`;
-          setMsg(`📷 Photo retravaillée : ${ko(d.octetsAvant)} → ${ko(d.octets)}.`);
+          setMsg(`Photo retravaillée : ${ko(d.octetsAvant)} → ${ko(d.octets)}.`);
         }
       }
       const res = await fetchDashboard(avecBoutique('/api/dashboard/produits', boutiqueId), {
@@ -117,7 +117,7 @@ export default function Page() {
       setFFile(null); setFDispo(true); setFStock(''); setFSeuil('5');
       await charger();
     } catch (e) {
-      setMsg('❌ ' + (e instanceof Error ? e.message : 'Erreur inconnue'));
+      setMsg(e instanceof Error ? e.message : 'Erreur inconnue');
     } finally { setEnvoi(false); }
   };
 
@@ -133,7 +133,7 @@ export default function Page() {
 
   const sauvegarderFiche = async () => {
     if (!fiche) return;
-    if (!gNom.trim()) { setGMsg('⚠️ Le nom ne peut pas être vide.'); return; }
+    if (!gNom.trim()) { setGMsg('Le nom ne peut pas être vide.'); return; }
     setGEnvoi(true); setGMsg('');
     try {
       // La photo suit le meme chemin qu'a la creation : le serveur la redresse,
@@ -170,7 +170,7 @@ export default function Page() {
       setFiche(null);
       await charger();
     } catch (e) {
-      setGMsg('❌ ' + (e instanceof Error ? e.message : 'Erreur inconnue'));
+      setGMsg(e instanceof Error ? e.message : 'Erreur inconnue');
     } finally { setGEnvoi(false); }
   };
 
@@ -201,16 +201,16 @@ export default function Page() {
       setEditProd(null);
       await charger();
     } catch (e) {
-      setEMsg('❌ ' + (e instanceof Error ? e.message : 'Erreur inconnue'));
+      setEMsg(e instanceof Error ? e.message : 'Erreur inconnue');
     } finally { setEEnvoi(false); }
   };
 
   // Analyse des stocks pour les badges et alertes
   const statutStock = (p: Prod) => {
     if (p.stock === null) return { type: 'na', label: 'Sans suivi', color: 'bg-chaux-100 text-chaux-600' };
-    if (p.stock === 0) return { type: 'rupture', label: '🔴 Rupture', color: 'bg-bissap-100 text-bissap-700' };
-    if (p.seuil_alerte !== null && p.stock <= p.seuil_alerte) return { type: 'bas', label: `🟠 Bas · ${p.stock}`, color: 'bg-mangue-100 text-mangue-700' };
-    return { type: 'ok', label: `🟢 Stock · ${p.stock}`, color: 'bg-accent-100 text-accent-700' };
+    if (p.stock === 0) return { type: 'rupture', label: 'Rupture', color: 'bg-bissap-100 text-bissap-700' };
+    if (p.seuil_alerte !== null && p.stock <= p.seuil_alerte) return { type: 'bas', label: `Bas · ${p.stock}`, color: 'bg-mangue-100 text-mangue-700' };
+    return { type: 'ok', label: `Stock · ${p.stock}`, color: 'bg-accent-100 text-accent-700' };
   };
 
   const alertes = prods.filter(p => p.stock !== null && ((p.seuil_alerte !== null && p.stock <= p.seuil_alerte) || p.stock === 0));
@@ -228,7 +228,7 @@ export default function Page() {
                 <p className="text-sm uppercase tracking-[0.2em] text-mangue-100">Menu réel · feuille Google</p>
                 <h1 className="mt-2 font-display text-3xl font-black">Produits · {nomBoutique}</h1>
                 <p className="mt-1 text-xs text-mangue-100">
-                  {prods.length} produits · {prods.filter(p => p.disponible).length} disponibles · maj {maj}
+                  {prods.length} produits · {prods.filter(p => p.disponible).length} disponibles · à jour à {maj}
                 </p>
               </div>
               <div className="flex gap-2">
@@ -247,7 +247,8 @@ export default function Page() {
               <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-mangue-700" />
               <div className="flex-1">
                 <p className="font-bold text-mangue-700">
-                  ⚠️ {alertes.length} produit{alertes.length > 1 ? 's' : ''} sous le seuil d'alerte
+                  <AlertTriangle className="inline h-4 w-4" aria-hidden /> {alertes.length} produit
+            {alertes.length > 1 ? 's' : ''} sous le seuil d’alerte
                 </p>
                 <p className="mt-1 text-sm text-mangue-700">
                   {alertes.slice(0, 3).map(p => p.nom).join(', ')}
@@ -313,7 +314,7 @@ export default function Page() {
                           onClick={() => ouvrirStock(p)}
                           className="rounded-full bg-chaux-100 px-3 py-1 text-xs font-semibold text-nuit-700 transition hover:bg-chaux-200"
                         >
-                          📦 Stock
+                          Stock
                         </button>
                       </div>
                     </div>
@@ -336,7 +337,7 @@ export default function Page() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="max-h-[90vh] w-full max-w-lg space-y-4 overflow-y-auto rounded-[1.5rem] bg-white p-6 shadow-2xl">
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-black text-nuit-900">🛍️ Nouveau produit</h2>
+              <h2 className="text-xl font-black text-nuit-900">Nouveau produit</h2>
               <button onClick={() => setOuvert(false)} className="rounded-full p-2 hover:bg-chaux-100"><X className="h-5 w-5" /></button>
             </div>
 
@@ -349,17 +350,17 @@ export default function Page() {
 
             <div className="grid gap-3 rounded-2xl border border-mangue-200 bg-mangue-50 p-3 sm:grid-cols-2">
               <div>
-                <label className="mb-1 block text-xs font-semibold text-mangue-700">📦 Stock actuel</label>
+                <label className="mb-1 block text-xs font-semibold text-mangue-700">Stock actuel</label>
                 <input type="number" min="0" placeholder="ex : 12 (laisser vide = sans suivi)" value={fStock} onChange={e => setFStock(e.target.value)} className="w-full rounded-lg border border-mangue-300 bg-white p-2 text-sm" />
               </div>
               <div>
-                <label className="mb-1 block text-xs font-semibold text-mangue-700">🔔 Alerte à</label>
+                <label className="mb-1 block text-xs font-semibold text-mangue-700">Alerte à</label>
                 <input type="number" min="0" placeholder="ex : 5" value={fSeuil} onChange={e => setFSeuil(e.target.value)} className="w-full rounded-lg border border-mangue-300 bg-white p-2 text-sm" />
               </div>
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-semibold text-chaux-600">📸 Photo de l’article</label>
+              <label className="mb-1 block text-sm font-semibold text-chaux-600">Photo de l’article</label>
               <input type="file" accept="image/*" onChange={e => setFFile(e.target.files?.[0] || null)}
                 className="block w-full text-sm text-chaux-600 file:mr-3 file:rounded-full file:border-0 file:bg-mangue-100 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-mangue-700 hover:file:bg-mangue-200" />
               <p className="mt-2 text-xs text-chaux-600">…ou colle un lien image :</p>
@@ -446,7 +447,7 @@ export default function Page() {
           <div className="w-full max-w-md space-y-4 rounded-[1.5rem] bg-white p-6 shadow-2xl">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-xl font-black text-nuit-900">📦 Gérer le stock</h2>
+                <h2 className="text-xl font-black text-nuit-900">Gérer le stock</h2>
                 <p className="text-sm text-chaux-600">{editProd.nom}</p>
               </div>
               <button onClick={() => setEditProd(null)} className="rounded-full p-2 hover:bg-chaux-100"><X className="h-5 w-5" /></button>
@@ -459,7 +460,7 @@ export default function Page() {
                 <p className="mt-1 text-xs text-chaux-600">Vide = pas de suivi</p>
               </div>
               <div>
-                <label className="mb-1 block text-sm font-semibold text-nuit-700">Seuil d'alerte</label>
+                <label className="mb-1 block text-sm font-semibold text-nuit-700">Seuil d’alerte</label>
                 <input type="number" min="0" placeholder="ex : 5" value={eSeuil} onChange={x => setESeuil(x.target.value)} className="w-full rounded-lg border p-2" />
                 <p className="mt-1 text-xs text-chaux-600">Alerte quand stock ≤ ce nombre</p>
               </div>
@@ -475,7 +476,7 @@ export default function Page() {
             <div className="flex gap-2">
               <Bouton variante="calme" onClick={() => setEditProd(null)} className="flex-1">Annuler</Bouton>
               <Bouton onClick={sauvegarderStock} chargement={eEnvoi} className="flex-1">
-                {eEnvoi ? 'Sauvegarde…' : '💾 Sauvegarder'}
+                {eEnvoi ? 'Sauvegarde…' : 'Sauvegarder'}
               </Bouton>
             </div>
           </div>

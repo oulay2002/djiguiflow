@@ -111,7 +111,7 @@ export default function Page() {
                 </div>
 
                 <div className="rounded-[1.75rem] border border-[var(--hairline)] bg-white/80 p-6 shadow-[0_18px_45px_rgba(48,35,20,0.08)] backdrop-blur-sm xl:col-span-2">
-                  <h2 className="text-xl font-black text-nuit-900">🌍 Répartition par canal</h2>
+                  <h2 className="text-xl font-black text-nuit-900">Répartition par canal</h2>
                   <div className="mt-5 space-y-4">
                     {Object.entries(s.parCanal).map(([canal, nb]) => {
                       const m = canalMeta[canal] || { label: canal, icon: Globe2, txt: 'text-chaux-600', bar: 'bg-chaux-400' };

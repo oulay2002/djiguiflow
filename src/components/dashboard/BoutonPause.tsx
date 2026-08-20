@@ -22,6 +22,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { PauseCircle, PlayCircle } from 'lucide-react';
+import { classesBouton } from '@/components/ui/Bouton';
 import { supabase } from '@/lib/supabase';
 import { useBoutique, uuidBoutiqueCourante } from '@/lib/boutique';
 
@@ -113,15 +114,15 @@ export default function BoutonPause() {
 
   if (enPause) {
     return (
-      <div className="mb-6 rounded-2xl border border-amber-300 bg-amber-50 p-4">
+      <div className="mb-6 rounded-2xl border border-mangue-200 bg-mangue-50 p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <PauseCircle className="h-6 w-6 shrink-0 text-amber-600" />
+            <PauseCircle className="h-6 w-6 shrink-0 text-mangue-600" />
             <div>
-              <p className="font-semibold text-amber-900">
+              <p className="font-semibold text-mangue-700">
                 Boutique en pause jusqu’à {heureLisible(pauseJusqua!)}
               </p>
-              <p className="text-sm text-amber-800">
+              <p className="text-sm text-mangue-600">
                 Vos clients voient « fermé » et aucune commande ne peut arriver.
               </p>
             </div>
@@ -129,13 +130,13 @@ export default function BoutonPause() {
           <button
             onClick={() => void ecrire(null)}
             disabled={enCours}
-            className="flex items-center gap-2 rounded-xl bg-amber-600 px-4 py-2 font-semibold text-white hover:bg-amber-700 disabled:opacity-50"
+            className={classesBouton('action')}
           >
             <PlayCircle className="h-5 w-5" />
             Reprendre maintenant
           </button>
         </div>
-        {erreur && <p className="mt-2 text-sm text-red-700">{erreur}</p>}
+        {erreur && <p className="mt-2 text-sm text-bissap-700">{erreur}</p>}
       </div>
     );
   }
@@ -145,15 +146,15 @@ export default function BoutonPause() {
       {!ouvertChoix ? (
         <button
           onClick={() => setOuvertChoix(true)}
-          className="flex items-center gap-2 rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:border-amber-400 hover:text-amber-800"
+          className={classesBouton('calme', 'sm')}
         >
           <PauseCircle className="h-4 w-4" />
           Je ferme un moment
         </button>
       ) : (
-        <div className="rounded-2xl border border-gray-200 bg-white p-4">
-          <p className="mb-1 font-semibold text-gray-900">Fermer les commandes pendant…</p>
-          <p className="mb-3 text-sm text-gray-600">
+        <div className="rounded-2xl border border-[var(--hairline)] bg-white p-4">
+          <p className="mb-1 font-semibold text-nuit-900">Fermer les commandes pendant…</p>
+          <p className="mb-3 text-sm text-chaux-600">
             La boutique rouvrira toute seule. Vous pourrez reprendre avant, à tout moment.
           </p>
           <div className="flex flex-wrap gap-2">
@@ -162,7 +163,7 @@ export default function BoutonPause() {
                 key={d.libelle}
                 onClick={() => mettreEnPause(d.minutes)}
                 disabled={enCours}
-                className="rounded-xl border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:border-amber-400 hover:bg-amber-50 disabled:opacity-50"
+                className={classesBouton('calme', 'sm')}
               >
                 {d.libelle}
               </button>
@@ -170,12 +171,12 @@ export default function BoutonPause() {
             <button
               onClick={() => setOuvertChoix(false)}
               disabled={enCours}
-              className="rounded-xl px-3 py-2 text-sm text-gray-500 hover:text-gray-700"
+              className={classesBouton('fantome', 'sm')}
             >
               Annuler
             </button>
           </div>
-          {erreur && <p className="mt-2 text-sm text-red-700">{erreur}</p>}
+          {erreur && <p className="mt-2 text-sm text-bissap-700">{erreur}</p>}
         </div>
       )}
     </div>

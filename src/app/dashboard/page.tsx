@@ -123,7 +123,7 @@ export default function Page() {
           <header className="flex flex-col gap-4 rounded-[2rem] border border-white/70 bg-white/75 p-5 shadow-[0_20px_60px_rgba(49,35,20,0.08)] backdrop-blur-xl md:flex-row md:items-center md:justify-between">
             <div>
               <p className="text-sm uppercase tracking-[0.2em] text-chaux-600">Tableau de bord · données réelles</p>
-              <h1 className="mt-2 text-3xl font-black">Bonjour, {nomBoutique} 👋</h1>
+              <h1 className="mt-2 font-display text-3xl font-black">Bonjour, {nomBoutique}</h1>
             </div>
             <div className="flex items-center gap-3">
               <button className="flex h-11 w-11 items-center justify-center rounded-full border border-[var(--hairline)] bg-chaux-50 text-chaux-600 hover:text-primary-700">
@@ -178,25 +178,25 @@ export default function Page() {
               visible, commandes acceptees, et personne au bout. Le marchand
               voyait une commande arriver et croyait tout en ordre. */}
           {manques.length > 0 && (
-            <section className="rounded-[1.5rem] border border-red-300 bg-red-50 p-5">
+            <section className="rounded-[1.5rem] border border-bissap-200 bg-bissap-50 p-5">
               <div className="flex flex-wrap items-start gap-4">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-red-100 text-red-700">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-bissap-100 text-bissap-700">
                   <AlertTriangle className="h-6 w-6" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="font-semibold text-red-900">
+                  <p className="font-semibold text-bissap-700">
                     Votre boutique ne peut pas encore servir une commande
                   </p>
                   <ul className="mt-2 space-y-1.5">
                     {manques.map(m => (
-                      <li key={m.titre} className="text-sm text-red-800">
+                      <li key={m.titre} className="text-sm text-bissap-600">
                         <span className="font-semibold">{m.titre}</span> — {m.detail}
                       </li>
                     ))}
                   </ul>
                   <Link
                     href="/onboarding"
-                    className="mt-3 inline-flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700"
+                    className="mt-3 inline-flex items-center gap-2 rounded-xl bg-bissap-600 px-4 py-2 text-sm font-semibold text-white hover:bg-bissap-700"
                   >
                     Terminer le branchement <ArrowRight className="h-4 w-4" />
                   </Link>
@@ -206,9 +206,9 @@ export default function Page() {
           )}
 
           {((perdus?.nombre ?? 0) > 0 || (attendues?.nombre ?? 0) > 0) && (
-            <section className="rounded-[1.5rem] border border-amber-200 bg-amber-50/70 p-5">
+            <section className="rounded-[1.5rem] border border-mangue-200 bg-mangue-50/70 p-5">
               <div className="flex flex-wrap items-start gap-4">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-amber-100 text-amber-700">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-mangue-100 text-mangue-700">
                   <ShoppingBag className="h-6 w-6" />
                 </div>
                 <div className="min-w-0 space-y-3">
@@ -216,12 +216,12 @@ export default function Page() {
                       le marchand ne voyait ni l’une ni l’autre. */}
                   {perdus && perdus.nombre > 0 && (
                     <div>
-                      <p className="font-semibold text-amber-900">
+                      <p className="font-semibold text-mangue-700">
                         {perdus.nombre} panier{perdus.nombre > 1 ? 's' : ''} laissé
                         {perdus.nombre > 1 ? 's' : ''} en route cette semaine
                         {perdus.valeur > 0 && ` — ${perdus.valeur.toLocaleString('fr-FR')} F`}
                       </p>
-                      <p className="text-sm text-amber-800">
+                      <p className="text-sm text-mangue-600">
                         Ces clients ont composé leur commande et laissé leur numéro, sans valider.
                         Un prix, un délai ou des frais de livraison peuvent expliquer l’hésitation.
                       </p>
@@ -229,12 +229,12 @@ export default function Page() {
                   )}
                   {attendues && attendues.nombre > 0 && (
                     <div>
-                      <p className="font-semibold text-amber-900">
+                      <p className="font-semibold text-mangue-700">
                         {attendues.nombre} commande{attendues.nombre > 1 ? 's' : ''} attend
                         {attendues.nombre > 1 ? 'ent' : ''} la réponse du client
                         {attendues.valeur > 0 && ` — ${attendues.valeur.toLocaleString('fr-FR')} F`}
                       </p>
-                      <p className="text-sm text-amber-800">
+                      <p className="text-sm text-mangue-600">
                         Le panier est prêt, il ne manque que sa confirmation. Un rappel lui est
                         envoyé automatiquement ; sans réponse sous 24 h, la commande est annulée.
                       </p>
@@ -281,12 +281,12 @@ export default function Page() {
                   </g>
                 ))}
               </svg>
-              <p className="mt-2 text-xs text-chaux-600">💡 Survole les points pour voir le détail de chaque jour.</p>
+              <p className="mt-2 text-xs text-chaux-600">Chaque point donne le détail de sa journée.</p>
             </div>
 
             <div className="space-y-6">
               <div className="rounded-[1.75rem] border border-[var(--hairline)] bg-white/80 p-6 shadow-[0_18px_45px_rgba(48,35,20,0.08)] backdrop-blur-sm">
-                <h3 className="text-xl font-black">🌍 Canaux de vente</h3>
+                <h3 className="text-xl font-black">Canaux de vente</h3>
                 <div className="mt-4 space-y-4">
                   {s && Object.entries(s.parCanal).map(([canal, nb]) => {
                     const m = canalMeta[canal] || { label: canal, icon: Globe2, txt: 'text-chaux-600', bar: 'bg-chaux-400' };

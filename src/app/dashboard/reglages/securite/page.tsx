@@ -121,8 +121,8 @@ export default function SecuritePage() {
     <div className="min-h-screen bg-[var(--background)] p-4 sm:p-6 lg:p-8">
       <div className="mb-8">
         <LienRetour href="/dashboard/reglages">Retour aux réglages</LienRetour>
-        <h1 className="text-3xl font-bold text-nuit-900">Sécurité</h1>
-        <p className="text-chaux-600 mt-1">Gérez votre mot de passe et vos sessions</p>
+        <h1 className="font-display text-3xl font-bold text-nuit-900">Sécurité</h1>
+        <p className="text-chaux-600 mt-1">Votre mot de passe, et les appareils connectés à ce compte.</p>
       </div>
 
       <div className="max-w-4xl mx-auto space-y-6">

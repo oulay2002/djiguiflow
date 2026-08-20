@@ -8,7 +8,7 @@ export default function ReglagesPage() {
   const menuItems = [
     {
       title: 'Profil',
-      description: 'Modifiez vos informations personnelles',
+      description: 'Votre nom, votre numéro, votre email',
       icon: User,
       href: '/dashboard/reglages/profil',
       color: 'bg-nuit-50 text-nuit-600'
@@ -18,7 +18,7 @@ export default function ReglagesPage() {
       // gere le cas multi-boutiques. Un doublon divergerait a la premiere
       // evolution du formulaire.
       title: 'Boutique',
-      description: 'Paramètres de votre boutique',
+      description: 'Nom, quartier, horaires et catégorie',
       icon: Store,
       href: '/dashboard/ma-boutique',
       color: 'bg-accent-50 text-accent-600'
@@ -32,7 +32,7 @@ export default function ReglagesPage() {
     },
     {
       title: 'Sécurité',
-      description: 'Gérez votre mot de passe et authentification',
+      description: 'Mot de passe et appareils connectés',
       icon: Shield,
       href: '/dashboard/reglages/securite',
       color: 'bg-bissap-50 text-bissap-600'
@@ -45,8 +45,8 @@ export default function ReglagesPage() {
       <div className="mb-8">
         <LienRetour href="/dashboard">Retour au dashboard</LienRetour>
         <div>
-          <h1 className="text-3xl font-bold text-nuit-900">Réglages</h1>
-          <p className="text-chaux-600 mt-1">Gérez les paramètres de votre compte</p>
+          <h1 className="font-display text-3xl font-bold text-nuit-900">Réglages</h1>
+          <p className="text-chaux-600 mt-1">Votre compte, votre boutique, et ce que vous recevez.</p>
         </div>
       </div>
 

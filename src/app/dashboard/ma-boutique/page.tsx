@@ -251,7 +251,7 @@ export default function MaBoutiquePage() {
       <div className="mb-8">
         <LienRetour href="/dashboard">Retour au dashboard</LienRetour>
         <h1 className="font-display text-3xl font-bold text-nuit-900">Ma boutique</h1>
-        <p className="text-chaux-600 mt-1">Configurez les informations de votre commerce</p>
+        <p className="text-chaux-600 mt-1">Ce que vos clients voient : nom, quartier, numéro et horaires.</p>
 
         {nbBoutiques > 1 && (
           <p className="mt-3 inline-flex items-center gap-2 rounded-xl border border-mangue-200 bg-mangue-50 px-3 py-2 text-sm text-mangue-700">

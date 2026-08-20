@@ -302,8 +302,8 @@ export default function PaiementsPage() {
               <ArrowLeft className="h-4 w-4 transition-transform duration-150 group-hover:-translate-x-0.5" />
               Retour au dashboard
             </Link>
-            <h1 className="text-3xl font-black tracking-tight text-nuit-900">Abonnements et facturation</h1>
-            <p className="mt-2 text-chaux-600">Activez votre formule, securisez vos paiements et gerez votre abonnement.</p>
+            <h1 className="font-display text-3xl font-black tracking-tight text-nuit-900">Abonnements et facturation</h1>
+            <p className="mt-2 text-chaux-600">Votre formule, et jusqu’à quand elle court.</p>
           </div>
           <div className="hidden rounded-2xl border border-primary-200 bg-white/70 px-4 py-3 shadow-sm md:flex md:items-center md:gap-2">
             <ShieldCheck className="h-5 w-5 text-primary-700" />
@@ -358,11 +358,11 @@ export default function PaiementsPage() {
                   <p className="mt-2 text-lg font-bold capitalize text-nuit-900">{subscription?.status ?? '-'}</p>
                 </div>
                 <div className="rounded-2xl border border-[var(--hairline)] bg-chaux-50 p-4">
-                  <p className="text-xs uppercase tracking-[0.15em] text-chaux-600">Debut periode</p>
+                  <p className="text-xs uppercase tracking-[0.15em] text-chaux-600">Début de période</p>
                   <p className="mt-2 text-lg font-bold text-nuit-900">{formatDate(subscription?.current_period_start ?? null)}</p>
                 </div>
                 <div className="rounded-2xl border border-[var(--hairline)] bg-chaux-50 p-4">
-                  <p className="text-xs uppercase tracking-[0.15em] text-chaux-600">Fin periode</p>
+                  <p className="text-xs uppercase tracking-[0.15em] text-chaux-600">Fin de période</p>
                   <p className="mt-2 text-lg font-bold text-nuit-900">{formatDate(subscription?.current_period_end ?? null)}</p>
                 </div>
               </div>

@@ -32,13 +32,13 @@ export const ENTREES_NAV: Entree[] = [
   { label: 'Commandes', court: 'Commandes', href: '/dashboard/commandes', icon: ShoppingCart },
   { label: 'Produits', court: 'Produits', href: '/dashboard/products', icon: Package2 },
   { label: 'Clients', court: 'Clients', href: '/dashboard/customers', icon: Users },
-  { label: 'Ma Boutique', href: '/dashboard/ma-boutique', icon: Store },
-  { label: 'Analytics', href: '/dashboard/stats', icon: TrendingUp },
+  { label: 'Ma boutique', href: '/dashboard/ma-boutique', icon: Store },
+  { label: 'Pilotage', href: '/dashboard/stats', icon: TrendingUp },
   { label: 'Livreurs', href: '/dashboard/livreurs', icon: Truck },
   { label: 'Paiements', href: '/dashboard/paiements', icon: CreditCard },
   { label: 'Notifications', href: '/dashboard/reglages/notifications', icon: Bell },
   { label: 'Réglages', href: '/dashboard/reglages', icon: Settings },
-  { label: 'Onboarding', href: '/onboarding', icon: Rocket },
+  { label: 'Branchement', href: '/onboarding', icon: Rocket },
 ];
 
 /** Les quatre que le marchand ouvre plusieurs fois par jour. */
