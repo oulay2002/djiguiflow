@@ -10,9 +10,6 @@ import {
   Line,
   BarChart,
   Bar,
-  PieChart,
-  Pie,
-  Cell,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -29,8 +26,7 @@ import {
   Clock,
   Star,
   Truck,
-  Loader2,
-  Download
+  Loader2
 } from 'lucide-react';
 
 type Period = 'week' | 'month' | 'year';
@@ -46,6 +42,7 @@ type CommandeData = {
   client_nom: string;
   created_at: string;
   statut: string;
+  nom_livreur?: string | null;
   commande_items?: CommandeItem[];
 };
 
@@ -74,7 +71,6 @@ type StatusPoint = {
 type DriverPerformance = {
   name: string;
   deliveries: number;
-  rating: number;
 };
 
 export default function AnalyticsPage() {
@@ -88,7 +84,6 @@ export default function AnalyticsPage() {
     totalClients: 0,
     avgOrderValue: 0,
     revenueGrowth: 0,
-    ordersGrowth: 0,
   });
   const [chartData, setChartData] = useState<ChartPoint[]>([]);
   const [topProducts, setTopProducts] = useState<TopProduct[]>([]);
@@ -204,12 +199,27 @@ export default function AnalyticsPage() {
       { name: 'En attente', value: statusCounts.en_attente || 0 },
     ]);
 
-    const baseDelivery = Math.max(1, Math.round(totalOrders / 3));
-    setDriverPerformance([
-      { name: 'Livreur 1', deliveries: baseDelivery + 3, rating: 4.6 },
-      { name: 'Livreur 2', deliveries: baseDelivery, rating: 4.4 },
-      { name: 'Livreur 3', deliveries: Math.max(1, baseDelivery - 2), rating: 4.2 },
-    ]);
+    // Ce panneau affichait « Livreur 1 / 2 / 3 », des livraisons calculees
+    // depuis le total (totalOrders / 3) et des notes ecrites en dur —
+    // 4,6 / 4,4 / 4,2. C est la faute que la refonte du 11 aout avait
+    // chassee de la vitrine, restee vivante ici parce qu aucun lien ne
+    // menait a cette page.
+    //
+    // On compte donc les vraies livraisons par nom de livreur. La note
+    // disparait : personne ne la mesure.
+    const parLivreur = new Map<string, number>();
+    for (const commande of typedCommandes) {
+      if (commande.statut !== 'livree') continue;
+      const nom = (commande.nom_livreur ?? '').trim();
+      if (!nom) continue;
+      parLivreur.set(nom, (parLivreur.get(nom) ?? 0) + 1);
+    }
+    setDriverPerformance(
+      [...parLivreur.entries()]
+        .map(([name, deliveries]) => ({ name, deliveries }))
+        .sort((a, b) => b.deliveries - a.deliveries)
+        .slice(0, 5),
+    );
 
     setStats({
       totalRevenue,
@@ -217,7 +227,6 @@ export default function AnalyticsPage() {
       totalClients: uniqueClients,
       avgOrderValue,
       revenueGrowth,
-      ordersGrowth: 0,
     });
 
     setLoading(false);
@@ -234,7 +243,22 @@ export default function AnalyticsPage() {
   // Cinq familles de la maison, une par part : mangue, indigo, feuille,
   // bissap, chaux. Elles se distinguent entre elles sans convoquer de
   // teinte qui ne veut rien dire ici.
-  const COLORS = ['#d1861f', '#364a80', '#1f9a70', '#c4123f', '#837e70'];
+  // Ces trois parts ne sont pas des series : ce sont des ETATS, et elles
+  // reprennent le code couleur des autres ecrans — feuille quand c est livre,
+  // indigo quand c est en rue, mangue quand ca attend chez le commercant.
+  //
+  // Passees au validateur (all-pairs, surface blanche) : bande de clarte OK,
+  // separation daltonienne 9,3 au pire, vision normale 19,1, contraste OK.
+  // Seul echec, la chromie de l indigo : AUCUN pas du nuancier « indigo de
+  // teinture » n atteint le plancher de 0,10 — c est une couleur de structure,
+  // pas d identite. Chaque part portant son libelle en clair, la couleur ne
+  // travaille jamais seule.
+  const COULEURS_STATUT = ['#1f9a70', '#55679f', '#a76518'];
+
+  // Une seule serie par graphique : elle prend la couleur de l argent, comme
+  // le prix sur la vitrine et la courbe de l accueil. Varier la teinte d un
+  // graphique a l autre ferait chercher un sens qui n existe pas.
+  const SERIE = '#c4123f';
 
   if (loading) {
     return (
@@ -264,10 +288,6 @@ export default function AnalyticsPage() {
               <option value="month">Ce mois</option>
               <option value="year">Cette année</option>
             </select>
-            <button className="flex items-center gap-2 px-4 py-2 bg-bissap-500 text-white rounded-lg hover:bg-bissap-600 transition">
-              <Download className="w-4 h-4" />
-              Exporter
-            </button>
           </div>
         </div>
       </div>
@@ -279,28 +299,25 @@ export default function AnalyticsPage() {
           label="Chiffre d'affaires"
           value={`${stats.totalRevenue.toLocaleString()} FCFA`}
           growth={stats.revenueGrowth}
-          color="amber"
+          color="mangue"
         />
         <KPICard
           icon={ShoppingCart}
           label="Total commandes"
           value={stats.totalOrders}
-          growth={stats.ordersGrowth}
-          color="blue"
+          color="nuit"
         />
         <KPICard
           icon={Users}
           label="Clients uniques"
           value={stats.totalClients}
-          growth={0}
-          color="green"
+          color="feuille"
         />
         <KPICard
           icon={Package}
           label="Panier moyen"
           value={`${Math.round(stats.avgOrderValue).toLocaleString()} FCFA`}
-          growth={5.2}
-          color="purple"
+          color="nuit"
         />
       </div>
 
@@ -316,16 +333,16 @@ export default function AnalyticsPage() {
             <LineChart data={chartData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e0ddd3" />
               <XAxis dataKey="date" stroke="#837e70" />
-              <YAxis stroke="#837e70" />
+              <YAxis stroke="#837e70" tickFormatter={(v: number) => v.toLocaleString('fr-FR')} />
               <Tooltip 
                 contentStyle={{ backgroundColor: '#f8f7f3', borderRadius: '8px', border: '1px solid #e0ddd3' }}
               />
               <Line 
                 type="monotone" 
                 dataKey="revenue" 
-                stroke="#d1861f" 
-                strokeWidth={3}
-                dot={{ fill: '#d1861f', r: 4 }}
+                stroke={SERIE}
+                strokeWidth={2}
+                dot={{ fill: SERIE, r: 4 }}
               />
             </LineChart>
           </ResponsiveContainer>
@@ -345,7 +362,7 @@ export default function AnalyticsPage() {
               <Tooltip 
                 contentStyle={{ backgroundColor: '#f8f7f3', borderRadius: '8px', border: '1px solid #e0ddd3' }}
               />
-              <Bar dataKey="ventes" fill="#d1861f" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="ventes" fill={SERIE} radius={[4, 4, 0, 0]} maxBarSize={28} />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -365,7 +382,7 @@ export default function AnalyticsPage() {
             <Tooltip 
               contentStyle={{ backgroundColor: '#f8f7f3', borderRadius: '8px', border: '1px solid #e0ddd3' }}
             />
-            <Bar dataKey="orders" fill="#364a80" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="orders" fill={SERIE} radius={[4, 4, 0, 0]} maxBarSize={28} />
           </BarChart>
         </ResponsiveContainer>
       </div>
@@ -374,29 +391,44 @@ export default function AnalyticsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white rounded-xl p-6 border border-[var(--hairline)]">
           <h3 className="text-lg font-bold text-nuit-900 mb-4">Répartition des commandes</h3>
-          <ResponsiveContainer width="100%" height={250}>
-            <PieChart>
-              <Pie
-                data={statusData}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                label={({ name, percent = 0 }) => `${name} (${(percent * 100).toFixed(0)}%)`}
-                outerRadius={80}
-                fill="#8884d8"
-                dataKey="value"
-              >
-                {[0, 1, 2].map((index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip />
-            </PieChart>
-          </ResponsiveContainer>
+          <div className="space-y-4">
+            {statusData.map((etat, index) => {
+              const total = statusData.reduce((somme, e) => somme + e.value, 0) || 1;
+              const pct = Math.round((etat.value / total) * 100);
+              return (
+                <div key={etat.name}>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="flex items-center gap-2 font-semibold text-nuit-800">
+                      <span
+                        aria-hidden
+                        className="h-3 w-3 shrink-0 rounded-full"
+                        style={{ backgroundColor: COULEURS_STATUT[index] }}
+                      />
+                      {etat.name}
+                    </span>
+                    <span className="font-bold text-nuit-800">
+                      {etat.value} · {pct}%
+                    </span>
+                  </div>
+                  <div className="mt-2 h-3 overflow-hidden rounded-full bg-chaux-100">
+                    <div
+                      className="h-full rounded-full"
+                      style={{ width: `${pct}%`, backgroundColor: COULEURS_STATUT[index] }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
 
         <div className="bg-white rounded-xl p-6 border border-[var(--hairline)]">
-          <h3 className="text-lg font-bold text-nuit-900 mb-4">Performance livreurs</h3>
+          <h3 className="text-lg font-bold text-nuit-900 mb-4">Livraisons par livreur</h3>
+          {driverPerformance.length === 0 && (
+            <p className="text-sm text-chaux-600">
+              Aucune livraison rattachée à un livreur sur cette période.
+            </p>
+          )}
           <div className="space-y-4">
             {driverPerformance.map((driver) => (
               <div key={driver.name} className="flex items-center justify-between p-3 bg-chaux-50 rounded-lg">
@@ -408,10 +440,6 @@ export default function AnalyticsPage() {
                     <p className="font-semibold text-nuit-900">{driver.name}</p>
                     <p className="text-xs text-chaux-600">{driver.deliveries} livraisons</p>
                   </div>
-                </div>
-                <div className="flex items-center gap-1 text-mangue-600">
-                  <Star className="w-4 h-4 fill-current" />
-                  <span className="font-semibold">{driver.rating.toFixed(1)}</span>
                 </div>
               </div>
             ))}
@@ -427,15 +455,16 @@ type KPICardProps = {
   label: string;
   value: string | number;
   growth?: number;
-  color: 'amber' | 'blue' | 'green' | 'purple';
+  color: 'mangue' | 'nuit' | 'feuille';
 };
 
 function KPICard({ icon: Icon, label, value, growth, color }: KPICardProps) {
+  // « purple » rendait de l indigo : un nom de couleur qui ment finit par
+  // etre choisi pour ce qu il dit, pas pour ce qu il montre.
   const colors: Record<string, string> = {
-    amber: 'bg-mangue-50 text-mangue-600',
-    blue: 'bg-nuit-50 text-nuit-600',
-    green: 'bg-accent-50 text-accent-600',
-    purple: 'bg-nuit-50 text-nuit-600',
+    mangue: 'bg-mangue-50 text-mangue-600',
+    nuit: 'bg-nuit-50 text-nuit-600',
+    feuille: 'bg-accent-50 text-accent-600',
   };
 
   return (

@@ -23,10 +23,10 @@ type Stats = {
   noteMoyenne: number; nbNotes: number; topPlats: [string, number][];
 };
 
-const canalMeta: Record<string, { label: string; icon: ComponentType<{ className?: string }>; txt: string; bar: string }> = {
-  whatsapp: { label: 'WhatsApp', icon: Smartphone, txt: 'text-accent-700', bar: 'bg-accent-500' },
-  telegram: { label: 'Telegram', icon: Send, txt: 'text-nuit-700', bar: 'bg-nuit-500' },
-  app: { label: 'Application', icon: Globe2, txt: 'text-mangue-700', bar: 'bg-mangue-500' },
+const canalMeta: Record<string, { label: string; icon: ComponentType<{ className?: string }> }> = {
+  whatsapp: { label: 'WhatsApp', icon: Smartphone },
+  telegram: { label: 'Telegram', icon: Send },
+  app: { label: 'Application', icon: Globe2 },
 };
 
 export default function Page() {
@@ -123,17 +123,17 @@ export default function Page() {
                   <h2 className="text-xl font-black text-nuit-900">Répartition par canal</h2>
                   <div className="mt-5 space-y-4">
                     {Object.entries(s.parCanal).map(([canal, nb]) => {
-                      const m = canalMeta[canal] || { label: canal, icon: Globe2, txt: 'text-chaux-600', bar: 'bg-chaux-400' };
+                      const m = canalMeta[canal] || { label: canal, icon: Globe2 };
                       const Icon = m.icon;
                       const pct = Math.round((nb / totalCanal) * 100);
                       return (
                         <div key={canal}>
                           <div className="flex items-center justify-between text-sm">
-                            <span className={`flex items-center gap-2 font-semibold ${m.txt}`}><Icon className="h-4 w-4" />{m.label}</span>
+                            <span className="flex items-center gap-2 font-semibold text-nuit-800"><Icon className="h-4 w-4 text-chaux-600" aria-hidden />{m.label}</span>
                             <span className="font-bold text-nuit-800">{nb} · {pct}%</span>
                           </div>
                           <div className="mt-2 h-3 overflow-hidden rounded-full bg-chaux-100">
-                            <div className={`h-full rounded-full ${m.bar}`} style={{ width: `${pct}%` }} />
+                            <div className="h-full rounded-full bg-bissap-500" style={{ width: `${pct}%` }} />
                           </div>
                         </div>
                       );
