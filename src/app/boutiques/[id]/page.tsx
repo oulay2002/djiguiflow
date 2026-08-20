@@ -7,6 +7,7 @@ import { MapPin, Minus, Plus, ShoppingBag } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { normaliserTelephone, formaterTelephone } from '@/lib/telephone';
 import { LienRetour, classesBouton } from '@/components/ui/Bouton';
+import { EMOJI_DEFAUT, Enseigne, initiale } from '@/components/ui/Enseigne';
 
 type Produit = {
   id: string;
@@ -68,6 +69,35 @@ async function appelerVitrine<T>(nom: string, ref: string): Promise<T[]> {
 }
 
 /**
+ * Le vocabulaire de la page suit le commerce.
+ *
+ * « Tout le menu », « A la carte » viennent du premier marchand, un
+ * restaurant. Sur une boutique de vetements ils designent un rayon qui
+ * n'existe pas, et le client comprend que la page a ete ecrite pour un autre.
+ * Les mots neutres valent partout ; ceux de la table ne s'emploient que si la
+ * categorie du marchand les reclame.
+ */
+const CATEGORIES_TABLE = /restaurant|maquis|fast|food|traiteur|p[âa]tisserie|boulangerie|caf[ée]|glace|cuisine|pizz|grill/i;
+
+function lexique(secteur: string) {
+  return CATEGORIES_TABLE.test(secteur)
+    ? {
+        tout: 'Tout le menu',
+        chargement: 'Chargement du menu…',
+        vide: 'Le menu arrive',
+        duJour: 'Menu du jour',
+        reste: 'À la carte',
+      }
+    : {
+        tout: 'Tout',
+        chargement: 'Chargement du catalogue…',
+        vide: 'Les articles arrivent',
+        duJour: 'En vedette',
+        reste: 'Le reste de la boutique',
+      };
+}
+
+/**
  * Visuel d'un plat.
  *
  * La plupart des plats n'ont pas de photo — c'est le cas majoritaire, pas
@@ -89,8 +119,6 @@ function Visuel({ p }: { p: Produit }) {
     );
   }
 
-  const initiale = p.nom.trim().charAt(0).toUpperCase() || '·';
-
   // Bande courte, et non un bloc au format photo : sans image, un grand
   // cadre vide ne fait que reduire le nombre de plats visibles a l'ecran —
   // sur telephone, il n'en laissait plus qu'un seul.
@@ -100,7 +128,7 @@ function Visuel({ p }: { p: Produit }) {
         aria-hidden
         className="pointer-events-none absolute -top-4 left-2 select-none font-display text-[5.5rem] font-black leading-none text-nuit-900/[0.07]"
       >
-        {initiale}
+        {initiale(p.nom)}
       </span>
       {p.categorie && (
         <span className="relative font-mono text-[10px] uppercase tracking-[0.2em] text-nuit-900/45">
@@ -126,7 +154,7 @@ export default function Page() {
   const [ouvert, setOuvert] = useState(true);
   const [messageHoraire, setMessageHoraire] = useState('');
 
-  const [header, setHeader] = useState({ nom: 'Boutique', secteur: 'Commerce', emoji: '🏪' });
+  const [header, setHeader] = useState({ nom: 'Boutique', secteur: 'Commerce', emoji: EMOJI_DEFAUT });
   const [zone, setZone] = useState('');
   const [produits, setProduits] = useState<Produit[]>([]);
   const [chargement, setChargement] = useState(true);
@@ -184,7 +212,7 @@ export default function Page() {
         setHeader({
           nom: b.nom ?? 'Boutique',
           secteur: b.categorie ?? 'Commerce',
-          emoji: b.emoji || '🏪',
+          emoji: b.emoji || EMOJI_DEFAUT,
         });
         setZone(String(b.zone ?? ''));
         setTelBoutique(String(b.telephone ?? ''));
@@ -247,6 +275,8 @@ export default function Page() {
     .filter(Boolean) as { prod: Produit; q: number }[];
   const total = lignes.reduce((s, l) => s + l.prod.prix * l.q, 0);
   const articles = lignes.reduce((s, l) => s + l.q, 0);
+
+  const mots = useMemo(() => lexique(header.secteur), [header.secteur]);
 
   const categories = useMemo(
     () => Array.from(new Set(produits.map(p => p.categorie).filter(Boolean))),
@@ -359,7 +389,7 @@ export default function Page() {
               <p className="mt-1.5 text-sm leading-snug text-chaux-600">{p.description}</p>
             )}
 
-            <div className="mt-4 flex items-center justify-between gap-3 pt-1">
+            <div className="mt-auto flex items-center justify-between gap-3 pt-4">
               {/* Le prix est une donnée : en mono, il s'aligne d'une carte
                   à l'autre et se compare d'un coup d'œil. */}
               <p className="font-mono text-lg font-bold leading-none text-bissap-600">
@@ -434,13 +464,17 @@ export default function Page() {
                 {header.secteur}
                 {zone && ` · ${zone}`}
               </p>
-              <h1 className="mt-1.5 font-display text-3xl font-black leading-[1.05] sm:mt-2 sm:text-5xl">
-                <span aria-hidden className="mr-2">{header.emoji}</span>
-                {header.nom}
-              </h1>
-              <p className="mt-2 max-w-md text-sm text-chaux-300 sm:mt-3">
-                Composez votre commande, elle part directement au commerçant.
-              </p>
+              <div className="mt-1.5 flex items-center gap-3 sm:mt-2 sm:gap-4">
+                <Enseigne
+                  nom={header.nom}
+                  emoji={header.emoji}
+                  variante="nuit"
+                  className="h-12 w-12 text-2xl sm:h-16 sm:w-16 sm:text-3xl"
+                />
+                <h1 className="font-display text-3xl font-black leading-[1.05] sm:text-5xl">
+                  {header.nom}
+                </h1>
+              </div>
 
               {/* L'etat d'ouverture se lit AVANT le menu, pas au moment de
                   valider. Un client qui remplit son panier a 3 h du matin pour
@@ -493,10 +527,10 @@ export default function Page() {
         {echec && (
           <div
             role="alert"
-            className="mb-8 flex flex-wrap items-center gap-4 border border-red-200 bg-red-50 p-5"
+            className="mb-8 flex flex-wrap items-center gap-4 border border-bissap-200 bg-bissap-50 p-5"
           >
-            <span className="stamp font-mono text-xs font-bold text-red-700">REFUSÉE</span>
-            <p className="text-sm text-red-800">
+            <span className="stamp font-mono text-xs font-bold text-bissap-700">REFUSÉE</span>
+            <p className="text-sm text-bissap-800">
               {echec} Votre panier est conservé.
             </p>
           </div>
@@ -519,7 +553,7 @@ export default function Page() {
                     : 'border-[var(--hairline)] text-chaux-600 hover:border-nuit-900 hover:text-nuit-900'
                 }`}
               >
-                {c === 'tout' ? 'Tout le menu' : c}
+                {c === 'tout' ? mots.tout : c}
               </button>
             ))}
           </div>
@@ -528,10 +562,10 @@ export default function Page() {
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_340px]">
           <div className="space-y-10">
             {chargement ? (
-              <p className="font-mono text-sm text-chaux-600">Chargement du menu…</p>
+              <p className="font-mono text-sm text-chaux-600">{mots.chargement}</p>
             ) : visibles.length === 0 ? (
               <div className="border border-dashed border-[var(--hairline)] p-10 text-center">
-                <p className="font-display text-lg font-bold text-nuit-800">Le menu arrive</p>
+                <p className="font-display text-lg font-bold text-nuit-800">{mots.vide}</p>
                 <p className="mt-1 text-sm text-chaux-600">
                   Ce commerçant n&apos;a pas encore publié d&apos;article.
                 </p>
@@ -540,14 +574,14 @@ export default function Page() {
               <>
                 <section>
                   <h2 className="mb-4 flex items-center gap-3 font-mono text-xs font-bold uppercase tracking-[0.24em] text-mangue-600">
-                    Menu du jour
+                    {mots.duJour}
                     <span className="h-px flex-1 bg-mangue-200" />
                   </h2>
                   {grille(duJour)}
                 </section>
                 <section>
                   <h2 className="mb-4 flex items-center gap-3 font-mono text-xs font-bold uppercase tracking-[0.24em] text-chaux-600">
-                    À la carte
+                    {mots.reste}
                     <span className="h-px flex-1 bg-chaux-200" />
                   </h2>
                   {grille(carte)}
