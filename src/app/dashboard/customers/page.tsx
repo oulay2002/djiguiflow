@@ -30,7 +30,7 @@ import {
   Users,
   X,
 } from 'lucide-react';
-import { supabase, utilisateurCourant } from '@/lib/supabase';
+import { utilisateurCourant } from '@/lib/supabase';
 import { fetchDashboard } from '@/lib/apiClient';
 import { useBoutique, avecBoutique } from '@/lib/boutique';
 import { TuileStat } from '@/components/ui/Etat';
@@ -125,8 +125,13 @@ export default function CustomersPage() {
 
   const totalRevenue = customers.reduce((acc, c) => acc + c.depense, 0);
   // Sans clients, la moyenne serait une division par zéro affichée « NaN ».
+  // `toLocaleString` et non `toFixed` : ce dernier rend « 1.0 », avec un
+  // point decimal anglais, dans une interface qui compte en virgules.
   const avgOrders = customers.length
-    ? (customers.reduce((acc, c) => acc + c.commandes, 0) / customers.length).toFixed(1)
+    ? (customers.reduce((acc, c) => acc + c.commandes, 0) / customers.length).toLocaleString(
+        'fr-FR',
+        { minimumFractionDigits: 1, maximumFractionDigits: 1 },
+      )
     : '0';
 
   if (loading) {
@@ -181,10 +186,10 @@ export default function CustomersPage() {
             {/* Le ton porte le sens : bissap pour l'argent, feuille pour ce
                 qui est acquis, nuit pour les comptages sans état. */}
             {([
-              { intitule: 'Total clients', valeur: customers.length, icone: Users, ton: 'neutre' },
-              { intitule: 'Commandes moy.', valeur: avgOrders, icone: ShoppingCart, ton: 'neutre' },
-              { intitule: 'Revenu total', valeur: `${totalRevenue.toLocaleString('fr-FR')} FCFA`, icone: Star, ton: 'urgent' },
-              { intitule: 'Clients fidèles', valeur: customers.filter((c) => c.commandes >= 3).length, icone: UserPlus, ton: 'fait' },
+              { intitule: 'Total clients', valeur: customers.length, unite: '', icone: Users, ton: 'neutre' },
+              { intitule: 'Commandes moy.', valeur: avgOrders, unite: '', icone: ShoppingCart, ton: 'neutre' },
+              { intitule: 'Revenu total', valeur: totalRevenue.toLocaleString('fr-FR'), unite: 'FCFA', icone: Star, ton: 'urgent' },
+              { intitule: 'Clients fidèles', valeur: customers.filter((c) => c.commandes >= 3).length, unite: '', icone: UserPlus, ton: 'fait' },
             ] as const).map((stat, index) => (
               <motion.div
                 key={stat.intitule}
@@ -196,6 +201,7 @@ export default function CustomersPage() {
                   icone={stat.icone}
                   intitule={stat.intitule}
                   valeur={stat.valeur}
+                  unite={stat.unite}
                   ton={stat.ton}
                 />
               </motion.div>
@@ -207,19 +213,19 @@ export default function CustomersPage() {
               <table className="w-full">
                 <thead className="bg-chaux-50">
                   <tr>
-                    <th className="px-6 py-4 text-left text-[11px] font-bold uppercase tracking-[0.18em] text-chaux-600">Client</th>
-                    <th className="px-6 py-4 text-left text-[11px] font-bold uppercase tracking-[0.18em] text-chaux-600">Contact</th>
-                    <th className="px-6 py-4 text-left text-[11px] font-bold uppercase tracking-[0.18em] text-chaux-600">Adresse</th>
-                    <th className="px-6 py-4 text-left text-[11px] font-bold uppercase tracking-[0.18em] text-chaux-600">Commandes</th>
-                    <th className="px-6 py-4 text-left text-[11px] font-bold uppercase tracking-[0.18em] text-chaux-600">Dépensé</th>
-                    <th className="px-6 py-4 text-left text-[11px] font-bold uppercase tracking-[0.18em] text-chaux-600">Dernière cmd</th>
-                    <th className="px-6 py-4 text-left text-[11px] font-bold uppercase tracking-[0.18em] text-chaux-600">Note</th>
+                    <th className="whitespace-nowrap px-4 py-4 text-left text-[11px] font-bold uppercase tracking-[0.18em] text-chaux-600">Client</th>
+                    <th className="whitespace-nowrap px-4 py-4 text-left text-[11px] font-bold uppercase tracking-[0.18em] text-chaux-600">Contact</th>
+                    <th className="whitespace-nowrap px-4 py-4 text-left text-[11px] font-bold uppercase tracking-[0.18em] text-chaux-600">Adresse</th>
+                    <th className="whitespace-nowrap px-4 py-4 text-left text-[11px] font-bold uppercase tracking-[0.18em] text-chaux-600">Commandes</th>
+                    <th className="whitespace-nowrap px-4 py-4 text-left text-[11px] font-bold uppercase tracking-[0.18em] text-chaux-600">Dépensé</th>
+                    <th className="whitespace-nowrap px-4 py-4 text-left text-[11px] font-bold uppercase tracking-[0.18em] text-chaux-600">Dernière cmd</th>
+                    <th className="whitespace-nowrap px-4 py-4 text-left text-[11px] font-bold uppercase tracking-[0.18em] text-chaux-600">Note</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-chaux-200">
                   {filteredCustomers.map((customer, index) => (
                     <motion.tr key={customer.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: index * 0.05 }} className="transition hover:bg-chaux-50/80">
-                      <td className="px-6 py-4">
+                      <td className="px-4 py-4">
                         <div className="flex items-center gap-3">
                           <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-nuit-500 to-primary-700 text-sm font-black text-white">
                             {initiales(customer.nom)}
@@ -235,7 +241,7 @@ export default function CustomersPage() {
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-4 py-4">
                         <div className="flex items-center gap-2 text-sm text-chaux-600">
                           <Phone className="h-4 w-4 text-chaux-400" />
                           <a href={`tel:+${customer.telephone}`} className="font-mono hover:text-primary-700">
@@ -243,16 +249,19 @@ export default function CustomersPage() {
                           </a>
                         </div>
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-4 py-4">
                         <div className="flex max-w-xs items-center gap-2 text-sm text-chaux-600">
                           <MapPin className="h-4 w-4 flex-shrink-0 text-chaux-400" />
                           <span className="truncate">{customer.adresse || '—'}</span>
                         </div>
                       </td>
-                      <td className="px-6 py-4 font-mono font-bold text-nuit-900">{customer.commandes}</td>
-                      <td className="px-6 py-4 font-mono font-bold text-nuit-900">{customer.depense.toLocaleString('fr-FR')} FCFA</td>
-                      <td className="px-6 py-4 text-sm text-chaux-600">{dateCourte(customer.derniereCommande)}</td>
-                      <td className="px-6 py-4">
+                      <td className="px-4 py-4 font-mono font-bold text-nuit-900">{customer.commandes}</td>
+                      <td className="whitespace-nowrap px-4 py-4 font-mono font-bold text-nuit-900">
+                        {customer.depense.toLocaleString('fr-FR')}
+                        <span className="ml-1 text-xs font-semibold text-chaux-600">FCFA</span>
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-4 text-sm text-chaux-600">{dateCourte(customer.derniereCommande)}</td>
+                      <td className="px-4 py-4">
                         {customer.note === null ? (
                           <span className="text-xs text-chaux-600">Pas encore noté</span>
                         ) : (

@@ -9,7 +9,7 @@ import {
   AlertTriangle, ArrowRight, Bell, Globe2, Package2, Send, ShoppingCart, ShoppingBag,
   Smartphone, Star, Trophy, Wallet,
 } from 'lucide-react';
-import { supabase, utilisateurCourant } from '@/lib/supabase';
+import { utilisateurCourant } from '@/lib/supabase';
 import CompteurQuota from '@/components/dashboard/CompteurQuota';
 import ReglagePush from '@/components/pwa/ReglagePush';
 import BoutonPause from '@/components/dashboard/BoutonPause';

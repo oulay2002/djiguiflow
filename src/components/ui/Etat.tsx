@@ -81,11 +81,15 @@ export function TuileStat({
   icone: Icone,
   intitule,
   valeur,
+  unite,
   ton = 'neutre',
 }: {
   icone: LucideIcon;
   intitule: string;
   valeur: number | string;
+  /** Detachee du nombre : « 29 500 FCFA » se coupait en deux au milieu
+   *  du montant. C'est le chiffre qu'on lit, pas la devise. */
+  unite?: string;
   ton?: Ton;
 }) {
   return (
@@ -94,7 +98,10 @@ export function TuileStat({
           qu'on compare d'une tuile a l'autre, il doit rester sur la meme
           ligne quelle que soit la longueur de l'intitule. */}
       <div className="flex items-start justify-between gap-3">
-        <p className="font-mono text-3xl font-bold leading-none text-nuit-900">{valeur}</p>
+        <p className="font-mono text-3xl font-bold leading-none text-nuit-900">
+          {valeur}
+          {unite && <span className="ml-1 text-sm font-semibold text-chaux-600">{unite}</span>}
+        </p>
         <span
           className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${TONS[ton].pastille}`}
         >
