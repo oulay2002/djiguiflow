@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { LienRetour, classesBouton } from '@/components/ui/Bouton';
 import BoutonGoogle from '@/components/ui/BoutonGoogle';
 import { isSupabaseConfigured, supabase } from '@/lib/supabase';
@@ -49,6 +49,14 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+
+  // Tant que React n a pas repris la main, un clic sur « Se connecter »
+  // declenche la soumission NATIVE du formulaire : la page se recharge sur
+  // /login? et il ne se passe rien. Le marchand croit le bouton casse — et
+  // sur un telephone lent, la fenetre dure. On garde donc le bouton inactif
+  // jusqu a l hydratation, ou il ne peut plus rien avaler en silence.
+  const [pret, setPret] = useState(false);
+  useEffect(() => setPret(true), []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -233,7 +241,7 @@ export default function RegisterPage() {
               </p>
             )}
 
-            <button type="submit" disabled={loading} className={`${classesBouton('action', 'md', 'carree')} w-full`}>
+            <button type="submit" disabled={!pret || loading} className={`${classesBouton('action', 'md', 'carree')} w-full`}>
               {loading ? 'Ouverture…' : 'Ouvrir ma boutique'}
             </button>
           </form>

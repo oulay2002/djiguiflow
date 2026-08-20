@@ -180,7 +180,18 @@ export async function POST(req: Request) {
       // Le repli du chat_id vit ICI et nulle part ailleurs : a la creation, un
       // client venu de la vitrine n'a pas de conversation ouverte.
       chat_id: payload.chat_id || telephone,
-      canal: payload.canal || 'whatsapp',
+      // Un appelant qui ne dit pas le canal nous laisse deviner, et deviner
+      // « whatsapp » a coute cher : les frais de livraison, le suivi et la
+      // demande d'avis d'un client Telegram partaient vers un numero. Le
+      // defaut reste — refuser la commande serait pire — mais il ne se tait
+      // plus.
+      canal: payload.canal || (() => {
+        console.error(
+          `Sync ${reference} — canal absent de la requete, « whatsapp » suppose.`
+          + ` L'appelant devrait le transmettre.`,
+        );
+        return 'whatsapp';
+      })(),
       client_telephone: telephone,
       client_adresse: adresse,
       total: montant,

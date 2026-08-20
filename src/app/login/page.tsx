@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { LienRetour, classesBouton } from '@/components/ui/Bouton';
 import BoutonGoogle from '@/components/ui/BoutonGoogle';
 import { isSupabaseConfigured, supabase } from '@/lib/supabase';
@@ -44,6 +44,14 @@ function LoginPageContent() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+
+  // Tant que React n a pas repris la main, un clic sur « Se connecter »
+  // declenche la soumission NATIVE du formulaire : la page se recharge sur
+  // /login? et il ne se passe rien. Le marchand croit le bouton casse — et
+  // sur un telephone lent, la fenetre dure. On garde donc le bouton inactif
+  // jusqu a l hydratation, ou il ne peut plus rien avaler en silence.
+  const [pret, setPret] = useState(false);
+  useEffect(() => setPret(true), []);
 
   const erreurOAuth = MESSAGES_OAUTH[searchParams.get('erreur') ?? ''] ?? '';
 
@@ -177,7 +185,7 @@ function LoginPageContent() {
               </p>
             )}
 
-            <button type="submit" disabled={loading} className={`${classesBouton('action', 'md', 'carree')} w-full`}>
+            <button type="submit" disabled={!pret || loading} className={`${classesBouton('action', 'md', 'carree')} w-full`}>
               {loading ? 'Connexion…' : 'Se connecter'}
             </button>
           </form>

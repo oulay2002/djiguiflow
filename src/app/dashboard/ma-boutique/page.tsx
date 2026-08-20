@@ -35,6 +35,18 @@ import {
  * plutot qu'une grille vide ou tout serait ferme — ce qui fermerait sa boutique
  * a la seconde ou il coche la case.
  */
+/**
+ * Les secteurs proposes. « Commerce » ouvre la liste parce que c'est le defaut
+ * neutre : une pharmacie ou un vendeur de vetements ne doit pas se retrouver
+ * classe « Restaurant » faute d'avoir choisi.
+ *
+ * La liste n'est pas fermee pour autant : une categorie deja enregistree et
+ * absente d'ici est conservee telle quelle (voir le selecteur).
+ */
+const CATEGORIES = [
+  'Commerce', 'Restaurant', 'Maquis', 'Électronique', 'Santé', 'Épicerie', 'Mode',
+];
+
 const HORAIRES_PAR_DEFAUT: Horaires = Object.fromEntries(
   SEMAINE.map((j) => [j, { ouvre: '08:00', ferme: '20:00' }]),
 ) as Horaires;
@@ -58,7 +70,7 @@ export default function MaBoutiquePage() {
     nom: '',
     description: '',
     zone: '',
-    categorie: 'Restaurant',
+    categorie: 'Commerce',
     telephone: '',
     logo_url: ''
   });
@@ -115,7 +127,9 @@ export default function MaBoutiquePage() {
           nom: data.nom || '',
           description: data.description || '',
           zone: data.zone || '',
-          categorie: data.categorie || 'Restaurant',
+          // Neutre par defaut : la plateforme sert aussi des pharmacies et
+          // des boutiques de vetements.
+          categorie: data.categorie || 'Commerce',
           telephone: data.telephone || '',
           logo_url: data.logo_url || ''
         });
@@ -124,7 +138,7 @@ export default function MaBoutiquePage() {
       } else {
         // Aucune boutique : formulaire vierge de creation.
         setBoutiqueEditee(null);
-        setFormData({ nom: '', description: '', zone: '', categorie: 'Restaurant', telephone: '', logo_url: '' });
+        setFormData({ nom: '', description: '', zone: '', categorie: 'Commerce', telephone: '', logo_url: '' });
         setLogoPreview('');
         setHoraires(null);
       }
@@ -367,12 +381,20 @@ export default function MaBoutiquePage() {
                       onChange={(e) => setFormData({...formData, categorie: e.target.value})}
                       className="w-full px-4 py-2.5 border border-chaux-200 rounded-lg focus:ring-2 focus:ring-nuit-200 focus:border-nuit-300 bg-white"
                     >
-                      <option value="Restaurant">Restaurant</option>
-                      <option value="Maquis">Maquis</option>
-                      <option value="Électronique">Électronique</option>
-                      <option value="Santé">Santé</option>
-                      <option value="Épicerie">Épicerie</option>
-                      <option value="Mode">Mode</option>
+                      {/* LA CATEGORIE DU MARCHAND SURVIT MEME SI ELLE N'EST PAS
+                          DANS LA LISTE.
+                          « Rose Monde » est enregistree en « vetements et
+                          accessoire », qui n'y figure pas : ouvrir cette page et
+                          enregistrer lui aurait silencieusement change de secteur
+                          pour la premiere option venue. Une liste fermee sur des
+                          donnees ouvertes efface ce qu'elle ne connait pas. */}
+                      {formData.categorie
+                        && !CATEGORIES.includes(formData.categorie) && (
+                        <option value={formData.categorie}>{formData.categorie}</option>
+                      )}
+                      {CATEGORIES.map(c => (
+                        <option key={c} value={c}>{c}</option>
+                      ))}
                     </select>
                   </div>
                 </div>

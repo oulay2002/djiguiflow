@@ -171,7 +171,10 @@ export async function provisionnerMarchand(d: DemandeProvisioning): Promise<Resu
       user_id: userId,
       nom,
       slug,
-      categorie: d.categorie?.trim() || 'Restaurant',
+      // UNE PLATEFORME MULTI-SECTEURS NE SUPPOSE PAS LA RESTAURATION.
+      // Une pharmacie, un quincaillier ou un vendeur de vetements se
+      // retrouvaient classes « Restaurant » faute d'avoir choisi.
+      categorie: d.categorie?.trim() || 'Commerce',
       zone: d.zone?.trim() || null,
       telephone: d.telephone?.trim() || null,
       emoji: d.emoji?.trim() || '🏪',

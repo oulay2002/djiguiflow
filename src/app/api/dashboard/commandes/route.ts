@@ -126,7 +126,18 @@ export async function PATCH(req: Request) {
         body: JSON.stringify({
           type: 'demande',
           reference,
-          phone: data.client_telephone || data.chat_id || '',
+          // UN CHAT_ID N'EST PAS UN NUMERO DE TELEPHONE.
+          //
+          // Le repli `|| data.chat_id` envoyait l'identifiant de conversation
+          // Telegram dans le champ `phone`. En bout de chaine, la
+          // synchronisation l'ecrivait comme numero du client : le marchand
+          // lisait « 1724402569 » dans sa fiche et composait un numero qui
+          // n'existe pas. Meme famille que le chat_id ecrase par le telephone,
+          // dans l'autre sens.
+          //
+          // Vide vaut mieux que faux : la confirmation se transmet par le
+          // canal, pas par ce champ.
+          phone: data.client_telephone || '',
           nom: data.client_nom ?? 'Client',
           total: String(data.total ?? 0),
           boutique_id: m.boutiqueId,

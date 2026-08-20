@@ -9,9 +9,11 @@ test.describe('Authenticated dashboard navigation', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/login');
 
-    await page.getByLabel('Email').fill(e2eEmail!);
-    await page.getByLabel('Mot de passe').fill(e2ePassword!);
-    await page.getByRole('button', { name: /se connecter/i }).click();
+    // Option exact obligatoire : sans elle, « Mot de passe » attrape aussi le
+    // bouton « Afficher le mot de passe » pose a l'interieur du champ.
+    await page.getByLabel('Email', { exact: true }).fill(e2eEmail!);
+    await page.getByLabel('Mot de passe', { exact: true }).fill(e2ePassword!);
+    await page.getByRole('button', { name: 'Se connecter', exact: true }).click();
 
     await expect(page).toHaveURL(/\/dashboard$/, { timeout: 15_000 });
   });
