@@ -1,0 +1,119 @@
+import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
+import { resoudreMarchand } from '@/lib/marchands';
+
+export const dynamic = 'force-dynamic';
+
+/**
+ * Les commandes d'un client, pour l'assistante.
+ *
+ * ELLE SERT DEUX OUTILS D'UN COUP, parce qu'ils posaient la meme question a la
+ * meme feuille :
+ *
+ *   « suivre_commande »               — ou en est ma commande ?
+ *   « Consulter historique commandes » — qu'a-t-il deja commande, et a quelle
+ *                                        adresse ?
+ *
+ * Deux routes auraient duplique la meme lecture et le meme cloisonnement. Le
+ * filtre `valides_seulement` suffit a les distinguer.
+ *
+ * ELLE REND LES NOMS DE LA FEUILLE — `order_id`, `customer_name`,
+ * `statut_livraison` — pour que les descriptions d'outils, que le modele lit
+ * pour savoir quoi faire du resultat, restent vraies sans etre reecrites.
+ */
+
+/** Un historique sert a reconnaitre une habitude, pas a remonter le temps. */
+const COMMANDES_MAX = 10;
+
+export async function POST(req: Request) {
+  const secret = req.headers.get('x-sync-secret');
+  if (!process.env.SYNC_SECRET || secret !== process.env.SYNC_SECRET) {
+    return Response.json({ error: 'Non autorise' }, { status: 401 });
+  }
+
+  let corps: Record<string, unknown>;
+  try {
+    corps = await req.json();
+  } catch {
+    return Response.json({ error: 'Corps JSON invalide' }, { status: 400 });
+  }
+
+  const chatId = String(corps.chat_id ?? corps.phone ?? corps.destinataire ?? '').trim();
+  const boutiqueRef = String(corps.boutique ?? corps.slug ?? corps.boutique_id ?? '').trim();
+  const validesSeulement = corps.valides_seulement === true
+    || String(corps.valides_seulement ?? '') === '1';
+
+  // Pas de client, pas d'historique — et surtout pas une erreur : l'assistante
+  // interroge cet outil des le premier message, y compris pour un inconnu.
+  if (!chatId) return Response.json([]);
+  if (!boutiqueRef) return Response.json({ error: 'boutique requise' }, { status: 400 });
+
+  const marchand = await resoudreMarchand(boutiqueRef);
+  if (!marchand) return Response.json({ error: 'Boutique introuvable' }, { status: 404 });
+
+  const sb = getSupabaseAdmin();
+  if (!sb) return Response.json({ error: 'Base indisponible' }, { status: 503 });
+
+  let requete = sb
+    .from('commandes')
+    .select('id, reference, client_nom, client_telephone, client_adresse, instructions, total, statut, statut_livraison, nom_livreur, position_livreur, heure_prise_en_charge, heure_livraison, created_at')
+    // LE CLOISONNEMENT EST ICI, ET IL N'EST PAS NEGOCIABLE. Un meme numero
+    // peut ecrire a deux boutiques : sans ce filtre, l'assistante de l'une
+    // lirait l'historique de l'autre.
+    .eq('boutique_id', marchand.boutiqueId)
+    .eq('chat_id', chatId);
+
+  if (validesSeulement) {
+    // « Deja validee » du temps de la feuille : tout ce qui n'est plus un
+    // panier en cours de collecte, ni une commande abandonnee.
+    requete = requete.not('statut', 'in', '("panier","abandonnee")');
+  }
+
+  const { data, error } = await requete
+    .order('created_at', { ascending: false })
+    .limit(COMMANDES_MAX);
+
+  if (error) {
+    console.error(`Commandes client — lecture impossible (${marchand.id}) :`, error.message);
+    return Response.json([]);
+  }
+
+  const lignes = data ?? [];
+  if (!lignes.length) return Response.json([]);
+
+  // Les articles de toutes les commandes en une seule lecture : dix requetes
+  // separees pour dix commandes rendraient l'assistante lente a chaque message.
+  const { data: articles } = await sb
+    .from('commande_items')
+    .select('commande_id, nom_produit, quantite, prix_unitaire')
+    .in('commande_id', lignes.map((c) => c.id));
+
+  const parCommande = new Map<string, { nom: string; quantite: number; prix: number }[]>();
+  for (const a of articles ?? []) {
+    const liste = parCommande.get(a.commande_id) ?? [];
+    liste.push({
+      nom: String(a.nom_produit ?? ''),
+      quantite: Number(a.quantite ?? 0),
+      prix: Number(a.prix_unitaire ?? 0),
+    });
+    parCommande.set(a.commande_id, liste);
+  }
+
+  return Response.json(
+    lignes.map((c) => ({
+      order_id: c.reference ?? '',
+      customer_name: c.client_nom ?? '',
+      phone: c.client_telephone ?? '',
+      address: c.client_adresse ?? '',
+      instructions: c.instructions ?? '',
+      total_price: Number(c.total ?? 0),
+      status: c.statut ?? '',
+      statut_livraison: c.statut_livraison ?? '',
+      nom_livreur: c.nom_livreur ?? '',
+      position_livreur: c.position_livreur ?? '',
+      heure_prise_en_charge: c.heure_prise_en_charge ?? '',
+      heure_livraison: c.heure_livraison ?? '',
+      timestamp: c.created_at ?? '',
+      items: JSON.stringify(parCommande.get(c.id) ?? []),
+    })),
+  );
+}
