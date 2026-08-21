@@ -1,10 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import { ArrowUpRight } from 'lucide-react';
 import { fetchDashboard } from '@/lib/apiClient';
 import { useBoutique, avecBoutique } from '@/lib/boutique';
 import { classesBouton } from '@/components/ui/Bouton';
+import { TONS } from '@/components/ui/Etat';
 
 /**
  * Le branchement d'une boutique, en cinq etapes.
@@ -33,17 +35,27 @@ type Boutique = {
   telegram_webhook_branche?: boolean;
 };
 
-/** Un voyant, pas une phrase : l'etat se lit avant de se relire. */
-function Etat({ actif, quand, sinon }: { actif?: boolean; quand: string; sinon: string }) {
+/** Les trois issues d'un geste : en cours, abouti, echoue. */
+type TonMessage = 'ok' | 'erreur' | 'attente';
+
+/**
+ * Un voyant, pas une phrase : l'etat se lit avant de se relire.
+ *
+ * Sa couleur vient de TONS, jamais d'une teinte recopiee : `fait` quand le
+ * canal repond, `eteint` tant qu'il ne repond pas. Recopiee, la valeur finit
+ * par diverger de celle des etiquettes du tableau de bord, et deux verts
+ * differents pour le meme fait valent moins qu'un seul.
+ */
+function Voyant({ actif, quand, sinon }: { actif?: boolean; quand: string; sinon: string }) {
   return (
     <span
-      className={`inline-flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.14em] ${
-        actif ? 'text-accent-700' : 'text-chaux-600'
+      className={`inline-flex items-center gap-1.5 font-mono text-xs uppercase tracking-[0.14em] ${
+        TONS[actif ? 'fait' : 'eteint'].texte
       }`}
     >
       <span
         aria-hidden
-        className={`h-1.5 w-1.5 shrink-0 ${actif ? 'bg-accent-500' : 'bg-chaux-400'}`}
+        className={`h-1.5 w-1.5 shrink-0 ${actif ? 'bg-accent-500' : 'bg-chaux-500'}`}
       />
       {actif ? quand : sinon}
     </span>
@@ -64,9 +76,13 @@ function Etape({
 }) {
   return (
     <section className="border border-[var(--hairline)] bg-chaux-50 p-6 soft-shadow">
+      {/* Le rang est en indigo, pas en bissap : numeroter est un geste de
+          structure, et le bissap se garde pour l'unique action de la page.
+          Cinq numeros en bissap contre un bouton, et c'est le bouton qu'on ne
+          voit plus. */}
       <div className="flex items-baseline gap-3">
-        <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-bissap-500">
-          {String(rang).padStart(2, '0')}
+        <span className="w-6 shrink-0 font-mono text-2xl font-bold leading-none tabular-nums text-nuit-900">
+          {rang}
         </span>
         <h2 className="font-display text-xl font-bold text-nuit-900">{titre}</h2>
       </div>
@@ -76,9 +92,21 @@ function Etape({
   );
 }
 
+/**
+ * Le champ du branchement.
+ *
+ * Angle vif, comme tout ce que porte cette page : l'onboarding appartient au
+ * monde de l'imprime, pas a celui de l'outil — meme silhouette que le guide
+ * qu'il ouvre.
+ *
+ * `py-3` et non `py-2.5` : 44 px de haut, la cible se touche au pouce. Et le
+ * placeholder est en chaux encre, parce qu'il porte le FORMAT attendu
+ * (« 2250759486701 ») : au gris par defaut du navigateur il tombe sous le
+ * seuil de contraste, et c'est justement ce qu'il faut pouvoir recopier.
+ */
 const CHAMP =
-  'w-full border border-[var(--hairline)] bg-white px-3 py-2.5 text-sm outline-none ' +
-  'transition focus:border-nuit-400';
+  'w-full border border-[var(--hairline)] bg-white px-3 py-3 text-sm ' +
+  'placeholder:text-chaux-600 transition focus:border-nuit-400';
 
 export default function OnboardingPage() {
   // La boutique du selecteur, et rien d'autre. Sans elle, la page branchait
@@ -87,8 +115,41 @@ export default function OnboardingPage() {
   const { boutiqueId, pret } = useBoutique();
   const [boutique, setBoutique] = useState<Boutique | null>(null);
   const [chargement, setChargement] = useState(true);
-  const [message, setMessage] = useState<{ ton: 'ok' | 'erreur' | 'attente'; texte: string } | null>(
-    null,
+  const [message, setMessage] = useState<{ ton: TonMessage; texte: string } | null>(null);
+
+  // Un seul minuteur, tenu par une reference. Deux enregistrements rapproches
+  // en posaient deux : celui du premier geste effacait le message du second
+  // avant qu'on ait eu le temps de le lire.
+  const minuteur = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  /**
+   * Annonce le resultat d'un geste.
+   *
+   * UNE ERREUR NE S'EFFACE PAS TOUTE SEULE, et c'est la regle entiere. Le
+   * marchand branche sa boutique debout, entre deux clients : il quitte
+   * l'ecran des yeux, et il revenait sur une page ou plus rien ne disait que
+   * sa saisie n'etait pas partie — alors que le champ, lui, affichait
+   * toujours ce qu'il venait de taper. Il croyait son numero enregistre.
+   *
+   * « Enregistrement… » ne s'efface pas non plus : il est toujours remplace
+   * par son issue, et si la requete traine, le voir rester dit la verite
+   * mieux que de le voir disparaitre.
+   *
+   * Seul un succes part tout seul. Il ne demande rien a personne.
+   */
+  const annoncer = useCallback((ton: TonMessage, texte: string, duree = 5000) => {
+    if (minuteur.current) clearTimeout(minuteur.current);
+    minuteur.current = null;
+    setMessage({ ton, texte });
+    if (ton !== 'ok') return;
+    minuteur.current = setTimeout(() => setMessage(null), duree);
+  }, []);
+
+  useEffect(
+    () => () => {
+      if (minuteur.current) clearTimeout(minuteur.current);
+    },
+    [],
   );
 
   useEffect(() => {
@@ -103,20 +164,17 @@ export default function OnboardingPage() {
           setBoutique(await r.json());
         } else {
           const j = await r.json().catch(() => null);
-          setMessage({ ton: 'erreur', texte: j?.error || `Erreur ${r.status}` });
+          annoncer('erreur', j?.error || `Erreur ${r.status}`);
         }
       } catch {
-        setMessage({
-          ton: 'erreur',
-          texte: 'Connexion impossible. Vérifiez que vous êtes connecté.',
-        });
+        annoncer('erreur', 'Connexion impossible. Vérifiez que vous êtes connecté.');
       }
       setChargement(false);
     })();
-  }, [pret, boutiqueId]);
+  }, [pret, boutiqueId, annoncer]);
 
   const enregistrer = async (champ: string, valeur: string) => {
-    setMessage({ ton: 'attente', texte: 'Enregistrement…' });
+    annoncer('attente', 'Enregistrement…');
     try {
       const r = await fetchDashboard(avecBoutique('/api/onboarding', boutiqueId), {
         method: 'PATCH',
@@ -128,14 +186,13 @@ export default function OnboardingPage() {
         // La fiche renvoyee fait foi : elle porte l'etat de branchement
         // recalcule, que la page ne saurait pas deviner seule.
         setBoutique((b) => (j?.boutique ? j.boutique : b ? { ...b, [champ]: valeur } : b));
-        setMessage({ ton: 'ok', texte: j?.faits?.length ? j.faits.join(' · ') : 'Enregistré' });
+        annoncer('ok', j?.faits?.length ? j.faits.join(' · ') : 'Enregistré');
       } else {
-        setMessage({ ton: 'erreur', texte: j?.error || "L'enregistrement a échoué." });
+        annoncer('erreur', j?.error || "L'enregistrement a échoué.");
       }
     } catch {
-      setMessage({ ton: 'erreur', texte: "L'enregistrement a échoué. Réessayez." });
+      annoncer('erreur', "L'enregistrement a échoué. Réessayez.");
     }
-    setTimeout(() => setMessage(null), 5000);
   };
 
   /**
@@ -150,30 +207,32 @@ export default function OnboardingPage() {
    * comprises. On peut donc cliquer deux fois.
    */
   const preparerClasseur = async () => {
-    setMessage({ ton: 'attente', texte: 'Préparation du classeur…' });
+    annoncer('attente', 'Préparation du classeur…');
     try {
       const r = await fetchDashboard(avecBoutique('/api/dashboard/boutique/onglets', boutiqueId), {
         method: 'POST',
       });
       const j = await r.json().catch(() => null);
       if (!r.ok) {
-        setMessage({ ton: 'erreur', texte: j?.error || 'Préparation impossible.' });
+        annoncer('erreur', j?.error || 'Préparation impossible.');
         return;
       }
       const crees: string[] = j?.crees ?? [];
-      setMessage({
-        ton: 'ok',
-        texte: crees.length
+      // Six secondes et non cinq : ce message nomme les onglets crees, il y a
+      // plus a lire.
+      annoncer(
+        'ok',
+        crees.length
           ? `Onglet(s) créé(s) : ${crees.join(', ')}`
           : 'Vos onglets existaient déjà, rien à créer.',
-      });
+        6000,
+      );
       // La fiche porte les noms retenus : on la recharge pour les afficher.
       const f = await fetchDashboard(avecBoutique('/api/onboarding', boutiqueId));
       if (f.ok) setBoutique(await f.json());
     } catch {
-      setMessage({ ton: 'erreur', texte: 'Connexion impossible.' });
+      annoncer('erreur', 'Connexion impossible.');
     }
-    setTimeout(() => setMessage(null), 6000);
   };
 
   /** Un secret ne se reaffiche pas : le champ se vide une fois envoye. */
@@ -202,16 +261,25 @@ export default function OnboardingPage() {
     <main className="min-h-screen bg-chaux-100 pb-20">
       <header className="indigo-weave relative bg-nuit-900 px-5 pb-10 pt-8 text-chaux-50 sm:px-8">
         <div className="mx-auto max-w-3xl">
-          <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-mangue-300">
-            Branchement
-          </p>
-          <h1 className="mt-3 font-display text-3xl font-black leading-[1.05] sm:text-5xl">
+          <h1 className="font-display text-3xl font-black leading-[1.05] sm:text-5xl">
             {boutique?.nom || 'Votre boutique'}
           </h1>
           <p className="mt-3 max-w-lg text-sm text-chaux-200">
             Cinq étapes, dans cet ordre. Vos clients écriront à votre propre numéro, et vos
             livreurs recevront les courses par votre propre bot.
           </p>
+          {/* Le guide s'ouvre a cote, pas a la place : le marchand a les mains
+              dans les champs, il ne doit pas perdre sa page pour lire comment
+              les remplir. */}
+          <a
+            href="/aide/brancher"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-5 inline-flex min-h-11 items-center gap-2 border border-chaux-50/30 px-4 font-mono text-xs uppercase tracking-[0.16em] text-chaux-50 transition hover:border-mangue-300 hover:text-mangue-200"
+          >
+            Lire le guide pas à pas
+            <ArrowUpRight className="h-4 w-4" aria-hidden />
+          </a>
         </div>
         <div className="perf-line absolute inset-x-0 bottom-0 text-chaux-50" aria-hidden />
       </header>
@@ -252,7 +320,7 @@ export default function OnboardingPage() {
               aide="Ce sont vos propres comptes qui parlent à vos clients. Tout ce que vous collez ici part dans un coffre chiffré : rien ne réapparaîtra sur cette page, et personne d'autre ne peut le lire."
             >
               <div className="border border-[var(--hairline)] bg-white p-4">
-                <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-nuit-900">
+                <p className="font-mono text-xs uppercase tracking-[0.16em] text-nuit-900">
                   WhatsApp
                 </p>
                 <p className="mt-2 text-sm leading-relaxed text-chaux-600">
@@ -260,13 +328,13 @@ export default function OnboardingPage() {
                   n&apos;avez qu&apos;un QR code à scanner, aucune clé à manipuler.
                 </p>
                 <span className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1">
-                  <Etat
+                  <Voyant
                     actif={boutique.whatsapp_connecte}
                     quand="numéro connecté"
                     sinon="écrivez-nous pour recevoir votre QR"
                   />
                   {boutique.whatsapp_connecte && (
-                    <Etat
+                    <Voyant
                       actif={boutique.whatsapp_webhook_protege}
                       quand="réception sécurisée"
                       sinon="réception non sécurisée"
@@ -278,7 +346,7 @@ export default function OnboardingPage() {
               <div className="border border-[var(--hairline)] bg-white p-4">
                 <label
                   htmlFor="jeton-telegram"
-                  className="font-mono text-[11px] uppercase tracking-[0.16em] text-nuit-900"
+                  className="font-mono text-xs uppercase tracking-[0.16em] text-nuit-900"
                 >
                   Jeton du bot Telegram
                 </label>
@@ -297,7 +365,7 @@ export default function OnboardingPage() {
                   }
                 />
                 <p className="mt-3">
-                  <Etat
+                  <Voyant
                     actif={boutique.telegram_webhook_branche}
                     quand="bot branché"
                     sinon="bot pas encore branché"
@@ -363,7 +431,7 @@ export default function OnboardingPage() {
                   ] as const
                 ).map(([champ, libelle, exemple]) => (
                   <label key={champ} className="block">
-                    <span className="font-mono text-[11px] uppercase tracking-[0.16em] text-chaux-600">
+                    <span className="font-mono text-xs uppercase tracking-[0.16em] text-chaux-600">
                       {libelle}
                     </span>
                     <input
@@ -378,11 +446,16 @@ export default function OnboardingPage() {
               </div>
 
               {/* Le marchand n'a pas a creer ses onglets a la main, ni meme a
-                  savoir qu'ils existent. Un clic, et c'est pret. */}
+                  savoir qu'ils existent. Un clic, et c'est pret.
+
+                  Le systeme possede deja ce bouton : `calme`, la variante des
+                  gestes secondaires. Ecrit a la main il etait arrondi au milieu
+                  d'une page qui n'a pas un seul angle adouci, et haut de 36 px
+                  la ou le pouce en demande 44. */}
               <button
                 type="button"
                 onClick={preparerClasseur}
-                className="mt-4 inline-flex items-center gap-2 rounded-xl bg-nuit-900 px-4 py-2 text-sm font-semibold text-white hover:bg-nuit-800"
+                className={`${classesBouton('calme', 'md', 'carree')} mt-4`}
               >
                 Créer mes onglets automatiquement
               </button>
