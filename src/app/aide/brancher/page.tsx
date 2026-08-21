@@ -2,6 +2,7 @@ import Link from 'next/link';
 import type { CSSProperties, ReactNode } from 'react';
 import type { Metadata } from 'next';
 import { ArrowRight } from 'lucide-react';
+import { LienRetour } from '@/components/ui/Bouton';
 
 /**
  * Le guide de branchement, DANS le produit.
@@ -44,16 +45,32 @@ export const metadata: Metadata = {
  * un filet gris ferait le meme travail en disant qu'on est ailleurs.
  */
 function Acte({
+  id,
   titre,
   compte,
   tampon,
 }: {
+  id: string;
   titre: string;
   compte?: string;
   tampon?: string;
 }) {
   return (
-    <div>
+    // IL RESTE EN HAUT TANT QU'ON EST DANS L'ACTE. Le guide fait plus de cinq
+    // mille pixels et s'annonce en trente minutes, lus debout entre deux
+    // clients sur un telephone qui se verrouille. Sans ce repere, on remonte
+    // pour savoir ou l'on en est.
+    //
+    // `sticky` et non un ecouteur de defilement : c'est le compositeur qui
+    // travaille, pas le processeur. Sur l'Android d'entree de gamme du
+    // marchand, la difference n'est pas theorique.
+    //
+    // Les marges negatives rendent le fond bord a bord : sans elles, le texte
+    // qui defile dessous reapparait dans le rembourrage du conteneur.
+    <div
+      id={id}
+      className="sticky top-0 z-10 -mx-5 bg-chaux-50 px-5 pb-3 pt-4 sm:-mx-6 sm:px-6"
+    >
       <div className="flex items-baseline gap-4">
         <h2 className="font-display text-lg font-extrabold uppercase tracking-[0.14em] text-nuit-900">
           {titre}
@@ -95,9 +112,13 @@ function Etape({
   verification: ReactNode;
 }) {
   return (
+    // Le `scroll-mt` degage la hauteur de l'en-tete d'acte collant : sans lui,
+    // la carte atteinte par une ancre atterrit DERRIERE le repere qui vient de
+    // se coller en haut. Ces deux valeurs suivent la hauteur de cet en-tete ;
+    // elles changent avec lui.
     <article
       id={`etape-${rang}`}
-      className="etape scroll-mt-6 border border-chaux-200 bg-white sm:scroll-mt-10"
+      className="etape scroll-mt-24 border border-chaux-200 bg-white sm:scroll-mt-28"
     >
       <div className="flex flex-col gap-4 p-5 sm:p-6">
         <div className="flex items-baseline gap-4">
@@ -172,6 +193,41 @@ function Echange({ legende, lignes }: { legende: string; lignes: [string, string
   );
 }
 
+/**
+ * Le bordereau : ce que porte ce bon, et ou l'attraper.
+ *
+ * ON N'ENTRE PAS TOUJOURS PAR LE HAUT, ET ON NE LIT PAS TOUT D'UNE TRAITE. Un
+ * marchand qui reprend son branchement a l'acte deux ne doit pas refaire
+ * defiler quatre etapes pour y arriver. Sans ce bordereau, la seule facon
+ * d'atteindre un acte etait un lien profond envoye depuis un autre ecran.
+ *
+ * La commande d'essai y figure, et ce n'est pas un acte : c'est la table de
+ * diagnostic, donc la destination la plus demandee par quelqu'un dont le
+ * branchement ne marche pas.
+ *
+ * Cibles de 44 px : c'est une liste qu'on touche au pouce, pas une table des
+ * matieres qu'on clique a la souris.
+ */
+function Bordereau({ entrees }: { entrees: { id: string; titre: string; compte: string }[] }) {
+  return (
+    <nav aria-label="Ce que contient ce guide" className="border-y border-chaux-200">
+      <ul className="flex flex-col divide-y divide-chaux-200">
+        {entrees.map(({ id, titre, compte }) => (
+          <li key={id}>
+            <a
+              href={`#${id}`}
+              className="flex min-h-11 items-baseline gap-4 py-2 text-nuit-800 transition-colors duration-150 hover:text-bissap-600"
+            >
+              <span className="font-semibold">{titre}</span>
+              <span className="ml-auto shrink-0 font-mono text-xs text-chaux-600">{compte}</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  );
+}
+
 /** Un renvoi vers l'etape en cause. Le lien fait ce que le texte promettait. */
 function Renvoi({ etape }: { etape: number }) {
   return (
@@ -235,20 +291,39 @@ export default function GuideBrancherPage() {
       <div className="mx-auto flex max-w-3xl flex-col gap-16 px-5 py-16 sm:gap-20 sm:px-6">
 
         <header className="flex flex-col gap-5">
-          <h1 className="font-display text-4xl font-extrabold leading-[1.05] tracking-[-0.02em] text-nuit-900 sm:text-5xl">
+          {/* La page est publique et se partage par lien : on y arrive aussi
+              sans etre passe par le produit. Sans ce talon, le seul lien
+              sortant etait le bouton du bas, cinq mille pixels plus loin. */}
+          {/* L'enveloppe n'est pas decorative : dans un conteneur `flex-col`,
+              l'enfant s'etire sur toute la largeur, et un talon large comme la
+              page n'est plus un talon. Elle lui rend sa silhouette. */}
+          <div>
+            <LienRetour href="/">Retour à l&apos;accueil</LienRetour>
+          </div>
+
+          <h1 className="mt-1 font-display text-4xl font-extrabold leading-[1.05] tracking-[-0.02em] text-nuit-900 sm:text-5xl">
             Brancher sa boutique
           </h1>
           <p className="max-w-[34em] text-lg leading-relaxed text-nuit-700">
             Huit étapes pour que votre boutique reçoive de vraies commandes, les confie
             à un livreur et tienne son stock toute seule.
           </p>
-          <p className="border-t border-chaux-200 pt-4 font-mono text-xs text-chaux-600">
+          <p className="font-mono text-xs text-chaux-600">
             Comptez 30 minutes · Prévoyez votre téléphone à portée de main
           </p>
+
+          <Bordereau
+            entrees={[
+              { id: 'acte-boutique', titre: 'Votre boutique', compte: 'Étapes 1 à 2' },
+              { id: 'acte-canaux', titre: 'Vos canaux', compte: 'Étapes 3 à 6' },
+              { id: 'acte-livreurs', titre: 'Vos livreurs et vos horaires', compte: 'Étapes 7 à 8' },
+              { id: 'acte-essai', titre: 'La commande d’essai', compte: 'Obligatoire' },
+            ]}
+          />
         </header>
 
         <section className="flex flex-col gap-5">
-          <Acte titre="Votre boutique" compte="Étapes 1 à 2" />
+          <Acte id="acte-boutique" titre="Votre boutique" compte="Étapes 1 à 2" />
 
           <div className="flex flex-col gap-3">
             <Etape
@@ -282,7 +357,7 @@ export default function GuideBrancherPage() {
         </section>
 
         <section className="flex flex-col gap-5">
-          <Acte titre="Vos canaux" compte="Étapes 3 à 6" />
+          <Acte id="acte-canaux" titre="Vos canaux" compte="Étapes 3 à 6" />
 
           <p className="max-w-[66ch] text-nuit-700">
             Ces quatre étapes se suivent dans l’ordre, et l’ordre n’est pas un détail :
@@ -426,7 +501,7 @@ export default function GuideBrancherPage() {
         </section>
 
         <section className="flex flex-col gap-5">
-          <Acte titre="Vos livreurs et vos horaires" compte="Étapes 7 à 8" />
+          <Acte id="acte-livreurs" titre="Vos livreurs et vos horaires" compte="Étapes 7 à 8" />
 
           <div className="flex flex-col gap-3">
             <Etape
@@ -464,7 +539,7 @@ export default function GuideBrancherPage() {
         </section>
 
         <section className="flex flex-col gap-5">
-          <Acte titre="La commande d’essai" tampon="Obligatoire" />
+          <Acte id="acte-essai" titre="La commande d’essai" tampon="Obligatoire" />
 
           <p className="max-w-[66ch] text-nuit-800">
             Passez vous-même une commande depuis votre vitrine, puis acceptez-la comme
@@ -493,7 +568,7 @@ export default function GuideBrancherPage() {
         </section>
 
         <section className="flex flex-col gap-5">
-          <Acte titre="Trois choses qui surprennent" />
+          <Acte id="acte-surprises" titre="Trois choses qui surprennent" />
 
           <div className="flex flex-col gap-4">
             {SURPRISES.map(([titre, texte]) => (
