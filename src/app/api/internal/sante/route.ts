@@ -77,9 +77,18 @@ const HEURES_FENETRE_STOCK = 48;
  */
 const HEURES_ABANDONS_EN_RETARD = 26;
 
+/**
+ * Le delai laisse a la chaine pour prevenir le client apres une acceptation.
+ *
+ * La notification part dans la seconde ; quinze minutes absorbent une course
+ * entre le marquage et la sonde, et un reessai n8n, sans laisser passer un
+ * vrai silence bien longtemps.
+ */
+const MINUTES_APRES_ACCEPTATION = 15;
+
 type Constat = {
   /** Le silence observe, en un mot-cle stable pour n8n. */
-  type: 'sans_livreur' | 'stock_non_decompte' | 'abandons_en_retard';
+  type: 'sans_livreur' | 'stock_non_decompte' | 'abandons_en_retard' | 'client_non_prevenu';
   /** Toujours nomme : un compte global n'est pas actionnable. */
   boutique: string;
   reference: string;
@@ -152,12 +161,62 @@ export async function POST(req: Request) {
     .order('created_at', { ascending: true })
     .limit(100);
 
+  // ---- 4. Livreur accepte, client jamais prevenu.
+  //
+  // CE DETECTEUR S'ARME TOUT SEUL, ET C'EST INDISPENSABLE. `client_prevenu_le`
+  // est NULL sur toutes les commandes anterieures a son existence — vingt-quatre
+  // le jour de sa creation — sans qu'aucune ne soit fautive. NULL veut dire « on
+  // ne sait pas », jamais « pas prevenu ».
+  //
+  // Plutot que de figer une date de mise en service qui deviendrait fausse si
+  // le marquage tardait a etre branche, on demande a la base si le mecanisme a
+  // DEJA fonctionne au moins une fois. Tant que la reponse est non, le
+  // detecteur se tait entierement : il ne peut pas accuser un mecanisme qui
+  // n'existe pas encore.
+  const { data: dejaMarquee, error: errTemoin } = await sb
+    .from('commandes')
+    .select('reference')
+    .not('client_prevenu_le', 'is', null)
+    .limit(1);
+
+  const marquageEnService = (dejaMarquee?.length ?? 0) > 0;
+  let clientNonPrevenu: unknown[] | null = [];
+  let errPrevenu: { message: string } | null = null;
+
+  if (marquageEnService) {
+    // La borne basse n'est pas une date en dur : c'est la premiere commande
+    // jamais marquee. Tout ce qui precede appartient a l'avant, et l'avant ne
+    // se juge pas.
+    const { data: premiere } = await sb
+      .from('commandes')
+      .select('heure_prise_en_charge')
+      .not('client_prevenu_le', 'is', null)
+      .order('client_prevenu_le', { ascending: true })
+      .limit(1);
+
+    const depuis = premiere?.[0]?.heure_prise_en_charge ?? null;
+    const seuilPrevenu = iso(maintenant - MINUTES_APRES_ACCEPTATION * 60_000);
+
+    let requete = sb
+      .from('commandes')
+      .select(champs)
+      .not('heure_prise_en_charge', 'is', null)
+      .is('client_prevenu_le', null)
+      .lt('heure_prise_en_charge', seuilPrevenu);
+
+    if (depuis) requete = requete.gte('heure_prise_en_charge', depuis);
+
+    const r = await requete.order('heure_prise_en_charge', { ascending: true }).limit(100);
+    clientNonPrevenu = r.data;
+    errPrevenu = r.error;
+  }
+
   // UNE LECTURE RATEE N'EST PAS UN SILENCE DE MOINS.
   //
   // Si l'on avalait l'erreur, la route rendrait « 0 constat » et n8n
   // conclurait que la chaine va bien. Un moniteur qui ment quand il est casse
   // est pire que pas de moniteur : il fabrique une confiance sans objet.
-  const panne = errLivreur ?? errStock ?? errAbandons;
+  const panne = errLivreur ?? errStock ?? errAbandons ?? errTemoin ?? errPrevenu;
   if (panne) {
     console.error('Sante — lecture impossible :', panne.message);
     return Response.json(
@@ -198,6 +257,16 @@ export async function POST(req: Request) {
 
   // Les boutiques concernees, pour qu'une alerte puisse dire CHEZ QUI sans
   // avoir a relire la liste entiere.
+  for (const l of (clientNonPrevenu ?? []) as unknown as LigneCommande[]) {
+    constats.push({
+      type: 'client_non_prevenu',
+      boutique: nomBoutique(l),
+      reference: String(l.reference ?? ''),
+      age_minutes: minutesDepuis(l.created_at),
+      detail: 'livreur a accepte, client jamais prevenu',
+    });
+  }
+
   const boutiques = [...new Set(constats.map((c) => c.boutique))].sort();
 
   return Response.json({
@@ -209,7 +278,11 @@ export async function POST(req: Request) {
       sans_livreur: constats.filter((c) => c.type === 'sans_livreur').length,
       stock_non_decompte: constats.filter((c) => c.type === 'stock_non_decompte').length,
       abandons_en_retard: constats.filter((c) => c.type === 'abandons_en_retard').length,
+      client_non_prevenu: constats.filter((c) => c.type === 'client_non_prevenu').length,
     },
+    // Rendu explicitement : un `client_non_prevenu` a zero ne veut pas dire la
+    // meme chose selon que le marquage tourne ou non.
+    marquage_client_en_service: marquageEnService,
     boutiques,
     constats,
   });

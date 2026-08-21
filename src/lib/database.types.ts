@@ -147,6 +147,7 @@ export type Database = {
           chat_id: string | null
           client_adresse: string
           client_nom: string
+          client_prevenu_le: string | null
           client_telephone: string
           confirmation_heure: string | null
           confirmation_statut: string | null
@@ -177,6 +178,7 @@ export type Database = {
           chat_id?: string | null
           client_adresse: string
           client_nom: string
+          client_prevenu_le?: string | null
           client_telephone: string
           confirmation_heure?: string | null
           confirmation_statut?: string | null
@@ -207,6 +209,7 @@ export type Database = {
           chat_id?: string | null
           client_adresse?: string
           client_nom?: string
+          client_prevenu_le?: string | null
           client_telephone?: string
           confirmation_heure?: string | null
           confirmation_statut?: string | null
