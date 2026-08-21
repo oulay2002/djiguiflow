@@ -98,10 +98,7 @@ function LoginPageContent() {
       <header className="indigo-weave relative bg-nuit-900 px-4 pb-9 pt-6 text-white">
         <div className="mx-auto max-w-md">
           <LienRetour href="/">Retour à l&apos;accueil</LienRetour>
-          <p className="mt-6 font-mono text-[10px] uppercase tracking-[0.28em] text-mangue-300 sm:text-[11px]">
-            Espace marchand
-          </p>
-          <h1 className="mt-1.5 font-display text-3xl font-black leading-[1.05] sm:text-4xl">
+          <h1 className="mt-6 font-display text-3xl font-black leading-[1.05] sm:text-4xl">
             DjiguiFlow
           </h1>
         </div>
@@ -113,10 +110,16 @@ function LoginPageContent() {
           className="slip-in relative border border-[var(--hairline)] bg-chaux-50 p-6 soft-shadow sm:p-8"
           style={{ ['--tear-bg' as string]: FOND_PAGE }}
         >
-          {/* Le talon du bon, au-dessus de la perforation. */}
-          <p className="font-mono text-[10px] font-bold uppercase tracking-[0.28em] text-chaux-600">
+          {/* Le talon du bon, au-dessus de la perforation.
+
+              C'est un vrai titre, pas un ornement : le h1 du bandeau porte la
+              marque, et depuis qu'il n'y a plus d'etiquette au-dessus de lui,
+              c'est ce mot-ci — et lui seul — qui dit ce que la page fait. Il
+              etait deja le titre a l'oeil ; il l'est maintenant aussi pour un
+              lecteur d'ecran. Son apparence ne change pas d'un pixel. */}
+          <h2 className="font-mono text-xs font-bold uppercase tracking-[0.28em] text-chaux-600">
             Connexion
-          </p>
+          </h2>
           <div className="tear absolute inset-x-0 top-14 sm:top-16" />
 
           {erreurOAuth && (
@@ -133,14 +136,14 @@ function LoginPageContent() {
               perforation separe, elle ne dit pas qu'on choisit. */}
           <div className="relative my-6 flex items-center justify-center">
             <div className="perf-line absolute inset-x-0 text-nuit-900" aria-hidden />
-            <span className="relative bg-chaux-50 px-3 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-chaux-600">
+            <span className="relative bg-chaux-50 px-3 font-mono text-xs font-bold uppercase tracking-[0.2em] text-chaux-600">
               ou
             </span>
           </div>
 
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
-              <label htmlFor="email" className="mb-1.5 block font-mono text-[11px] font-bold uppercase tracking-[0.16em] text-chaux-600">
+              <label htmlFor="email" className="mb-1.5 block font-mono text-xs font-bold uppercase tracking-[0.16em] text-chaux-600">
                 Email
               </label>
               <input
@@ -156,7 +159,7 @@ function LoginPageContent() {
             </div>
 
             <div>
-              <label htmlFor="password" className="mb-1.5 block font-mono text-[11px] font-bold uppercase tracking-[0.16em] text-chaux-600">
+              <label htmlFor="password" className="mb-1.5 block font-mono text-xs font-bold uppercase tracking-[0.16em] text-chaux-600">
                 Mot de passe
               </label>
               <div className="relative">
