@@ -1,0 +1,3680 @@
+{
+  "active": true,
+  "activeVersion": {
+    "authors": "JEAN PAUL OULAI",
+    "autosaved": false,
+    "connections": {
+      "Call 'Envoyer réponse client'": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Notifier groupe - livre",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Chercher fiche livreur": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Coordonnees livreur",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Code in JavaScript": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Config marchand",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Code in JavaScript1": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Préparer données Switch",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Config marchand": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Verifier doublon",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Coordonnees livreur": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Notifier client - Commande acceptée",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Corriger téléphone": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Switch",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Demander les frais": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Demander la position",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Demander note client": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Notifier groupe - livre",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "If": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Call 'Envoyer réponse client'",
+              "type": "main"
+            }
+          ],
+          [
+            {
+              "index": 0,
+              "node": "Demander note client",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Notifier client - Commande acceptée": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Marquer client prevenu",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Notifier client- commande livrée": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "If",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Notifier client-commande en route": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Notifier groupe - en_route",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Notifier client-commande parti": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Notifier groupe - parti",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Notifier groupe - Course acceptée": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Chercher fiche livreur",
+              "type": "main"
+            },
+            {
+              "index": 0,
+              "node": "Demander les frais",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Notifier groupe - Course refusée": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Notifier client - Commande refusée",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Préparer données Switch": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Corriger téléphone",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Switch": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Notifier groupe - Course acceptée",
+              "type": "main"
+            },
+            {
+              "index": 0,
+              "node": "Refléter dans Supabase",
+              "type": "main"
+            }
+          ],
+          [
+            {
+              "index": 0,
+              "node": "Notifier groupe - Course refusée",
+              "type": "main"
+            }
+          ],
+          [
+            {
+              "index": 0,
+              "node": "Notifier client-commande parti",
+              "type": "main"
+            },
+            {
+              "index": 0,
+              "node": "Refléter dans Supabase",
+              "type": "main"
+            }
+          ],
+          [
+            {
+              "index": 0,
+              "node": "Notifier client-commande en route",
+              "type": "main"
+            },
+            {
+              "index": 0,
+              "node": "Refléter dans Supabase",
+              "type": "main"
+            }
+          ],
+          [
+            {
+              "index": 0,
+              "node": "Notifier client- commande livrée",
+              "type": "main"
+            },
+            {
+              "index": 0,
+              "node": "Refléter dans Supabase",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Trouver la commande": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Code in JavaScript1",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Verifier doublon": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Message erreur livreur",
+              "type": "main"
+            }
+          ],
+          [
+            {
+              "index": 0,
+              "node": "Trouver la commande",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "When Executed by Another Workflow": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Code in JavaScript",
+              "type": "main"
+            }
+          ]
+        ]
+      }
+    },
+    "description": null,
+    "name": null,
+    "nodeGroups": [],
+    "nodes": [
+      {
+        "id": "4c13459a-b872-454c-8926-eb7d526f52b9",
+        "name": "Code in JavaScript",
+        "parameters": {
+          "jsCode": "const callbackData = $input.first().json;\nconst cq = callbackData.callback_query || callbackData;\nconst callbackDataText = cq.data || '';\n\nlet action = 'unknown';\nlet orderId = 'unknown';\nlet clientChatId = 'unknown';\n\nif (callbackDataText && typeof callbackDataText === 'string') {\n  const parts = callbackDataText.split('_');\n  \n  if (parts[0] === 'accept' || parts[0] === 'refuse') {\n    action = parts[0];\n    clientChatId = parts[1] || 'unknown';\n    orderId = parts.length >= 3 ? parts.slice(2).join('_') : 'unknown';\n  }\n  else if (parts[0] === 'parti' || parts[0] === 'livre') {\n    action = parts[0];\n    clientChatId = parts[1] || 'unknown';\n    orderId = parts.length >= 3 ? parts.slice(2).join('_') : 'unknown';\n  }\n  else if (parts[0] === 'en' && parts[1] === 'route') {\n    action = 'en_route';\n    clientChatId = parts[2] || 'unknown';\n    orderId = parts.length >= 4 ? parts.slice(3).join('_') : 'unknown';\n  }\n}\n\nlet statut_livraison = '';\nlet position = '';\nlet message_client = '';\nlet message_groupe = '';\n\nif (action === 'accept') {\n  statut_livraison = 'accepte';\n  position = 'Course acceptee';\n  message_client = 'Votre commande est en route !';\n  message_groupe = 'Course acceptee';\n} else if (action === 'refuse') {\n  statut_livraison = 'refusee';\n  position = 'Course refusee';\n  message_client = 'Nous cherchons un autre livreur.';\n  message_groupe = 'Course refusee.';\n} else if (action === 'parti') {\n  statut_livraison = 'parti';\n  position = 'Le livreur a quitte la boutique';\n  message_client = 'Votre livreur a recupere votre commande ! Il arrive dans 30-40 minutes.';\n  message_groupe = 'Parti de la boutique';\n} else if (action === 'en_route') {\n  statut_livraison = 'en_route';\n  position = 'Le livreur est en route';\n  message_client = 'Votre livreur est en route ! Il arrive dans 10-15 minutes.';\n  message_groupe = 'Livreur en route';\n} else if (action === 'livre') {\n  statut_livraison = 'livre';\n  position = 'Commande livree';\n  message_client = 'Votre commande a ete livree ! Merci de votre confiance.';\n  message_groupe = 'Commande livree';\n} else {\n  statut_livraison = action;\n  position = 'Mise a jour';\n  message_client = 'Mise a jour de votre livraison';\n  message_groupe = 'Mise a jour';\n}\n\nconst livreurId = cq.from ? cq.from.id : null;\nconst livreurName = cq.from ? (cq.from.first_name || cq.from.username || 'Inconnu') : 'Inconnu';\nconst chatIdGroupe = cq.message && cq.message.chat ? cq.message.chat.id : null;\n\nreturn [{\n  json: {\n    order_id: orderId,\n    client_chat_id: clientChatId,\n    action: action,\n    statut_livraison: statut_livraison,\n    position: position,\n    message_client: message_client,\n    message_groupe: message_groupe,\n    livreur_id: livreurId,\n    livreur_name: livreurName,\n    chat_id_groupe: chatIdGroupe,\n    skip: false\n  }\n}];"
+        },
+        "position": [
+          -32,
+          336
+        ],
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2
+      },
+      {
+        "id": "0395dc67-649f-489d-96f9-ed9ecdf70525",
+        "name": "Verifier doublon",
+        "parameters": {
+          "looseTypeValidation": true,
+          "options": {},
+          "rules": {
+            "values": [
+              {
+                "conditions": {
+                  "combinator": "and",
+                  "conditions": [
+                    {
+                      "id": "2179237a-2b27-4c9d-9b37-1e10714e4b14",
+                      "leftValue": "={{ $json.skip }}",
+                      "operator": {
+                        "operation": "equals",
+                        "type": "string"
+                      },
+                      "rightValue": "true"
+                    }
+                  ],
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "loose",
+                    "version": 3
+                  }
+                },
+                "outputKey": "doublon",
+                "renameOutput": true
+              },
+              {
+                "conditions": {
+                  "combinator": "and",
+                  "conditions": [
+                    {
+                      "id": "ea7fcf7c-5a41-4eb9-8508-a0c86f4115ce",
+                      "leftValue": "true",
+                      "operator": {
+                        "name": "filter.operator.equals",
+                        "operation": "equals",
+                        "type": "string"
+                      },
+                      "rightValue": "true"
+                    }
+                  ],
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "loose",
+                    "version": 3
+                  }
+                },
+                "outputKey": "normal",
+                "renameOutput": true
+              }
+            ]
+          }
+        },
+        "position": [
+          656,
+          336
+        ],
+        "type": "n8n-nodes-base.switch",
+        "typeVersion": 3.4
+      },
+      {
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "QoKeVRwGrk1YqN9Q",
+            "name": "Header Auth account 2"
+          }
+        },
+        "id": "3f2b683c-7e8b-4076-825a-b4f88c9e3bc2",
+        "maxTries": 3,
+        "name": "Trouver la commande",
+        "notes": "Lit la commande dans SUPABASE. Elle etait cherchee dans l onglet Google Sheets du marchand : des que la prise de commande a cesse d y ecrire, la recherche est revenue vide et le livreur qui acceptait ne declenchait plus rien. La route rend les memes NOMS DE CHAMPS que la feuille, pour ne pas avoir a reecrire quinze expressions.",
+        "parameters": {
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "jsonBody": "={\n  \"order_id\": {{ JSON.stringify($json.order_id) }}\n}",
+          "method": "POST",
+          "options": {},
+          "sendBody": true,
+          "specifyBody": "json",
+          "url": "https://www.djiguiflow.com/api/internal/commandes/fiche"
+        },
+        "position": [
+          880,
+          400
+        ],
+        "retryOnFail": true,
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "waitBetweenTries": 2000
+      },
+      {
+        "id": "28662fc8-a3cb-4578-b8aa-c012b6aa2fa1",
+        "name": "Code in JavaScript1",
+        "parameters": {
+          "jsCode": "const items = $input.all();\nconst attendu = String($('Code in JavaScript').first().json.order_id || '').trim();\n\n// La feuille n'est plus interrogee par chat_id mais par order_id : elle ne\n// devrait rendre qu'une seule ligne. On verifie tout de meme la\n// correspondance, parce qu'un doublon dans la feuille suffirait a\n// reintroduire la confusion qu'on vient de supprimer.\nif (items.length === 0) {\n  throw new Error(`Commande ${attendu} introuvable dans la feuille — callback livreur non traite.`);\n}\n\nconst ligne = items.find(i => String(i.json.order_id || '').trim() === attendu);\nif (!ligne) {\n  throw new Error(`Commande ${attendu} absente des ${items.length} ligne(s) remontees — appariement impossible.`);\n}\n\n// La ligne est rendue telle quelle : c'est « Corriger telephone », en aval,\n// qui normalise le numero. La correction faite ici etait morte, « Preparer\n// donnees Switch » ecrasant la valeur juste apres.\nreturn [{ json: ligne.json }];\n"
+        },
+        "position": [
+          1104,
+          400
+        ],
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2
+      },
+      {
+        "id": "c1178bfb-fe56-45c1-ba92-402963028463",
+        "name": "Préparer données Switch",
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "1ab00aad-760b-4108-9f87-b7e922f9d86b",
+                "name": "action",
+                "type": "string",
+                "value": "={{ $('Code in JavaScript').first().json.action }}"
+              },
+              {
+                "id": "d414ae07-2e75-474b-8f65-734c06f15960",
+                "name": "client_chat_id",
+                "type": "string",
+                "value": "={{ $('Code in JavaScript').first().json.client_chat_id }}"
+              },
+              {
+                "id": "8af1294f-8047-4c82-b057-45896a51253a",
+                "name": "message_client",
+                "type": "string",
+                "value": "={{ $('Code in JavaScript').first().json.message_client }}"
+              },
+              {
+                "id": "648d5a50-c684-4659-b968-d8098a500c83",
+                "name": "message_groupe",
+                "type": "string",
+                "value": "={{ $('Code in JavaScript').first().json.message_groupe }}"
+              },
+              {
+                "id": "e9283d55-1a4d-48b7-9d1a-cb4876c4095b",
+                "name": "statut_livraison",
+                "type": "string",
+                "value": "={{ $('Code in JavaScript').first().json.statut_livraison }}"
+              },
+              {
+                "id": "52060def-0507-462e-8d62-7207c92c33b1",
+                "name": "position",
+                "type": "string",
+                "value": "={{ $('Code in JavaScript').first().json.position }}"
+              },
+              {
+                "id": "b759945b-84a6-410c-8111-b43ca9474516",
+                "name": "chat_id_groupe",
+                "type": "string",
+                "value": "={{ $('Code in JavaScript').first().json.chat_id_groupe }}"
+              },
+              {
+                "id": "5de3c6ba-4ba8-4fa1-b8d9-1b39e342265a",
+                "name": "livreur_name",
+                "type": "string",
+                "value": "={{ $('Code in JavaScript').first().json.livreur_name }}"
+              },
+              {
+                "id": "a1000000-0000-4000-8000-000000000001",
+                "name": "phone",
+                "type": "string",
+                "value": "={{ $('Code in JavaScript1').first().json.phone }}"
+              },
+              {
+                "id": "a1000000-0000-4000-8000-000000000002",
+                "name": "customer_name",
+                "type": "string",
+                "value": "={{ $('Code in JavaScript1').first().json.customer_name }}"
+              },
+              {
+                "id": "a1000000-0000-4000-8000-000000000003",
+                "name": "address",
+                "type": "string",
+                "value": "={{ $('Code in JavaScript1').first().json.address }}"
+              },
+              {
+                "id": "a1000000-0000-4000-8000-000000000004",
+                "name": "order_id",
+                "type": "string",
+                "value": "={{ $('Code in JavaScript1').first().json.order_id }}"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "position": [
+          1344,
+          384
+        ],
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4
+      },
+      {
+        "id": "b7628582-8f73-4056-86b6-fe758eeed61a",
+        "name": "Corriger téléphone",
+        "parameters": {
+          "jsCode": "const items = $input.all();\n\nreturn items.map(item => {\n  let phone = String(item.json.phone || '');\n  \n  // Supprimer tous les espaces, tirets, points\n  phone = phone.replace(/[\\s\\-.]/g, '');\n  \n  // Ajouter des zéros au début pour avoir 10 chiffres\n  phone = phone.padStart(10, '0');\n  \n  // Si le numéro fait plus de 10 chiffres, garder les 10 derniers\n  if (phone.length > 10) {\n    phone = phone.slice(-10);\n  }\n  \n  return {\n    json: {\n      ...item.json,\n      phone: phone\n    }\n  };\n});"
+        },
+        "position": [
+          1520,
+          384
+        ],
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2
+      },
+      {
+        "id": "641d5ced-d946-459a-b2d0-fac4662fb94f",
+        "name": "Switch",
+        "parameters": {
+          "looseTypeValidation": true,
+          "options": {},
+          "rules": {
+            "values": [
+              {
+                "conditions": {
+                  "combinator": "and",
+                  "conditions": [
+                    {
+                      "id": "74e770ae-590c-4630-947a-217428cd6ab4",
+                      "leftValue": "={{ $json.action }}",
+                      "operator": {
+                        "operation": "equals",
+                        "type": "string"
+                      },
+                      "rightValue": "accept"
+                    }
+                  ],
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "loose",
+                    "version": 3
+                  }
+                },
+                "outputKey": "accept",
+                "renameOutput": true
+              },
+              {
+                "conditions": {
+                  "combinator": "and",
+                  "conditions": [
+                    {
+                      "id": "b7ea6925-36ec-4a2d-98df-5ada48238f9b",
+                      "leftValue": "={{ $json.action }}",
+                      "operator": {
+                        "name": "filter.operator.equals",
+                        "operation": "equals",
+                        "type": "string"
+                      },
+                      "rightValue": "refuse"
+                    }
+                  ],
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "loose",
+                    "version": 3
+                  }
+                },
+                "outputKey": "refuse",
+                "renameOutput": true
+              },
+              {
+                "conditions": {
+                  "combinator": "and",
+                  "conditions": [
+                    {
+                      "id": "addcbbac-2731-4951-88be-40216ffefc07",
+                      "leftValue": "={{ $json.action }}",
+                      "operator": {
+                        "name": "filter.operator.equals",
+                        "operation": "equals",
+                        "type": "string"
+                      },
+                      "rightValue": "parti"
+                    }
+                  ],
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "loose",
+                    "version": 3
+                  }
+                },
+                "outputKey": "parti",
+                "renameOutput": true
+              },
+              {
+                "conditions": {
+                  "combinator": "and",
+                  "conditions": [
+                    {
+                      "id": "8be3fc78-c5da-4b4d-93d2-f1a6cc4ebad5",
+                      "leftValue": "={{ $json.action }}",
+                      "operator": {
+                        "name": "filter.operator.equals",
+                        "operation": "equals",
+                        "type": "string"
+                      },
+                      "rightValue": "en_route"
+                    }
+                  ],
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "loose",
+                    "version": 3
+                  }
+                },
+                "outputKey": "en_route",
+                "renameOutput": true
+              },
+              {
+                "conditions": {
+                  "combinator": "and",
+                  "conditions": [
+                    {
+                      "id": "f33f2d6c-55ce-443a-acca-df910176243e",
+                      "leftValue": "={{ $json.action }}",
+                      "operator": {
+                        "name": "filter.operator.equals",
+                        "operation": "equals",
+                        "type": "string"
+                      },
+                      "rightValue": "livre"
+                    }
+                  ],
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "loose",
+                    "version": 3
+                  }
+                },
+                "outputKey": "livre",
+                "renameOutput": true
+              }
+            ]
+          }
+        },
+        "position": [
+          1664,
+          336
+        ],
+        "type": "n8n-nodes-base.switch",
+        "typeVersion": 3.4
+      },
+      {
+        "id": "1d788d4f-a29e-4323-9e44-ebec355dbb36",
+        "maxTries": 3,
+        "name": "Notifier client - Commande acceptée",
+        "notes": "La boutique est transmise : sans elle, l envoi retombait sur le bot par defaut de la plateforme et le client d un marchand recevait ses messages par le bot d un AUTRE. Constate le 19 aout 2026.",
+        "onError": "continueRegularOutput",
+        "parameters": {
+          "options": {},
+          "workflowId": {
+            "__rl": true,
+            "cachedResultName": "Envoyer réponse client",
+            "mode": "list",
+            "value": "JkNvcqsZaY22dfk5"
+          },
+          "workflowInputs": {
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": true,
+            "mappingMode": "defineBelow",
+            "matchingColumns": [],
+            "schema": [
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "canal",
+                "id": "canal",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "destinataire",
+                "id": "destinataire",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "message",
+                "id": "message",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              }
+            ],
+            "value": {
+              "boutique": "={{ $('When Executed by Another Workflow').first().json.slug }}",
+              "canal": "={{ $('Trouver la commande').first().json.canal }}",
+              "destinataire": "={{ String($('Trouver la commande').first().json.chat_id) }}",
+              "message": "=🚚 Excellente nouvelle !\n\nVotre commande {{ $('Trouver la commande').first().json.order_id }} est en route !\n{{ $('Coordonnees livreur').first().json.ligne_client }}⏱️ Temps estimé : 30-45 minutes\n\n🚩 Suivre en direct :\nhttps://www.djiguiflow.com/suivi?ref={{ encodeURIComponent(String($('Trouver la commande').first().json.order_id)) }}\n\nÀ tout de suite ! 🙌"
+            }
+          }
+        },
+        "position": [
+          2640,
+          -128
+        ],
+        "retryOnFail": false,
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.3,
+        "waitBetweenTries": 2000
+      },
+      {
+        "id": "c453bc86-a0db-42d4-a154-63c51bdc6d49",
+        "maxTries": 3,
+        "name": "Notifier client - Commande refusée",
+        "notes": "La boutique est transmise : sans elle, l envoi retombait sur le bot par defaut de la plateforme et le client d un marchand recevait ses messages par le bot d un AUTRE. Constate le 19 aout 2026.",
+        "onError": "continueRegularOutput",
+        "parameters": {
+          "options": {},
+          "workflowId": {
+            "__rl": true,
+            "cachedResultName": "Envoyer réponse client",
+            "mode": "list",
+            "value": "JkNvcqsZaY22dfk5"
+          },
+          "workflowInputs": {
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": true,
+            "mappingMode": "defineBelow",
+            "matchingColumns": [],
+            "schema": [
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "canal",
+                "id": "canal",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "destinataire",
+                "id": "destinataire",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "message",
+                "id": "message",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              }
+            ],
+            "value": {
+              "boutique": "={{ $('When Executed by Another Workflow').first().json.slug }}",
+              "canal": "={{ $('Trouver la commande').first().json.canal }}",
+              "destinataire": "={{ String($('Trouver la commande').first().json.chat_id) }}",
+              "message": "=⚠️ Votre commande {{ $('Trouver la commande').first().json.order_id }}  Un livreur vient de se désister. Nous cherchons immédiatement un autre livreur pour vous.  Merci de votre patience, nous vous tiendrons informé dans quelques minutes. 🙏"
+            }
+          }
+        },
+        "position": [
+          2240,
+          192
+        ],
+        "retryOnFail": false,
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.3,
+        "waitBetweenTries": 2000
+      },
+      {
+        "credentials": {
+          "googleSheetsOAuth2Api": {
+            "id": "9Q14ADLSkwfm2Y5H",
+            "name": "Google Sheets account"
+          }
+        },
+        "disabled": true,
+        "id": "f4c51586-efa3-4258-858b-34455e463728",
+        "maxTries": 3,
+        "name": "Update statut - parti",
+        "notes": "HORS CHEMIN CRITIQUE. Ce miroir ecrivait le statut dans l onglet du marchand. Depuis que la prise de commande n ecrit plus dans la feuille, son `update` ne trouve aucune ligne : il ne LEVE pas, il ne rend simplement AUCUN ITEM — et n8n saute alors tout ce qui suit. Le client ne recevait plus ni « parti », ni « en route », ni « livree ». La verite est dans Supabase, ecrite par « Refleter dans Supabase ».",
+        "onError": "continueRegularOutput",
+        "parameters": {
+          "columns": {
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": true,
+            "mappingMode": "defineBelow",
+            "matchingColumns": [
+              "order_id"
+            ],
+            "value": {
+              "order_id": "={{ $('Trouver la commande').first().json.order_id }}",
+              "position_livreur": "={{ $json.position }}",
+              "statut_livraison": "={{ $json.statut_livraison }}"
+            }
+          },
+          "documentId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $('When Executed by Another Workflow').first().json.sheet_document_id }}"
+          },
+          "operation": "update",
+          "options": {},
+          "sheetName": {
+            "__rl": true,
+            "mode": "name",
+            "value": "={{ $('Config marchand').first().json.sheetCommandes }}"
+          }
+        },
+        "position": [
+          2016,
+          384
+        ],
+        "retryOnFail": true,
+        "type": "n8n-nodes-base.googleSheets",
+        "typeVersion": 4.7,
+        "waitBetweenTries": 2000
+      },
+      {
+        "id": "a3134154-c648-44be-829c-6f3035ae34a3",
+        "maxTries": 3,
+        "name": "Notifier client-commande parti",
+        "notes": "La boutique est transmise : sans elle, l envoi retombait sur le bot par defaut de la plateforme et le client d un marchand recevait ses messages par le bot d un AUTRE. Constate le 19 aout 2026.",
+        "onError": "continueRegularOutput",
+        "parameters": {
+          "options": {},
+          "workflowId": {
+            "__rl": true,
+            "cachedResultName": "Envoyer réponse client",
+            "mode": "list",
+            "value": "JkNvcqsZaY22dfk5"
+          },
+          "workflowInputs": {
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": true,
+            "mappingMode": "defineBelow",
+            "matchingColumns": [],
+            "schema": [
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "canal",
+                "id": "canal",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "destinataire",
+                "id": "destinataire",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "message",
+                "id": "message",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              }
+            ],
+            "value": {
+              "boutique": "={{ $('When Executed by Another Workflow').first().json.slug }}",
+              "canal": "={{ $('Trouver la commande').first().json.canal }}",
+              "destinataire": "={{ String($('Trouver la commande').first().json.chat_id) }}",
+              "message": "={{ $('Préparer données Switch').first().json.message_client }}"
+            }
+          }
+        },
+        "position": [
+          2240,
+          384
+        ],
+        "retryOnFail": false,
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.3,
+        "waitBetweenTries": 2000
+      },
+      {
+        "credentials": {
+          "googleSheetsOAuth2Api": {
+            "id": "9Q14ADLSkwfm2Y5H",
+            "name": "Google Sheets account"
+          }
+        },
+        "disabled": true,
+        "id": "da274ab6-3de5-445b-87ab-abfdd3e40b4d",
+        "maxTries": 3,
+        "name": "Update statut - en_route",
+        "notes": "HORS CHEMIN CRITIQUE. Ce miroir ecrivait le statut dans l onglet du marchand. Depuis que la prise de commande n ecrit plus dans la feuille, son `update` ne trouve aucune ligne : il ne LEVE pas, il ne rend simplement AUCUN ITEM — et n8n saute alors tout ce qui suit. Le client ne recevait plus ni « parti », ni « en route », ni « livree ». La verite est dans Supabase, ecrite par « Refleter dans Supabase ».",
+        "onError": "continueRegularOutput",
+        "parameters": {
+          "columns": {
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": true,
+            "mappingMode": "defineBelow",
+            "matchingColumns": [
+              "order_id"
+            ],
+            "value": {
+              "order_id": "={{ $('Trouver la commande').first().json.order_id }}",
+              "position_livreur": "={{ $json.position }}",
+              "statut_livraison": "={{ $json.statut_livraison }}"
+            }
+          },
+          "documentId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $('When Executed by Another Workflow').first().json.sheet_document_id }}"
+          },
+          "operation": "update",
+          "options": {},
+          "sheetName": {
+            "__rl": true,
+            "mode": "name",
+            "value": "={{ $('Config marchand').first().json.sheetCommandes }}"
+          }
+        },
+        "position": [
+          2016,
+          576
+        ],
+        "retryOnFail": true,
+        "type": "n8n-nodes-base.googleSheets",
+        "typeVersion": 4.7,
+        "waitBetweenTries": 2000
+      },
+      {
+        "id": "ee93ed8d-7f3a-49ca-996d-b56f0557a570",
+        "maxTries": 3,
+        "name": "Notifier client-commande en route",
+        "notes": "La boutique est transmise : sans elle, l envoi retombait sur le bot par defaut de la plateforme et le client d un marchand recevait ses messages par le bot d un AUTRE. Constate le 19 aout 2026.",
+        "onError": "continueRegularOutput",
+        "parameters": {
+          "options": {},
+          "workflowId": {
+            "__rl": true,
+            "cachedResultName": "Envoyer réponse client",
+            "mode": "list",
+            "value": "JkNvcqsZaY22dfk5"
+          },
+          "workflowInputs": {
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": true,
+            "mappingMode": "defineBelow",
+            "matchingColumns": [],
+            "schema": [
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "canal",
+                "id": "canal",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "destinataire",
+                "id": "destinataire",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "message",
+                "id": "message",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              }
+            ],
+            "value": {
+              "boutique": "={{ $('When Executed by Another Workflow').first().json.slug }}",
+              "canal": "={{ $('Trouver la commande').first().json.canal }}",
+              "destinataire": "={{ String($('Trouver la commande').first().json.chat_id) }}",
+              "message": "={{ $('Préparer données Switch').first().json.message_client }}"
+            }
+          }
+        },
+        "position": [
+          2240,
+          576
+        ],
+        "retryOnFail": false,
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.3,
+        "waitBetweenTries": 2000
+      },
+      {
+        "credentials": {
+          "googleSheetsOAuth2Api": {
+            "id": "9Q14ADLSkwfm2Y5H",
+            "name": "Google Sheets account"
+          }
+        },
+        "disabled": true,
+        "id": "b60fff65-68cc-4b27-bca0-2ca2b1dcef7a",
+        "maxTries": 3,
+        "name": "Update statut - livre",
+        "notes": "HORS CHEMIN CRITIQUE. Ce miroir ecrivait le statut dans l onglet du marchand. Depuis que la prise de commande n ecrit plus dans la feuille, son `update` ne trouve aucune ligne : il ne LEVE pas, il ne rend simplement AUCUN ITEM — et n8n saute alors tout ce qui suit. Le client ne recevait plus ni « parti », ni « en route », ni « livree ». La verite est dans Supabase, ecrite par « Refleter dans Supabase ».",
+        "onError": "continueRegularOutput",
+        "parameters": {
+          "columns": {
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": true,
+            "mappingMode": "defineBelow",
+            "matchingColumns": [
+              "order_id"
+            ],
+            "value": {
+              "heure_livraison": "={{ $now.toISO() }}",
+              "order_id": "={{ $('Trouver la commande').first().json.order_id }}",
+              "position_livreur": "={{ $json.position }}",
+              "statut_livraison": "={{ $json.statut_livraison }}"
+            }
+          },
+          "documentId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $('When Executed by Another Workflow').first().json.sheet_document_id }}"
+          },
+          "operation": "update",
+          "options": {},
+          "sheetName": {
+            "__rl": true,
+            "mode": "name",
+            "value": "={{ $('Config marchand').first().json.sheetCommandes }}"
+          }
+        },
+        "position": [
+          2016,
+          768
+        ],
+        "retryOnFail": true,
+        "type": "n8n-nodes-base.googleSheets",
+        "typeVersion": 4.7,
+        "waitBetweenTries": 2000
+      },
+      {
+        "id": "8491da7c-4005-4426-93c9-5aad9bc27810",
+        "maxTries": 3,
+        "name": "Notifier client- commande livrée",
+        "notes": "La boutique est transmise : sans elle, l envoi retombait sur le bot par defaut de la plateforme et le client d un marchand recevait ses messages par le bot d un AUTRE. Constate le 19 aout 2026.",
+        "onError": "continueRegularOutput",
+        "parameters": {
+          "options": {},
+          "workflowId": {
+            "__rl": true,
+            "cachedResultName": "Envoyer réponse client",
+            "mode": "list",
+            "value": "JkNvcqsZaY22dfk5"
+          },
+          "workflowInputs": {
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": true,
+            "mappingMode": "defineBelow",
+            "matchingColumns": [],
+            "schema": [
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "canal",
+                "id": "canal",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "destinataire",
+                "id": "destinataire",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "message",
+                "id": "message",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              }
+            ],
+            "value": {
+              "boutique": "={{ $('When Executed by Another Workflow').first().json.slug }}",
+              "canal": "={{ $('Trouver la commande').first().json.canal }}",
+              "destinataire": "={{ String($('Trouver la commande').first().json.chat_id) }}",
+              "message": "={{ $('Préparer données Switch').first().json.message_client }}"
+            }
+          }
+        },
+        "position": [
+          2240,
+          768
+        ],
+        "retryOnFail": false,
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.3,
+        "waitBetweenTries": 2000
+      },
+      {
+        "id": "9c0f85e0-84bc-4aee-86e1-ef2a349aa8b9",
+        "name": "If",
+        "parameters": {
+          "conditions": {
+            "combinator": "and",
+            "conditions": [
+              {
+                "id": "325e9f0f-27fb-4bfb-9b45-66bb6127ee39",
+                "leftValue": "={{ $('Trouver la commande').first().json.canal }}",
+                "operator": {
+                  "name": "filter.operator.equals",
+                  "operation": "equals",
+                  "type": "string"
+                },
+                "rightValue": "whatsapp"
+              }
+            ],
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 3
+            }
+          },
+          "options": {}
+        },
+        "position": [
+          2464,
+          768
+        ],
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3
+      },
+      {
+        "id": "5386ea72-d476-44ac-a1c2-08089ce9a24b",
+        "maxTries": 3,
+        "name": "Call 'Envoyer réponse client'",
+        "notes": "La boutique est transmise : sans elle, l envoi retombait sur le bot par defaut de la plateforme et le client d un marchand recevait ses messages par le bot d un AUTRE. Constate le 19 aout 2026.",
+        "onError": "continueRegularOutput",
+        "parameters": {
+          "options": {},
+          "workflowId": {
+            "__rl": true,
+            "cachedResultName": "Envoyer réponse client",
+            "mode": "list",
+            "value": "JkNvcqsZaY22dfk5"
+          },
+          "workflowInputs": {
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": true,
+            "mappingMode": "defineBelow",
+            "matchingColumns": [],
+            "schema": [
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "canal",
+                "id": "canal",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "destinataire",
+                "id": "destinataire",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "message",
+                "id": "message",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              }
+            ],
+            "value": {
+              "boutique": "={{ $('When Executed by Another Workflow').first().json.slug }}",
+              "canal": "={{ $('Trouver la commande').first().json.canal }}",
+              "destinataire": "={{ String($('Trouver la commande').first().json.chat_id) }}",
+              "message": "⭐ Merci ! Notez votre livraison de 1 à 5 en répondant un chiffre."
+            }
+          }
+        },
+        "position": [
+          2688,
+          672
+        ],
+        "retryOnFail": false,
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.3,
+        "waitBetweenTries": 2000
+      },
+      {
+        "credentials": {
+          "googleSheetsOAuth2Api": {
+            "id": "9Q14ADLSkwfm2Y5H",
+            "name": "Google Sheets account"
+          }
+        },
+        "disabled": true,
+        "id": "d8466d69-e42d-4ba6-986e-3d4685963826",
+        "maxTries": 3,
+        "name": "Update statut - accepte",
+        "notes": "HORS CHEMIN CRITIQUE. Ce miroir ecrivait le statut dans l onglet du marchand. Depuis que la prise de commande n ecrit plus dans la feuille, son `update` ne trouve aucune ligne : il ne LEVE pas, il ne rend simplement AUCUN ITEM — et n8n saute alors tout ce qui suit. Le client ne recevait plus ni « parti », ni « en route », ni « livree ». La verite est dans Supabase, ecrite par « Refleter dans Supabase ».",
+        "onError": "continueRegularOutput",
+        "parameters": {
+          "columns": {
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": true,
+            "mappingMode": "defineBelow",
+            "matchingColumns": [
+              "order_id"
+            ],
+            "value": {
+              "heure_prise_en_charge": "={{ $now.toISO() }}",
+              "nom_livreur": "={{ $json.livreur_name }}",
+              "order_id": "={{ $('Trouver la commande').first().json.order_id }}",
+              "position_livreur": "={{ $json.position }}",
+              "statut_livraison": "={{ $json.statut_livraison }}"
+            }
+          },
+          "documentId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $('When Executed by Another Workflow').first().json.sheet_document_id }}"
+          },
+          "operation": "update",
+          "options": {},
+          "sheetName": {
+            "__rl": true,
+            "mode": "name",
+            "value": "={{ $('Config marchand').first().json.sheetCommandes }}"
+          }
+        },
+        "position": [
+          1872,
+          0
+        ],
+        "retryOnFail": true,
+        "type": "n8n-nodes-base.googleSheets",
+        "typeVersion": 4.7,
+        "waitBetweenTries": 2000
+      },
+      {
+        "id": "24022f6e-f6e0-42c5-b97d-87c6f0ee6796",
+        "name": "When Executed by Another Workflow",
+        "parameters": {
+          "workflowInputs": {
+            "values": [
+              {
+                "name": "callback_query",
+                "type": "object"
+              },
+              {
+                "name": "slug"
+              },
+              {
+                "name": "nom_boutique"
+              },
+              {
+                "name": "sheet_document_id"
+              },
+              {
+                "name": "sheet_commandes"
+              },
+              {
+                "name": "groupe_livreurs"
+              },
+              {
+                "name": "telegram_marchand"
+              }
+            ]
+          }
+        },
+        "position": [
+          -320,
+          336
+        ],
+        "type": "n8n-nodes-base.executeWorkflowTrigger",
+        "typeVersion": 1.2
+      },
+      {
+        "id": "3085ef42-c5a2-4633-9976-2b590284b812",
+        "name": "Config marchand",
+        "parameters": {
+          "jsCode": "const base  = $('Code in JavaScript').first().json;\nconst fiche = $('When Executed by Another Workflow').first().json || {};\n\n// Le marchand n'est plus devine : le routeur Telegram l'a deja resolu a\n// partir du slug de l'URL du webhook, et nous passe sa fiche. L'ancienne\n// version le cherchait dans l'onglet Marchands par l'identifiant du groupe\n// livreurs, et retombait sur « zahara » quand elle ne trouvait pas — ce qui\n// ecrivait les commandes d'un marchand dans la feuille d'un autre.\nreturn [{ json: { ...base,\n  slug:              String(fiche.slug || ''),\n  boutique_id:       String(fiche.slug || ''),\n  nom_boutique:      String(fiche.nom_boutique || ''),\n  sheetCommandes:    String(fiche.sheet_commandes || ''),\n  sheet_document_id: String(fiche.sheet_document_id || ''),\n  telegram_marchand: String(fiche.telegram_marchand || ''),\n} }];"
+        },
+        "position": [
+          448,
+          336
+        ],
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2
+      },
+      {
+        "id": "5787e042-87c8-4939-b79e-2a6b3fe12810",
+        "maxTries": 3,
+        "name": "Message erreur livreur",
+        "onError": "continueRegularOutput",
+        "parameters": {
+          "mode": "once",
+          "options": {},
+          "workflowId": {
+            "__rl": true,
+            "cachedResultName": "Envoyer réponse client",
+            "mode": "list",
+            "value": "JkNvcqsZaY22dfk5"
+          },
+          "workflowInputs": {
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": true,
+            "mappingMode": "defineBelow",
+            "matchingColumns": [],
+            "schema": [],
+            "value": {
+              "boutique": "={{ $('When Executed by Another Workflow').first().json.slug }}",
+              "canal": "telegram",
+              "destinataire": "={{ $json.chat_id_groupe }}",
+              "message": "=⚠️ {{ $json.livreur_name }}, cette action est déjà enregistrée. Aucune mise à jour nécessaire.",
+              "reply_markup": ""
+            }
+          }
+        },
+        "position": [
+          864,
+          192
+        ],
+        "retryOnFail": false,
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.3,
+        "waitBetweenTries": 2000
+      },
+      {
+        "id": "9ceadb94-6055-4f26-95db-0ab68051dc7c",
+        "maxTries": 3,
+        "name": "Notifier groupe - Course acceptée",
+        "onError": "continueRegularOutput",
+        "parameters": {
+          "mode": "once",
+          "options": {},
+          "workflowId": {
+            "__rl": true,
+            "cachedResultName": "Envoyer réponse client",
+            "mode": "list",
+            "value": "JkNvcqsZaY22dfk5"
+          },
+          "workflowInputs": {
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": true,
+            "mappingMode": "defineBelow",
+            "matchingColumns": [],
+            "schema": [],
+            "value": {
+              "boutique": "={{ $('When Executed by Another Workflow').first().json.slug }}",
+              "canal": "telegram",
+              "destinataire": "={{ $('Code in JavaScript').first().json.chat_id_groupe }}",
+              "message": "=✅ Course acceptée par {{ $('Code in JavaScript').first().json.livreur_name }} !\n\n📦 Commande : {{ $('Trouver la commande').first().json.order_id }}\n👤 Client : {{ $('Trouver la commande').first().json.customer_name }}\n📞 Téléphone : {{ $('Trouver la commande').first().json.phone }}\n📍 Adresse : {{ $('Trouver la commande').first().json.address }}{{ String($('Trouver la commande').first().json.address || '').trim() ? '\\n🗺️ Itinéraire : https://www.google.com/maps/search/' + encodeURIComponent(String($('Trouver la commande').first().json.address).trim()) : '' }}\n\nBonne livraison ! 🛵",
+              "reply_markup": ""
+            }
+          }
+        },
+        "position": [
+          2080,
+          0
+        ],
+        "retryOnFail": false,
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.3,
+        "waitBetweenTries": 2000
+      },
+      {
+        "id": "0fe3ec4d-0f6e-44f7-a11b-d29989432672",
+        "maxTries": 3,
+        "name": "Notifier groupe - Course refusée",
+        "onError": "continueRegularOutput",
+        "parameters": {
+          "mode": "once",
+          "options": {},
+          "workflowId": {
+            "__rl": true,
+            "cachedResultName": "Envoyer réponse client",
+            "mode": "list",
+            "value": "JkNvcqsZaY22dfk5"
+          },
+          "workflowInputs": {
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": true,
+            "mappingMode": "defineBelow",
+            "matchingColumns": [],
+            "schema": [],
+            "value": {
+              "boutique": "={{ $('When Executed by Another Workflow').first().json.slug }}",
+              "canal": "telegram",
+              "destinataire": "={{ $('Code in JavaScript').first().json.chat_id_groupe }}",
+              "message": "=❌ Course refusée par {{ $('Code in JavaScript').first().json.livreur_name }}\n\n📦 Commande : {{ $('Trouver la commande').first().json.order_id }}\n👤 Client : {{ $('Trouver la commande').first().json.customer_name }}\n📞 Téléphone : {{ $('Trouver la commande').first().json.phone }}\n📍 Adresse : {{ $('Trouver la commande').first().json.address }}{{ String($('Trouver la commande').first().json.address || '').trim() ? '\\n🗺️ Itinéraire : https://www.google.com/maps/search/' + encodeURIComponent(String($('Trouver la commande').first().json.address).trim()) : '' }}\n💰 Total : {{ $('Trouver la commande').first().json.total_price }} FCFA\n\nQui prend cette livraison ?",
+              "reply_markup": "={{ JSON.stringify({ inline_keyboard: [[ { text: \"✅ J'accepte\", callback_data: 'accept_' + $('Trouver la commande').first().json.chat_id + '_' + String($('Trouver la commande').first().json.order_id).trim() }, { text: '❌ Je refuse', callback_data: 'refuse_' + $('Trouver la commande').first().json.chat_id + '_' + String($('Trouver la commande').first().json.order_id).trim() } ]] }) }}"
+            }
+          }
+        },
+        "position": [
+          2016,
+          192
+        ],
+        "retryOnFail": false,
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.3,
+        "waitBetweenTries": 2000
+      },
+      {
+        "id": "d904e278-8786-4d08-84e4-39fc8aa1507a",
+        "maxTries": 3,
+        "name": "Notifier groupe - parti",
+        "onError": "continueRegularOutput",
+        "parameters": {
+          "mode": "once",
+          "options": {},
+          "workflowId": {
+            "__rl": true,
+            "cachedResultName": "Envoyer réponse client",
+            "mode": "list",
+            "value": "JkNvcqsZaY22dfk5"
+          },
+          "workflowInputs": {
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": true,
+            "mappingMode": "defineBelow",
+            "matchingColumns": [],
+            "schema": [],
+            "value": {
+              "boutique": "={{ $('When Executed by Another Workflow').first().json.slug }}",
+              "canal": "telegram",
+              "destinataire": "={{ $('Préparer données Switch').first().json.chat_id_groupe }}",
+              "message": "=✅ {{ $('Préparer données Switch').first().json.livreur_name }} a marqué : « Parti de la boutique » à {{ $now.toFormat('HH:mm') }}",
+              "reply_markup": ""
+            }
+          }
+        },
+        "position": [
+          2464,
+          384
+        ],
+        "retryOnFail": false,
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.3,
+        "waitBetweenTries": 2000
+      },
+      {
+        "id": "b49bb5d4-96b5-4b7c-824c-c0e6da82f044",
+        "maxTries": 3,
+        "name": "Notifier groupe - en_route",
+        "onError": "continueRegularOutput",
+        "parameters": {
+          "mode": "once",
+          "options": {},
+          "workflowId": {
+            "__rl": true,
+            "cachedResultName": "Envoyer réponse client",
+            "mode": "list",
+            "value": "JkNvcqsZaY22dfk5"
+          },
+          "workflowInputs": {
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": true,
+            "mappingMode": "defineBelow",
+            "matchingColumns": [],
+            "schema": [],
+            "value": {
+              "boutique": "={{ $('When Executed by Another Workflow').first().json.slug }}",
+              "canal": "telegram",
+              "destinataire": "={{ $('Préparer données Switch').first().json.chat_id_groupe }}",
+              "message": "=📍 {{ $('Préparer données Switch').first().json.livreur_name }} a marqué : « En route » à {{ $now.toFormat('HH:mm') }}",
+              "reply_markup": ""
+            }
+          }
+        },
+        "position": [
+          2464,
+          576
+        ],
+        "retryOnFail": false,
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.3,
+        "waitBetweenTries": 2000
+      },
+      {
+        "id": "3a89c2ac-a240-4fc2-aa9a-15390d6f7cd3",
+        "maxTries": 3,
+        "name": "Notifier groupe - livre",
+        "onError": "continueRegularOutput",
+        "parameters": {
+          "mode": "once",
+          "options": {},
+          "workflowId": {
+            "__rl": true,
+            "cachedResultName": "Envoyer réponse client",
+            "mode": "list",
+            "value": "JkNvcqsZaY22dfk5"
+          },
+          "workflowInputs": {
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": true,
+            "mappingMode": "defineBelow",
+            "matchingColumns": [],
+            "schema": [],
+            "value": {
+              "boutique": "={{ $('When Executed by Another Workflow').first().json.slug }}",
+              "canal": "telegram",
+              "destinataire": "={{ $('Préparer données Switch').first().json.chat_id_groupe }}",
+              "message": "=🏁 {{ $('Préparer données Switch').first().json.livreur_name }} a marqué : « Livré » à {{ $now.toFormat('HH:mm') }}",
+              "reply_markup": ""
+            }
+          }
+        },
+        "position": [
+          2912,
+          768
+        ],
+        "retryOnFail": false,
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.3,
+        "waitBetweenTries": 2000
+      },
+      {
+        "id": "866d76ab-a70d-40e3-b1bc-d33b79d179f2",
+        "maxTries": 3,
+        "name": "Demander note client",
+        "onError": "continueRegularOutput",
+        "parameters": {
+          "mode": "once",
+          "options": {},
+          "workflowId": {
+            "__rl": true,
+            "cachedResultName": "Envoyer réponse client",
+            "mode": "list",
+            "value": "JkNvcqsZaY22dfk5"
+          },
+          "workflowInputs": {
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": true,
+            "mappingMode": "defineBelow",
+            "matchingColumns": [],
+            "schema": [],
+            "value": {
+              "boutique": "={{ $('When Executed by Another Workflow').first().json.slug }}",
+              "canal": "={{ $('Trouver la commande').first().json.canal }}",
+              "destinataire": "={{ String($('Trouver la commande').first().json.chat_id) }}",
+              "message": "✅ Votre commande a été livrée ! Comment évaluez-vous cette livraison ? Votre avis nous aide à améliorer notre service.",
+              "reply_markup": "={{ JSON.stringify({ inline_keyboard: [[ { text: '⭐⭐⭐⭐⭐ Parfait', callback_data: 'note_5_' + String($('Trouver la commande').first().json.chat_id) + '_' + String($('Préparer données Switch').first().json.order_id).trim() }, { text: '⭐⭐⭐ Moyen', callback_data: 'note_3_' + String($('Trouver la commande').first().json.chat_id) + '_' + String($('Préparer données Switch').first().json.order_id).trim() }, { text: '⭐ À améliorer', callback_data: 'note_1_' + String($('Trouver la commande').first().json.chat_id) + '_' + String($('Préparer données Switch').first().json.order_id).trim() } ]] }) }}"
+            }
+          }
+        },
+        "position": [
+          2688,
+          864
+        ],
+        "retryOnFail": false,
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.3,
+        "waitBetweenTries": 2000
+      },
+      {
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "QoKeVRwGrk1YqN9Q",
+            "name": "Header Auth account 2"
+          }
+        },
+        "id": "6622a63a-02e0-4042-a36e-107380b80636",
+        "maxTries": 3,
+        "name": "Refléter dans Supabase",
+        "notes": "Alimente par les quatre mises a jour de statut. La feuille reste la vue operationnelle ; Supabase sert les rapports, dont l alerte retard qui sans cela ne se referme jamais.",
+        "onError": "stopWorkflow",
+        "parameters": {
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "jsonBody": "={\n  \"reference\": {{ JSON.stringify($json.order_id) }},\n  \"statut_livraison\": {{ JSON.stringify($json.statut_livraison || '') }},\n  \"position_livreur\": {{ JSON.stringify($json.position_livreur || '') }},\n  \"nom_livreur\": {{ JSON.stringify($json.nom_livreur || '') }},\n  \"heure_prise_en_charge\": {{ JSON.stringify($json.heure_prise_en_charge || '') }},\n  \"heure_livraison\": {{ JSON.stringify($json.heure_livraison || '') }}\n}",
+          "method": "POST",
+          "options": {},
+          "sendBody": true,
+          "specifyBody": "json",
+          "url": "https://www.djiguiflow.com/api/internal/commandes/livraison"
+        },
+        "position": [
+          2016,
+          -192
+        ],
+        "retryOnFail": true,
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "waitBetweenTries": 2000
+      },
+      {
+        "id": "c1a70001-0000-4000-8000-000000000002",
+        "name": "Coordonnees livreur",
+        "parameters": {
+          "jsCode": "// Qui livre, et comment le joindre.\n//\n// Le prenom vient de Telegram : immediat, toujours la. Le nom et le numero\n// viennent de la fiche que le marchand a saisie dans son tableau de bord, et\n// n'existent que si le livreur a rattache son compte en ouvrant son lien\n// d'invitation.\n//\n// L'annuaire a brievement vecu dans un onglet Google Sheets. C'etait une\n// erreur : cette feuille est la tuyauterie de n8n, pas l'espace de travail du\n// marchand, et Google y rangeait « 0102030405 » comme un nombre en avalant le\n// zero de tete. Le numero vient desormais d'un champ texte de Supabase et se\n// transmet tel que le marchand l'a ecrit : aucune retouche, donc aucun moyen\n// de casser un numero qui marchait.\nconst base = $('Code in JavaScript').first().json;\nconst id = String(base.livreur_id ?? '').trim();\nconst nomTelegram = String(base.livreur_name || '').trim();\n\n// « Chercher fiche livreur » porte onError continueRegularOutput : une\n// plateforme injoignable rend un item d'erreur au lieu de lever. On distingue\n// « lecture impossible » de « livreur pas encore rattache », parce que la\n// premiere merite un jour d'etre remontee et la seconde est banale.\nlet fiche = null;\nlet lecture_ok = true;\ntry {\n  const r = $('Chercher fiche livreur').first().json || {};\n  if (r.error || r.ok !== true) lecture_ok = false;\n  else if (r.trouve === true) fiche = r;\n} catch (e) {\n  lecture_ok = false;\n}\n\nconst nom = String((fiche && fiche.nom) || '').trim()\n  || (nomTelegram === 'Inconnu' ? '' : nomTelegram);\nconst telephone = String((fiche && fiche.telephone) || '').trim();\n\n// LE CLIENT NE DOIT JAMAIS RESTER SANS PERSONNE A APPELER.\n//\n// Un livreur non rattache est un cas NORMAL : il rejoint le groupe Telegram du\n// marchand sans ouvrir son lien d'invitation, et n'existe donc dans aucun\n// annuaire. Le client recevait alors « Livreur : Jean Paul » — un prenom,\n// parfois orne d'emojis, et rien pour joindre qui que ce soit si sa commande\n// tarde. Constate le 20 aout 2026 chez Rose Monde, qui n'a aucun livreur\n// enregistre.\n//\n// Le numero de la boutique est un repli legitime : il est deja public sur la\n// vitrine, et c'est le marchand qui repond de sa livraison.\nlet telephoneBoutique = '';\ntry {\n  telephoneBoutique = String(($('Chercher fiche livreur').first().json || {}).telephone_boutique || '').trim();\n} catch (e) {\n  telephoneBoutique = '';\n}\n\n// La ligne est assemblee ici, pas dans le gabarit du message : un gabarit ne\n// sait pas taire une valeur absente, il ecrit « Livreur : » suivi de rien —\n// exactement ce qu'a recu le client le 16 aout.\nlet ligne_client = '';\nif (nom && telephone) ligne_client = `🛵 Livreur : ${nom} — ${telephone}\\n`;\nelse if (nom) ligne_client = `🛵 Livreur : ${nom}\\n`;\n\n// Faute du numero du livreur, celui de la boutique. Jamais les deux : deux\n// numeros dans un meme message, c'est un client qui ne sait pas lequel appeler.\nif (!telephone && telephoneBoutique) {\n  ligne_client += `📞 Une question ? Appelez la boutique au ${telephoneBoutique}\\n`;\n}\n\nreturn [{ json: {\n  livreur_id: id,\n  nom,\n  telephone,\n  ligne_client,\n  rattache: !!fiche,\n  lecture_ok,\n} }];"
+        },
+        "position": [
+          2448,
+          0
+        ],
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2
+      },
+      {
+        "alwaysOutputData": true,
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "QoKeVRwGrk1YqN9Q",
+            "name": "Header Auth account 2"
+          }
+        },
+        "id": "c1a70002-0000-4000-8000-000000000001",
+        "maxTries": 2,
+        "name": "Chercher fiche livreur",
+        "notes": "Le marchand saisit ses livreurs dans son tableau de bord, pas dans un tableur. Un livreur non rattache est un cas normal, pas une panne : la route rend trouve=false en 200 et le client est prevenu quand meme.",
+        "onError": "continueRegularOutput",
+        "parameters": {
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "jsonBody": "={\n  \"boutique\": {{ JSON.stringify(String($('When Executed by Another Workflow').first().json.slug || '')) }},\n  \"telegram_id\": {{ JSON.stringify(String($('Code in JavaScript').first().json.livreur_id ?? '')) }}\n}",
+          "method": "POST",
+          "options": {},
+          "sendBody": true,
+          "specifyBody": "json",
+          "url": "https://www.djiguiflow.com/api/internal/livreurs/telegram"
+        },
+        "position": [
+          2256,
+          0
+        ],
+        "retryOnFail": true,
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "waitBetweenTries": 2000
+      },
+      {
+        "id": "c1a70009-0000-4000-8000-000000000001",
+        "name": "Demander les frais",
+        "notes": "Un message SEPARE, et pose plus bas que la notification du client : celui-ci est prevenu d abord, et n attend jamais que le livreur ait repondu. Si le livreur n appuie jamais, la commande suit son cours.",
+        "onError": "continueRegularOutput",
+        "parameters": {
+          "mode": "once",
+          "options": {},
+          "workflowId": {
+            "__rl": true,
+            "cachedResultName": "Envoyer réponse client",
+            "mode": "list",
+            "value": "JkNvcqsZaY22dfk5"
+          },
+          "workflowInputs": {
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": true,
+            "mappingMode": "defineBelow",
+            "matchingColumns": [],
+            "schema": [],
+            "value": {
+              "boutique": "={{ $('When Executed by Another Workflow').first().json.slug }}",
+              "canal": "telegram",
+              "destinataire": "={{ $('Code in JavaScript').first().json.chat_id_groupe }}",
+              "message": "=💰 {{ $('Code in JavaScript').first().json.livreur_name }}, quels sont les frais de livraison pour la commande {{ $('Trouver la commande').first().json.order_id }} ?\n\nLe client sera prévenu du montant que vous choisissez.",
+              "reply_markup": "={{ JSON.stringify({ inline_keyboard: [...[[1000, 1500, 2000], [2500, 3000]].map((rangee) => rangee.map((m) => ({ text: m.toLocaleString('fr-FR') + ' F', callback_data: 'frais_' + m + '_' + String($('Trouver la commande').first().json.order_id).trim() }))), [{ text: '✏️ Autre montant', callback_data: 'frais_autre_' + String($('Trouver la commande').first().json.order_id).trim() }]] }) }}",
+              "sheet_document_id": "={{ $('When Executed by Another Workflow').first().json.sheet_document_id }}"
+            }
+          }
+        },
+        "position": [
+          2256,
+          240
+        ],
+        "retryOnFail": false,
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.3
+      },
+      {
+        "id": "demander-position-0001",
+        "name": "Demander la position",
+        "notes": "Envoye APRES la question des frais. Le livreur voyait les boutons d etat en premier : il pouvait marquer parti sans avoir annonce son montant, et le client ne connaissait jamais ses frais.",
+        "parameters": {
+          "mode": "once",
+          "options": {},
+          "workflowId": {
+            "__rl": true,
+            "cachedResultName": "Envoyer réponse client",
+            "mode": "list",
+            "value": "JkNvcqsZaY22dfk5"
+          },
+          "workflowInputs": {
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": true,
+            "mappingMode": "defineBelow",
+            "matchingColumns": [],
+            "schema": [],
+            "value": {
+              "boutique": "={{ $('When Executed by Another Workflow').first().json.slug }}",
+              "canal": "telegram",
+              "destinataire": "={{ $('Code in JavaScript').first().json.chat_id_groupe }}",
+              "message": "=Quelle est votre position ?",
+              "reply_markup": "={{ JSON.stringify({ inline_keyboard: [[ { text: '🚚 Parti de la boutique', callback_data: 'parti_' + $('Trouver la commande').first().json.chat_id + '_' + String($('Trouver la commande').first().json.order_id).trim() }, { text: '📍 En route', callback_data: 'en_route_' + $('Trouver la commande').first().json.chat_id + '_' + String($('Trouver la commande').first().json.order_id).trim() }, { text: '🏁 Livré', callback_data: 'livre_' + $('Trouver la commande').first().json.chat_id + '_' + String($('Trouver la commande').first().json.order_id).trim() } ]] }) }}"
+            }
+          }
+        },
+        "position": [
+          2456,
+          240
+        ],
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.3
+      },
+      {
+        "id": "6a49af31-b212-400e-a319-1f70973933d9",
+        "name": "La feuille ne commande plus",
+        "parameters": {
+          "content": "## Supabase fait foi, la feuille suit\n\nLes quatre « Update statut » ecrivent dans l onglet du marchand. Ils sont\nDOUBLES par « Refleter dans Supabase », qui fait le vrai travail.\n\nIls etaient en arret-sur-erreur, et sur le chemin critique : depuis que la\nprise de commande n ecrit plus dans la feuille, la ligne n existe plus, leur\n`update` echoue — et le client ne recevait plus ni « parti », ni « en route »,\nni « livree ».\n\nDesormais non bloquants. Une livraison ne doit jamais dependre d un miroir.\n\nConstate le 21 aout 2026, au premier essai reel du decouplage.",
+          "height": 240,
+          "width": 560
+        },
+        "position": [
+          -160,
+          -420
+        ],
+        "type": "n8n-nodes-base.stickyNote",
+        "typeVersion": 1
+      },
+      {
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "QoKeVRwGrk1YqN9Q",
+            "name": "Header Auth account 2"
+          }
+        },
+        "id": "n-marquer-prevenu",
+        "maxTries": 3,
+        "name": "Marquer client prevenu",
+        "onError": "continueRegularOutput",
+        "parameters": {
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "jsonBody": "={\n  \"reference\": {{ JSON.stringify($('Trouver la commande').first().json.order_id) }}\n}",
+          "method": "POST",
+          "options": {},
+          "sendBody": true,
+          "specifyBody": "json",
+          "url": "https://www.djiguiflow.com/api/internal/commandes/prevenu"
+        },
+        "position": [
+          2860,
+          -8
+        ],
+        "retryOnFail": true,
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "waitBetweenTries": 5000
+      }
+    ],
+    "workflowId": "LqBgRvLeeKUwZhB5",
+    "workflowPublishHistory": [
+      {
+        "event": "activated",
+        "id": 225,
+        "userId": "81519f6f-0887-498a-ad83-5ffd6d591e9a",
+        "workflowId": "LqBgRvLeeKUwZhB5"
+      },
+      {
+        "event": "deactivated",
+        "id": 224,
+        "userId": "81519f6f-0887-498a-ad83-5ffd6d591e9a",
+        "workflowId": "LqBgRvLeeKUwZhB5"
+      }
+    ]
+  },
+  "connections": {
+    "Call 'Envoyer réponse client'": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Notifier groupe - livre",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Chercher fiche livreur": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Coordonnees livreur",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Config marchand",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Préparer données Switch",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Config marchand": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Verifier doublon",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Coordonnees livreur": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Notifier client - Commande acceptée",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Corriger téléphone": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Switch",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Demander les frais": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Demander la position",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Demander note client": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Notifier groupe - livre",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Call 'Envoyer réponse client'",
+            "type": "main"
+          }
+        ],
+        [
+          {
+            "index": 0,
+            "node": "Demander note client",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Notifier client - Commande acceptée": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Marquer client prevenu",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Notifier client- commande livrée": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "If",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Notifier client-commande en route": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Notifier groupe - en_route",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Notifier client-commande parti": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Notifier groupe - parti",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Notifier groupe - Course acceptée": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Chercher fiche livreur",
+            "type": "main"
+          },
+          {
+            "index": 0,
+            "node": "Demander les frais",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Notifier groupe - Course refusée": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Notifier client - Commande refusée",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Préparer données Switch": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Corriger téléphone",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Notifier groupe - Course acceptée",
+            "type": "main"
+          },
+          {
+            "index": 0,
+            "node": "Refléter dans Supabase",
+            "type": "main"
+          }
+        ],
+        [
+          {
+            "index": 0,
+            "node": "Notifier groupe - Course refusée",
+            "type": "main"
+          }
+        ],
+        [
+          {
+            "index": 0,
+            "node": "Notifier client-commande parti",
+            "type": "main"
+          },
+          {
+            "index": 0,
+            "node": "Refléter dans Supabase",
+            "type": "main"
+          }
+        ],
+        [
+          {
+            "index": 0,
+            "node": "Notifier client-commande en route",
+            "type": "main"
+          },
+          {
+            "index": 0,
+            "node": "Refléter dans Supabase",
+            "type": "main"
+          }
+        ],
+        [
+          {
+            "index": 0,
+            "node": "Notifier client- commande livrée",
+            "type": "main"
+          },
+          {
+            "index": 0,
+            "node": "Refléter dans Supabase",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Trouver la commande": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Code in JavaScript1",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Verifier doublon": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Message erreur livreur",
+            "type": "main"
+          }
+        ],
+        [
+          {
+            "index": 0,
+            "node": "Trouver la commande",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Code in JavaScript",
+            "type": "main"
+          }
+        ]
+      ]
+    }
+  },
+  "description": null,
+  "id": "LqBgRvLeeKUwZhB5",
+  "isArchived": false,
+  "name": "Acceptation Livraison",
+  "nodeGroups": [],
+  "nodes": [
+    {
+      "id": "4c13459a-b872-454c-8926-eb7d526f52b9",
+      "name": "Code in JavaScript",
+      "parameters": {
+        "jsCode": "const callbackData = $input.first().json;\nconst cq = callbackData.callback_query || callbackData;\nconst callbackDataText = cq.data || '';\n\nlet action = 'unknown';\nlet orderId = 'unknown';\nlet clientChatId = 'unknown';\n\nif (callbackDataText && typeof callbackDataText === 'string') {\n  const parts = callbackDataText.split('_');\n  \n  if (parts[0] === 'accept' || parts[0] === 'refuse') {\n    action = parts[0];\n    clientChatId = parts[1] || 'unknown';\n    orderId = parts.length >= 3 ? parts.slice(2).join('_') : 'unknown';\n  }\n  else if (parts[0] === 'parti' || parts[0] === 'livre') {\n    action = parts[0];\n    clientChatId = parts[1] || 'unknown';\n    orderId = parts.length >= 3 ? parts.slice(2).join('_') : 'unknown';\n  }\n  else if (parts[0] === 'en' && parts[1] === 'route') {\n    action = 'en_route';\n    clientChatId = parts[2] || 'unknown';\n    orderId = parts.length >= 4 ? parts.slice(3).join('_') : 'unknown';\n  }\n}\n\nlet statut_livraison = '';\nlet position = '';\nlet message_client = '';\nlet message_groupe = '';\n\nif (action === 'accept') {\n  statut_livraison = 'accepte';\n  position = 'Course acceptee';\n  message_client = 'Votre commande est en route !';\n  message_groupe = 'Course acceptee';\n} else if (action === 'refuse') {\n  statut_livraison = 'refusee';\n  position = 'Course refusee';\n  message_client = 'Nous cherchons un autre livreur.';\n  message_groupe = 'Course refusee.';\n} else if (action === 'parti') {\n  statut_livraison = 'parti';\n  position = 'Le livreur a quitte la boutique';\n  message_client = 'Votre livreur a recupere votre commande ! Il arrive dans 30-40 minutes.';\n  message_groupe = 'Parti de la boutique';\n} else if (action === 'en_route') {\n  statut_livraison = 'en_route';\n  position = 'Le livreur est en route';\n  message_client = 'Votre livreur est en route ! Il arrive dans 10-15 minutes.';\n  message_groupe = 'Livreur en route';\n} else if (action === 'livre') {\n  statut_livraison = 'livre';\n  position = 'Commande livree';\n  message_client = 'Votre commande a ete livree ! Merci de votre confiance.';\n  message_groupe = 'Commande livree';\n} else {\n  statut_livraison = action;\n  position = 'Mise a jour';\n  message_client = 'Mise a jour de votre livraison';\n  message_groupe = 'Mise a jour';\n}\n\nconst livreurId = cq.from ? cq.from.id : null;\nconst livreurName = cq.from ? (cq.from.first_name || cq.from.username || 'Inconnu') : 'Inconnu';\nconst chatIdGroupe = cq.message && cq.message.chat ? cq.message.chat.id : null;\n\nreturn [{\n  json: {\n    order_id: orderId,\n    client_chat_id: clientChatId,\n    action: action,\n    statut_livraison: statut_livraison,\n    position: position,\n    message_client: message_client,\n    message_groupe: message_groupe,\n    livreur_id: livreurId,\n    livreur_name: livreurName,\n    chat_id_groupe: chatIdGroupe,\n    skip: false\n  }\n}];"
+      },
+      "position": [
+        -32,
+        336
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "id": "0395dc67-649f-489d-96f9-ed9ecdf70525",
+      "name": "Verifier doublon",
+      "parameters": {
+        "looseTypeValidation": true,
+        "options": {},
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "2179237a-2b27-4c9d-9b37-1e10714e4b14",
+                    "leftValue": "={{ $json.skip }}",
+                    "operator": {
+                      "operation": "equals",
+                      "type": "string"
+                    },
+                    "rightValue": "true"
+                  }
+                ],
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 3
+                }
+              },
+              "outputKey": "doublon",
+              "renameOutput": true
+            },
+            {
+              "conditions": {
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "ea7fcf7c-5a41-4eb9-8508-a0c86f4115ce",
+                    "leftValue": "true",
+                    "operator": {
+                      "name": "filter.operator.equals",
+                      "operation": "equals",
+                      "type": "string"
+                    },
+                    "rightValue": "true"
+                  }
+                ],
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 3
+                }
+              },
+              "outputKey": "normal",
+              "renameOutput": true
+            }
+          ]
+        }
+      },
+      "position": [
+        656,
+        336
+      ],
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4
+    },
+    {
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "QoKeVRwGrk1YqN9Q",
+          "name": "Header Auth account 2"
+        }
+      },
+      "id": "3f2b683c-7e8b-4076-825a-b4f88c9e3bc2",
+      "maxTries": 3,
+      "name": "Trouver la commande",
+      "notes": "Lit la commande dans SUPABASE. Elle etait cherchee dans l onglet Google Sheets du marchand : des que la prise de commande a cesse d y ecrire, la recherche est revenue vide et le livreur qui acceptait ne declenchait plus rien. La route rend les memes NOMS DE CHAMPS que la feuille, pour ne pas avoir a reecrire quinze expressions.",
+      "parameters": {
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "jsonBody": "={\n  \"order_id\": {{ JSON.stringify($json.order_id) }}\n}",
+        "method": "POST",
+        "options": {},
+        "sendBody": true,
+        "specifyBody": "json",
+        "url": "https://www.djiguiflow.com/api/internal/commandes/fiche"
+      },
+      "position": [
+        880,
+        400
+      ],
+      "retryOnFail": true,
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "waitBetweenTries": 2000
+    },
+    {
+      "id": "28662fc8-a3cb-4578-b8aa-c012b6aa2fa1",
+      "name": "Code in JavaScript1",
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst attendu = String($('Code in JavaScript').first().json.order_id || '').trim();\n\n// La feuille n'est plus interrogee par chat_id mais par order_id : elle ne\n// devrait rendre qu'une seule ligne. On verifie tout de meme la\n// correspondance, parce qu'un doublon dans la feuille suffirait a\n// reintroduire la confusion qu'on vient de supprimer.\nif (items.length === 0) {\n  throw new Error(`Commande ${attendu} introuvable dans la feuille — callback livreur non traite.`);\n}\n\nconst ligne = items.find(i => String(i.json.order_id || '').trim() === attendu);\nif (!ligne) {\n  throw new Error(`Commande ${attendu} absente des ${items.length} ligne(s) remontees — appariement impossible.`);\n}\n\n// La ligne est rendue telle quelle : c'est « Corriger telephone », en aval,\n// qui normalise le numero. La correction faite ici etait morte, « Preparer\n// donnees Switch » ecrasant la valeur juste apres.\nreturn [{ json: ligne.json }];\n"
+      },
+      "position": [
+        1104,
+        400
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "id": "c1178bfb-fe56-45c1-ba92-402963028463",
+      "name": "Préparer données Switch",
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1ab00aad-760b-4108-9f87-b7e922f9d86b",
+              "name": "action",
+              "type": "string",
+              "value": "={{ $('Code in JavaScript').first().json.action }}"
+            },
+            {
+              "id": "d414ae07-2e75-474b-8f65-734c06f15960",
+              "name": "client_chat_id",
+              "type": "string",
+              "value": "={{ $('Code in JavaScript').first().json.client_chat_id }}"
+            },
+            {
+              "id": "8af1294f-8047-4c82-b057-45896a51253a",
+              "name": "message_client",
+              "type": "string",
+              "value": "={{ $('Code in JavaScript').first().json.message_client }}"
+            },
+            {
+              "id": "648d5a50-c684-4659-b968-d8098a500c83",
+              "name": "message_groupe",
+              "type": "string",
+              "value": "={{ $('Code in JavaScript').first().json.message_groupe }}"
+            },
+            {
+              "id": "e9283d55-1a4d-48b7-9d1a-cb4876c4095b",
+              "name": "statut_livraison",
+              "type": "string",
+              "value": "={{ $('Code in JavaScript').first().json.statut_livraison }}"
+            },
+            {
+              "id": "52060def-0507-462e-8d62-7207c92c33b1",
+              "name": "position",
+              "type": "string",
+              "value": "={{ $('Code in JavaScript').first().json.position }}"
+            },
+            {
+              "id": "b759945b-84a6-410c-8111-b43ca9474516",
+              "name": "chat_id_groupe",
+              "type": "string",
+              "value": "={{ $('Code in JavaScript').first().json.chat_id_groupe }}"
+            },
+            {
+              "id": "5de3c6ba-4ba8-4fa1-b8d9-1b39e342265a",
+              "name": "livreur_name",
+              "type": "string",
+              "value": "={{ $('Code in JavaScript').first().json.livreur_name }}"
+            },
+            {
+              "id": "a1000000-0000-4000-8000-000000000001",
+              "name": "phone",
+              "type": "string",
+              "value": "={{ $('Code in JavaScript1').first().json.phone }}"
+            },
+            {
+              "id": "a1000000-0000-4000-8000-000000000002",
+              "name": "customer_name",
+              "type": "string",
+              "value": "={{ $('Code in JavaScript1').first().json.customer_name }}"
+            },
+            {
+              "id": "a1000000-0000-4000-8000-000000000003",
+              "name": "address",
+              "type": "string",
+              "value": "={{ $('Code in JavaScript1').first().json.address }}"
+            },
+            {
+              "id": "a1000000-0000-4000-8000-000000000004",
+              "name": "order_id",
+              "type": "string",
+              "value": "={{ $('Code in JavaScript1').first().json.order_id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "position": [
+        1344,
+        384
+      ],
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4
+    },
+    {
+      "id": "b7628582-8f73-4056-86b6-fe758eeed61a",
+      "name": "Corriger téléphone",
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\nreturn items.map(item => {\n  let phone = String(item.json.phone || '');\n  \n  // Supprimer tous les espaces, tirets, points\n  phone = phone.replace(/[\\s\\-.]/g, '');\n  \n  // Ajouter des zéros au début pour avoir 10 chiffres\n  phone = phone.padStart(10, '0');\n  \n  // Si le numéro fait plus de 10 chiffres, garder les 10 derniers\n  if (phone.length > 10) {\n    phone = phone.slice(-10);\n  }\n  \n  return {\n    json: {\n      ...item.json,\n      phone: phone\n    }\n  };\n});"
+      },
+      "position": [
+        1520,
+        384
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "id": "641d5ced-d946-459a-b2d0-fac4662fb94f",
+      "name": "Switch",
+      "parameters": {
+        "looseTypeValidation": true,
+        "options": {},
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "74e770ae-590c-4630-947a-217428cd6ab4",
+                    "leftValue": "={{ $json.action }}",
+                    "operator": {
+                      "operation": "equals",
+                      "type": "string"
+                    },
+                    "rightValue": "accept"
+                  }
+                ],
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 3
+                }
+              },
+              "outputKey": "accept",
+              "renameOutput": true
+            },
+            {
+              "conditions": {
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "b7ea6925-36ec-4a2d-98df-5ada48238f9b",
+                    "leftValue": "={{ $json.action }}",
+                    "operator": {
+                      "name": "filter.operator.equals",
+                      "operation": "equals",
+                      "type": "string"
+                    },
+                    "rightValue": "refuse"
+                  }
+                ],
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 3
+                }
+              },
+              "outputKey": "refuse",
+              "renameOutput": true
+            },
+            {
+              "conditions": {
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "addcbbac-2731-4951-88be-40216ffefc07",
+                    "leftValue": "={{ $json.action }}",
+                    "operator": {
+                      "name": "filter.operator.equals",
+                      "operation": "equals",
+                      "type": "string"
+                    },
+                    "rightValue": "parti"
+                  }
+                ],
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 3
+                }
+              },
+              "outputKey": "parti",
+              "renameOutput": true
+            },
+            {
+              "conditions": {
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "8be3fc78-c5da-4b4d-93d2-f1a6cc4ebad5",
+                    "leftValue": "={{ $json.action }}",
+                    "operator": {
+                      "name": "filter.operator.equals",
+                      "operation": "equals",
+                      "type": "string"
+                    },
+                    "rightValue": "en_route"
+                  }
+                ],
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 3
+                }
+              },
+              "outputKey": "en_route",
+              "renameOutput": true
+            },
+            {
+              "conditions": {
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "f33f2d6c-55ce-443a-acca-df910176243e",
+                    "leftValue": "={{ $json.action }}",
+                    "operator": {
+                      "name": "filter.operator.equals",
+                      "operation": "equals",
+                      "type": "string"
+                    },
+                    "rightValue": "livre"
+                  }
+                ],
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 3
+                }
+              },
+              "outputKey": "livre",
+              "renameOutput": true
+            }
+          ]
+        }
+      },
+      "position": [
+        1664,
+        336
+      ],
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4
+    },
+    {
+      "id": "1d788d4f-a29e-4323-9e44-ebec355dbb36",
+      "maxTries": 3,
+      "name": "Notifier client - Commande acceptée",
+      "notes": "La boutique est transmise : sans elle, l envoi retombait sur le bot par defaut de la plateforme et le client d un marchand recevait ses messages par le bot d un AUTRE. Constate le 19 aout 2026.",
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "options": {},
+        "workflowId": {
+          "__rl": true,
+          "cachedResultName": "Envoyer réponse client",
+          "mode": "list",
+          "value": "JkNvcqsZaY22dfk5"
+        },
+        "workflowInputs": {
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true,
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "schema": [
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "canal",
+              "id": "canal",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "destinataire",
+              "id": "destinataire",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "message",
+              "id": "message",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            }
+          ],
+          "value": {
+            "boutique": "={{ $('When Executed by Another Workflow').first().json.slug }}",
+            "canal": "={{ $('Trouver la commande').first().json.canal }}",
+            "destinataire": "={{ String($('Trouver la commande').first().json.chat_id) }}",
+            "message": "=🚚 Excellente nouvelle !\n\nVotre commande {{ $('Trouver la commande').first().json.order_id }} est en route !\n{{ $('Coordonnees livreur').first().json.ligne_client }}⏱️ Temps estimé : 30-45 minutes\n\n🚩 Suivre en direct :\nhttps://www.djiguiflow.com/suivi?ref={{ encodeURIComponent(String($('Trouver la commande').first().json.order_id)) }}\n\nÀ tout de suite ! 🙌"
+          }
+        }
+      },
+      "position": [
+        2640,
+        -128
+      ],
+      "retryOnFail": false,
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "id": "c453bc86-a0db-42d4-a154-63c51bdc6d49",
+      "maxTries": 3,
+      "name": "Notifier client - Commande refusée",
+      "notes": "La boutique est transmise : sans elle, l envoi retombait sur le bot par defaut de la plateforme et le client d un marchand recevait ses messages par le bot d un AUTRE. Constate le 19 aout 2026.",
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "options": {},
+        "workflowId": {
+          "__rl": true,
+          "cachedResultName": "Envoyer réponse client",
+          "mode": "list",
+          "value": "JkNvcqsZaY22dfk5"
+        },
+        "workflowInputs": {
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true,
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "schema": [
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "canal",
+              "id": "canal",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "destinataire",
+              "id": "destinataire",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "message",
+              "id": "message",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            }
+          ],
+          "value": {
+            "boutique": "={{ $('When Executed by Another Workflow').first().json.slug }}",
+            "canal": "={{ $('Trouver la commande').first().json.canal }}",
+            "destinataire": "={{ String($('Trouver la commande').first().json.chat_id) }}",
+            "message": "=⚠️ Votre commande {{ $('Trouver la commande').first().json.order_id }}  Un livreur vient de se désister. Nous cherchons immédiatement un autre livreur pour vous.  Merci de votre patience, nous vous tiendrons informé dans quelques minutes. 🙏"
+          }
+        }
+      },
+      "position": [
+        2240,
+        192
+      ],
+      "retryOnFail": false,
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "9Q14ADLSkwfm2Y5H",
+          "name": "Google Sheets account"
+        }
+      },
+      "disabled": true,
+      "id": "f4c51586-efa3-4258-858b-34455e463728",
+      "maxTries": 3,
+      "name": "Update statut - parti",
+      "notes": "HORS CHEMIN CRITIQUE. Ce miroir ecrivait le statut dans l onglet du marchand. Depuis que la prise de commande n ecrit plus dans la feuille, son `update` ne trouve aucune ligne : il ne LEVE pas, il ne rend simplement AUCUN ITEM — et n8n saute alors tout ce qui suit. Le client ne recevait plus ni « parti », ni « en route », ni « livree ». La verite est dans Supabase, ecrite par « Refleter dans Supabase ».",
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "columns": {
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true,
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "order_id"
+          ],
+          "value": {
+            "order_id": "={{ $('Trouver la commande').first().json.order_id }}",
+            "position_livreur": "={{ $json.position }}",
+            "statut_livraison": "={{ $json.statut_livraison }}"
+          }
+        },
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('When Executed by Another Workflow').first().json.sheet_document_id }}"
+        },
+        "operation": "update",
+        "options": {},
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "={{ $('Config marchand').first().json.sheetCommandes }}"
+        }
+      },
+      "position": [
+        2016,
+        384
+      ],
+      "retryOnFail": true,
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "waitBetweenTries": 2000
+    },
+    {
+      "id": "a3134154-c648-44be-829c-6f3035ae34a3",
+      "maxTries": 3,
+      "name": "Notifier client-commande parti",
+      "notes": "La boutique est transmise : sans elle, l envoi retombait sur le bot par defaut de la plateforme et le client d un marchand recevait ses messages par le bot d un AUTRE. Constate le 19 aout 2026.",
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "options": {},
+        "workflowId": {
+          "__rl": true,
+          "cachedResultName": "Envoyer réponse client",
+          "mode": "list",
+          "value": "JkNvcqsZaY22dfk5"
+        },
+        "workflowInputs": {
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true,
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "schema": [
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "canal",
+              "id": "canal",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "destinataire",
+              "id": "destinataire",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "message",
+              "id": "message",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            }
+          ],
+          "value": {
+            "boutique": "={{ $('When Executed by Another Workflow').first().json.slug }}",
+            "canal": "={{ $('Trouver la commande').first().json.canal }}",
+            "destinataire": "={{ String($('Trouver la commande').first().json.chat_id) }}",
+            "message": "={{ $('Préparer données Switch').first().json.message_client }}"
+          }
+        }
+      },
+      "position": [
+        2240,
+        384
+      ],
+      "retryOnFail": false,
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "9Q14ADLSkwfm2Y5H",
+          "name": "Google Sheets account"
+        }
+      },
+      "disabled": true,
+      "id": "da274ab6-3de5-445b-87ab-abfdd3e40b4d",
+      "maxTries": 3,
+      "name": "Update statut - en_route",
+      "notes": "HORS CHEMIN CRITIQUE. Ce miroir ecrivait le statut dans l onglet du marchand. Depuis que la prise de commande n ecrit plus dans la feuille, son `update` ne trouve aucune ligne : il ne LEVE pas, il ne rend simplement AUCUN ITEM — et n8n saute alors tout ce qui suit. Le client ne recevait plus ni « parti », ni « en route », ni « livree ». La verite est dans Supabase, ecrite par « Refleter dans Supabase ».",
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "columns": {
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true,
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "order_id"
+          ],
+          "value": {
+            "order_id": "={{ $('Trouver la commande').first().json.order_id }}",
+            "position_livreur": "={{ $json.position }}",
+            "statut_livraison": "={{ $json.statut_livraison }}"
+          }
+        },
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('When Executed by Another Workflow').first().json.sheet_document_id }}"
+        },
+        "operation": "update",
+        "options": {},
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "={{ $('Config marchand').first().json.sheetCommandes }}"
+        }
+      },
+      "position": [
+        2016,
+        576
+      ],
+      "retryOnFail": true,
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "waitBetweenTries": 2000
+    },
+    {
+      "id": "ee93ed8d-7f3a-49ca-996d-b56f0557a570",
+      "maxTries": 3,
+      "name": "Notifier client-commande en route",
+      "notes": "La boutique est transmise : sans elle, l envoi retombait sur le bot par defaut de la plateforme et le client d un marchand recevait ses messages par le bot d un AUTRE. Constate le 19 aout 2026.",
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "options": {},
+        "workflowId": {
+          "__rl": true,
+          "cachedResultName": "Envoyer réponse client",
+          "mode": "list",
+          "value": "JkNvcqsZaY22dfk5"
+        },
+        "workflowInputs": {
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true,
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "schema": [
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "canal",
+              "id": "canal",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "destinataire",
+              "id": "destinataire",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "message",
+              "id": "message",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            }
+          ],
+          "value": {
+            "boutique": "={{ $('When Executed by Another Workflow').first().json.slug }}",
+            "canal": "={{ $('Trouver la commande').first().json.canal }}",
+            "destinataire": "={{ String($('Trouver la commande').first().json.chat_id) }}",
+            "message": "={{ $('Préparer données Switch').first().json.message_client }}"
+          }
+        }
+      },
+      "position": [
+        2240,
+        576
+      ],
+      "retryOnFail": false,
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "9Q14ADLSkwfm2Y5H",
+          "name": "Google Sheets account"
+        }
+      },
+      "disabled": true,
+      "id": "b60fff65-68cc-4b27-bca0-2ca2b1dcef7a",
+      "maxTries": 3,
+      "name": "Update statut - livre",
+      "notes": "HORS CHEMIN CRITIQUE. Ce miroir ecrivait le statut dans l onglet du marchand. Depuis que la prise de commande n ecrit plus dans la feuille, son `update` ne trouve aucune ligne : il ne LEVE pas, il ne rend simplement AUCUN ITEM — et n8n saute alors tout ce qui suit. Le client ne recevait plus ni « parti », ni « en route », ni « livree ». La verite est dans Supabase, ecrite par « Refleter dans Supabase ».",
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "columns": {
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true,
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "order_id"
+          ],
+          "value": {
+            "heure_livraison": "={{ $now.toISO() }}",
+            "order_id": "={{ $('Trouver la commande').first().json.order_id }}",
+            "position_livreur": "={{ $json.position }}",
+            "statut_livraison": "={{ $json.statut_livraison }}"
+          }
+        },
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('When Executed by Another Workflow').first().json.sheet_document_id }}"
+        },
+        "operation": "update",
+        "options": {},
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "={{ $('Config marchand').first().json.sheetCommandes }}"
+        }
+      },
+      "position": [
+        2016,
+        768
+      ],
+      "retryOnFail": true,
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "waitBetweenTries": 2000
+    },
+    {
+      "id": "8491da7c-4005-4426-93c9-5aad9bc27810",
+      "maxTries": 3,
+      "name": "Notifier client- commande livrée",
+      "notes": "La boutique est transmise : sans elle, l envoi retombait sur le bot par defaut de la plateforme et le client d un marchand recevait ses messages par le bot d un AUTRE. Constate le 19 aout 2026.",
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "options": {},
+        "workflowId": {
+          "__rl": true,
+          "cachedResultName": "Envoyer réponse client",
+          "mode": "list",
+          "value": "JkNvcqsZaY22dfk5"
+        },
+        "workflowInputs": {
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true,
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "schema": [
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "canal",
+              "id": "canal",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "destinataire",
+              "id": "destinataire",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "message",
+              "id": "message",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            }
+          ],
+          "value": {
+            "boutique": "={{ $('When Executed by Another Workflow').first().json.slug }}",
+            "canal": "={{ $('Trouver la commande').first().json.canal }}",
+            "destinataire": "={{ String($('Trouver la commande').first().json.chat_id) }}",
+            "message": "={{ $('Préparer données Switch').first().json.message_client }}"
+          }
+        }
+      },
+      "position": [
+        2240,
+        768
+      ],
+      "retryOnFail": false,
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "id": "9c0f85e0-84bc-4aee-86e1-ef2a349aa8b9",
+      "name": "If",
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "325e9f0f-27fb-4bfb-9b45-66bb6127ee39",
+              "leftValue": "={{ $('Trouver la commande').first().json.canal }}",
+              "operator": {
+                "name": "filter.operator.equals",
+                "operation": "equals",
+                "type": "string"
+              },
+              "rightValue": "whatsapp"
+            }
+          ],
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          }
+        },
+        "options": {}
+      },
+      "position": [
+        2464,
+        768
+      ],
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3
+    },
+    {
+      "id": "5386ea72-d476-44ac-a1c2-08089ce9a24b",
+      "maxTries": 3,
+      "name": "Call 'Envoyer réponse client'",
+      "notes": "La boutique est transmise : sans elle, l envoi retombait sur le bot par defaut de la plateforme et le client d un marchand recevait ses messages par le bot d un AUTRE. Constate le 19 aout 2026.",
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "options": {},
+        "workflowId": {
+          "__rl": true,
+          "cachedResultName": "Envoyer réponse client",
+          "mode": "list",
+          "value": "JkNvcqsZaY22dfk5"
+        },
+        "workflowInputs": {
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true,
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "schema": [
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "canal",
+              "id": "canal",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "destinataire",
+              "id": "destinataire",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "message",
+              "id": "message",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            }
+          ],
+          "value": {
+            "boutique": "={{ $('When Executed by Another Workflow').first().json.slug }}",
+            "canal": "={{ $('Trouver la commande').first().json.canal }}",
+            "destinataire": "={{ String($('Trouver la commande').first().json.chat_id) }}",
+            "message": "⭐ Merci ! Notez votre livraison de 1 à 5 en répondant un chiffre."
+          }
+        }
+      },
+      "position": [
+        2688,
+        672
+      ],
+      "retryOnFail": false,
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "9Q14ADLSkwfm2Y5H",
+          "name": "Google Sheets account"
+        }
+      },
+      "disabled": true,
+      "id": "d8466d69-e42d-4ba6-986e-3d4685963826",
+      "maxTries": 3,
+      "name": "Update statut - accepte",
+      "notes": "HORS CHEMIN CRITIQUE. Ce miroir ecrivait le statut dans l onglet du marchand. Depuis que la prise de commande n ecrit plus dans la feuille, son `update` ne trouve aucune ligne : il ne LEVE pas, il ne rend simplement AUCUN ITEM — et n8n saute alors tout ce qui suit. Le client ne recevait plus ni « parti », ni « en route », ni « livree ». La verite est dans Supabase, ecrite par « Refleter dans Supabase ».",
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "columns": {
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true,
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "order_id"
+          ],
+          "value": {
+            "heure_prise_en_charge": "={{ $now.toISO() }}",
+            "nom_livreur": "={{ $json.livreur_name }}",
+            "order_id": "={{ $('Trouver la commande').first().json.order_id }}",
+            "position_livreur": "={{ $json.position }}",
+            "statut_livraison": "={{ $json.statut_livraison }}"
+          }
+        },
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('When Executed by Another Workflow').first().json.sheet_document_id }}"
+        },
+        "operation": "update",
+        "options": {},
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "={{ $('Config marchand').first().json.sheetCommandes }}"
+        }
+      },
+      "position": [
+        1872,
+        0
+      ],
+      "retryOnFail": true,
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "waitBetweenTries": 2000
+    },
+    {
+      "id": "24022f6e-f6e0-42c5-b97d-87c6f0ee6796",
+      "name": "When Executed by Another Workflow",
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "callback_query",
+              "type": "object"
+            },
+            {
+              "name": "slug"
+            },
+            {
+              "name": "nom_boutique"
+            },
+            {
+              "name": "sheet_document_id"
+            },
+            {
+              "name": "sheet_commandes"
+            },
+            {
+              "name": "groupe_livreurs"
+            },
+            {
+              "name": "telegram_marchand"
+            }
+          ]
+        }
+      },
+      "position": [
+        -320,
+        336
+      ],
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2
+    },
+    {
+      "id": "3085ef42-c5a2-4633-9976-2b590284b812",
+      "name": "Config marchand",
+      "parameters": {
+        "jsCode": "const base  = $('Code in JavaScript').first().json;\nconst fiche = $('When Executed by Another Workflow').first().json || {};\n\n// Le marchand n'est plus devine : le routeur Telegram l'a deja resolu a\n// partir du slug de l'URL du webhook, et nous passe sa fiche. L'ancienne\n// version le cherchait dans l'onglet Marchands par l'identifiant du groupe\n// livreurs, et retombait sur « zahara » quand elle ne trouvait pas — ce qui\n// ecrivait les commandes d'un marchand dans la feuille d'un autre.\nreturn [{ json: { ...base,\n  slug:              String(fiche.slug || ''),\n  boutique_id:       String(fiche.slug || ''),\n  nom_boutique:      String(fiche.nom_boutique || ''),\n  sheetCommandes:    String(fiche.sheet_commandes || ''),\n  sheet_document_id: String(fiche.sheet_document_id || ''),\n  telegram_marchand: String(fiche.telegram_marchand || ''),\n} }];"
+      },
+      "position": [
+        448,
+        336
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "id": "5787e042-87c8-4939-b79e-2a6b3fe12810",
+      "maxTries": 3,
+      "name": "Message erreur livreur",
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "mode": "once",
+        "options": {},
+        "workflowId": {
+          "__rl": true,
+          "cachedResultName": "Envoyer réponse client",
+          "mode": "list",
+          "value": "JkNvcqsZaY22dfk5"
+        },
+        "workflowInputs": {
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true,
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "schema": [],
+          "value": {
+            "boutique": "={{ $('When Executed by Another Workflow').first().json.slug }}",
+            "canal": "telegram",
+            "destinataire": "={{ $json.chat_id_groupe }}",
+            "message": "=⚠️ {{ $json.livreur_name }}, cette action est déjà enregistrée. Aucune mise à jour nécessaire.",
+            "reply_markup": ""
+          }
+        }
+      },
+      "position": [
+        864,
+        192
+      ],
+      "retryOnFail": false,
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "id": "9ceadb94-6055-4f26-95db-0ab68051dc7c",
+      "maxTries": 3,
+      "name": "Notifier groupe - Course acceptée",
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "mode": "once",
+        "options": {},
+        "workflowId": {
+          "__rl": true,
+          "cachedResultName": "Envoyer réponse client",
+          "mode": "list",
+          "value": "JkNvcqsZaY22dfk5"
+        },
+        "workflowInputs": {
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true,
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "schema": [],
+          "value": {
+            "boutique": "={{ $('When Executed by Another Workflow').first().json.slug }}",
+            "canal": "telegram",
+            "destinataire": "={{ $('Code in JavaScript').first().json.chat_id_groupe }}",
+            "message": "=✅ Course acceptée par {{ $('Code in JavaScript').first().json.livreur_name }} !\n\n📦 Commande : {{ $('Trouver la commande').first().json.order_id }}\n👤 Client : {{ $('Trouver la commande').first().json.customer_name }}\n📞 Téléphone : {{ $('Trouver la commande').first().json.phone }}\n📍 Adresse : {{ $('Trouver la commande').first().json.address }}{{ String($('Trouver la commande').first().json.address || '').trim() ? '\\n🗺️ Itinéraire : https://www.google.com/maps/search/' + encodeURIComponent(String($('Trouver la commande').first().json.address).trim()) : '' }}\n\nBonne livraison ! 🛵",
+            "reply_markup": ""
+          }
+        }
+      },
+      "position": [
+        2080,
+        0
+      ],
+      "retryOnFail": false,
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "id": "0fe3ec4d-0f6e-44f7-a11b-d29989432672",
+      "maxTries": 3,
+      "name": "Notifier groupe - Course refusée",
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "mode": "once",
+        "options": {},
+        "workflowId": {
+          "__rl": true,
+          "cachedResultName": "Envoyer réponse client",
+          "mode": "list",
+          "value": "JkNvcqsZaY22dfk5"
+        },
+        "workflowInputs": {
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true,
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "schema": [],
+          "value": {
+            "boutique": "={{ $('When Executed by Another Workflow').first().json.slug }}",
+            "canal": "telegram",
+            "destinataire": "={{ $('Code in JavaScript').first().json.chat_id_groupe }}",
+            "message": "=❌ Course refusée par {{ $('Code in JavaScript').first().json.livreur_name }}\n\n📦 Commande : {{ $('Trouver la commande').first().json.order_id }}\n👤 Client : {{ $('Trouver la commande').first().json.customer_name }}\n📞 Téléphone : {{ $('Trouver la commande').first().json.phone }}\n📍 Adresse : {{ $('Trouver la commande').first().json.address }}{{ String($('Trouver la commande').first().json.address || '').trim() ? '\\n🗺️ Itinéraire : https://www.google.com/maps/search/' + encodeURIComponent(String($('Trouver la commande').first().json.address).trim()) : '' }}\n💰 Total : {{ $('Trouver la commande').first().json.total_price }} FCFA\n\nQui prend cette livraison ?",
+            "reply_markup": "={{ JSON.stringify({ inline_keyboard: [[ { text: \"✅ J'accepte\", callback_data: 'accept_' + $('Trouver la commande').first().json.chat_id + '_' + String($('Trouver la commande').first().json.order_id).trim() }, { text: '❌ Je refuse', callback_data: 'refuse_' + $('Trouver la commande').first().json.chat_id + '_' + String($('Trouver la commande').first().json.order_id).trim() } ]] }) }}"
+          }
+        }
+      },
+      "position": [
+        2016,
+        192
+      ],
+      "retryOnFail": false,
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "id": "d904e278-8786-4d08-84e4-39fc8aa1507a",
+      "maxTries": 3,
+      "name": "Notifier groupe - parti",
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "mode": "once",
+        "options": {},
+        "workflowId": {
+          "__rl": true,
+          "cachedResultName": "Envoyer réponse client",
+          "mode": "list",
+          "value": "JkNvcqsZaY22dfk5"
+        },
+        "workflowInputs": {
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true,
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "schema": [],
+          "value": {
+            "boutique": "={{ $('When Executed by Another Workflow').first().json.slug }}",
+            "canal": "telegram",
+            "destinataire": "={{ $('Préparer données Switch').first().json.chat_id_groupe }}",
+            "message": "=✅ {{ $('Préparer données Switch').first().json.livreur_name }} a marqué : « Parti de la boutique » à {{ $now.toFormat('HH:mm') }}",
+            "reply_markup": ""
+          }
+        }
+      },
+      "position": [
+        2464,
+        384
+      ],
+      "retryOnFail": false,
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "id": "b49bb5d4-96b5-4b7c-824c-c0e6da82f044",
+      "maxTries": 3,
+      "name": "Notifier groupe - en_route",
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "mode": "once",
+        "options": {},
+        "workflowId": {
+          "__rl": true,
+          "cachedResultName": "Envoyer réponse client",
+          "mode": "list",
+          "value": "JkNvcqsZaY22dfk5"
+        },
+        "workflowInputs": {
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true,
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "schema": [],
+          "value": {
+            "boutique": "={{ $('When Executed by Another Workflow').first().json.slug }}",
+            "canal": "telegram",
+            "destinataire": "={{ $('Préparer données Switch').first().json.chat_id_groupe }}",
+            "message": "=📍 {{ $('Préparer données Switch').first().json.livreur_name }} a marqué : « En route » à {{ $now.toFormat('HH:mm') }}",
+            "reply_markup": ""
+          }
+        }
+      },
+      "position": [
+        2464,
+        576
+      ],
+      "retryOnFail": false,
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "id": "3a89c2ac-a240-4fc2-aa9a-15390d6f7cd3",
+      "maxTries": 3,
+      "name": "Notifier groupe - livre",
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "mode": "once",
+        "options": {},
+        "workflowId": {
+          "__rl": true,
+          "cachedResultName": "Envoyer réponse client",
+          "mode": "list",
+          "value": "JkNvcqsZaY22dfk5"
+        },
+        "workflowInputs": {
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true,
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "schema": [],
+          "value": {
+            "boutique": "={{ $('When Executed by Another Workflow').first().json.slug }}",
+            "canal": "telegram",
+            "destinataire": "={{ $('Préparer données Switch').first().json.chat_id_groupe }}",
+            "message": "=🏁 {{ $('Préparer données Switch').first().json.livreur_name }} a marqué : « Livré » à {{ $now.toFormat('HH:mm') }}",
+            "reply_markup": ""
+          }
+        }
+      },
+      "position": [
+        2912,
+        768
+      ],
+      "retryOnFail": false,
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "id": "866d76ab-a70d-40e3-b1bc-d33b79d179f2",
+      "maxTries": 3,
+      "name": "Demander note client",
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "mode": "once",
+        "options": {},
+        "workflowId": {
+          "__rl": true,
+          "cachedResultName": "Envoyer réponse client",
+          "mode": "list",
+          "value": "JkNvcqsZaY22dfk5"
+        },
+        "workflowInputs": {
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true,
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "schema": [],
+          "value": {
+            "boutique": "={{ $('When Executed by Another Workflow').first().json.slug }}",
+            "canal": "={{ $('Trouver la commande').first().json.canal }}",
+            "destinataire": "={{ String($('Trouver la commande').first().json.chat_id) }}",
+            "message": "✅ Votre commande a été livrée ! Comment évaluez-vous cette livraison ? Votre avis nous aide à améliorer notre service.",
+            "reply_markup": "={{ JSON.stringify({ inline_keyboard: [[ { text: '⭐⭐⭐⭐⭐ Parfait', callback_data: 'note_5_' + String($('Trouver la commande').first().json.chat_id) + '_' + String($('Préparer données Switch').first().json.order_id).trim() }, { text: '⭐⭐⭐ Moyen', callback_data: 'note_3_' + String($('Trouver la commande').first().json.chat_id) + '_' + String($('Préparer données Switch').first().json.order_id).trim() }, { text: '⭐ À améliorer', callback_data: 'note_1_' + String($('Trouver la commande').first().json.chat_id) + '_' + String($('Préparer données Switch').first().json.order_id).trim() } ]] }) }}"
+          }
+        }
+      },
+      "position": [
+        2688,
+        864
+      ],
+      "retryOnFail": false,
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "QoKeVRwGrk1YqN9Q",
+          "name": "Header Auth account 2"
+        }
+      },
+      "id": "6622a63a-02e0-4042-a36e-107380b80636",
+      "maxTries": 3,
+      "name": "Refléter dans Supabase",
+      "notes": "Alimente par les quatre mises a jour de statut. La feuille reste la vue operationnelle ; Supabase sert les rapports, dont l alerte retard qui sans cela ne se referme jamais.",
+      "onError": "stopWorkflow",
+      "parameters": {
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "jsonBody": "={\n  \"reference\": {{ JSON.stringify($json.order_id) }},\n  \"statut_livraison\": {{ JSON.stringify($json.statut_livraison || '') }},\n  \"position_livreur\": {{ JSON.stringify($json.position_livreur || '') }},\n  \"nom_livreur\": {{ JSON.stringify($json.nom_livreur || '') }},\n  \"heure_prise_en_charge\": {{ JSON.stringify($json.heure_prise_en_charge || '') }},\n  \"heure_livraison\": {{ JSON.stringify($json.heure_livraison || '') }}\n}",
+        "method": "POST",
+        "options": {},
+        "sendBody": true,
+        "specifyBody": "json",
+        "url": "https://www.djiguiflow.com/api/internal/commandes/livraison"
+      },
+      "position": [
+        2016,
+        -192
+      ],
+      "retryOnFail": true,
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "waitBetweenTries": 2000
+    },
+    {
+      "id": "c1a70001-0000-4000-8000-000000000002",
+      "name": "Coordonnees livreur",
+      "parameters": {
+        "jsCode": "// Qui livre, et comment le joindre.\n//\n// Le prenom vient de Telegram : immediat, toujours la. Le nom et le numero\n// viennent de la fiche que le marchand a saisie dans son tableau de bord, et\n// n'existent que si le livreur a rattache son compte en ouvrant son lien\n// d'invitation.\n//\n// L'annuaire a brievement vecu dans un onglet Google Sheets. C'etait une\n// erreur : cette feuille est la tuyauterie de n8n, pas l'espace de travail du\n// marchand, et Google y rangeait « 0102030405 » comme un nombre en avalant le\n// zero de tete. Le numero vient desormais d'un champ texte de Supabase et se\n// transmet tel que le marchand l'a ecrit : aucune retouche, donc aucun moyen\n// de casser un numero qui marchait.\nconst base = $('Code in JavaScript').first().json;\nconst id = String(base.livreur_id ?? '').trim();\nconst nomTelegram = String(base.livreur_name || '').trim();\n\n// « Chercher fiche livreur » porte onError continueRegularOutput : une\n// plateforme injoignable rend un item d'erreur au lieu de lever. On distingue\n// « lecture impossible » de « livreur pas encore rattache », parce que la\n// premiere merite un jour d'etre remontee et la seconde est banale.\nlet fiche = null;\nlet lecture_ok = true;\ntry {\n  const r = $('Chercher fiche livreur').first().json || {};\n  if (r.error || r.ok !== true) lecture_ok = false;\n  else if (r.trouve === true) fiche = r;\n} catch (e) {\n  lecture_ok = false;\n}\n\nconst nom = String((fiche && fiche.nom) || '').trim()\n  || (nomTelegram === 'Inconnu' ? '' : nomTelegram);\nconst telephone = String((fiche && fiche.telephone) || '').trim();\n\n// LE CLIENT NE DOIT JAMAIS RESTER SANS PERSONNE A APPELER.\n//\n// Un livreur non rattache est un cas NORMAL : il rejoint le groupe Telegram du\n// marchand sans ouvrir son lien d'invitation, et n'existe donc dans aucun\n// annuaire. Le client recevait alors « Livreur : Jean Paul » — un prenom,\n// parfois orne d'emojis, et rien pour joindre qui que ce soit si sa commande\n// tarde. Constate le 20 aout 2026 chez Rose Monde, qui n'a aucun livreur\n// enregistre.\n//\n// Le numero de la boutique est un repli legitime : il est deja public sur la\n// vitrine, et c'est le marchand qui repond de sa livraison.\nlet telephoneBoutique = '';\ntry {\n  telephoneBoutique = String(($('Chercher fiche livreur').first().json || {}).telephone_boutique || '').trim();\n} catch (e) {\n  telephoneBoutique = '';\n}\n\n// La ligne est assemblee ici, pas dans le gabarit du message : un gabarit ne\n// sait pas taire une valeur absente, il ecrit « Livreur : » suivi de rien —\n// exactement ce qu'a recu le client le 16 aout.\nlet ligne_client = '';\nif (nom && telephone) ligne_client = `🛵 Livreur : ${nom} — ${telephone}\\n`;\nelse if (nom) ligne_client = `🛵 Livreur : ${nom}\\n`;\n\n// Faute du numero du livreur, celui de la boutique. Jamais les deux : deux\n// numeros dans un meme message, c'est un client qui ne sait pas lequel appeler.\nif (!telephone && telephoneBoutique) {\n  ligne_client += `📞 Une question ? Appelez la boutique au ${telephoneBoutique}\\n`;\n}\n\nreturn [{ json: {\n  livreur_id: id,\n  nom,\n  telephone,\n  ligne_client,\n  rattache: !!fiche,\n  lecture_ok,\n} }];"
+      },
+      "position": [
+        2448,
+        0
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "alwaysOutputData": true,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "QoKeVRwGrk1YqN9Q",
+          "name": "Header Auth account 2"
+        }
+      },
+      "id": "c1a70002-0000-4000-8000-000000000001",
+      "maxTries": 2,
+      "name": "Chercher fiche livreur",
+      "notes": "Le marchand saisit ses livreurs dans son tableau de bord, pas dans un tableur. Un livreur non rattache est un cas normal, pas une panne : la route rend trouve=false en 200 et le client est prevenu quand meme.",
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "jsonBody": "={\n  \"boutique\": {{ JSON.stringify(String($('When Executed by Another Workflow').first().json.slug || '')) }},\n  \"telegram_id\": {{ JSON.stringify(String($('Code in JavaScript').first().json.livreur_id ?? '')) }}\n}",
+        "method": "POST",
+        "options": {},
+        "sendBody": true,
+        "specifyBody": "json",
+        "url": "https://www.djiguiflow.com/api/internal/livreurs/telegram"
+      },
+      "position": [
+        2256,
+        0
+      ],
+      "retryOnFail": true,
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "waitBetweenTries": 2000
+    },
+    {
+      "id": "c1a70009-0000-4000-8000-000000000001",
+      "name": "Demander les frais",
+      "notes": "Un message SEPARE, et pose plus bas que la notification du client : celui-ci est prevenu d abord, et n attend jamais que le livreur ait repondu. Si le livreur n appuie jamais, la commande suit son cours.",
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "mode": "once",
+        "options": {},
+        "workflowId": {
+          "__rl": true,
+          "cachedResultName": "Envoyer réponse client",
+          "mode": "list",
+          "value": "JkNvcqsZaY22dfk5"
+        },
+        "workflowInputs": {
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true,
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "schema": [],
+          "value": {
+            "boutique": "={{ $('When Executed by Another Workflow').first().json.slug }}",
+            "canal": "telegram",
+            "destinataire": "={{ $('Code in JavaScript').first().json.chat_id_groupe }}",
+            "message": "=💰 {{ $('Code in JavaScript').first().json.livreur_name }}, quels sont les frais de livraison pour la commande {{ $('Trouver la commande').first().json.order_id }} ?\n\nLe client sera prévenu du montant que vous choisissez.",
+            "reply_markup": "={{ JSON.stringify({ inline_keyboard: [...[[1000, 1500, 2000], [2500, 3000]].map((rangee) => rangee.map((m) => ({ text: m.toLocaleString('fr-FR') + ' F', callback_data: 'frais_' + m + '_' + String($('Trouver la commande').first().json.order_id).trim() }))), [{ text: '✏️ Autre montant', callback_data: 'frais_autre_' + String($('Trouver la commande').first().json.order_id).trim() }]] }) }}",
+            "sheet_document_id": "={{ $('When Executed by Another Workflow').first().json.sheet_document_id }}"
+          }
+        }
+      },
+      "position": [
+        2256,
+        240
+      ],
+      "retryOnFail": false,
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3
+    },
+    {
+      "id": "demander-position-0001",
+      "name": "Demander la position",
+      "notes": "Envoye APRES la question des frais. Le livreur voyait les boutons d etat en premier : il pouvait marquer parti sans avoir annonce son montant, et le client ne connaissait jamais ses frais.",
+      "parameters": {
+        "mode": "once",
+        "options": {},
+        "workflowId": {
+          "__rl": true,
+          "cachedResultName": "Envoyer réponse client",
+          "mode": "list",
+          "value": "JkNvcqsZaY22dfk5"
+        },
+        "workflowInputs": {
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true,
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "schema": [],
+          "value": {
+            "boutique": "={{ $('When Executed by Another Workflow').first().json.slug }}",
+            "canal": "telegram",
+            "destinataire": "={{ $('Code in JavaScript').first().json.chat_id_groupe }}",
+            "message": "=Quelle est votre position ?",
+            "reply_markup": "={{ JSON.stringify({ inline_keyboard: [[ { text: '🚚 Parti de la boutique', callback_data: 'parti_' + $('Trouver la commande').first().json.chat_id + '_' + String($('Trouver la commande').first().json.order_id).trim() }, { text: '📍 En route', callback_data: 'en_route_' + $('Trouver la commande').first().json.chat_id + '_' + String($('Trouver la commande').first().json.order_id).trim() }, { text: '🏁 Livré', callback_data: 'livre_' + $('Trouver la commande').first().json.chat_id + '_' + String($('Trouver la commande').first().json.order_id).trim() } ]] }) }}"
+          }
+        }
+      },
+      "position": [
+        2456,
+        240
+      ],
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3
+    },
+    {
+      "id": "6a49af31-b212-400e-a319-1f70973933d9",
+      "name": "La feuille ne commande plus",
+      "parameters": {
+        "content": "## Supabase fait foi, la feuille suit\n\nLes quatre « Update statut » ecrivent dans l onglet du marchand. Ils sont\nDOUBLES par « Refleter dans Supabase », qui fait le vrai travail.\n\nIls etaient en arret-sur-erreur, et sur le chemin critique : depuis que la\nprise de commande n ecrit plus dans la feuille, la ligne n existe plus, leur\n`update` echoue — et le client ne recevait plus ni « parti », ni « en route »,\nni « livree ».\n\nDesormais non bloquants. Une livraison ne doit jamais dependre d un miroir.\n\nConstate le 21 aout 2026, au premier essai reel du decouplage.",
+        "height": 240,
+        "width": 560
+      },
+      "position": [
+        -160,
+        -420
+      ],
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1
+    },
+    {
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "QoKeVRwGrk1YqN9Q",
+          "name": "Header Auth account 2"
+        }
+      },
+      "id": "n-marquer-prevenu",
+      "maxTries": 3,
+      "name": "Marquer client prevenu",
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "jsonBody": "={\n  \"reference\": {{ JSON.stringify($('Trouver la commande').first().json.order_id) }}\n}",
+        "method": "POST",
+        "options": {},
+        "sendBody": true,
+        "specifyBody": "json",
+        "url": "https://www.djiguiflow.com/api/internal/commandes/prevenu"
+      },
+      "position": [
+        2860,
+        -8
+      ],
+      "retryOnFail": true,
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "waitBetweenTries": 5000
+    }
+  ],
+  "settings": {
+    "availableInMCP": true,
+    "errorWorkflow": "NfWU666FLz9jR1Zv",
+    "executionOrder": "v1"
+  },
+  "sourceWorkflowId": null,
+  "tags": [],
+  "versionCounter": 23
+}

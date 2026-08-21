@@ -1,0 +1,607 @@
+{
+  "active": true,
+  "activeVersion": {
+    "authors": "JEAN PAUL OULAI",
+    "autosaved": false,
+    "connections": {
+      "Chaque lundi": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Contenus de la semaine",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Composer les envois": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Envoi Telegram",
+              "type": "main"
+            },
+            {
+              "index": 0,
+              "node": "Envoi WhatsApp",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Contenus de la semaine": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Lire le registre",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Lire le registre": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Composer les envois",
+              "type": "main"
+            }
+          ]
+        ]
+      }
+    },
+    "description": null,
+    "name": null,
+    "nodeGroups": [],
+    "nodes": [
+      {
+        "id": "26a21fb9-48cc-451e-82c3-0022318b819c",
+        "name": "Chaque lundi",
+        "parameters": {
+          "rule": {
+            "interval": [
+              {
+                "field": "weeks",
+                "triggerAtDay": [
+                  1
+                ],
+                "triggerAtHour": 8
+              }
+            ]
+          }
+        },
+        "position": [
+          0,
+          96
+        ],
+        "type": "n8n-nodes-base.scheduleTrigger",
+        "typeVersion": 1.3
+      },
+      {
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "QoKeVRwGrk1YqN9Q",
+            "name": "Header Auth account 2"
+          }
+        },
+        "id": "e2e58292-451c-4dc8-a200-12fcdf209233",
+        "maxTries": 3,
+        "name": "Contenus de la semaine",
+        "notes": "Composes a partir des ventes reelles de la semaine. Une boutique sans vente est absente : lui envoyer un post vide lui rappellerait chaque lundi qu'elle n'a rien vendu.",
+        "parameters": {
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "jsonBody": "={}",
+          "method": "POST",
+          "options": {},
+          "sendBody": true,
+          "specifyBody": "json",
+          "url": "https://www.djiguiflow.com/api/internal/contenus/hebdo"
+        },
+        "position": [
+          224,
+          96
+        ],
+        "retryOnFail": true,
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "waitBetweenTries": 2000
+      },
+      {
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "QoKeVRwGrk1YqN9Q",
+            "name": "Header Auth account 2"
+          }
+        },
+        "id": "8b2ced0e-ad59-4e87-b738-2c4f7eb961a5",
+        "maxTries": 3,
+        "name": "Lire le registre",
+        "notes": "Un envoi planifie n'a pas de marchand appelant : il faut lui dire ou joindre chacun.",
+        "parameters": {
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "options": {},
+          "url": "https://www.djiguiflow.com/api/internal/boutiques"
+        },
+        "position": [
+          448,
+          96
+        ],
+        "retryOnFail": true,
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "waitBetweenTries": 2000
+      },
+      {
+        "id": "f4e6d260-cd5b-4c49-89f0-f26137abd896",
+        "name": "Composer les envois",
+        "parameters": {
+          "jsCode": "const contenus = $('Contenus de la semaine').first().json.contenus || [];\nif (!contenus.length) return [];\n\n// Ou joindre chaque marchand. Un contenu ne doit jamais partir vers le chat\n// d'une autre boutique que celle dont il parle.\nconst annuaire = {};\nfor (const m of ($('Lire le registre').first().json.marchands) || []) {\n  annuaire[String(m.id || '').trim()] = m;\n}\n\nconst sorties = [];\n\nfor (const c of contenus) {\n  const m = annuaire[String(c.slug || '').trim()] || {};\n\n  // Texte BRUT, sans balisage. Le marchand va copier-coller ces blocs tels\n  // quels dans Facebook, dans TikTok et dans son statut : des asterisques ou\n  // des balises HTML partiraient avec, et il les publierait sans les voir.\n  const message =\n    '🗓️ Votre publication de la semaine — prête à être publiée\\n' +\n    '🏪 ' + c.nom + '\\n\\n' +\n    '🖼️ Le visuel à télécharger :\\n' + c.urlVisuel + '\\n\\n' +\n    '━━━ FACEBOOK / INSTAGRAM ━━━\\n' + c.legende + '\\n\\n' + c.hashtags + '\\n\\n' +\n    '━━━ TIKTOK ━━━\\n' + c.scriptTikTok + '\\n\\n' +\n    '━━━ STATUT WHATSAPP ━━━\\n' + c.statutWhatsApp;\n\n  sorties.push({ json: {\n    slug: String(c.slug || '').trim(),\n    message: message,\n    telegram: String(m.telegramMarchand || '').trim(),\n    whatsapp: String(m.whatsapp || '').trim(),\n  } });\n}\n\nreturn sorties;"
+        },
+        "position": [
+          672,
+          96
+        ],
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2
+      },
+      {
+        "id": "a0c2ac07-d18b-447a-91b0-a095134b8bcc",
+        "maxTries": 3,
+        "name": "Envoi Telegram",
+        "notes": "Une execution par boutique. Un destinataire vide fait repondre l'API en 424, journalise, plutot que d'atterrir chez un autre marchand.",
+        "onError": "continueRegularOutput",
+        "parameters": {
+          "mode": "each",
+          "options": {},
+          "workflowId": {
+            "__rl": true,
+            "cachedResultName": "Envoyer réponse client",
+            "mode": "list",
+            "value": "JkNvcqsZaY22dfk5"
+          },
+          "workflowInputs": {
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": true,
+            "mappingMode": "defineBelow",
+            "matchingColumns": [],
+            "schema": [
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "canal",
+                "id": "canal",
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "destinataire",
+                "id": "destinataire",
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "message",
+                "id": "message",
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "boutique",
+                "id": "boutique",
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "reply_markup",
+                "id": "reply_markup",
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "format",
+                "id": "format",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "sheet_document_id",
+                "id": "sheet_document_id",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              }
+            ],
+            "value": {
+              "boutique": "={{ $json.slug }}",
+              "canal": "telegram",
+              "destinataire": "={{ $json.telegram }}",
+              "message": "={{ $json.message }}"
+            }
+          }
+        },
+        "position": [
+          896,
+          0
+        ],
+        "retryOnFail": false,
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.3,
+        "waitBetweenTries": 2000
+      },
+      {
+        "id": "f58c695d-966c-4ccc-9bc6-e23ca64269f5",
+        "maxTries": 3,
+        "name": "Envoi WhatsApp",
+        "onError": "continueRegularOutput",
+        "parameters": {
+          "mode": "each",
+          "options": {},
+          "workflowId": {
+            "__rl": true,
+            "cachedResultName": "Envoyer réponse client",
+            "mode": "list",
+            "value": "JkNvcqsZaY22dfk5"
+          },
+          "workflowInputs": {
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": true,
+            "mappingMode": "defineBelow",
+            "matchingColumns": [],
+            "schema": [],
+            "value": {
+              "boutique": "={{ $json.slug }}",
+              "canal": "whatsapp",
+              "destinataire": "={{ $json.whatsapp }}",
+              "message": "={{ $json.message }}",
+              "reply_markup": ""
+            }
+          }
+        },
+        "position": [
+          896,
+          192
+        ],
+        "retryOnFail": false,
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.3,
+        "waitBetweenTries": 2000
+      }
+    ],
+    "workflowId": "CXVWhhXEn3rpDJlC",
+    "workflowPublishHistory": [
+      {
+        "event": "activated",
+        "id": 14,
+        "userId": "81519f6f-0887-498a-ad83-5ffd6d591e9a",
+        "workflowId": "CXVWhhXEn3rpDJlC"
+      }
+    ]
+  },
+  "connections": {
+    "Chaque lundi": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Contenus de la semaine",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Composer les envois": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Envoi Telegram",
+            "type": "main"
+          },
+          {
+            "index": 0,
+            "node": "Envoi WhatsApp",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Contenus de la semaine": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Lire le registre",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Lire le registre": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Composer les envois",
+            "type": "main"
+          }
+        ]
+      ]
+    }
+  },
+  "description": null,
+  "id": "CXVWhhXEn3rpDJlC",
+  "isArchived": false,
+  "name": "Contenus Hebdo",
+  "nodeGroups": [],
+  "nodes": [
+    {
+      "id": "26a21fb9-48cc-451e-82c3-0022318b819c",
+      "name": "Chaque lundi",
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "triggerAtDay": [
+                1
+              ],
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      },
+      "position": [
+        0,
+        96
+      ],
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3
+    },
+    {
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "QoKeVRwGrk1YqN9Q",
+          "name": "Header Auth account 2"
+        }
+      },
+      "id": "e2e58292-451c-4dc8-a200-12fcdf209233",
+      "maxTries": 3,
+      "name": "Contenus de la semaine",
+      "notes": "Composes a partir des ventes reelles de la semaine. Une boutique sans vente est absente : lui envoyer un post vide lui rappellerait chaque lundi qu'elle n'a rien vendu.",
+      "parameters": {
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "jsonBody": "={}",
+        "method": "POST",
+        "options": {},
+        "sendBody": true,
+        "specifyBody": "json",
+        "url": "https://www.djiguiflow.com/api/internal/contenus/hebdo"
+      },
+      "position": [
+        224,
+        96
+      ],
+      "retryOnFail": true,
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "waitBetweenTries": 2000
+    },
+    {
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "QoKeVRwGrk1YqN9Q",
+          "name": "Header Auth account 2"
+        }
+      },
+      "id": "8b2ced0e-ad59-4e87-b738-2c4f7eb961a5",
+      "maxTries": 3,
+      "name": "Lire le registre",
+      "notes": "Un envoi planifie n'a pas de marchand appelant : il faut lui dire ou joindre chacun.",
+      "parameters": {
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {},
+        "url": "https://www.djiguiflow.com/api/internal/boutiques"
+      },
+      "position": [
+        448,
+        96
+      ],
+      "retryOnFail": true,
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "waitBetweenTries": 2000
+    },
+    {
+      "id": "f4e6d260-cd5b-4c49-89f0-f26137abd896",
+      "name": "Composer les envois",
+      "parameters": {
+        "jsCode": "const contenus = $('Contenus de la semaine').first().json.contenus || [];\nif (!contenus.length) return [];\n\n// Ou joindre chaque marchand. Un contenu ne doit jamais partir vers le chat\n// d'une autre boutique que celle dont il parle.\nconst annuaire = {};\nfor (const m of ($('Lire le registre').first().json.marchands) || []) {\n  annuaire[String(m.id || '').trim()] = m;\n}\n\nconst sorties = [];\n\nfor (const c of contenus) {\n  const m = annuaire[String(c.slug || '').trim()] || {};\n\n  // Texte BRUT, sans balisage. Le marchand va copier-coller ces blocs tels\n  // quels dans Facebook, dans TikTok et dans son statut : des asterisques ou\n  // des balises HTML partiraient avec, et il les publierait sans les voir.\n  const message =\n    '🗓️ Votre publication de la semaine — prête à être publiée\\n' +\n    '🏪 ' + c.nom + '\\n\\n' +\n    '🖼️ Le visuel à télécharger :\\n' + c.urlVisuel + '\\n\\n' +\n    '━━━ FACEBOOK / INSTAGRAM ━━━\\n' + c.legende + '\\n\\n' + c.hashtags + '\\n\\n' +\n    '━━━ TIKTOK ━━━\\n' + c.scriptTikTok + '\\n\\n' +\n    '━━━ STATUT WHATSAPP ━━━\\n' + c.statutWhatsApp;\n\n  sorties.push({ json: {\n    slug: String(c.slug || '').trim(),\n    message: message,\n    telegram: String(m.telegramMarchand || '').trim(),\n    whatsapp: String(m.whatsapp || '').trim(),\n  } });\n}\n\nreturn sorties;"
+      },
+      "position": [
+        672,
+        96
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "id": "a0c2ac07-d18b-447a-91b0-a095134b8bcc",
+      "maxTries": 3,
+      "name": "Envoi Telegram",
+      "notes": "Une execution par boutique. Un destinataire vide fait repondre l'API en 424, journalise, plutot que d'atterrir chez un autre marchand.",
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "mode": "each",
+        "options": {},
+        "workflowId": {
+          "__rl": true,
+          "cachedResultName": "Envoyer réponse client",
+          "mode": "list",
+          "value": "JkNvcqsZaY22dfk5"
+        },
+        "workflowInputs": {
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true,
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "schema": [
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "canal",
+              "id": "canal",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "destinataire",
+              "id": "destinataire",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "message",
+              "id": "message",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "boutique",
+              "id": "boutique",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "reply_markup",
+              "id": "reply_markup",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "format",
+              "id": "format",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "sheet_document_id",
+              "id": "sheet_document_id",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            }
+          ],
+          "value": {
+            "boutique": "={{ $json.slug }}",
+            "canal": "telegram",
+            "destinataire": "={{ $json.telegram }}",
+            "message": "={{ $json.message }}"
+          }
+        }
+      },
+      "position": [
+        896,
+        0
+      ],
+      "retryOnFail": false,
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "id": "f58c695d-966c-4ccc-9bc6-e23ca64269f5",
+      "maxTries": 3,
+      "name": "Envoi WhatsApp",
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "mode": "each",
+        "options": {},
+        "workflowId": {
+          "__rl": true,
+          "cachedResultName": "Envoyer réponse client",
+          "mode": "list",
+          "value": "JkNvcqsZaY22dfk5"
+        },
+        "workflowInputs": {
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true,
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "schema": [],
+          "value": {
+            "boutique": "={{ $json.slug }}",
+            "canal": "whatsapp",
+            "destinataire": "={{ $json.whatsapp }}",
+            "message": "={{ $json.message }}",
+            "reply_markup": ""
+          }
+        }
+      },
+      "position": [
+        896,
+        192
+      ],
+      "retryOnFail": false,
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "waitBetweenTries": 2000
+    }
+  ],
+  "settings": {
+    "availableInMCP": true,
+    "errorWorkflow": "NfWU666FLz9jR1Zv",
+    "executionOrder": "v1",
+    "timezone": "Africa/Abidjan"
+  },
+  "sourceWorkflowId": null,
+  "tags": [],
+  "versionCounter": 4
+}

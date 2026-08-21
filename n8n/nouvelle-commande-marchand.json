@@ -1,0 +1,642 @@
+{
+  "active": true,
+  "activeVersion": {
+    "authors": "JEAN PAUL OULAI (via MCP)",
+    "autosaved": false,
+    "connections": {
+      "Commande identifiée ?": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Contexte boutique",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Contexte boutique": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Notification push marchand",
+              "type": "main"
+            },
+            {
+              "index": 0,
+              "node": "Prévenir le marchand (Telegram)",
+              "type": "main"
+            },
+            {
+              "index": 0,
+              "node": "WhatsApp connecte ?",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Webhook": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Commande identifiée ?",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "WhatsApp connecte ?": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Prévenir le marchand (WhatsApp)",
+              "type": "main"
+            }
+          ]
+        ]
+      }
+    },
+    "description": null,
+    "name": null,
+    "nodeGroups": [],
+    "nodes": [
+      {
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "vkSCoRL3hmMp5S2G",
+            "name": "Header Auth account"
+          }
+        },
+        "id": "d9a94bfd-aff5-430d-a827-2f0ed289603e",
+        "name": "Webhook",
+        "parameters": {
+          "authentication": "headerAuth",
+          "httpMethod": "POST",
+          "options": {},
+          "path": "nouvelle-commande"
+        },
+        "position": [
+          0,
+          0
+        ],
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2.1,
+        "webhookId": "9f314903-cc92-407c-8e65-6cf8224452d6"
+      },
+      {
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "QoKeVRwGrk1YqN9Q",
+            "name": "Header Auth account 2"
+          }
+        },
+        "id": "abadc3ed-9e86-4ee7-88aa-2584f1fb0d7f",
+        "maxTries": 3,
+        "name": "Contexte boutique",
+        "notes": "n8n Cloud ne peut pas ouvrir de connexion Postgres vers Supabase (IPv6 uniquement). On demande le contexte a l'application en HTTPS.",
+        "parameters": {
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "jsonBody": "={\n  \"commande\": \"{{ $json.body.id }}\"\n}",
+          "method": "POST",
+          "options": {},
+          "sendBody": true,
+          "specifyBody": "json",
+          "url": "https://www.djiguiflow.com/api/canaux/contexte"
+        },
+        "position": [
+          400,
+          0
+        ],
+        "retryOnFail": true,
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "waitBetweenTries": 2000
+      },
+      {
+        "id": "05db2ce1-d593-48d2-9ddf-ed2a6499e750",
+        "maxTries": 3,
+        "name": "Prévenir le marchand (WhatsApp)",
+        "onError": "continueRegularOutput",
+        "parameters": {
+          "mode": "once",
+          "options": {},
+          "workflowId": {
+            "__rl": true,
+            "cachedResultName": "Envoyer réponse client",
+            "mode": "list",
+            "value": "JkNvcqsZaY22dfk5"
+          },
+          "workflowInputs": {
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": true,
+            "mappingMode": "defineBelow",
+            "matchingColumns": [],
+            "schema": [],
+            "value": {
+              "boutique": "={{ $json.slug || $json.boutique_id }}",
+              "canal": "whatsapp",
+              "destinataire": "={{ $json.telephone }}",
+              "message": "=🔔 *Nouvelle commande — {{ $json.nom }}*\n\n📦 Commande #{{ String($('Webhook').first().json.body.id || 'N/A').slice(0,6).toUpperCase() }}\n👤 Client : {{ $('Webhook').first().json.body.client_nom || 'Non renseigne' }}\n📞 Tél : {{ $('Webhook').first().json.body.client_telephone || 'Non renseigne' }}\n📍 Adresse : {{ $('Webhook').first().json.body.client_adresse || 'Non renseignee' }}\n💰 Total : {{ $('Webhook').first().json.body.total || 0 }} FCFA\n\n👉 https://www.djiguiflow.com/dashboard/commandes",
+              "reply_markup": ""
+            }
+          }
+        },
+        "position": [
+          624,
+          0
+        ],
+        "retryOnFail": false,
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.3,
+        "waitBetweenTries": 2000
+      },
+      {
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "QoKeVRwGrk1YqN9Q",
+            "name": "Header Auth account 2"
+          }
+        },
+        "id": "4db1aa2b-0bba-42fd-94c1-2148018d059f",
+        "maxTries": 3,
+        "name": "Notification push marchand",
+        "notes": "Fait sonner le telephone du marchand sans passer par un tiers. La route repond 200 meme sans destinataire : un marchand qui n a pas installe l application n est pas une panne.",
+        "onError": "continueRegularOutput",
+        "parameters": {
+          "authentication": "genericCredentialType",
+          "contentType": "json",
+          "genericAuthType": "httpHeaderAuth",
+          "jsonBody": "={\n  \"boutique\": {{ JSON.stringify($json.slug || $json.boutique_id || '') }},\n  \"titre\": {{ JSON.stringify('Nouvelle commande — ' + ($json.nom || 'votre boutique')) }},\n  \"corps\": {{ JSON.stringify(($('Webhook').first().json.body.client_nom || 'Client') + ' — ' + ($('Webhook').first().json.body.total || 0) + ' FCFA') }},\n  \"url\": \"/dashboard/commandes\",\n  \"tag\": {{ JSON.stringify('commande-' + String($('Webhook').first().json.body.id || '')) }}\n}",
+          "method": "POST",
+          "options": {},
+          "sendBody": true,
+          "specifyBody": "json",
+          "url": "https://www.djiguiflow.com/api/internal/push/envoyer"
+        },
+        "position": [
+          624,
+          192
+        ],
+        "retryOnFail": true,
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "waitBetweenTries": 2000
+      },
+      {
+        "id": "36090019-55bd-4833-8af8-d587b4511741",
+        "name": "Commande identifiée ?",
+        "notes": "Le webhook accepte tout corps portant le bon secret : sondes de connectivite, rejeux, appels malformes. Sans identifiant de commande, l API repond 400 et la panne remonte au canal d alerte comme si une commande avait ete perdue. On s arrete ici, en silence.",
+        "parameters": {
+          "conditions": {
+            "combinator": "and",
+            "conditions": [
+              {
+                "id": "commande-identifiee",
+                "leftValue": "={{ String($json.body?.id ?? '').trim() }}",
+                "operator": {
+                  "operation": "notEmpty",
+                  "singleValue": true,
+                  "type": "string"
+                },
+                "rightValue": ""
+              }
+            ],
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            }
+          },
+          "looseTypeValidation": true,
+          "options": {}
+        },
+        "position": [
+          176,
+          0
+        ],
+        "type": "n8n-nodes-base.filter",
+        "typeVersion": 2.2
+      },
+      {
+        "id": "e7a02c12-94a5-4e28-901e-ed39151e9253",
+        "maxTries": 3,
+        "name": "Prévenir le marchand (Telegram)",
+        "notes": "Texte brut, sans balisage : cet envoi part sans parse_mode, et des asterisques s afficheraient tels quels. Un marchand sans Telegram declare donne un destinataire vide, refuse et journalise par l API, sans consequence sur la branche WhatsApp.",
+        "onError": "continueRegularOutput",
+        "parameters": {
+          "mode": "once",
+          "options": {},
+          "workflowId": {
+            "__rl": true,
+            "cachedResultName": "Envoyer réponse client",
+            "mode": "list",
+            "value": "JkNvcqsZaY22dfk5"
+          },
+          "workflowInputs": {
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": true,
+            "mappingMode": "defineBelow",
+            "matchingColumns": [],
+            "schema": [],
+            "value": {
+              "boutique": "={{ $json.slug || $json.boutique_id }}",
+              "canal": "telegram",
+              "destinataire": "={{ $json.telegram_marchand }}",
+              "message": "=🔔 Nouvelle commande — {{ $json.nom }}\n\n📦 Commande #{{ String($('Webhook').first().json.body.id || 'N/A').slice(0,6).toUpperCase() }}\n👤 Client : {{ $('Webhook').first().json.body.client_nom || 'Non renseigne' }}\n📞 Tél : {{ $('Webhook').first().json.body.client_telephone || 'Non renseigne' }}\n📍 Adresse : {{ $('Webhook').first().json.body.client_adresse || 'Non renseignee' }}\n💰 Total : {{ $('Webhook').first().json.body.total || 0 }} FCFA\n\n👉 https://www.djiguiflow.com/dashboard/commandes",
+              "reply_markup": ""
+            }
+          }
+        },
+        "position": [
+          624,
+          -192
+        ],
+        "retryOnFail": false,
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.3,
+        "waitBetweenTries": 2000
+      },
+      {
+        "id": "5ef789ba-7306-42b0-b17a-bde29523ee19",
+        "name": "WhatsApp connecte ?",
+        "notes": "Le marchand a-t-il seulement WhatsApp ? Sans ce test, tout nouvel inscrit declenchait une alerte technique a chaque commande, alors qu'il etait deja prevenu par Telegram.",
+        "parameters": {
+          "conditions": {
+            "combinator": "and",
+            "conditions": [
+              {
+                "id": "a-whatsapp",
+                "leftValue": "={{ $json.whatsapp_connecte === true && String($json.telephone || '').trim() !== '' }}",
+                "operator": {
+                  "operation": "true",
+                  "singleValue": true,
+                  "type": "boolean"
+                },
+                "rightValue": ""
+              }
+            ],
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            }
+          }
+        },
+        "position": [
+          480,
+          -80
+        ],
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2
+      },
+      {
+        "id": "47ec0bec-3461-4e81-980f-7ed041eef5e6",
+        "name": "Pourquoi ce test",
+        "parameters": {
+          "content": "## On n essaie que le canal qui existe\n\nCe workflow prevenait le marchand sur WhatsApp ET sur Telegram, sans jamais\ndemander s il avait l un ou l autre.\n\nRose Monde n a que Telegram. Chaque commande produisait donc une alerte\ntechnique « aucun jeton whatsapp » — alors que le marchand etait parfaitement\nprevenu. C est tout nouvel inscrit qui aurait ce comportement, et ce bruit\nfinit par masquer les vraies pannes.\n\n`whatsapp_connecte` vient de /api/canaux/contexte. Constate le 20 aout 2026.",
+          "height": 200,
+          "width": 520
+        },
+        "position": [
+          340,
+          -320
+        ],
+        "type": "n8n-nodes-base.stickyNote",
+        "typeVersion": 1
+      }
+    ],
+    "workflowId": "22NzoGizdPGkMLRr",
+    "workflowPublishHistory": [
+      {
+        "event": "activated",
+        "id": 174,
+        "userId": "81519f6f-0887-498a-ad83-5ffd6d591e9a",
+        "workflowId": "22NzoGizdPGkMLRr"
+      }
+    ]
+  },
+  "connections": {
+    "Commande identifiée ?": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Contexte boutique",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Contexte boutique": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Notification push marchand",
+            "type": "main"
+          },
+          {
+            "index": 0,
+            "node": "Prévenir le marchand (Telegram)",
+            "type": "main"
+          },
+          {
+            "index": 0,
+            "node": "WhatsApp connecte ?",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Commande identifiée ?",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "WhatsApp connecte ?": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Prévenir le marchand (WhatsApp)",
+            "type": "main"
+          }
+        ]
+      ]
+    }
+  },
+  "description": null,
+  "id": "22NzoGizdPGkMLRr",
+  "isArchived": false,
+  "name": "Nouvelle Commande → Marchand",
+  "nodeGroups": [],
+  "nodes": [
+    {
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "vkSCoRL3hmMp5S2G",
+          "name": "Header Auth account"
+        }
+      },
+      "id": "d9a94bfd-aff5-430d-a827-2f0ed289603e",
+      "name": "Webhook",
+      "parameters": {
+        "authentication": "headerAuth",
+        "httpMethod": "POST",
+        "options": {},
+        "path": "nouvelle-commande"
+      },
+      "position": [
+        0,
+        0
+      ],
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "webhookId": "9f314903-cc92-407c-8e65-6cf8224452d6"
+    },
+    {
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "QoKeVRwGrk1YqN9Q",
+          "name": "Header Auth account 2"
+        }
+      },
+      "id": "abadc3ed-9e86-4ee7-88aa-2584f1fb0d7f",
+      "maxTries": 3,
+      "name": "Contexte boutique",
+      "notes": "n8n Cloud ne peut pas ouvrir de connexion Postgres vers Supabase (IPv6 uniquement). On demande le contexte a l'application en HTTPS.",
+      "parameters": {
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "jsonBody": "={\n  \"commande\": \"{{ $json.body.id }}\"\n}",
+        "method": "POST",
+        "options": {},
+        "sendBody": true,
+        "specifyBody": "json",
+        "url": "https://www.djiguiflow.com/api/canaux/contexte"
+      },
+      "position": [
+        400,
+        0
+      ],
+      "retryOnFail": true,
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "waitBetweenTries": 2000
+    },
+    {
+      "id": "05db2ce1-d593-48d2-9ddf-ed2a6499e750",
+      "maxTries": 3,
+      "name": "Prévenir le marchand (WhatsApp)",
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "mode": "once",
+        "options": {},
+        "workflowId": {
+          "__rl": true,
+          "cachedResultName": "Envoyer réponse client",
+          "mode": "list",
+          "value": "JkNvcqsZaY22dfk5"
+        },
+        "workflowInputs": {
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true,
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "schema": [],
+          "value": {
+            "boutique": "={{ $json.slug || $json.boutique_id }}",
+            "canal": "whatsapp",
+            "destinataire": "={{ $json.telephone }}",
+            "message": "=🔔 *Nouvelle commande — {{ $json.nom }}*\n\n📦 Commande #{{ String($('Webhook').first().json.body.id || 'N/A').slice(0,6).toUpperCase() }}\n👤 Client : {{ $('Webhook').first().json.body.client_nom || 'Non renseigne' }}\n📞 Tél : {{ $('Webhook').first().json.body.client_telephone || 'Non renseigne' }}\n📍 Adresse : {{ $('Webhook').first().json.body.client_adresse || 'Non renseignee' }}\n💰 Total : {{ $('Webhook').first().json.body.total || 0 }} FCFA\n\n👉 https://www.djiguiflow.com/dashboard/commandes",
+            "reply_markup": ""
+          }
+        }
+      },
+      "position": [
+        624,
+        0
+      ],
+      "retryOnFail": false,
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "QoKeVRwGrk1YqN9Q",
+          "name": "Header Auth account 2"
+        }
+      },
+      "id": "4db1aa2b-0bba-42fd-94c1-2148018d059f",
+      "maxTries": 3,
+      "name": "Notification push marchand",
+      "notes": "Fait sonner le telephone du marchand sans passer par un tiers. La route repond 200 meme sans destinataire : un marchand qui n a pas installe l application n est pas une panne.",
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "authentication": "genericCredentialType",
+        "contentType": "json",
+        "genericAuthType": "httpHeaderAuth",
+        "jsonBody": "={\n  \"boutique\": {{ JSON.stringify($json.slug || $json.boutique_id || '') }},\n  \"titre\": {{ JSON.stringify('Nouvelle commande — ' + ($json.nom || 'votre boutique')) }},\n  \"corps\": {{ JSON.stringify(($('Webhook').first().json.body.client_nom || 'Client') + ' — ' + ($('Webhook').first().json.body.total || 0) + ' FCFA') }},\n  \"url\": \"/dashboard/commandes\",\n  \"tag\": {{ JSON.stringify('commande-' + String($('Webhook').first().json.body.id || '')) }}\n}",
+        "method": "POST",
+        "options": {},
+        "sendBody": true,
+        "specifyBody": "json",
+        "url": "https://www.djiguiflow.com/api/internal/push/envoyer"
+      },
+      "position": [
+        624,
+        192
+      ],
+      "retryOnFail": true,
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "waitBetweenTries": 2000
+    },
+    {
+      "id": "36090019-55bd-4833-8af8-d587b4511741",
+      "name": "Commande identifiée ?",
+      "notes": "Le webhook accepte tout corps portant le bon secret : sondes de connectivite, rejeux, appels malformes. Sans identifiant de commande, l API repond 400 et la panne remonte au canal d alerte comme si une commande avait ete perdue. On s arrete ici, en silence.",
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "commande-identifiee",
+              "leftValue": "={{ String($json.body?.id ?? '').trim() }}",
+              "operator": {
+                "operation": "notEmpty",
+                "singleValue": true,
+                "type": "string"
+              },
+              "rightValue": ""
+            }
+          ],
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          }
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "position": [
+        176,
+        0
+      ],
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2
+    },
+    {
+      "id": "e7a02c12-94a5-4e28-901e-ed39151e9253",
+      "maxTries": 3,
+      "name": "Prévenir le marchand (Telegram)",
+      "notes": "Texte brut, sans balisage : cet envoi part sans parse_mode, et des asterisques s afficheraient tels quels. Un marchand sans Telegram declare donne un destinataire vide, refuse et journalise par l API, sans consequence sur la branche WhatsApp.",
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "mode": "once",
+        "options": {},
+        "workflowId": {
+          "__rl": true,
+          "cachedResultName": "Envoyer réponse client",
+          "mode": "list",
+          "value": "JkNvcqsZaY22dfk5"
+        },
+        "workflowInputs": {
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true,
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "schema": [],
+          "value": {
+            "boutique": "={{ $json.slug || $json.boutique_id }}",
+            "canal": "telegram",
+            "destinataire": "={{ $json.telegram_marchand }}",
+            "message": "=🔔 Nouvelle commande — {{ $json.nom }}\n\n📦 Commande #{{ String($('Webhook').first().json.body.id || 'N/A').slice(0,6).toUpperCase() }}\n👤 Client : {{ $('Webhook').first().json.body.client_nom || 'Non renseigne' }}\n📞 Tél : {{ $('Webhook').first().json.body.client_telephone || 'Non renseigne' }}\n📍 Adresse : {{ $('Webhook').first().json.body.client_adresse || 'Non renseignee' }}\n💰 Total : {{ $('Webhook').first().json.body.total || 0 }} FCFA\n\n👉 https://www.djiguiflow.com/dashboard/commandes",
+            "reply_markup": ""
+          }
+        }
+      },
+      "position": [
+        624,
+        -192
+      ],
+      "retryOnFail": false,
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "id": "5ef789ba-7306-42b0-b17a-bde29523ee19",
+      "name": "WhatsApp connecte ?",
+      "notes": "Le marchand a-t-il seulement WhatsApp ? Sans ce test, tout nouvel inscrit declenchait une alerte technique a chaque commande, alors qu'il etait deja prevenu par Telegram.",
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "a-whatsapp",
+              "leftValue": "={{ $json.whatsapp_connecte === true && String($json.telephone || '').trim() !== '' }}",
+              "operator": {
+                "operation": "true",
+                "singleValue": true,
+                "type": "boolean"
+              },
+              "rightValue": ""
+            }
+          ],
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          }
+        }
+      },
+      "position": [
+        480,
+        -80
+      ],
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2
+    },
+    {
+      "id": "47ec0bec-3461-4e81-980f-7ed041eef5e6",
+      "name": "Pourquoi ce test",
+      "parameters": {
+        "content": "## On n essaie que le canal qui existe\n\nCe workflow prevenait le marchand sur WhatsApp ET sur Telegram, sans jamais\ndemander s il avait l un ou l autre.\n\nRose Monde n a que Telegram. Chaque commande produisait donc une alerte\ntechnique « aucun jeton whatsapp » — alors que le marchand etait parfaitement\nprevenu. C est tout nouvel inscrit qui aurait ce comportement, et ce bruit\nfinit par masquer les vraies pannes.\n\n`whatsapp_connecte` vient de /api/canaux/contexte. Constate le 20 aout 2026.",
+        "height": 200,
+        "width": 520
+      },
+      "position": [
+        340,
+        -320
+      ],
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1
+    }
+  ],
+  "settings": {
+    "availableInMCP": true,
+    "errorWorkflow": "NfWU666FLz9jR1Zv",
+    "executionOrder": "v1"
+  },
+  "sourceWorkflowId": null,
+  "tags": [],
+  "versionCounter": 4
+}
