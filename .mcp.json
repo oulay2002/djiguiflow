@@ -6,7 +6,7 @@
     },
     "n8n": {
       "type": "http",
-      "url": "https://oulai2002.app.n8n.cloud/mcp-server/http"
+      "url": "https://n8n.djiguiflow.com/mcp-server/http"
     },
     "github": {
       "type": "http",
