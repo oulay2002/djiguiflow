@@ -140,10 +140,7 @@ export default function RootLayout({
         />
         <EnregistrementServiceWorker />
         {children}
-      {/* impeccable-live-start */}
-<script src="http://localhost:8400/live.js?token=4a81a675-0f1b-4593-af37-f97636f37754"></script>
-{/* impeccable-live-end */}
-</body>
+      </body>
     </html>
   );
 }
