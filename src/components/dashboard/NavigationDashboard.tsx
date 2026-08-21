@@ -83,7 +83,7 @@ function BarreLaterale({ actif }: { actif: string | null }) {
         </span>
         <span>
           <span className="block font-display text-lg font-black">DjiguiFlow</span>
-          <span className="block font-mono text-[10px] uppercase tracking-[0.2em] text-chaux-600">
+          <span className="block font-mono text-xs uppercase tracking-[0.2em] text-chaux-600">
             Espace marchand
           </span>
         </span>

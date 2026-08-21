@@ -434,7 +434,7 @@ export default function PaiementsPage() {
                       } ${isHighlighted ? 'ring-2 ring-mangue-300' : ''}`}
                     >
                       {plan.popular && (
-                        <p className="mb-4 inline-flex rounded-full bg-white/15 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.2em] text-white/90">
+                        <p className="mb-4 inline-flex rounded-full bg-white/15 px-3 py-1 text-xs font-bold uppercase tracking-[0.2em] text-white/90">
                           Plus populaire
                         </p>
                       )}

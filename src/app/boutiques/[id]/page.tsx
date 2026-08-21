@@ -131,7 +131,7 @@ function Visuel({ p }: { p: Produit }) {
         {initiale(p.nom)}
       </span>
       {p.categorie && (
-        <span className="relative font-mono text-[10px] uppercase tracking-[0.2em] text-nuit-900/45">
+        <span className="relative font-mono text-xs uppercase tracking-[0.2em] text-nuit-900/45">
           {p.categorie}
         </span>
       )}
@@ -394,7 +394,7 @@ export default function Page() {
                   à l'autre et se compare d'un coup d'œil. */}
               <p className="font-mono text-lg font-bold leading-none text-bissap-600">
                 {fcfa(p.prix)}
-                <span className="ml-1 text-[11px] font-semibold text-chaux-600">FCFA</span>
+                <span className="ml-1 text-xs font-semibold text-chaux-600">FCFA</span>
               </p>
 
               {panier[p.id] ? (
@@ -424,7 +424,7 @@ export default function Page() {
                    donne l'impression d'une carte pauvre.
                    Le serveur refuse de toute facon la commande — cet affichage
                    evite au client de composer un panier pour rien. */
-                <span className="border border-[var(--hairline)] bg-chaux-100 px-3 py-2 font-mono text-[11px] font-bold uppercase tracking-[0.15em] text-chaux-600">
+                <span className="border border-[var(--hairline)] bg-chaux-100 px-3 py-2 font-mono text-xs font-bold uppercase tracking-[0.15em] text-chaux-600">
                   Épuisé
                 </span>
               ) : (
@@ -440,7 +440,7 @@ export default function Page() {
             {/* Un bouton grise sans explication passe pour une panne. On dit ce
                 qui reste, et seulement quand le client bute dessus. */}
             {typeof p.stock === 'number' && p.stock > 0 && panier[p.id] >= p.stock && (
-              <p className="mt-2 text-right font-mono text-[11px] font-semibold text-chaux-600">
+              <p className="mt-2 text-right font-mono text-xs font-semibold text-chaux-600">
                 Il n’en reste que {p.stock}
               </p>
             )}
@@ -460,7 +460,7 @@ export default function Page() {
 
           <div className="mt-4 flex flex-wrap items-end justify-between gap-4 sm:mt-6 sm:gap-5">
             <div>
-              <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-mangue-300 sm:text-[11px]">
+              <p className="font-mono text-xs uppercase tracking-[0.28em] text-mangue-300">
                 {header.secteur}
                 {zone && ` · ${zone}`}
               </p>
@@ -494,7 +494,7 @@ export default function Page() {
 
             <Link
               href="/suivi"
-              className="inline-flex min-h-10 items-center gap-2 border border-white/25 bg-white/10 px-4 font-mono text-[11px] uppercase tracking-[0.18em] transition hover:bg-white/20"
+              className="inline-flex min-h-10 items-center gap-2 border border-white/25 bg-white/10 px-4 font-mono text-xs uppercase tracking-[0.18em] transition hover:bg-white/20"
             >
               <MapPin className="h-4 w-4" /> Suivre ma commande
             </Link>
@@ -547,7 +547,7 @@ export default function Page() {
                 aria-pressed={categorie === c}
                 // Memes onglets que sur la liste des boutiques : c'est le meme
                 // classeur qu'on feuillette.
-                className={`min-h-9 shrink-0 border px-3.5 font-mono text-[11px] uppercase tracking-[0.16em] transition ${
+                className={`min-h-9 shrink-0 border px-3.5 font-mono text-xs uppercase tracking-[0.16em] transition ${
                   categorie === c
                     ? 'border-nuit-900 bg-nuit-900 text-chaux-50'
                     : 'border-[var(--hairline)] text-chaux-600 hover:border-nuit-900 hover:text-nuit-900'
@@ -603,7 +603,7 @@ export default function Page() {
                   mordent les bords du ticket : tant que le panneau avait des
                   angles arrondis, elles s'y noyaient et le motif ne se lisait
                   pas. */}
-              <p className="font-mono text-[10px] font-bold uppercase tracking-[0.28em] text-chaux-600">
+              <p className="font-mono text-xs font-bold uppercase tracking-[0.28em] text-chaux-600">
                 Bon de commande
               </p>
               <div className="tear absolute inset-x-0 top-11" />

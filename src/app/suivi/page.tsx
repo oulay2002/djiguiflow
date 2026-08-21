@@ -159,7 +159,7 @@ function Suivre() {
     <main className="min-h-screen bg-chaux-100">
       <header className="indigo-weave relative bg-nuit-900 px-5 pb-10 pt-10 text-chaux-50 sm:px-8">
         <div className="mx-auto max-w-xl">
-          <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-mangue-300">
+          <p className="font-mono text-xs uppercase tracking-[0.28em] text-mangue-300">
             Suivi en direct
           </p>
           <h1 className="mt-3 font-display text-3xl font-black leading-[1.05] sm:text-4xl">
@@ -205,7 +205,7 @@ function Suivre() {
             className="relative border border-dashed border-[var(--hairline)] bg-chaux-50/60 p-6"
             style={{ ['--tear-bg' as string]: FOND_PAGE }}
           >
-            <p className="font-mono text-[10px] font-bold uppercase tracking-[0.28em] text-chaux-600">
+            <p className="font-mono text-xs font-bold uppercase tracking-[0.28em] text-chaux-600">
               Bon de suivi
             </p>
 
@@ -228,7 +228,7 @@ function Suivre() {
 
             <div className="perf-line my-5 text-nuit-900" aria-hidden />
 
-            <p className="text-center font-mono text-[11px] uppercase tracking-[0.18em] text-chaux-600">
+            <p className="text-center font-mono text-xs uppercase tracking-[0.18em] text-chaux-600">
               En attente de votre référence
             </p>
           </article>
@@ -243,13 +243,13 @@ function Suivre() {
 
             <div className="flex items-start justify-between gap-4 pt-3">
               <div>
-                <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-chaux-600">
+                <p className="font-mono text-xs uppercase tracking-[0.2em] text-chaux-600">
                   {suivi.nom_boutique || 'Votre commande'}
                 </p>
                 <p className="mt-1 font-mono text-base font-bold text-nuit-900">{suivi.order_id}</p>
               </div>
               {!livree && (
-                <span className="stamp shrink-0 font-mono text-[10px] uppercase text-mangue-600">
+                <span className="stamp shrink-0 font-mono text-xs uppercase text-mangue-600">
                   En cours
                 </span>
               )}
@@ -294,7 +294,7 @@ function Suivre() {
                       {e.label}
                     </span>
                     {e.detail && (
-                      <span className="block font-mono text-[11px] uppercase tracking-[0.14em] text-accent-700">
+                      <span className="block font-mono text-xs uppercase tracking-[0.14em] text-accent-700">
                         {e.detail}
                       </span>
                     )}
@@ -306,7 +306,7 @@ function Suivre() {
             <div className="perf-line my-5 text-nuit-900" aria-hidden />
 
             <div className="flex items-baseline justify-between">
-              <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-chaux-600">
+              <span className="font-mono text-xs uppercase tracking-[0.2em] text-chaux-600">
                 Total
               </span>
               <span className="font-mono text-2xl font-black text-bissap-600">
@@ -325,7 +325,7 @@ function Suivre() {
                 n'a promise. */}
             {suivi.frais_livraison !== null && suivi.frais_livraison !== undefined && (
               <div className="mt-3 flex items-baseline justify-between">
-                <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-chaux-600">
+                <span className="font-mono text-xs uppercase tracking-[0.2em] text-chaux-600">
                   Livraison
                 </span>
                 <span className="font-mono text-sm font-bold text-nuit-800">

@@ -102,7 +102,7 @@ function Chip({ tone, children }: { tone: 'mangue' | 'nuit' | 'feuille'; childre
 
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-sm px-2 py-1 font-mono text-[10px] font-medium uppercase tracking-[0.16em] ${tones[tone]}`}
+      className={`inline-flex items-center gap-1.5 rounded-sm px-2 py-1 font-mono text-xs font-medium uppercase tracking-[0.16em] ${tones[tone]}`}
     >
       {children}
     </span>
@@ -111,7 +111,7 @@ function Chip({ tone, children }: { tone: 'mangue' | 'nuit' | 'feuille'; childre
 
 function Eyebrow({ children, className = '' }: { children: ReactNode; className?: string }) {
   return (
-    <p className={`font-mono text-[11px] uppercase tracking-[0.22em] ${className}`}>{children}</p>
+    <p className={`font-mono text-xs uppercase tracking-[0.22em] ${className}`}>{children}</p>
   );
 }
 
@@ -218,7 +218,7 @@ export default function Home() {
               </Link>
             </div>
 
-            <p className="mt-6 font-mono text-[11px] uppercase tracking-[0.18em] text-nuit-300">
+            <p className="mt-6 font-mono text-xs uppercase tracking-[0.18em] text-nuit-300">
               30 jours offerts · sans carte bancaire
             </p>
           </div>
@@ -238,7 +238,7 @@ export default function Home() {
                 <span className="text-chaux-600">mar. 23:41</span>
               </div>
 
-              <div className="mt-4 space-y-1.5 font-mono text-[13px]">
+              <div className="mt-4 space-y-1.5 font-mono text-sm">
                 <div className="flex justify-between gap-4">
                   <span>2 × pizza margherita</span>
                   <span className="text-chaux-600">7 000</span>
@@ -250,14 +250,14 @@ export default function Home() {
               </div>
 
               <div className="mt-4 flex items-baseline justify-between border-t border-dashed border-nuit-900/25 pt-3">
-                <span className="font-mono text-[11px] uppercase tracking-[0.16em] text-chaux-600">
+                <span className="font-mono text-xs uppercase tracking-[0.16em] text-chaux-600">
                   à payer
                 </span>
                 <span className="font-mono text-lg font-semibold text-bissap-600">9 500 FCFA</span>
               </div>
 
               <div className="mt-5 flex items-center justify-between">
-                <span className="stamp font-mono text-[10px] font-semibold uppercase text-nuit-500">
+                <span className="stamp font-mono text-xs font-semibold uppercase text-nuit-500">
                   cocody
                 </span>
                 <Chip tone="mangue">reçue</Chip>
@@ -274,7 +274,7 @@ export default function Home() {
                 <span className="text-chaux-600">23:43</span>
               </div>
               <p className="mt-3 font-display text-lg font-bold">Aminata K.</p>
-              <p className="font-mono text-[13px] text-chaux-600">zone Cocody · 1,4 km · à moto</p>
+              <p className="font-mono text-sm text-chaux-600">zone Cocody · 1,4 km · à moto</p>
               <div className="mt-4 flex justify-end">
                 <Chip tone="nuit">livreur assigné</Chip>
               </div>
@@ -289,7 +289,7 @@ export default function Home() {
                 <span className="text-chaux-600">reçu</span>
                 <span className="text-chaux-600">23:52</span>
               </div>
-              <div className="mt-3 space-y-1.5 font-mono text-[13px]">
+              <div className="mt-3 space-y-1.5 font-mono text-sm">
                 <div className="flex justify-between gap-4">
                   <span>livrée en</span>
                   <span>11 min</span>
@@ -340,7 +340,7 @@ export default function Home() {
           <div className="mt-14 grid gap-x-12 gap-y-10 md:grid-cols-2">
             {releves.map((item) => (
               <div key={item.cle} className="border-t border-nuit-900/15 pt-5">
-                <span className="font-mono text-[11px] uppercase tracking-[0.22em] text-bissap-500">
+                <span className="font-mono text-xs uppercase tracking-[0.22em] text-bissap-500">
                   {item.cle}
                 </span>
                 <h3 className="mt-3 font-display text-2xl font-bold tracking-tight text-nuit-800">
@@ -360,7 +360,7 @@ export default function Home() {
             className="rounded-sm bg-chaux-50 p-6 shadow-[0_18px_44px_rgba(19,28,61,0.12)] sm:p-8"
             style={{ '--tear-bg': CHAUX } as CSSProperties}
           >
-            <div className="flex items-baseline justify-between font-mono text-[11px] uppercase tracking-[0.16em] text-chaux-600">
+            <div className="flex items-baseline justify-between font-mono text-xs uppercase tracking-[0.16em] text-chaux-600">
               <span>djiguiflow · relevé</span>
               <span>mar. 4 août</span>
             </div>
@@ -383,7 +383,7 @@ export default function Home() {
                   </div>
                 ))}
                 <div className="flex items-baseline justify-between gap-4 pt-2">
-                  <dt className="font-mono text-[11px] uppercase tracking-[0.16em] text-chaux-600">
+                  <dt className="font-mono text-xs uppercase tracking-[0.16em] text-chaux-600">
                     total encaissé
                   </dt>
                   <dd className="font-mono text-xl font-semibold text-bissap-600">312 500 FCFA</dd>
@@ -463,14 +463,14 @@ export default function Home() {
 
                   <div className="flex items-center justify-between">
                     <span
-                      className={`font-mono text-[11px] uppercase tracking-[0.22em] ${
+                      className={`font-mono text-xs uppercase tracking-[0.22em] ${
                         vedette ? 'text-nuit-200' : 'text-chaux-600'
                       }`}
                     >
                       {plan.key}
                     </span>
                     {vedette && (
-                      <span className="stamp font-mono text-[10px] font-semibold uppercase text-mangue-300">
+                      <span className="stamp font-mono text-xs font-semibold uppercase text-mangue-300">
                         le plus pris
                       </span>
                     )}
@@ -496,7 +496,7 @@ export default function Home() {
                       {plan.priceLabel}
                     </span>
                     <span
-                      className={`font-mono text-[11px] uppercase tracking-[0.16em] ${
+                      className={`font-mono text-xs uppercase tracking-[0.16em] ${
                         vedette ? 'text-nuit-200' : 'text-chaux-600'
                       }`}
                     >
@@ -596,7 +596,7 @@ export default function Home() {
             className="rounded-sm border border-dashed border-white/30 p-6 font-mono text-sm text-nuit-200"
             aria-hidden="true"
           >
-            <div className="flex items-baseline justify-between text-[11px] uppercase tracking-[0.16em]">
+            <div className="flex items-baseline justify-between text-xs uppercase tracking-[0.16em]">
               <span>#DJ-0001</span>
               <span>en attente</span>
             </div>
@@ -605,7 +605,7 @@ export default function Home() {
               <div className="h-px w-1/2 bg-white/15" />
               <div className="h-px w-2/3 bg-white/15" />
             </div>
-            <p className="mt-8 text-[13px] text-nuit-300">votre première commande</p>
+            <p className="mt-8 text-nuit-300">votre première commande</p>
           </div>
         </div>
       </section>
@@ -643,7 +643,7 @@ export default function Home() {
         </div>
 
         <div className="mx-auto mt-12 max-w-6xl px-4 sm:px-6">
-          <p className="border-t border-white/10 pt-6 font-mono text-[11px] uppercase tracking-[0.16em] text-nuit-300">
+          <p className="border-t border-white/10 pt-6 font-mono text-xs uppercase tracking-[0.16em] text-nuit-300">
             djiguiflow · abidjan · bamako · dakar
           </p>
         </div>
