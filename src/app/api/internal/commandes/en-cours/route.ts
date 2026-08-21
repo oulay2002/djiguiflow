@@ -65,6 +65,12 @@ export async function POST(req: Request) {
     .eq('chat_id', chatId)
     .eq('statut', 'en_attente')
     .gt('created_at', depuis)
+    // PAS CELLES QUI SONT DEJA PARTIES. La relecture de la feuille ecartait
+    // toute ligne portant un nom de livreur ou un statut de livraison : sans
+    // cela, un client qui reecrit dans les douze heures relancerait une
+    // demande de confirmation sur une commande deja en cours de livraison.
+    .is('nom_livreur', null)
+    .or('statut_livraison.is.null,statut_livraison.eq.,statut_livraison.eq.en attente')
     .order('created_at', { ascending: false })
     .limit(1);
 
