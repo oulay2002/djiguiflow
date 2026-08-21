@@ -120,12 +120,23 @@ export default function RegisterPage() {
       <header className="indigo-weave relative bg-nuit-900 px-4 pb-9 pt-6 text-white">
         <div className="mx-auto max-w-md">
           <LienRetour href="/">Retour à l&apos;accueil</LienRetour>
-          <p className="mt-6 font-mono text-xs uppercase tracking-[0.28em] text-mangue-300">
-            30 jours offerts · sans carte bancaire
-          </p>
-          <h1 className="mt-1.5 font-display text-3xl font-black leading-[1.05] sm:text-4xl">
+          <h1 className="mt-6 font-display text-3xl font-black leading-[1.05] sm:text-4xl">
             Ouvrir ma boutique
           </h1>
+          {/* L'offre passe SOUS le titre. Elle etait au-dessus, en mono
+              capitale tres interlettree — le costume d'une etiquette collee au
+              titre pour lui faire dire ce qu'il ne dit pas. Mais « Ouvrir ma
+              boutique » dit deja ce que la page fait, et ceci n'est pas une
+              etiquette : c'est un fait, et le seul qui leve l'hesitation a
+              l'endroit exact ou l'on decide. On garde le fait, on lui retire
+              la place et l'habit du kicker.
+
+              La mangue reste : c'est l'unique touche chaude admise sur une
+              surface indigo, et cette ligne est la seule de la page qui
+              merite d'etre remarquee apres le titre. */}
+          <p className="mt-3 text-sm text-mangue-200">
+            30 jours offerts · sans carte bancaire
+          </p>
         </div>
         <div className="perf-line absolute inset-x-0 bottom-0 text-white" aria-hidden />
       </header>
