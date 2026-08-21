@@ -110,6 +110,24 @@ export async function POST(req: Request) {
     String(b.confirmation_demandee ?? '') === '1' ||
     String(b.confirmation_demandee ?? '').toLowerCase() === 'true';
 
+  // ---- L'ETAT DECLARE PAR L'ASSISTANTE.
+  //
+  // Elle construit la commande au fil de la conversation et n'a que deux
+  // etats a dire : `en_cours` tant qu'elle collecte, `validee` quand le client
+  // a confirme le recapitulatif. Ils se traduisent ici en etats du produit.
+  //
+  // `en_cours` devient `panier` — un statut deja exclu PARTOUT : fiche client,
+  // liste des commandes, statistiques, suivi. Une commande a moitie construite
+  // ne doit pas s'annoncer au marchand comme une commande a preparer.
+  //
+  // `validee` devient `en_attente` : la commande est reelle, le marchand la
+  // voit, la confirmation peut partir.
+  const etatDemande = String(b.status ?? b.statut ?? '').trim().toLowerCase();
+  const statutVoulu =
+    etatDemande === 'validee' ? 'en_attente'
+    : etatDemande === 'en_cours' ? 'panier'
+    : null;
+
   if (data) {
     // Ni `statut` ni `confirmation_statut` ici : ils appartiennent au cycle de
     // vie reel de la commande. Les forcer remettait a « en attente » une
@@ -126,6 +144,25 @@ export async function POST(req: Request) {
         // Non bloquant : la commande vit sa vie, seule la mesure de l'abandon
         // s'en trouve amputee.
         console.error(`Sync ${reference} — marqueur de confirmation refuse :`, errMarque.message);
+      }
+    }
+
+    // ---- LA PROMOTION D'UN PANIER EN COMMANDE, ET ELLE SEULE.
+    //
+    // Cette route s'interdit de toucher `statut` parce que le forcer remettait
+    // « en attente » une commande deja en livraison. L'interdiction tient : on
+    // n'autorise QU'UNE transition, `panier` -> `en_attente`, et le filtre
+    // `.eq('statut', 'panier')` la rend impossible a detourner. Une commande
+    // livree, annulee ou deja en attente n'est pas concernee.
+    if (statutVoulu === 'en_attente') {
+      const { error: errPromotion } = await sb
+        .from('commandes')
+        .update({ statut: 'en_attente' })
+        .eq('reference', reference)
+        .eq('statut', 'panier');
+
+      if (errPromotion) {
+        console.error(`Sync ${reference} — promotion du panier refusee :`, errPromotion.message);
       }
     }
 
@@ -167,8 +204,10 @@ export async function POST(req: Request) {
       ...payload,
       reference,
       boutique_id,
-      // L'etat de depart n'est connu qu'a la creation.
-      statut: 'en_attente',
+      // L'etat de depart n'est connu qu'a la creation. `panier` quand
+      // l'assistante est encore en train de collecter : la commande existe,
+      // mais elle reste invisible au marchand jusqu'a la confirmation.
+      statut: statutVoulu ?? 'en_attente',
       // LE MARQUEUR VAUT AUSSI A LA CREATION.
       //
       // Il n'etait pose que sur une commande DEJA EN BASE. Or l'assistante fait
