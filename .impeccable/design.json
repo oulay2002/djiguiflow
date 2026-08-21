@@ -75,6 +75,7 @@
       "display": { "displayName": "Display", "purpose": "Titre héros de la vitrine, un seul par page." },
       "headline": { "displayName": "Headline", "purpose": "Titres de section de la vitrine." },
       "title": { "displayName": "Title", "purpose": "Titres de carte et de bloc." },
+      "chapeau": { "displayName": "Chapeau", "purpose": "Le paragraphe qui suit un grand titre et porte la promesse de la section. Quatre emplois sur la vitrine, toujours en max-w-lg." },
       "body": { "displayName": "Body", "purpose": "Texte courant. Le tableau de bord vit en 0.875rem, pas 1rem : l'écran est étroit." },
       "label": { "displayName": "Label", "purpose": "Intitulés de tuile et catégories, en capitales, toujours en chaux encre." },
       "donnee": { "displayName": "Donnée", "purpose": "Tout nombre que le marchand compare : montants, compteurs, heures. Monospace obligatoire." }
