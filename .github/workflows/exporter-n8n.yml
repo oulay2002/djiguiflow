@@ -83,11 +83,20 @@ jobs:
           if gh pr view "$BRANCHE" --json state --jq .state 2>/dev/null | grep -q OPEN; then
             echo "PR deja ouverte, mise a jour."
           else
+            # Le corps passe par un fichier : ecrit en ligne, ses retours a la
+            # ligne cassaient le bloc YAML de cette etape.
+            cat > /tmp/corps-pr.md <<'CORPS'
+          L'export quotidien a trouve une difference entre le depot et l'instance n8n.
+
+          Le diff ci-dessous est **la revue** : l'export est deterministe, donc tout
+          ce qui apparait a ete change par un humain dans l'interface.
+
+          Fusionner vaut dire : oui, ce changement est voulu et je veux qu'il soit
+          trace. Fermer sans fusionner vaut dire : ce changement ne devrait pas etre
+          la — auquel cas c'est n8n qu'il faut corriger, pas cette PR.
+          CORPS
+            sed -i 's/^          //' /tmp/corps-pr.md
             gh pr create --base main --head "$BRANCHE" \
               --title "n8n : des workflows ont change" \
-              --body "L'export quotidien a trouve une difference entre le depot et l'instance n8n.
-
-Le diff ci-dessous est **la revue** : l'export est deterministe, donc tout ce qui apparait a ete change par un humain dans l'interface.
-
-Fusionner vaut dire : « oui, ce changement est voulu et je veux qu'il soit trace ». Fermer sans fusionner vaut dire : « ce changement ne devrait pas etre la » — auquel cas c'est n8n qu'il faut corriger, pas cette PR."
+              --body-file /tmp/corps-pr.md
           fi
