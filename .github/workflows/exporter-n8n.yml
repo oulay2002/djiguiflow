@@ -1,0 +1,93 @@
+# Donne une histoire aux workflows n8n.
+#
+# n8n versionne deja en interne : le retour arriere existe sans nous. Ce que
+# n8n ne fait pas, c'est survivre a la perte du VPS et rendre un changement
+# d'automatisation RELISIBLE a cote du code applicatif dont il depend.
+#
+# ELLE TOURNE PARCE QU'UN EXPORT MANUEL POURRIT. Le depot mentirait des la
+# premiere modification faite dans l'interface, et un depot qui ment sur la
+# production est pire que pas de depot. Voir l'en-tete de
+# scripts/exporter-workflows-n8n.mjs.
+name: Exporter les workflows n8n
+
+on:
+  schedule:
+    # Abidjan ne change jamais d'heure : UTC = heure locale. 5 h du matin, quand
+    # personne ne modifie un workflow — la PR attend le reveil, elle ne coupe
+    # pas une session de travail en cours.
+    - cron: '0 5 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+# Deux exports en parallele se disputeraient la meme branche.
+concurrency:
+  group: exporter-n8n
+  cancel-in-progress: false
+
+jobs:
+  exporter:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Lire n8n et ecrire n8n/
+        run: node scripts/exporter-workflows-n8n.mjs
+        env:
+          N8N_API_KEY: ${{ secrets.N8N_API_KEY }}
+          # Facultatif : le script porte sa valeur par defaut.
+          N8N_API_URL: ${{ vars.N8N_API_URL }}
+
+      # L'export est deterministe — deux passages rendent des octets
+      # identiques. Un diff non vide signifie donc qu'un humain a change
+      # quelque chose dans n8n, jamais qu'un horodatage a bouge.
+      - name: Y a-t-il un vrai changement ?
+        id: diff
+        run: |
+          if [ -z "$(git status --porcelain n8n/)" ]; then
+            echo "change=non" >> "$GITHUB_OUTPUT"
+            echo "Aucun changement dans n8n depuis le dernier export."
+          else
+            echo "change=oui" >> "$GITHUB_OUTPUT"
+            git status --short n8n/
+          fi
+
+      # UNE PR, PAS UNE POUSSEE DIRECTE. `main` est protegee, et surtout : le
+      # diff EST la revue. Un changement d'automatisation qui atterrit sans que
+      # personne ne le regarde ne vaut pas mieux que pas de trace du tout.
+      - name: Ouvrir ou mettre a jour la PR
+        if: steps.diff.outputs.change == 'oui'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          BRANCHE="export-n8n"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # Toujours la meme branche : deux jours de suite sans relecture
+          # donnent une PR mise a jour, pas deux PR concurrentes.
+          git checkout -B "$BRANCHE"
+          git add n8n/
+          git commit -m "n8n : etat des workflows au $(date -u '+%Y-%m-%d')" \
+                     -m "Export automatique. Le diff est la revue : il ne contient que ce qu'un humain a change dans l'interface n8n."
+          git push --force-with-lease origin "$BRANCHE"
+
+          if gh pr view "$BRANCHE" --json state --jq .state 2>/dev/null | grep -q OPEN; then
+            echo "PR deja ouverte, mise a jour."
+          else
+            gh pr create --base main --head "$BRANCHE" \
+              --title "n8n : des workflows ont change" \
+              --body "L'export quotidien a trouve une difference entre le depot et l'instance n8n.
+
+Le diff ci-dessous est **la revue** : l'export est deterministe, donc tout ce qui apparait a ete change par un humain dans l'interface.
+
+Fusionner vaut dire : « oui, ce changement est voulu et je veux qu'il soit trace ». Fermer sans fusionner vaut dire : « ce changement ne devrait pas etre la » — auquel cas c'est n8n qu'il faut corriger, pas cette PR."
+          fi
