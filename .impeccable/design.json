@@ -1,0 +1,237 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-21T08:21:04Z",
+  "title": "Design System: DjiguiFlow",
+  "extensions": {
+    "colorMeta": {
+      "nuit": {
+        "role": "secondary",
+        "displayName": "Indigo de nuit",
+        "canonical": "#131c3d",
+        "tonalRamp": ["#0c1229", "#131c3d", "#1b2750", "#263566", "#364a80", "#55679f", "#8090c2", "#eef0f8"]
+      },
+      "nuit-profond": {
+        "role": "secondary",
+        "displayName": "Indigo profond",
+        "canonical": "#0c1229",
+        "tonalRamp": ["#0c1229", "#131c3d", "#1b2750", "#263566", "#364a80", "#55679f", "#b0badc", "#eef0f8"]
+      },
+      "nuit-filet": {
+        "role": "secondary",
+        "displayName": "Indigo médian",
+        "canonical": "#364a80",
+        "tonalRamp": ["#0c1229", "#131c3d", "#1b2750", "#263566", "#364a80", "#55679f", "#8090c2", "#d8dcee"]
+      },
+      "chaux": {
+        "role": "neutral",
+        "displayName": "Chaux",
+        "canonical": "#eeece5",
+        "tonalRamp": ["#5f5b50", "#837e70", "#a8a394", "#c9c5b8", "#e0ddd3", "#eeece5", "#f8f7f3", "#ffffff"]
+      },
+      "chaux-clair": {
+        "role": "neutral",
+        "displayName": "Chaux claire",
+        "canonical": "#f8f7f3",
+        "tonalRamp": ["#5f5b50", "#837e70", "#a8a394", "#c9c5b8", "#e0ddd3", "#eeece5", "#f8f7f3", "#ffffff"]
+      },
+      "chaux-encre": {
+        "role": "neutral",
+        "displayName": "Chaux encre",
+        "canonical": "#5f5b50",
+        "tonalRamp": ["#3a382f", "#5f5b50", "#837e70", "#a8a394", "#c9c5b8", "#e0ddd3", "#eeece5", "#f8f7f3"]
+      },
+      "bissap": {
+        "role": "primary",
+        "displayName": "Bissap",
+        "canonical": "#c4123f",
+        "tonalRamp": ["#440618", "#620821", "#830b2b", "#a50e36", "#c4123f", "#d85372", "#e8899f", "#fdf2f4"]
+      },
+      "bissap-profond": {
+        "role": "primary",
+        "displayName": "Bissap profond",
+        "canonical": "#a50e36",
+        "tonalRamp": ["#440618", "#620821", "#830b2b", "#a50e36", "#c4123f", "#d85372", "#f4b9c6", "#fdf2f4"]
+      },
+      "feuille": {
+        "role": "tertiary",
+        "displayName": "Feuille",
+        "canonical": "#1f9a70",
+        "tonalRamp": ["#0b2f28", "#0f4738", "#125d49", "#177a5d", "#1f9a70", "#4dbb87", "#b5e7ca", "#edfaf3"]
+      },
+      "mangue": {
+        "role": "tertiary",
+        "displayName": "Mangue",
+        "canonical": "#e9a23b",
+        "tonalRamp": ["#7d4b13", "#a76518", "#d1861f", "#e9a23b", "#efb75a", "#f6d493", "#fbe9c8", "#fdf6e9"]
+      },
+      "filet": {
+        "role": "neutral",
+        "displayName": "Filet",
+        "canonical": "rgba(19, 28, 61, 0.14)",
+        "tonalRamp": ["rgba(19,28,61,0.6)", "rgba(19,28,61,0.45)", "rgba(19,28,61,0.35)", "rgba(19,28,61,0.25)", "rgba(19,28,61,0.14)", "rgba(19,28,61,0.09)", "rgba(19,28,61,0.05)", "rgba(19,28,61,0.02)"]
+      }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Titre héros de la vitrine, un seul par page." },
+      "headline": { "displayName": "Headline", "purpose": "Titres de section de la vitrine." },
+      "title": { "displayName": "Title", "purpose": "Titres de carte et de bloc." },
+      "body": { "displayName": "Body", "purpose": "Texte courant. Le tableau de bord vit en 0.875rem, pas 1rem : l'écran est étroit." },
+      "label": { "displayName": "Label", "purpose": "Intitulés de tuile et catégories, en capitales, toujours en chaux encre." },
+      "donnee": { "displayName": "Donnée", "purpose": "Tout nombre que le marchand compare : montants, compteurs, heures. Monospace obligatoire." }
+    },
+    "shadows": [
+      { "name": "douce", "value": "0 18px 44px rgba(19, 28, 61, 0.1)", "purpose": "La feuille au repos. Cartes, tuiles, panneaux. C'est le défaut, et il est permanent." },
+      { "name": "encre-de-tampon", "value": "0 8px 20px -8px rgba(196, 18, 63, 0.8)", "purpose": "Sous le bouton d'action seulement. Imite l'encre qui bave sous un tampon appuyé." },
+      { "name": "bon-empile", "value": "0 24px 50px rgba(6, 10, 25, 0.4)", "purpose": "Tickets superposés de la démonstration héros, sur fond indigo." },
+      { "name": "tiroir", "value": "0 -20px 60px rgba(12, 18, 41, 0.25)", "purpose": "Tiroir de navigation mobile, projeté vers le haut." }
+    ],
+    "motion": [
+      { "name": "ease-talon", "value": "cubic-bezier(0.2, 0.8, 0.3, 1)", "purpose": "Le décollement du talon et l'entrée des tickets. Sortie franche, arrivée calme." },
+      { "name": "duree-etat", "value": "150ms", "purpose": "Changement d'état d'un bouton." },
+      { "name": "duree-talon", "value": "180ms", "purpose": "Décollement du talon au survol." },
+      { "name": "slip-in", "value": "0.55s cubic-bezier(0.2, 0.8, 0.3, 1) backwards", "purpose": "Entrée des tickets du héros, décalée par animationDelay." },
+      { "name": "pulse-dot", "value": "2.4s ease-in-out infinite", "purpose": "Pastille de statut vivant. Coupée sous prefers-reduced-motion." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "lg", "value": "1024px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Bouton action",
+      "kind": "button",
+      "refersTo": "bouton-action",
+      "description": "Le geste principal. Un seul par écran ; sa rareté est ce qui le rend lisible.",
+      "html": "<button class=\"ds-btn-action\">Enregistrer la commande</button>",
+      "css": ".ds-btn-action { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 20px; font-family: 'Instrument Sans', system-ui, sans-serif; font-size: 0.875rem; font-weight: 600; color: #fff; background: #c4123f; border: none; border-radius: 9999px; box-shadow: 0 8px 20px -8px rgba(196,18,63,0.8); transition: background .15s, box-shadow .15s, transform .15s; cursor: pointer; } .ds-btn-action:hover { background: #a50e36; box-shadow: 0 10px 24px -8px rgba(196,18,63,0.9); } .ds-btn-action:active { transform: translateY(1px); } .ds-btn-action:focus-visible { outline: 2px solid #c4123f; outline-offset: 3px; } .ds-btn-action:disabled { opacity: .45; box-shadow: none; pointer-events: none; }"
+    },
+    {
+      "name": "Bouton calme",
+      "kind": "button",
+      "refersTo": "bouton-calme",
+      "description": "Geste secondaire, sur le papier chaux.",
+      "html": "<button class=\"ds-btn-calme\">Annuler</button>",
+      "css": ".ds-btn-calme { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 20px; font-family: 'Instrument Sans', system-ui, sans-serif; font-size: 0.875rem; font-weight: 600; color: #1b2750; background: rgba(255,255,255,0.75); border: 1px solid rgba(19,28,61,0.14); border-radius: 9999px; transition: background .15s; cursor: pointer; } .ds-btn-calme:hover { background: #fff; } .ds-btn-calme:focus-visible { outline: 2px solid #c4123f; outline-offset: 3px; }"
+    },
+    {
+      "name": "Bouton vitrine",
+      "kind": "button",
+      "refersTo": "bouton-vitrine",
+      "description": "Le même geste, silhouette d'imprimé. La vitrine n'a pas un seul angle arrondi.",
+      "html": "<button class=\"ds-btn-vitrine\">Commander</button>",
+      "css": ".ds-btn-vitrine { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 20px; font-family: 'Instrument Sans', system-ui, sans-serif; font-size: 0.875rem; font-weight: 600; color: #fff; background: #c4123f; border: none; border-radius: 0; box-shadow: 0 8px 20px -8px rgba(196,18,63,0.8); transition: background .15s; cursor: pointer; } .ds-btn-vitrine:hover { background: #a50e36; } .ds-btn-vitrine:focus-visible { outline: 2px solid #c4123f; outline-offset: 3px; }"
+    },
+    {
+      "name": "Talon de retour",
+      "kind": "custom",
+      "refersTo": "talon-retour",
+      "description": "Composant signature. On ne revient pas, on arrache le talon : bord gauche perforé, bord droit arrondi, décollement au survol.",
+      "html": "<a class=\"ds-talon\" href=\"#\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M19 12H5\"/><path d=\"m12 19-7-7 7-7\"/></svg>Retour aux commandes</a>",
+      "css": ".ds-talon { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 8px 20px 8px 16px; font-family: 'Instrument Sans', system-ui, sans-serif; font-size: 0.875rem; font-weight: 600; color: #263566; text-decoration: none; background: rgba(255,255,255,0.8); border-left: 1.5px dashed rgba(19,28,61,0.35); border-radius: 0 9999px 9999px 0; box-shadow: 0 1px 2px rgba(19,28,61,0.06); transition: transform .18s cubic-bezier(0.2,0.8,0.3,1), border-color .18s ease, box-shadow .18s ease, background-color .18s ease, color .18s ease; } .ds-talon:hover { transform: translateX(-3px); border-left-color: #c4123f; box-shadow: 0 3px 10px rgba(19,28,61,0.1); background: #fff; color: #0c1229; } .ds-talon svg { transition: transform .15s; } .ds-talon:hover svg { transform: translateX(-2px); } @media (prefers-reduced-motion: reduce) { .ds-talon:hover { transform: none; } }"
+    },
+    {
+      "name": "Tuile de comptage",
+      "kind": "card",
+      "refersTo": "tuile-stat",
+      "description": "Le chiffre en haut, l'intitulé en dessous — c'est le chiffre qu'on compare d'une tuile à l'autre.",
+      "html": "<div class=\"ds-tuile\"><div class=\"ds-tuile-haut\"><p class=\"ds-tuile-valeur\">29 500<span class=\"ds-tuile-unite\">FCFA</span></p><span class=\"ds-tuile-pastille\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 2v20\"/><path d=\"M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6\"/></svg></span></div><p class=\"ds-tuile-intitule\">Encaissé aujourd'hui</p></div>",
+      "css": ".ds-tuile { background: rgba(255,255,255,0.75); border: 1px solid rgba(19,28,61,0.14); border-radius: 16px; padding: 16px; box-shadow: 0 18px 44px rgba(19,28,61,0.1); } .ds-tuile-haut { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; } .ds-tuile-valeur { margin: 0; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 1.875rem; font-weight: 700; line-height: 1; color: #0c1229; } .ds-tuile-unite { margin-left: 4px; font-size: 0.875rem; font-weight: 600; color: #5f5b50; } .ds-tuile-pastille { display: flex; height: 36px; width: 36px; flex-shrink: 0; align-items: center; justify-content: center; border-radius: 12px; background: #d7f3e2; color: #125d49; } .ds-tuile-intitule { margin: 12px 0 0; font-family: 'Instrument Sans', system-ui, sans-serif; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color: #5f5b50; }"
+    },
+    {
+      "name": "Carte",
+      "kind": "card",
+      "refersTo": "carte",
+      "description": "La feuille au repos : blanc translucide sur papier chaux, filet d'indigo dilué, ombre douce permanente.",
+      "html": "<div class=\"ds-carte\"><p class=\"ds-carte-titre\">Commande #1042</p><p class=\"ds-carte-corps\">Attiéké poisson · livraison Cocody</p></div>",
+      "css": ".ds-carte { background: rgba(255,255,255,0.75); border: 1px solid rgba(19,28,61,0.14); border-radius: 16px; padding: 16px; box-shadow: 0 18px 44px rgba(19,28,61,0.1); } .ds-carte-titre { margin: 0; font-family: 'Bricolage Grotesque', 'Trebuchet MS', sans-serif; font-size: 1.125rem; font-weight: 900; color: #131c3d; } .ds-carte-corps { margin: 6px 0 0; font-family: 'Instrument Sans', system-ui, sans-serif; font-size: 0.875rem; line-height: 1.5; color: #5f5b50; }"
+    },
+    {
+      "name": "Champ texte",
+      "kind": "input",
+      "refersTo": "champ-texte",
+      "description": "Le champ du système. Un rounded-lg border p-2 nu n'en fait pas partie.",
+      "html": "<input class=\"ds-champ\" placeholder=\"Nom de l'article\" />",
+      "css": ".ds-champ { width: 100%; padding: 12px 16px; font-family: 'Instrument Sans', system-ui, sans-serif; font-size: 0.875rem; color: #131c3d; background: #fff; border: 1px solid #e0ddd3; border-radius: 12px; outline: none; transition: border-color .15s, box-shadow .15s; } .ds-champ::placeholder { color: #a8a394; } .ds-champ:focus { border-color: #55679f; box-shadow: 0 0 0 2px #d8dcee; }"
+    },
+    {
+      "name": "Champ de recherche",
+      "kind": "input",
+      "refersTo": "champ-recherche",
+      "description": "Silhouette pilule, surface creusée en chaux claire, icône à gauche.",
+      "html": "<span class=\"ds-recherche-enveloppe\"><svg class=\"ds-recherche-icone\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"11\" cy=\"11\" r=\"8\"/><path d=\"m21 21-4.3-4.3\"/></svg><input class=\"ds-recherche\" placeholder=\"Rechercher...\" /></span>",
+      "css": ".ds-recherche-enveloppe { position: relative; display: inline-block; } .ds-recherche-icone { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #a8a394; pointer-events: none; } .ds-recherche { width: 224px; padding: 10px 16px 10px 36px; font-family: 'Instrument Sans', system-ui, sans-serif; font-size: 0.875rem; color: #1b2750; background: #f8f7f3; border: 1px solid #e0ddd3; border-radius: 9999px; outline: none; transition: border-color .15s, box-shadow .15s; } .ds-recherche::placeholder { color: #a8a394; } .ds-recherche:focus { border-color: #55679f; box-shadow: 0 0 0 2px #d8dcee; }"
+    },
+    {
+      "name": "Étiquette d'état",
+      "kind": "chip",
+      "refersTo": "etiquette-fait",
+      "description": "La pastille qu'on lit d'un coup d'œil dans une liste. Cinq tons, tous porteurs d'un sens métier.",
+      "html": "<span class=\"ds-etiquette ds-etiquette-fait\">livré</span> <span class=\"ds-etiquette ds-etiquette-encours\">en route</span> <span class=\"ds-etiquette ds-etiquette-urgent\">à assigner</span>",
+      "css": ".ds-etiquette { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; font-family: 'Instrument Sans', system-ui, sans-serif; font-size: 0.75rem; font-weight: 600; border-radius: 9999px; } .ds-etiquette-fait { background: #d7f3e2; color: #125d49; } .ds-etiquette-encours { background: #fbe9c8; color: #7d4b13; } .ds-etiquette-urgent { background: #fadde3; color: #a50e36; }"
+    },
+    {
+      "name": "Entrée de navigation",
+      "kind": "nav",
+      "refersTo": "nav-entree",
+      "description": "Barre latérale de bureau. L'entrée active porte un dégradé tonal indigo ; les autres sont en chaux encre.",
+      "html": "<nav class=\"ds-nav\"><a class=\"ds-nav-entree ds-nav-actif\" href=\"#\">Commandes</a><a class=\"ds-nav-entree\" href=\"#\">Produits</a><a class=\"ds-nav-entree\" href=\"#\">Livreurs</a></nav>",
+      "css": ".ds-nav { display: flex; flex-direction: column; gap: 6px; width: 240px; padding: 12px; background: rgba(255,255,255,0.8); border-right: 1px solid rgba(19,28,61,0.14); } .ds-nav-entree { display: flex; align-items: center; gap: 12px; padding: 12px; font-family: 'Instrument Sans', system-ui, sans-serif; font-size: 0.875rem; font-weight: 600; color: #5f5b50; text-decoration: none; border-radius: 16px; transition: background .15s, color .15s; } .ds-nav-entree:hover { background: #eeece5; } .ds-nav-actif { background: linear-gradient(to right, #263566, #364a80); color: #fff; box-shadow: 0 10px 15px -3px rgba(19,28,61,0.2); } .ds-nav-actif:hover { background: linear-gradient(to right, #263566, #364a80); }"
+    },
+    {
+      "name": "Bon de commande",
+      "kind": "custom",
+      "refersTo": "ticket",
+      "description": "Le motif signature : bord déchiré à encoches, ligne de perforation, tampon incliné. Les encoches sont de vrais trous — --tear-bg doit valoir la couleur du fond derrière le ticket.",
+      "html": "<div class=\"ds-scene\"><div class=\"ds-ticket\"><div class=\"ds-tear\"></div><div class=\"ds-ticket-ligne\"><span>assignation</span><span>23:43</span></div><p class=\"ds-ticket-nom\">Aminata K.</p><p class=\"ds-ticket-detail\">zone Cocody · 1,4 km · à moto</p><div class=\"ds-perf\"></div><div class=\"ds-ticket-pied\"><span class=\"ds-stamp\">cocody</span><span class=\"ds-etiquette ds-etiquette-encours\">en route</span></div></div></div>",
+      "css": ".ds-scene { background: #131c3d; padding: 32px 24px; } .ds-ticket { position: relative; background: #f8f7f3; color: #131c3d; padding: 24px 20px 20px; box-shadow: 0 24px 50px rgba(6,10,25,0.4); --tear-bg: #131c3d; } .ds-tear { position: absolute; left: 0; right: 0; top: 0; border-top: 1px dashed rgba(19,28,61,0.3); } .ds-tear::before, .ds-tear::after { content: \"\"; position: absolute; top: -7px; width: 14px; height: 14px; border-radius: 9999px; background: var(--tear-bg); } .ds-tear::before { left: -7px; } .ds-tear::after { right: -7px; } .ds-ticket-ligne { display: flex; align-items: baseline; justify-content: space-between; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 0.75rem; color: #5f5b50; } .ds-ticket-nom { margin: 12px 0 0; font-family: 'Bricolage Grotesque', 'Trebuchet MS', sans-serif; font-size: 1.125rem; font-weight: 700; } .ds-ticket-detail { margin: 2px 0 0; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 13px; color: #5f5b50; } .ds-perf { height: 2px; margin: 16px 0; color: #131c3d; background-image: repeating-linear-gradient(90deg, currentColor 0 7px, transparent 7px 16px); opacity: .3; } .ds-ticket-pied { display: flex; align-items: center; justify-content: space-between; } .ds-stamp { display: inline-block; border: 1.5px solid currentColor; border-radius: 3px; padding: 4px 8px; transform: rotate(-5deg); letter-spacing: 0.2em; opacity: .85; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10px; font-weight: 600; text-transform: uppercase; color: #364a80; } .ds-etiquette { display: inline-flex; align-items: center; padding: 4px 10px; font-family: 'Instrument Sans', system-ui, sans-serif; font-size: 0.75rem; font-weight: 600; border-radius: 9999px; } .ds-etiquette-encours { background: #fbe9c8; color: #7d4b13; }"
+    },
+    {
+      "name": "Enseigne",
+      "kind": "custom",
+      "refersTo": "enseigne",
+      "description": "La marque d'une boutique, posée comme un tampon. Logo, sinon emoji choisi, sinon initiale — l'emoji par défaut ne distingue rien.",
+      "html": "<span class=\"ds-enseigne ds-enseigne-jour\">Z</span> <span class=\"ds-enseigne ds-enseigne-nuit\">R</span>",
+      "css": ".ds-enseigne { display: inline-grid; place-items: center; height: 56px; width: 56px; flex-shrink: 0; border-radius: 16px; font-family: 'Bricolage Grotesque', 'Trebuchet MS', sans-serif; font-size: 1.5rem; font-weight: 900; } .ds-enseigne-jour { border: 1px solid rgba(19,28,61,0.14); background: #eeece5; color: #131c3d; } .ds-enseigne-nuit { border: 1.5px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.08); color: #efb75a; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "Indigo & ticket",
+    "overview": "Deux matières, et rien d'autre. L'indigo est la teinture : il tient la structure, les bandeaux, les surfaces de nuit — l'heure où l'assistante travaille seule pendant que le marchand dort. Le ticket est le papier : chaux passée au mur, encre qui bave sous le tampon, bord déchiré, ligne de perforation, talon qu'on arrache. Le produit remplace un carnet à souches ; le système visuel ne s'en cache pas, il le revendique.\n\nLa conséquence pratique, c'est que la matière décide avant le goût. Un élément n'est pas arrondi parce que c'est joli : le tableau de bord est un outil, ses commandes sont des pilules qu'on touche au pouce ; la vitrine est un imprimé, elle n'a pas un seul angle arrondi. Une couleur n'est pas choisie parce qu'elle s'accorde : le bissap dit le prix et l'urgence, la mangue dit « commencé, pas fini », la feuille dit « livré ». Le lecteur repère l'état d'une commande à la couleur avant d'avoir lu le mot — c'est le seul repérage fiable dont il dispose sur un écran de téléphone, en plein soleil, entre deux clients.\n\nL'indigo n'est jamais une couleur d'accent. Toute sa rampe échoue au plancher de chromie qui rendrait un accent lisible : c'est une couleur de structure, et la traiter autrement produit des écrans mous où plus rien ne ressort.",
+    "keyCharacteristics": [
+      "Papier posé sur papier : chaque carte est une feuille physique légèrement soulevée.",
+      "Cinq rôles de couleur, tous empruntés au métier, aucun décoratif.",
+      "Deux silhouettes qui ne se mélangent pas : pilule pour l'outil, angle vif pour l'imprimé.",
+      "Les chiffres sont en monospace, toujours — une donnée s'aligne, elle ne danse pas.",
+      "Cibles de 44 px minimum : le marchand pilote au pouce, debout."
+    ],
+    "rules": [
+      { "name": "La règle du vocabulaire clos", "body": "Cinq rampes existent : nuit, chaux, bissap, feuille, mangue. Un écran qui invente son bleu ou son violet fait perdre au lecteur le seul repérage fiable qu'il a. La couleur dit où en est la commande.", "section": "colors" },
+      { "name": "La règle du bissap unique", "body": "Un seul bouton bissap par écran. Sa rareté est ce qui le rend lisible ; deux le réduisent à de la décoration. Sur une surface indigo, l'action passe en blanc — c'est la surface qui décide, pas le geste.", "section": "colors" },
+      { "name": "La règle de l'indigo structurel", "body": "L'indigo n'accentue rien. Il porte, il encadre, il fait fond. Un indigo utilisé comme accent est un défaut.", "section": "colors" },
+      { "name": "La règle du chiffre en mono", "body": "Tout nombre que le marchand compare — un montant, un compteur, une heure — est en IBM Plex Mono. Une donnée doit s'aligner d'une tuile à l'autre et ne pas danser quand elle change.", "section": "typography" },
+      { "name": "La règle de l'unité détachée", "body": "L'unité (FCFA, cmd) est un span à part, plus petit et en chaux encre. Collée au nombre, « 29 500 FCFA » se coupe en deux au milieu du montant sur un écran étroit.", "section": "typography" },
+      { "name": "La règle du pouce", "body": "Toute cible interactive fait au moins 44 px de haut. Le marchand pilote debout, à une main, sans viser.", "section": "layout" },
+      { "name": "La règle de l'ombre teintée", "body": "Aucune ombre n'est noire. Elle emprunte sa teinte à l'indigo, ou à la couleur de l'élément qu'elle porte.", "section": "elevation" },
+      { "name": "La règle des deux mondes", "body": "Pilule dans l'outil, angle vif dans l'imprimé. Un bouton arrondi sur la vitrine, ou un angle vif dans le tableau de bord, est un défaut — pas une variation.", "section": "shapes" }
+    ],
+    "dos": [
+      "Do emprunter la couleur au rôle métier : bissap pour l'action et le prix, mangue pour ce qui est commencé, feuille pour ce qui est fait, nuit pour la structure, chaux pour l'inactif.",
+      "Do mettre tout chiffre comparable en IBM Plex Mono, unité détachée.",
+      "Do teinter les ombres d'indigo ou de la couleur de l'élément — jamais de noir.",
+      "Do garder 44px de hauteur minimale sur toute cible interactive.",
+      "Do utiliser la pilule dans le tableau de bord et l'angle vif sur la vitrine, sans jamais croiser les deux.",
+      "Do poser --tear-bg à la couleur du fond derrière le ticket chaque fois qu'on emploie .tear, sinon les encoches cessent d'être des trous.",
+      "Do prévoir le repli prefers-reduced-motion : les animations sont coupées, mais les changements de couleur restent."
+    ],
+    "donts": [
+      "Don't introduire un dégradé violet-bleu, une tuile d'icône arrondie au-dessus de chaque titre, une carte imbriquée dans une carte imbriquée dans une carte, ni du texte gris sur fond coloré. Ce sont les quatre marques qui trahissent une page générée.",
+      "Don't inventer une couleur hors des cinq rampes. Pas de bleu, pas de violet, pas de gris neutre — la chaux est chaude et l'indigo dilué remplace le gris.",
+      "Don't poser deux boutons bissap sur un même écran. Sur une surface teintée, l'action passe en blanc.",
+      "Don't écrire un champ sans jeton : rounded-lg border p-2 nu n'appartient pas au système. Le filet est chaux-200, l'arrondi 12px, le focus un anneau primary-100.",
+      "Don't utiliser l'indigo comme accent. Toute sa rampe échoue au plancher de chromie ; c'est une couleur de structure.",
+      "Don't répandre backdrop-blur. Il est réservé à la barre latérale de bureau : c'est le poste le plus coûteux à rendre sur un téléphone d'entrée de gamme.",
+      "Don't peindre les encoches du talon plutôt que d'en faire une silhouette. Une encoche peinte oblige à connaître la couleur du fond, qui change d'un écran à l'autre."
+    ]
+  }
+}

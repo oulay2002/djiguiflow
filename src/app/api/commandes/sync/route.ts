@@ -1,6 +1,7 @@
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import type { Database } from '@/lib/database.types';
 import { normaliserTelephone } from '@/lib/telephone';
+import { prefixeReference } from '@/lib/marchands';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,14 +14,84 @@ export async function POST(req: Request) {
   }
 
   const b = await req.json();
-  const reference = String(b.reference || b.order_id || '').trim();
+  const referenceDemandee = String(b.reference || b.order_id || '').trim();
   const boutique_id = String(b.boutique_id || '').trim();
-  if (!reference || !boutique_id) {
+  if (!referenceDemandee || !boutique_id) {
     return Response.json({ error: 'reference et boutique_id requis' }, { status: 400 });
   }
 
   const sb = getSupabaseAdmin();
   if (!sb) return Response.json({ error: 'Indisponible' }, { status: 503 });
+
+  // ---- UNE COMMANDE TERMINEE NE SE REOUVRE PAS.
+  //
+  // L'assistante invente elle-meme la reference, et quand un client demande
+  // « la meme chose qu'hier » elle REUTILISE celle de la commande d'hier. Le
+  // 21 aout, un client a ainsi recu « votre commande est bien enregistree »
+  // alors qu'on venait d'ecrire par-dessus une commande LIVREE la veille : rien
+  // n'est parti, ni confirmation, ni livreur.
+  //
+  // Du temps de Google Sheets, le defaut existait deja mais restait invisible :
+  // l'horodatage de la ligne etait reecrit a chaque mise a jour, ce qui trompait
+  // la fenetre de douze heures et faisait REPARTIR une commande deja livree
+  // chez les livreurs. Le mal etait pire, et silencieux.
+  //
+  // ON NE DEMANDE PAS AU MODELE DE MIEUX NOMMER. On lui reprend la main : si la
+  // reference designe une commande terminee, le serveur en attribue une neuve
+  // et la rend a l'appelant. Une consigne ne serait pas un verrou.
+  const TERMINEES = ['livree', 'annulee', 'abandonnee'];
+  let reference = referenceDemandee;
+
+  const { data: existante } = await sb
+    .from('commandes')
+    .select('statut, nom_livreur')
+    .eq('reference', referenceDemandee)
+    .maybeSingle();
+
+  const estTerminee = existante
+    && (TERMINEES.includes(String(existante.statut ?? ''))
+        || String(existante.nom_livreur ?? '').trim() !== '');
+
+  if (estTerminee) {
+    // L'ASSISTANTE APPELLE PLUSIEURS FOIS PAR CONVERSATION, toujours avec la
+    // meme reference — c'est meme ce que sa consigne lui demande. Generer une
+    // reference neuve a chaque appel creerait donc une commande par message.
+    //
+    // Le panier en cours de ce client fait donc autorite : s'il en existe un,
+    // on continue de l'ecrire. C'est la DONNEE qui definit « la commande en
+    // cours », pas la chaine que le modele a retenue.
+    const chatId = String(b.chat_id ?? b.chat ?? '').trim();
+
+    const { data: panier } = chatId
+      ? await sb
+          .from('commandes')
+          .select('reference')
+          .eq('boutique_id', boutique_id)
+          .eq('chat_id', chatId)
+          .eq('statut', 'panier')
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle()
+      : { data: null };
+
+    if (panier?.reference) {
+      reference = panier.reference;
+    } else {
+      const { data: fiche } = await sb
+        .from('boutiques')
+        .select('slug')
+        .eq('id', boutique_id)
+        .maybeSingle();
+
+      reference = `${prefixeReference(String(fiche?.slug ?? ''))}`
+        + `-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
+
+      console.error(
+        `Sync — reference ${referenceDemandee} designe une commande terminee.`
+        + ` Nouvelle commande ouverte sous ${reference}.`,
+      );
+    }
+  }
 
   /**
    * Ne recopier que ce qui est reellement fourni.
