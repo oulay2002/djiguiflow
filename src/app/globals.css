@@ -78,6 +78,17 @@
   --color-primary-800: var(--color-nuit-800);
   --color-primary-900: var(--color-nuit-900);
 
+  /* Le chapeau : le paragraphe qui suit un grand titre et porte la promesse
+     de la section. Entre le corps (0.875rem) et le titre (1.5rem), la rampe
+     n'avait rien — les quatre chapeaux de la vitrine vivaient donc sur une
+     valeur littérale recopiée quatre fois. Nommé ici, il tient à un endroit.
+
+     1.0625rem et non 1rem : sur fond indigo, à bout de bras, un corps de 16 px
+     se lit comme du texte courant alors que ces quatre paragraphes portent
+     l'argument. Et pas 1.125rem non plus, qui crie sur une page déjà dense. */
+  --text-chapeau: 1.0625rem;
+  --text-chapeau--line-height: 1.625;
+
   --font-display: var(--font-bricolage), "Trebuchet MS", sans-serif;
   --font-sans: var(--font-instrument), system-ui, sans-serif;
   --font-mono: var(--font-plex-mono), ui-monospace, monospace;

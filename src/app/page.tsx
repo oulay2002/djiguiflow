@@ -198,7 +198,7 @@ export default function Home() {
               <span className="font-mono text-accent-300 tracking-tight">23:52</span>.
             </h1>
 
-            <p className="mt-7 max-w-lg text-[1.0625rem] leading-relaxed text-nuit-100">
+            <p className="mt-7 max-w-lg text-chapeau text-nuit-100">
               DjiguiFlow reçoit la commande sur WhatsApp, assigne le livreur de la zone, encaisse et
               enregistre la note du client. Vous, vous dormiez.
             </p>
@@ -412,12 +412,12 @@ export default function Home() {
             <h2 className="mt-4 font-display text-4xl font-extrabold leading-[1.02] tracking-[-0.02em] text-nuit-800 sm:text-5xl">
               Le soir, tout est déjà compté.
             </h2>
-            <p className="mt-6 max-w-lg text-[1.0625rem] leading-relaxed text-nuit-700/85">
+            <p className="mt-6 max-w-lg text-chapeau text-nuit-700/85">
               Pas de carnet à recopier, pas de calcul de fin de journée. Le relevé se remplit à
               mesure que les commandes tombent : ce qui est vendu, ce qui est encaissé, ce qui est
               parti en retard et ce qu’il faut racheter demain matin.
             </p>
-            <p className="mt-4 max-w-lg text-[1.0625rem] leading-relaxed text-nuit-700/85">
+            <p className="mt-4 max-w-lg text-chapeau text-nuit-700/85">
               Les mêmes chiffres alimentent vos alertes. Une rupture de stock, un livreur qui
               accumule les retards, une zone qui décroche : vous êtes prévenu avant que le client
               ne s’en aperçoive.
@@ -571,7 +571,7 @@ export default function Home() {
             <h2 className="max-w-xl font-display text-4xl font-extrabold leading-[1.02] tracking-[-0.02em] sm:text-5xl">
               La prochaine commande peut déjà passer toute seule.
             </h2>
-            <p className="mt-5 max-w-lg text-[1.0625rem] leading-relaxed text-nuit-100">
+            <p className="mt-5 max-w-lg text-chapeau text-nuit-100">
               Ouvrez votre boutique, branchez votre numéro WhatsApp, ajoutez vos produits. Vos
               clients, eux, n’ont rien à apprendre.
             </p>

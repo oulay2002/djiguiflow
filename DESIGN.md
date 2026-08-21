@@ -32,6 +32,12 @@ typography:
     fontWeight: 700
     lineHeight: 1.15
     letterSpacing: "-0.01em"
+  chapeau:
+    fontFamily: "Instrument Sans, system-ui, sans-serif"
+    fontSize: "1.0625rem"
+    fontWeight: 400
+    lineHeight: 1.625
+    letterSpacing: "normal"
   body:
     fontFamily: "Instrument Sans, system-ui, sans-serif"
     fontSize: "0.875rem"
@@ -245,6 +251,11 @@ des données, celle des chiffres et des heures d'un ticket de caisse.
   titres de section de la vitrine.
 - **Title** (700, `1.5rem`, `-0.01em`) : les titres de carte et de bloc. Sa
   déclinaison courte (`1.125rem`, 900) sert aux en-têtes du tableau de bord.
+- **Chapeau** (400, `1.0625rem`, interligne 1.625) : le paragraphe qui suit un
+  grand titre et porte la promesse de la section. Il n'existe que sur la
+  vitrine, toujours contraint à `max-w-lg`, et s'écrit `text-chapeau` — jamais
+  une valeur littérale. Ni `1rem`, qui se lit comme du texte courant alors que
+  ce paragraphe porte l'argument, ni `1.125rem`, qui crie sur une page dense.
 - **Body** (400, `0.875rem`, interligne 1.5) : tout le texte courant. Le
   tableau de bord vit en `0.875rem`, pas en `1rem` : l'écran est étroit et la
   densité compte.
