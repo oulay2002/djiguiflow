@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-08-21T08:21:04Z",
+  "generatedAt": "2026-08-21T16:45:00Z",
   "title": "Design System: DjiguiFlow",
   "extensions": {
     "colorMeta": {
@@ -91,7 +91,8 @@
       { "name": "duree-etat", "value": "150ms", "purpose": "Changement d'état d'un bouton." },
       { "name": "duree-talon", "value": "180ms", "purpose": "Décollement du talon au survol." },
       { "name": "slip-in", "value": "0.55s cubic-bezier(0.2, 0.8, 0.3, 1) backwards", "purpose": "Entrée des tickets du héros, décalée par animationDelay." },
-      { "name": "pulse-dot", "value": "2.4s ease-in-out infinite", "purpose": "Pastille de statut vivant. Coupée sous prefers-reduced-motion." }
+      { "name": "pulse-dot", "value": "2.4s ease-in-out infinite", "purpose": "Pastille de statut vivant. Coupée sous prefers-reduced-motion." },
+      { "name": "etape-visee", "value": "2.2s cubic-bezier(0.16, 1, 0.3, 1) forwards", "purpose": "Anneau bissap de 2 px posé par .etape:target, puis effacé. On arrive sur le guide par un lien qui désigne une étape précise ; l'anneau dit « c'est celle-ci ». Sous prefers-reduced-motion il reste au lieu de s'effacer : la désignation porte l'information, seul l'effet part." }
     ],
     "breakpoints": [
       { "name": "sm", "value": "640px" },
@@ -194,6 +195,14 @@
       "description": "La marque d'une boutique, posée comme un tampon. Logo, sinon emoji choisi, sinon initiale — l'emoji par défaut ne distingue rien.",
       "html": "<span class=\"ds-enseigne ds-enseigne-jour\">Z</span> <span class=\"ds-enseigne ds-enseigne-nuit\">R</span>",
       "css": ".ds-enseigne { display: inline-grid; place-items: center; height: 56px; width: 56px; flex-shrink: 0; border-radius: 16px; font-family: 'Bricolage Grotesque', 'Trebuchet MS', sans-serif; font-size: 1.5rem; font-weight: 900; } .ds-enseigne-jour { border: 1px solid rgba(19,28,61,0.14); background: #eeece5; color: #131c3d; } .ds-enseigne-nuit { border: 1.5px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.08); color: #efb75a; }"
+    },
+    {
+      "name": "Feuillet à souche",
+      "kind": "custom",
+      "refersTo": "carte",
+      "description": "L'étape d'un guide : le corps en haut, la souche en bas, séparées par une perforation. La souche porte la preuve que l'étape a pris — en feuille, jamais en mangue.",
+      "html": "<article class=\"ds-feuillet\"><div class=\"ds-feuillet-corps\"><div class=\"ds-feuillet-tete\"><span class=\"ds-feuillet-rang\">4</span><div><p class=\"ds-feuillet-ou\"><b>Onboarding</b><span> &middot; étapes 1 et 2</span></p><h3 class=\"ds-feuillet-titre\">Connectez vos messageries</h3></div></div><p class=\"ds-feuillet-texte\">Indiquez le numéro WhatsApp auquel vos clients écrivent, puis collez le jeton de votre bot.</p></div><div class=\"ds-souche\"><p class=\"ds-souche-label\">Vérifiez</p><p class=\"ds-souche-texte\">La pastille « connecté » s’allume à côté du champ.</p></div></article>",
+      "css": ".ds-feuillet { border: 1px solid #e0ddd3; background: #fff; color: #131c3d; font-family: 'Instrument Sans', system-ui, sans-serif; } .ds-feuillet-corps { padding: 24px; display: flex; flex-direction: column; gap: 16px; } .ds-feuillet-tete { display: flex; align-items: baseline; gap: 16px; } .ds-feuillet-rang { width: 36px; flex-shrink: 0; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 1.875rem; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; color: #0c1229; } .ds-feuillet-ou { margin: 0 0 6px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.14em; } .ds-feuillet-ou b { color: #0c1229; font-weight: 600; } .ds-feuillet-ou span { color: #5f5b50; } .ds-feuillet-titre { margin: 0; font-family: 'Bricolage Grotesque', 'Trebuchet MS', sans-serif; font-size: 1.25rem; font-weight: 700; line-height: 1.2; letter-spacing: -0.01em; color: #0c1229; } .ds-feuillet-texte { margin: 0; font-size: 1rem; line-height: 1.5; color: #131c3d; max-width: 66ch; } .ds-souche { border-top: 1px dashed rgba(19, 28, 61, 0.28); background: #edfaf3; padding: 16px 24px; } .ds-souche-label { margin: 0; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.14em; color: #125d49; } .ds-souche-texte { margin: 6px 0 0; font-size: 0.875rem; line-height: 1.6; color: #131c3d; max-width: 62ch; }"
     }
   ],
   "narrative": {
@@ -214,7 +223,8 @@
       { "name": "La règle de l'unité détachée", "body": "L'unité (FCFA, cmd) est un span à part, plus petit et en chaux encre. Collée au nombre, « 29 500 FCFA » se coupe en deux au milieu du montant sur un écran étroit.", "section": "typography" },
       { "name": "La règle du pouce", "body": "Toute cible interactive fait au moins 44 px de haut. Le marchand pilote debout, à une main, sans viser.", "section": "layout" },
       { "name": "La règle de l'ombre teintée", "body": "Aucune ombre n'est noire. Elle emprunte sa teinte à l'indigo, ou à la couleur de l'élément qu'elle porte.", "section": "elevation" },
-      { "name": "La règle des deux mondes", "body": "Pilule dans l'outil, angle vif dans l'imprimé. Un bouton arrondi sur la vitrine, ou un angle vif dans le tableau de bord, est un défaut — pas une variation.", "section": "shapes" }
+      { "name": "La règle des deux mondes", "body": "Pilule dans l'outil, angle vif dans l'imprimé. Un bouton arrondi sur la vitrine, ou un angle vif dans le tableau de bord, est un défaut — pas une variation.", "section": "shapes" },
+      { "name": "La règle de la silhouette", "body": "Un motif de papier se porte par sa forme, pas par une couleur posée à côté. .stub et .souche le font par un bord pointillé ; .tear par de vrais trous. Dès qu'un motif a besoin qu'on lui peigne un repère pour se lire, ce n'est plus le papier qui parle.", "section": "shapes" }
     ],
     "dos": [
       "Do emprunter la couleur au rôle métier : bissap pour l'action et le prix, mangue pour ce qui est commencé, feuille pour ce qui est fait, nuit pour la structure, chaux pour l'inactif.",

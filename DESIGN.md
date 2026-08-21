@@ -351,7 +351,7 @@ n'a pas un seul angle arrondi (`rounded-none`). C'est pour cela que le composant
 `Bouton` porte une propriété `forme` séparée de sa `variante` — sans elle,
 adoucir la vitrine aurait arrondi tous les écrans du marchand par ricochet.
 
-Quatre motifs portent la métaphore du papier, et ils sont dessinés en CSS, pas
+Cinq motifs portent la métaphore du papier, et ils sont dessinés en CSS, pas
 en images :
 
 - **`.tear`** — le bord déchiré : un filet pointillé plus deux encoches rondes
@@ -366,12 +366,23 @@ en images :
   plat et perforé, bord droit arrondi. C'est la **silhouette** qui porte le
   motif, pas des encoches peintes : celles-ci auraient exigé de connaître la
   couleur du fond, qui change d'un écran à l'autre.
+- **`.souche`** — ce qu'on garde quand on a arraché le reste : un filet
+  pointillé en bord haut (`1px dashed rgba(19, 28, 61, 0.28)`), et rien
+  d'autre. Elle ferme un feuillet en pleine largeur, sous son corps, et porte
+  la preuve que l'étape a pris. Le pointillé fait tout le travail — une barre
+  de couleur en marge aurait dit « encadré » là où il faut dire « ce qui
+  reste ».
 
 ### Named Rules
 
 **La règle des deux mondes.** Pilule dans l'outil, angle vif dans l'imprimé.
 Un bouton arrondi sur la vitrine, ou un angle vif dans le tableau de bord,
 est un défaut — pas une variation.
+
+**La règle de la silhouette.** Un motif de papier se porte par sa forme, pas
+par une couleur posée à côté. `.stub` et `.souche` le font par un bord
+pointillé ; `.tear` par de vrais trous. Dès qu'un motif a besoin qu'on lui
+peigne un repère pour se lire, ce n'est plus le papier qui parle.
 
 ## Components
 
@@ -461,6 +472,28 @@ l'afficher tel quel revient à coller la même vignette sur chaque boutique. Le
 cadre vaut autant que ce qu'il contient — sans lui, l'emoji se lit comme un
 caractère au fil du texte. Deux variantes : `jour` (filet + fond chaux) et
 `nuit` (filet blanc à 30 % + fond blanc à 8 %).
+
+### Feuillet à souche (composant signature)
+
+L'étape d'un guide, en deux parties séparées par une perforation. En haut le
+corps : le rang en mono indigo (`1.5rem`, `1.875rem` au-delà de `640px`),
+tabulaire pour que les feuillets s'alignent ; l'adresse du geste au-dessus du titre
+(l'application en gras nuit, le chemin en chaux encre), puis le texte. En bas
+la **souche** (`.souche`), pleine largeur, fond feuille clair (`accent-50`),
+intitulé « Vérifiez » en label `accent-700`.
+
+La souche est en feuille et jamais en mangue : la mangue dit « commencé, pas
+fini », la souche constate un fait accompli — c'est la définition même de la
+feuille. Elle ne dit pas quoi faire, elle dit qu'on peut passer à la suite.
+
+Le feuillet porte son ancre (`#etape-N`) avec `scroll-mt-6`, parce qu'on y
+arrive aussi par un lien qui désigne une étape précise — et c'est le seul
+mouvement du guide. `.etape:target` pose alors un anneau bissap de 2 px qui
+s'efface en `2.2s` : il désigne, il ne décore pas. Le bissap est ici dans son
+rôle documenté d'anneau de focus, et il reste transitoire, donc il ne compte
+pas dans les marques permanentes de l'écran. En `prefers-reduced-motion`
+l'anneau **reste** au lieu de s'effacer : c'est la désignation qui porte
+l'information, seul l'effet part.
 
 ## Do's and Don'ts
 
