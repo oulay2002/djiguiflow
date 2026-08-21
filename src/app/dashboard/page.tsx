@@ -194,12 +194,24 @@ export default function Page() {
                       </li>
                     ))}
                   </ul>
+                  <div className="mt-3 flex flex-wrap items-center gap-3">
                   <Link
                     href="/onboarding"
-                    className="mt-3 inline-flex items-center gap-2 rounded-xl bg-bissap-600 px-4 py-2 text-sm font-semibold text-white hover:bg-bissap-700"
+                    className="inline-flex items-center gap-2 rounded-xl bg-bissap-600 px-4 py-2 text-sm font-semibold text-white hover:bg-bissap-700"
                   >
                     Terminer le branchement <ArrowRight className="h-4 w-4" />
                   </Link>
+                  {/* Certains veulent agir, d'autres veulent d'abord comprendre.
+                      Ne proposer que le formulaire laisse les seconds bloques. */}
+                  <a
+                    href="/aide/brancher"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm font-semibold text-bissap-800 underline underline-offset-4 hover:text-bissap-900"
+                  >
+                    Lire le guide
+                  </a>
+                  </div>
                 </div>
               </div>
             </section>
