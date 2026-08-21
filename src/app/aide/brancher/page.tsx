@@ -30,7 +30,8 @@ import { LienRetour } from '@/components/ui/Bouton';
  */
 
 export const metadata: Metadata = {
-  title: 'Brancher sa boutique — DjiguiFlow',
+  // Le suffixe vient du gabarit du layout : le poser ici le doublait.
+  title: 'Brancher sa boutique',
   description:
     'Huit étapes pour que votre boutique reçoive de vraies commandes, les confie '
     + 'à un livreur et tienne son stock toute seule.',
@@ -216,7 +217,7 @@ function Bordereau({ entrees }: { entrees: { id: string; titre: string; compte: 
           <li key={id}>
             <a
               href={`#${id}`}
-              className="flex min-h-11 items-baseline gap-4 py-2 text-nuit-800 transition-colors duration-150 hover:text-bissap-600"
+              className="flex min-h-11 items-baseline gap-4 py-2 text-nuit-800 transition-[color] duration-150 hover:text-bissap-600"
             >
               <span className="font-semibold">{titre}</span>
               <span className="ml-auto shrink-0 font-mono text-xs text-chaux-600">{compte}</span>
@@ -231,12 +232,17 @@ function Bordereau({ entrees }: { entrees: { id: string; titre: string; compte: 
 /** Un renvoi vers l'etape en cause. Le lien fait ce que le texte promettait. */
 function Renvoi({ etape }: { etape: number }) {
   return (
-    <a
-      href={`#etape-${etape}`}
-      className="font-semibold text-nuit-700 underline decoration-nuit-200 underline-offset-4 transition-colors duration-150 hover:decoration-nuit-700"
-    >
-      Sinon&nbsp;: étape {etape}
-    </a>
+    <>
+      {' '}
+      Si rien n’arrive,{' '}
+      <a
+        href={`#etape-${etape}`}
+        className="font-semibold text-nuit-700 underline decoration-nuit-200 underline-offset-4 transition-[text-decoration-color] duration-150 hover:decoration-nuit-700"
+      >
+        reprenez l’étape&nbsp;{etape}
+      </a>
+      .
+    </>
   );
 }
 
@@ -330,7 +336,7 @@ export default function GuideBrancherPage() {
               rang={1}
               titre="Décrivez votre boutique"
               app="Tableau de bord"
-              chemin="Ma Boutique"
+              chemin="Ma boutique"
               verification="Ouvrez votre vitrine. Votre nom et votre logo s’y affichent."
             >
               <p>
@@ -382,7 +388,11 @@ export default function GuideBrancherPage() {
               <ol className="flex list-decimal flex-col gap-1.5 pl-5">
                 <li>Envoyez-lui <Val>/newbot</Val>.</li>
                 <li>Donnez le nom de votre boutique, puis un identifiant finissant par <Val>bot</Val>.</li>
-                <li>Il vous répond avec un <b>jeton</b> — une longue suite de caractères. Gardez-la.</li>
+                <li>
+                  Il vous répond avec un <b>jeton</b> — une longue suite de caractères.
+                  Collez-la tout de suite dans une note sur votre téléphone : vous en aurez
+                  besoin à l’étape 4, et elle ne se réaffiche pas.
+                </li>
               </ol>
               <Echange
                 legende="Conversation avec @BotFather"
@@ -400,8 +410,8 @@ export default function GuideBrancherPage() {
             <Etape
               rang={4}
               titre="Connectez vos messageries"
-              app="Onboarding"
-              chemin="étapes 1 et 2"
+              app="Tableau de bord"
+              chemin="Branchement"
               verification="La pastille « connecté » s’allume à côté du champ."
             >
               <p>
@@ -419,8 +429,8 @@ export default function GuideBrancherPage() {
             <Etape
               rang={5}
               titre="Récupérez votre identifiant Telegram"
-              app="Onboarding"
-              chemin="étape 3"
+              app="Tableau de bord"
+              chemin="Branchement"
               verification={
                 <>
                   Le numéro est <b>positif</b> : c’est une personne. Enregistrez-le sans
@@ -430,7 +440,7 @@ export default function GuideBrancherPage() {
             >
               <p>
                 Écrivez <Val>ID</Val> en privé à votre bot. Il vous répond un numéro.
-                Recopiez-le dans le champ.
+                Recopiez-le dans le champ <b>Votre identifiant Telegram</b>.
               </p>
               <p className="text-sm text-nuit-600">
                 C’est là que vous recevrez l’alerte de chaque nouvelle commande.
@@ -448,7 +458,7 @@ export default function GuideBrancherPage() {
               rang={6}
               titre="Créez le groupe de vos livreurs"
               app="Telegram"
-              chemin="puis Onboarding, étape 4"
+              chemin="puis Branchement"
               verification={
                 <>
                   Le numéro commence par un <b>tiret</b> — c’est ainsi que Telegram désigne
@@ -460,7 +470,7 @@ export default function GuideBrancherPage() {
                 <li>Créez un groupe Telegram et nommez-le, par exemple <Val>Livreurs Ma Boutique</Val>.</li>
                 <li>Ajoutez-y votre bot, <b>en administrateur</b>.</li>
                 <li>Envoyez <Val>ID</Val> dans le groupe : le bot répond un numéro négatif.</li>
-                <li>Recopiez ce numéro, signe moins compris, dans le champ.</li>
+                <li>Recopiez ce numéro, signe moins compris, dans le champ <b>Le groupe de vos livreurs</b>.</li>
               </ol>
               <Echange
                 legende="Dans le groupe des livreurs"
@@ -526,7 +536,7 @@ export default function GuideBrancherPage() {
               rang={8}
               titre="Déclarez vos horaires"
               app="Tableau de bord"
-              chemin="Ma Boutique"
+              chemin="Ma boutique"
               verification="Votre vitrine affiche « Ouvert jusqu’à … » pendant vos heures, et annonce l’heure de réouverture en dehors."
             >
               <p>
@@ -559,12 +569,25 @@ export default function GuideBrancherPage() {
                 <span className="min-w-0">
                   <b className="block font-semibold text-nuit-900">{titre}</b>
                   <span className="mt-1 block max-w-[60ch] text-sm leading-snug text-chaux-600">
-                    {detail} <Renvoi etape={etape} />
+                    {detail}
+                    <Renvoi etape={etape} />
                   </span>
                 </span>
               </li>
             ))}
           </ol>
+
+          {/* CE QUE LE TEST NE PROUVE PAS. Ses quatre preuves suivent la
+              commande, donc les etapes 4 a 7. Un marchand dont les horaires
+              sont faux passe le test avec succes et continue de recevoir des
+              commandes a 3 h du matin — ce que la section suivante lui annonce
+              comme une surprise. Le dire ici coute une phrase ; le taire coute
+              une nuit. */}
+          <p className="max-w-[66ch] text-sm leading-relaxed text-chaux-600">
+            Ce test suit une commande : il prouve la chaîne, pas vos réglages. Votre
+            enseigne, vos articles et vos horaires se vérifient chacun à leur étape,
+            par leur « Vérifiez ».
+          </p>
         </section>
 
         <section className="flex flex-col gap-5">
@@ -584,6 +607,16 @@ export default function GuideBrancherPage() {
           <p className="max-w-[62ch] text-sm text-chaux-600">
             Une étape résiste ? Ne devinez pas : le bandeau du tableau de bord et les
             quatre points de la commande d’essai désignent toujours l’étape en cause.
+          </p>
+
+          {/* REGLE DU PIC-FIN. La page se terminait sur trois mises en garde,
+              puis un bouton : apres trente minutes de travail, la derniere
+              chose lue etait un avertissement. Ceci dit ce qui s'allume au
+              bout — un fait sur le mecanisme, aucun chiffre promis. */}
+          <p className="max-w-[62ch] text-nuit-800">
+            Ces huit étapes faites, votre boutique travaille sans vous : un client qui
+            écrit à 23 h reçoit une réponse, et la course part au livreur pendant que
+            vous dormez.
           </p>
           <Link
             href="/onboarding"

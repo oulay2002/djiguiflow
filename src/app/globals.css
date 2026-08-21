@@ -285,11 +285,16 @@ body {
 
    Le bissap est ici dans son rôle documenté d'anneau de focus, et il reste
    transitoire : il ne compte pas dans les marques permanentes de la page. */
+/* Le palier de 35 % n'est pas cosmétique. Sans lui, l'ease `(0.16, 1, 0.3, 1)`
+   emporte l'anneau à 21 % d'opacité dès 500 ms et 3 % à 1,1 s : l'animation
+   annonçait 2,2 s et n'en tenait que six centièmes. L'anneau tient d'abord
+   pleinement — le temps qu'un œil arrive — puis s'efface. */
 @keyframes etape-visee {
-  from {
+  0%,
+  35% {
     box-shadow: 0 0 0 2px var(--color-bissap-500);
   }
-  to {
+  100% {
     box-shadow: 0 0 0 2px rgba(196, 18, 63, 0);
   }
 }
