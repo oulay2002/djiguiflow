@@ -169,12 +169,12 @@ export default function VitrinePage() {
       <header className="indigo-weave bg-nuit-900 text-chaux-50">
         <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 sm:py-20">
           <div className="flex items-center justify-between gap-4">
-            <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-mangue-300">
+            <p className="font-mono text-xs uppercase tracking-[0.28em] text-mangue-300">
               Carnet de commandes · Abidjan
             </p>
             <Link
               href="/"
-              className="font-mono text-[11px] uppercase tracking-[0.2em] text-chaux-300 underline-offset-4 hover:text-chaux-50 hover:underline"
+              className="font-mono text-xs uppercase tracking-[0.2em] text-chaux-300 underline-offset-4 hover:text-chaux-50 hover:underline"
             >
               DjiguiFlow
             </Link>
@@ -227,7 +227,7 @@ export default function VitrinePage() {
                   type="button"
                   onClick={() => setCategorie(c)}
                   aria-pressed={actif}
-                  className={`border px-3.5 py-1.5 font-mono text-[11px] uppercase tracking-[0.16em] transition ${
+                  className={`border px-3.5 py-1.5 font-mono text-xs uppercase tracking-[0.16em] transition ${
                     actif
                       ? 'border-nuit-900 bg-nuit-900 text-chaux-50'
                       : 'border-[var(--hairline)] text-chaux-600 hover:border-nuit-900 hover:text-nuit-900'
@@ -239,12 +239,12 @@ export default function VitrinePage() {
             })}
           </div>
 
-          <label className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.16em] text-chaux-600">
+          <label className="flex items-center gap-2 font-mono text-xs uppercase tracking-[0.16em] text-chaux-600">
             Trier
             <select
               value={tri}
               onChange={(e) => setTri(e.target.value as Tri)}
-              className="border border-[var(--hairline)] bg-transparent px-2 py-1.5 font-mono text-[11px] uppercase tracking-[0.16em] text-nuit-900"
+              className="border border-[var(--hairline)] bg-transparent px-2 py-1.5 font-mono text-xs uppercase tracking-[0.16em] text-nuit-900"
             >
               {TRIS.map((t) => (
                 <option key={t.cle} value={t.cle}>
@@ -298,7 +298,7 @@ export default function VitrinePage() {
 
                     <div className="flex flex-1 flex-col p-6 pt-8">
                       <div className="flex items-start justify-between gap-4">
-                        <span className="stamp font-mono text-[10px] uppercase text-bissap-500">
+                        <span className="stamp font-mono text-xs uppercase text-bissap-500">
                           {b.categorie}
                         </span>
                         {b.logo && (
@@ -321,7 +321,7 @@ export default function VitrinePage() {
                         </p>
                       )}
 
-                      <dl className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 font-mono text-[11px] uppercase tracking-[0.14em] text-chaux-600">
+                      <dl className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 font-mono text-xs uppercase tracking-[0.14em] text-chaux-600">
                         <div className="flex items-center gap-1.5">
                           <dt className="sr-only">Quartier</dt>
                           <MapPin aria-hidden className="h-3.5 w-3.5" />
@@ -342,7 +342,7 @@ export default function VitrinePage() {
                             <span className="text-chaux-600">/5</span>
                           </span>
                         )}
-                        <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-chaux-600">
+                        <span className="font-mono text-xs uppercase tracking-[0.14em] text-chaux-600">
                           {ligneConfiance(b)}
                         </span>
                       </p>
@@ -350,7 +350,7 @@ export default function VitrinePage() {
 
                     {/* La couture, puis le talon qu'on détache pour entrer. */}
                     <div className="perf-line mx-6 text-nuit-900" aria-hidden />
-                    <span className="flex items-center justify-between px-6 py-4 font-mono text-[11px] uppercase tracking-[0.18em] text-nuit-900 transition-colors group-hover:bg-nuit-900 group-hover:text-chaux-50">
+                    <span className="flex items-center justify-between px-6 py-4 font-mono text-xs uppercase tracking-[0.18em] text-nuit-900 transition-colors group-hover:bg-nuit-900 group-hover:text-chaux-50">
                       Voir la boutique
                       <ArrowRight
                         aria-hidden

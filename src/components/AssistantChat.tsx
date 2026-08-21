@@ -228,7 +228,7 @@ export default function AssistantChat() {
             <div className="flex items-center justify-between border-b border-[var(--hairline)] bg-[linear-gradient(135deg,#fff9ef_0%,#eefaf4_100%)] px-4 py-3">
               <div>
                 <p className="text-sm font-black text-nuit-900">Assistant IA</p>
-                <p className="text-[11px] text-chaux-600">Infos, frais, paiements, support</p>
+                <p className="text-xs text-chaux-600">Infos, frais, paiements, support</p>
               </div>
               <button
                 type="button"
@@ -240,7 +240,7 @@ export default function AssistantChat() {
             </div>
 
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-mangue-100 bg-mangue-50/70 px-3 py-2">
-              <p className="text-[11px] font-semibold text-mangue-700">
+              <p className="text-xs font-semibold text-mangue-700">
                 Reponse IA generee
               </p>
               <div className="flex flex-wrap items-center gap-1.5">
@@ -248,7 +248,7 @@ export default function AssistantChat() {
                   href={supportHref}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-1 rounded-full border border-mangue-200 bg-white px-2.5 py-1 text-[10px] font-bold text-mangue-700 transition hover:bg-mangue-100"
+                  className="inline-flex items-center gap-1 rounded-full border border-mangue-200 bg-white px-2.5 py-1 text-xs font-bold text-mangue-700 transition hover:bg-mangue-100"
                 >
                   <Headset className="h-3 w-3" />
                   {supportMiniCtaLabel}
@@ -257,13 +257,13 @@ export default function AssistantChat() {
                   <div className="inline-flex items-center gap-1">
                     <a
                       href={callHref}
-                      className="inline-flex items-center gap-1 rounded-full border border-[var(--hairline)] bg-white px-2.5 py-1 text-[10px] font-bold text-nuit-700 transition hover:bg-chaux-100"
+                      className="inline-flex items-center gap-1 rounded-full border border-[var(--hairline)] bg-white px-2.5 py-1 text-xs font-bold text-nuit-700 transition hover:bg-chaux-100"
                     >
                       <PhoneCall className="h-3 w-3" />
                       Appeler
                     </a>
                     {supportPhoneDisplay && (
-                      <span className="rounded-full border border-[var(--hairline)] bg-white px-2 py-1 text-[10px] font-semibold text-chaux-600">
+                      <span className="rounded-full border border-[var(--hairline)] bg-white px-2 py-1 text-xs font-semibold text-chaux-600">
                         {supportPhoneDisplay}
                       </span>
                     )}
@@ -298,7 +298,7 @@ export default function AssistantChat() {
                     key={`floating-${prompt}`}
                     type="button"
                     onClick={() => handleSend(prompt)}
-                    className="rounded-full border border-[var(--hairline)] bg-chaux-50 px-3 py-1.5 text-[11px] font-semibold text-chaux-600 transition hover:border-primary-300 hover:bg-primary-50 hover:text-primary-700"
+                    className="rounded-full border border-[var(--hairline)] bg-chaux-50 px-3 py-1.5 text-xs font-semibold text-chaux-600 transition hover:border-primary-300 hover:bg-primary-50 hover:text-primary-700"
                   >
                     {prompt}
                   </button>
@@ -335,7 +335,7 @@ export default function AssistantChat() {
           <MessageSquare className="h-5 w-5" />
           <span className="hidden sm:inline">Assistant IA</span>
           {showLauncherBadge && !isFloatingOpen && (
-            <span className="absolute -right-1.5 -top-1.5 inline-flex h-6 min-w-6 items-center justify-center rounded-full border-2 border-white bg-bissap-500 px-1 text-[11px] font-black text-white shadow-lg shadow-bissap-500/35 animate-pulse">
+            <span className="absolute -right-1.5 -top-1.5 inline-flex h-6 min-w-6 items-center justify-center rounded-full border-2 border-white bg-bissap-500 px-1 text-xs font-black text-white shadow-lg shadow-bissap-500/35 animate-pulse">
               1
             </span>
           )}

@@ -47,7 +47,7 @@ export default function BoutiquesEnLigne() {
   return (
     <section className="py-20 lg:py-24">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
-        <p className="font-mono text-[11px] font-bold uppercase tracking-[0.24em] text-chaux-600">
+        <p className="font-mono text-xs font-bold uppercase tracking-[0.24em] text-chaux-600">
           déjà sur DjiguiFlow
         </p>
         <h2 className="mt-4 max-w-2xl font-display text-3xl font-black leading-tight text-nuit-900 sm:text-4xl">
@@ -72,7 +72,7 @@ export default function BoutiquesEnLigne() {
                 <span className="block truncate font-display text-lg font-bold leading-tight text-nuit-900">
                   {b.nom}
                 </span>
-                <span className="mt-0.5 block truncate font-mono text-[11px] uppercase tracking-[0.16em] text-chaux-600">
+                <span className="mt-0.5 block truncate font-mono text-xs uppercase tracking-[0.16em] text-chaux-600">
                   {b.secteur}
                   {b.zone && ` · ${b.zone}`}
                 </span>
@@ -95,7 +95,7 @@ export default function BoutiquesEnLigne() {
               <span className="block font-display text-lg font-bold leading-tight text-nuit-800">
                 Votre enseigne ici
               </span>
-              <span className="mt-0.5 block font-mono text-[11px] uppercase tracking-[0.16em] text-chaux-600">
+              <span className="mt-0.5 block font-mono text-xs uppercase tracking-[0.16em] text-chaux-600">
                 30 jours offerts
               </span>
             </span>

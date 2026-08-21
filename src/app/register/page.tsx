@@ -24,7 +24,7 @@ const CHAMP =
   'outline-none transition placeholder:text-chaux-400 focus:border-nuit-400';
 
 const LIBELLE =
-  'mb-1.5 block font-mono text-[11px] font-bold uppercase tracking-[0.16em] text-chaux-600';
+  'mb-1.5 block font-mono text-xs font-bold uppercase tracking-[0.16em] text-chaux-600';
 
 /** Lu par `useSyncExternalStore` pour savoir si React a repris la main. */
 const SANS_ABONNEMENT = () => () => {};
@@ -120,7 +120,7 @@ export default function RegisterPage() {
       <header className="indigo-weave relative bg-nuit-900 px-4 pb-9 pt-6 text-white">
         <div className="mx-auto max-w-md">
           <LienRetour href="/">Retour à l&apos;accueil</LienRetour>
-          <p className="mt-6 font-mono text-[10px] uppercase tracking-[0.28em] text-mangue-300 sm:text-[11px]">
+          <p className="mt-6 font-mono text-xs uppercase tracking-[0.28em] text-mangue-300">
             30 jours offerts · sans carte bancaire
           </p>
           <h1 className="mt-1.5 font-display text-3xl font-black leading-[1.05] sm:text-4xl">
@@ -135,7 +135,7 @@ export default function RegisterPage() {
           className="slip-in relative border border-[var(--hairline)] bg-chaux-50 p-6 soft-shadow sm:p-8"
           style={{ ['--tear-bg' as string]: FOND_PAGE }}
         >
-          <p className="font-mono text-[10px] font-bold uppercase tracking-[0.28em] text-chaux-600">
+          <p className="font-mono text-xs font-bold uppercase tracking-[0.28em] text-chaux-600">
             Bulletin d&apos;inscription
           </p>
           <div className="tear absolute inset-x-0 top-14 sm:top-16" />
@@ -152,7 +152,7 @@ export default function RegisterPage() {
               perforation separe, elle ne dit pas qu'on choisit. */}
           <div className="relative my-6 flex items-center justify-center">
             <div className="perf-line absolute inset-x-0 text-nuit-900" aria-hidden />
-            <span className="relative bg-chaux-50 px-3 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-chaux-600">
+            <span className="relative bg-chaux-50 px-3 font-mono text-xs font-bold uppercase tracking-[0.2em] text-chaux-600">
               ou
             </span>
           </div>

@@ -213,13 +213,13 @@ export default function CustomersPage() {
               <table className="w-full">
                 <thead className="bg-chaux-50">
                   <tr>
-                    <th className="whitespace-nowrap px-4 py-4 text-left text-[11px] font-bold uppercase tracking-[0.18em] text-chaux-600">Client</th>
-                    <th className="whitespace-nowrap px-4 py-4 text-left text-[11px] font-bold uppercase tracking-[0.18em] text-chaux-600">Contact</th>
-                    <th className="whitespace-nowrap px-4 py-4 text-left text-[11px] font-bold uppercase tracking-[0.18em] text-chaux-600">Adresse</th>
-                    <th className="whitespace-nowrap px-4 py-4 text-left text-[11px] font-bold uppercase tracking-[0.18em] text-chaux-600">Commandes</th>
-                    <th className="whitespace-nowrap px-4 py-4 text-left text-[11px] font-bold uppercase tracking-[0.18em] text-chaux-600">Dépensé</th>
-                    <th className="whitespace-nowrap px-4 py-4 text-left text-[11px] font-bold uppercase tracking-[0.18em] text-chaux-600">Dernière cmd</th>
-                    <th className="whitespace-nowrap px-4 py-4 text-left text-[11px] font-bold uppercase tracking-[0.18em] text-chaux-600">Note</th>
+                    <th className="whitespace-nowrap px-4 py-4 text-left text-xs font-bold uppercase tracking-[0.18em] text-chaux-600">Client</th>
+                    <th className="whitespace-nowrap px-4 py-4 text-left text-xs font-bold uppercase tracking-[0.18em] text-chaux-600">Contact</th>
+                    <th className="whitespace-nowrap px-4 py-4 text-left text-xs font-bold uppercase tracking-[0.18em] text-chaux-600">Adresse</th>
+                    <th className="whitespace-nowrap px-4 py-4 text-left text-xs font-bold uppercase tracking-[0.18em] text-chaux-600">Commandes</th>
+                    <th className="whitespace-nowrap px-4 py-4 text-left text-xs font-bold uppercase tracking-[0.18em] text-chaux-600">Dépensé</th>
+                    <th className="whitespace-nowrap px-4 py-4 text-left text-xs font-bold uppercase tracking-[0.18em] text-chaux-600">Dernière cmd</th>
+                    <th className="whitespace-nowrap px-4 py-4 text-left text-xs font-bold uppercase tracking-[0.18em] text-chaux-600">Note</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-chaux-200">
