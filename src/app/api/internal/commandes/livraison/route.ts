@@ -110,7 +110,90 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Écriture impossible' }, { status: 502 });
   }
 
+  /**
+   * Les horodatages se DEDUISENT du statut, comme `statut` juste au-dessus.
+   *
+   * LE DEFAUT QUE CECI FERME. Le chemin n8n n'ecrivait que `statut_livraison`.
+   * Verifie le 21 aout sur quatre executions consecutives : `Trouver la
+   * commande` rendait `undefined` pour les deux horodatages et `""` pour le
+   * livreur, et la route repondait « maj: { statut_livraison } » — rien
+   * d'autre. Le workflow RENVOYAIT les valeurs existantes au lieu d'en
+   * produire : a l'acceptation, `heure_prise_en_charge` est legitimement vide,
+   * c'est l'instant de la poser et non de la repeter.
+   *
+   * Consequence mesuree : l'horodatage n'existait que la ou le tableau de bord
+   * etait passe — 23 commandes sur 24 avec un nom de livreur, contre 1 sur 7
+   * sans. Aucune commande passee par le circuit livreur n'avait d'heure. Tout
+   * calcul de delai etait aveugle sur elles, et le detecteur « sans livreur »
+   * de /api/internal/sante les signalait comme abandonnees alors qu'un livreur
+   * s'en etait saisi.
+   *
+   * ICI ET NON DANS N8N. La route derive deja `statut` ; elle derive donc aussi
+   * l'heure, et la regle vaut pour tous les appelants — un workflow modifie ne
+   * peut plus l'oublier. Corriger dans n8n aurait demande de recommencer a
+   * chaque nouveau chemin.
+   *
+   * EN ECRITURE SEPAREE, ET CONDITIONNEE PAR `is(null)`. La mise a jour
+   * principale reste intacte — aucune regression possible sur le chemin des
+   * commandes reelles — et l'heure ne peut pas etre ecrasee : le moment ou un
+   * livreur a pris la course n'est pas celui ou n8n a repete le statut.
+   */
+  const statut = maj.statut_livraison ?? '';
+  const maintenant = new Date().toISOString();
+
+  // Un statut present qui n'est pas une attente veut dire qu'un livreur s'en
+  // est saisi. Le test est NEGATIF a dessein : le vocabulaire de cette colonne
+  // n'est tenu par aucune contrainte — on y trouve « livre », « livree »,
+  // « livrée », « accepte », « parti », « en route ». Enumerer les valeurs
+  // positives, c'est rater la prochaine en silence.
+  const prisEnCharge = Boolean(maj.nom_livreur) || (statut !== '' && !/^en[ _-]?attente$/i.test(statut));
+
+  const poses: string[] = [];
+
+  /**
+   * Pose une heure si, et seulement si, elle manque encore.
+   *
+   * Les deux appels sont ecrits en toutes lettres plutot que boucles sur un
+   * objet : une cle calculee elargit le type de `update()` a n'importe quelle
+   * colonne, et le compilateur cesse alors de proteger contre une faute de
+   * frappe — exactement ce que le `Pick` en tete de fichier cherche a eviter.
+   */
+  const poser = async (
+    champ: 'heure_prise_en_charge' | 'heure_livraison',
+    maj: MajCommande,
+  ): Promise<void> => {
+    const { data: touchees, error: errHorodatage } = await sb
+      .from('commandes')
+      .update(maj)
+      .ilike('reference', motifExact(reference))
+      .is(champ, null)
+      .select('id');
+
+    // Un horodatage manque n'annule pas une livraison enregistree : la mise a
+    // jour principale a deja abouti. On le journalise et on le dit dans la
+    // reponse, sans faire echouer l'appelant.
+    if (errHorodatage) {
+      console.error(`Livraison — ${champ} non pose (${reference}) :`, errHorodatage.message);
+    } else if (touchees?.length) {
+      poses.push(champ);
+    }
+  };
+
+  if (prisEnCharge && !maj.heure_prise_en_charge) {
+    await poser('heure_prise_en_charge', { heure_prise_en_charge: maintenant });
+  }
+  if (/^livr/i.test(statut) && !maj.heure_livraison) {
+    await poser('heure_livraison', { heure_livraison: maintenant });
+  }
+
   // Zero ligne touchee n'est pas une panne : la commande peut n'exister que
   // dans la feuille. On le dit sans faire echouer l'appelant.
-  return NextResponse.json({ ok: true, reference, lignes: data?.length ?? 0, maj });
+  return NextResponse.json({
+    ok: true,
+    reference,
+    lignes: data?.length ?? 0,
+    maj,
+    // Vide quand l'heure existait deja : l'appel est idempotent.
+    horodatages_poses: poses,
+  });
 }
