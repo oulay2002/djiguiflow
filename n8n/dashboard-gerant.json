@@ -1,0 +1,1439 @@
+{
+  "active": true,
+  "activeVersion": {
+    "authors": "JEAN PAUL OULAI",
+    "autosaved": false,
+    "connections": {
+      "Calcul CA": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Deux variantes",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Calcul Clients": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Deux variantes",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Calcul Retard": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Deux variantes",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Calcul Stock": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Deux variantes",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Calcul Top": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Deux variantes",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Calcul Total": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Deux variantes",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Calculs Stats": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Deux variantes",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Deux variantes": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Répondre au gérant",
+              "type": "main"
+            },
+            {
+              "index": 0,
+              "node": "Copie WhatsApp au gérant",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Edit Fields": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Donnees dashboard",
+              "type": "main"
+            },
+            {
+              "index": 0,
+              "node": "Switch",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Message Inconnu": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Deux variantes",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Switch": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Calculs Stats",
+              "type": "main"
+            }
+          ],
+          [
+            {
+              "index": 0,
+              "node": "Calcul Top",
+              "type": "main"
+            }
+          ],
+          [
+            {
+              "index": 0,
+              "node": "Calcul Retard",
+              "type": "main"
+            }
+          ],
+          [
+            {
+              "index": 0,
+              "node": "Calcul Clients",
+              "type": "main"
+            }
+          ],
+          [
+            {
+              "index": 0,
+              "node": "Calcul CA",
+              "type": "main"
+            }
+          ],
+          [
+            {
+              "index": 0,
+              "node": "Calcul Stock",
+              "type": "main"
+            }
+          ],
+          [
+            {
+              "index": 0,
+              "node": "Calcul Total",
+              "type": "main"
+            }
+          ],
+          [
+            {
+              "index": 0,
+              "node": "Message Inconnu",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "When Executed by Another Workflow": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Edit Fields",
+              "type": "main"
+            }
+          ]
+        ]
+      }
+    },
+    "description": null,
+    "name": null,
+    "nodeGroups": [],
+    "nodes": [
+      {
+        "id": "e738317d-e5e6-4288-ac3d-1749ab96014e",
+        "name": "Switch",
+        "parameters": {
+          "options": {},
+          "rules": {
+            "values": [
+              {
+                "conditions": {
+                  "combinator": "and",
+                  "conditions": [
+                    {
+                      "id": "3182dc83-f564-413b-a93e-0f46904ebba6",
+                      "leftValue": "={{ $json.message_text }}",
+                      "operator": {
+                        "operation": "contains",
+                        "type": "string"
+                      },
+                      "rightValue": "/stats"
+                    }
+                  ],
+                  "options": {
+                    "caseSensitive": false,
+                    "leftValue": "",
+                    "typeValidation": "strict",
+                    "version": 3
+                  }
+                },
+                "outputKey": "Stats",
+                "renameOutput": true
+              },
+              {
+                "conditions": {
+                  "combinator": "and",
+                  "conditions": [
+                    {
+                      "id": "a9aab505-d990-4d4d-85ca-2ce3da0676e4",
+                      "leftValue": "={{ $json.message_text }}",
+                      "operator": {
+                        "operation": "contains",
+                        "type": "string"
+                      },
+                      "rightValue": "/top"
+                    }
+                  ],
+                  "options": {
+                    "caseSensitive": false,
+                    "leftValue": "",
+                    "typeValidation": "strict",
+                    "version": 3
+                  }
+                },
+                "outputKey": "Top",
+                "renameOutput": true
+              },
+              {
+                "conditions": {
+                  "combinator": "and",
+                  "conditions": [
+                    {
+                      "id": "b6805a19-0620-42df-8454-38b447b917ca",
+                      "leftValue": "={{ $json.message_text }}",
+                      "operator": {
+                        "operation": "contains",
+                        "type": "string"
+                      },
+                      "rightValue": "/retard"
+                    }
+                  ],
+                  "options": {
+                    "caseSensitive": false,
+                    "leftValue": "",
+                    "typeValidation": "strict",
+                    "version": 3
+                  }
+                },
+                "outputKey": "Retard",
+                "renameOutput": true
+              },
+              {
+                "conditions": {
+                  "combinator": "and",
+                  "conditions": [
+                    {
+                      "id": "0a6999f4-1f82-484f-9dbe-e7f1c83c172b",
+                      "leftValue": "={{ $json.message_text }}",
+                      "operator": {
+                        "operation": "contains",
+                        "type": "string"
+                      },
+                      "rightValue": "/clients"
+                    }
+                  ],
+                  "options": {
+                    "caseSensitive": false,
+                    "leftValue": "",
+                    "typeValidation": "strict",
+                    "version": 3
+                  }
+                },
+                "outputKey": "Clients",
+                "renameOutput": true
+              },
+              {
+                "conditions": {
+                  "combinator": "and",
+                  "conditions": [
+                    {
+                      "id": "4e39e6b8-5da3-4b29-8536-03109287fe57",
+                      "leftValue": "={{ $json.message_text }}",
+                      "operator": {
+                        "operation": "contains",
+                        "type": "string"
+                      },
+                      "rightValue": "/ca"
+                    }
+                  ],
+                  "options": {
+                    "caseSensitive": false,
+                    "leftValue": "",
+                    "typeValidation": "strict",
+                    "version": 3
+                  }
+                },
+                "outputKey": "CA",
+                "renameOutput": true
+              },
+              {
+                "conditions": {
+                  "combinator": "and",
+                  "conditions": [
+                    {
+                      "id": "50f3fa4b-3709-4a49-a822-2b6a7c4a7251",
+                      "leftValue": "={{ $json.message_text }}",
+                      "operator": {
+                        "operation": "contains",
+                        "type": "string"
+                      },
+                      "rightValue": "/stock"
+                    }
+                  ],
+                  "options": {
+                    "caseSensitive": false,
+                    "leftValue": "",
+                    "typeValidation": "strict",
+                    "version": 3
+                  }
+                },
+                "outputKey": "Stock",
+                "renameOutput": true
+              },
+              {
+                "conditions": {
+                  "combinator": "and",
+                  "conditions": [
+                    {
+                      "id": "a64b5af6-6855-4877-86c5-9001a8901738",
+                      "leftValue": "={{ $json.message_text }}",
+                      "operator": {
+                        "operation": "contains",
+                        "type": "string"
+                      },
+                      "rightValue": "/total"
+                    }
+                  ],
+                  "options": {
+                    "caseSensitive": false,
+                    "leftValue": "",
+                    "typeValidation": "strict",
+                    "version": 3
+                  }
+                },
+                "outputKey": "Total",
+                "renameOutput": true
+              },
+              {
+                "conditions": {
+                  "combinator": "and",
+                  "conditions": [
+                    {
+                      "id": "cb4f5f51-8563-49ea-a71b-5085f1703368",
+                      "leftValue": "true",
+                      "operator": {
+                        "name": "filter.operator.equals",
+                        "operation": "equals",
+                        "type": "string"
+                      },
+                      "rightValue": "true"
+                    }
+                  ],
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "strict",
+                    "version": 3
+                  }
+                },
+                "outputKey": "Inconnu",
+                "renameOutput": true
+              }
+            ]
+          }
+        },
+        "position": [
+          32,
+          336
+        ],
+        "type": "n8n-nodes-base.switch",
+        "typeVersion": 3.4
+      },
+      {
+        "id": "0f4ef751-1405-42c5-8341-835c1146736c",
+        "name": "Calculs Stats",
+        "parameters": {
+          "jsCode": "const d = $('Donnees dashboard').first().json || {};\nconst net = (v) => String(v ?? '').replace(/[*_`\\[\\]]/g, '').trim();\nconst fcfa = (n) => Number(n || 0).toLocaleString('fr-FR');\n\nconst jour = d.jour || [];\nconst semaine = d.semaine || [];\n\nlet m = `📊 *ETAT DU JOUR*\\n`;\nif (jour.length) {\n  for (const b of jour) {\n    m += `\\n🏪 *${net(b.boutique_nom)}*\\n`;\n    m += `▸ Commandes : *${b.commandes}* · livrees : *${b.livrees}*\\n`;\n    m += `▸ CA : *${fcfa(b.ca)} FCFA* · panier : *${fcfa(b.panier_moyen)} FCFA*\\n`;\n  }\n} else {\n  m += `\\nAucune commande aujourd hui.\\n`;\n}\n\nm += `\\n━━━━━━━━━━━━━━━━\\n📅 *7 DERNIERS JOURS*\\n`;\nif (semaine.length) {\n  for (const b of semaine) {\n    m += `\\n🏪 *${net(b.boutique_nom)}* : *${b.commandes}* commandes · *${fcfa(b.ca)} FCFA*\\n`;\n  }\n} else {\n  m += `\\nAucune commande cette semaine.\\n`;\n}\n\nreturn [{ json: { message: m } }];"
+        },
+        "position": [
+          1024,
+          -688
+        ],
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2
+      },
+      {
+        "id": "e4222fc3-c6ea-46cd-93e3-73c766c69f44",
+        "name": "Calcul Top",
+        "parameters": {
+          "jsCode": "const d = $('Donnees dashboard').first().json || {};\nconst net = (v) => String(v ?? '').replace(/[*_`\\[\\]]/g, '').trim();\n\nconst plats = d.plats_tout || [];\nif (!plats.length) return [{ json: { message: '🍽️ Aucune vente enregistree.' } }];\n\nconst par = new Map();\nfor (const p of plats) {\n  const cle = p.boutique_nom || 'Boutique inconnue';\n  if (!par.has(cle)) par.set(cle, []);\n  par.get(cle).push(p);\n}\n\nlet m = `🍽️ *MEILLEURES VENTES*\\n`;\nfor (const [boutique, liste] of par) {\n  m += `\\n━━━━━━━━━━━━━━━━\\n🏪 *${net(boutique)}*\\n`;\n  liste.slice(0, 5).forEach((p, i) => {\n    m += `${i + 1}. ${net(p.produit)} : *${p.quantite}* vendu(s)\\n`;\n  });\n}\nreturn [{ json: { message: m } }];"
+        },
+        "position": [
+          1120,
+          -448
+        ],
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2
+      },
+      {
+        "id": "b829f706-7a61-4b78-810d-01f619ef5208",
+        "name": "Calcul Retard",
+        "parameters": {
+          "jsCode": "const d = $('Donnees dashboard').first().json || {};\nconst net = (v) => String(v ?? '').replace(/[*_`\\[\\]]/g, '').trim();\n\nconst retards = d.retards || [];\nif (!retards.length) return [{ json: { message: '✅ Aucune commande en retard.' } }];\n\nconst par = new Map();\nfor (const r of retards) {\n  const cle = r.boutique_nom || 'Boutique inconnue';\n  if (!par.has(cle)) par.set(cle, []);\n  par.get(cle).push(r);\n}\n\nlet m = `⚠️ *COMMANDES EN RETARD*\\n`;\nfor (const [boutique, liste] of par) {\n  m += `\\n━━━━━━━━━━━━━━━━\\n🏪 *${net(boutique)}* — ${liste.length} commande(s)\\n`;\n  for (const r of liste) {\n    m += `\\n• ${net(r.order_id)} — *${r.minutes} min*\\n`;\n    m += `  👤 ${net(r.client_nom)} · 📞 ${net(r.client_telephone)}\\n`;\n    m += `  📍 ${net(r.client_adresse)}\\n`;\n    m += `  🛵 ${net(r.nom_livreur) || 'Non assigne'}\\n`;\n  }\n}\nreturn [{ json: { message: m } }];"
+        },
+        "position": [
+          1136,
+          -240
+        ],
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2
+      },
+      {
+        "id": "862605c9-855d-46e9-88d0-d03e8525eca8",
+        "name": "Calcul Clients",
+        "parameters": {
+          "jsCode": "const d = $('Donnees dashboard').first().json || {};\nconst net = (v) => String(v ?? '').replace(/[*_`\\[\\]]/g, '').trim();\nconst fcfa = (n) => Number(n || 0).toLocaleString('fr-FR');\n\nconst clients = d.clients || [];\nif (!clients.length) return [{ json: { message: '🤝 Aucun client enregistre.' } }];\n\nconst par = new Map();\nfor (const c of clients) {\n  const cle = c.boutique_nom || 'Boutique inconnue';\n  if (!par.has(cle)) par.set(cle, []);\n  par.get(cle).push(c);\n}\n\nlet m = `🤝 *MEILLEURS CLIENTS*\\n`;\nfor (const [boutique, liste] of par) {\n  m += `\\n━━━━━━━━━━━━━━━━\\n🏪 *${net(boutique)}*\\n`;\n  liste.slice(0, 5).forEach((c, i) => {\n    m += `${i + 1}. ${net(c.client)} · *${c.commandes}* commande(s) · *${fcfa(c.total)} FCFA*\\n`;\n    if (c.telephone) m += `   📞 ${net(c.telephone)}\\n`;\n  });\n}\nreturn [{ json: { message: m } }];"
+        },
+        "position": [
+          1184,
+          -32
+        ],
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2
+      },
+      {
+        "id": "faefac25-17bb-4614-8e56-285d9e631905",
+        "name": "Calcul CA",
+        "parameters": {
+          "jsCode": "const d = $('Donnees dashboard').first().json || {};\nconst net = (v) => String(v ?? '').replace(/[*_`\\[\\]]/g, '').trim();\nconst fcfa = (n) => Number(n || 0).toLocaleString('fr-FR');\n\nconst bloc = (liste) => (liste && liste.length)\n  ? liste.map((b) => `🏪 *${net(b.boutique_nom)}* : *${fcfa(b.ca)} FCFA* (${b.commandes} cmd)`).join('\\n')\n  : '—';\n\nlet m = `💰 *CHIFFRE D AFFAIRES*\\n`;\nm += `\\n📅 *Aujourd hui*\\n${bloc(d.jour)}\\n`;\nm += `\\n📅 *7 derniers jours*\\n${bloc(d.semaine)}\\n`;\nm += `\\n📅 *Depuis l origine*\\n${bloc(d.tout)}\\n`;\n\nreturn [{ json: { message: m } }];"
+        },
+        "position": [
+          1248,
+          176
+        ],
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2
+      },
+      {
+        "id": "5201c094-843d-47e2-af72-67ce0fbd56f0",
+        "name": "Message Inconnu",
+        "parameters": {
+          "jsCode": "// Le gerant a tape autre chose qu'une commande connue : on lui rappelle\n// lesquelles existent plutot que de rester muet.\nconst m = [\n  '🤖 *Commandes disponibles*',\n  '',\n  '/stats — activite du jour et de la semaine',\n  '/ca — chiffre d affaires sur trois periodes',\n  '/top — meilleures ventes',\n  '/clients — meilleurs clients',\n  '/retard — commandes en souffrance',\n  '/stock — produits sous seuil',\n  '/total — cumul depuis l origine',\n].join('\\n');\n\nreturn [{ json: { message: m } }];"
+        },
+        "position": [
+          864,
+          704
+        ],
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2
+      },
+      {
+        "id": "53d12e29-e022-412e-9108-227f52c5e93f",
+        "name": "Edit Fields",
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "c482c82a-4234-44f5-a992-e432a240648c",
+                "name": "message_text",
+                "type": "string",
+                "value": "={{ ($json.message && $json.message.text) || '' }}"
+              },
+              {
+                "id": "fa18e0b3-d78b-4259-a14b-13ba3f1547e5",
+                "name": "chat_id",
+                "type": "string",
+                "value": "={{ ($json.message && $json.message.chat && $json.message.chat.id) || '' }}"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "position": [
+          -960,
+          64
+        ],
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4
+      },
+      {
+        "id": "6c6124e8-352b-4c38-abc5-e0ac0c104767",
+        "name": "Calcul Stock",
+        "parameters": {
+          "jsCode": "const d = $('Donnees dashboard').first().json || {};\nconst net = (v) => String(v ?? '').replace(/[*_`\\[\\]]/g, '').trim();\n\nconst stocks = d.stocks || [];\nif (!stocks.length) return [{ json: { message: '✅ Aucun produit sous seuil.' } }];\n\nconst par = new Map();\nfor (const s of stocks) {\n  const cle = s.boutique_nom || 'Boutique inconnue';\n  if (!par.has(cle)) par.set(cle, []);\n  par.get(cle).push(s);\n}\n\nlet m = `🚨 *STOCKS SOUS SEUIL*\\n`;\nfor (const [boutique, liste] of par) {\n  m += `\\n━━━━━━━━━━━━━━━━\\n🏪 *${net(boutique)}*\\n`;\n  for (const s of liste) {\n    m += s.niveau === 'critique'\n      ? `🔴 *${net(s.produit)}* : ${s.restant} restant(s) (seuil ${s.seuil})\\n`\n      : `🟠 *${net(s.produit)}* : ${s.restant} restant(s) (seuil ${s.seuil})\\n`;\n  }\n}\nreturn [{ json: { message: m } }];"
+        },
+        "position": [
+          864,
+          336
+        ],
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2
+      },
+      {
+        "id": "c7757e3c-6189-4b02-8241-31698c774b6b",
+        "name": "Calcul Total",
+        "parameters": {
+          "jsCode": "const d = $('Donnees dashboard').first().json || {};\nconst net = (v) => String(v ?? '').replace(/[*_`\\[\\]]/g, '').trim();\nconst fcfa = (n) => Number(n || 0).toLocaleString('fr-FR');\n\nconst tout = d.tout || [];\nif (!tout.length) return [{ json: { message: '📈 Aucune commande enregistree.' } }];\n\nlet m = `📈 *CUMUL DEPUIS L ORIGINE*\\n`;\nlet caTotal = 0;\nlet cmdTotal = 0;\n\nfor (const b of tout) {\n  caTotal += Number(b.ca || 0);\n  cmdTotal += Number(b.commandes || 0);\n  m += `\\n━━━━━━━━━━━━━━━━\\n🏪 *${net(b.boutique_nom)}*\\n`;\n  m += `▸ Commandes : *${b.commandes}* · livrees : *${b.livrees}* · annulees : *${b.annulees}*\\n`;\n  m += `▸ CA : *${fcfa(b.ca)} FCFA* · panier : *${fcfa(b.panier_moyen)} FCFA*\\n`;\n  if (b.avis > 0) m += `▸ Satisfaction : *${String(b.note_moyenne).replace('.', ',')}/5* (${b.avis} avis)\\n`;\n}\n\nif (tout.length > 1) {\n  m += `\\n━━━━━━━━━━━━━━━━\\n🌐 *TOUTES BOUTIQUES*\\n`;\n  m += `▸ Commandes : *${cmdTotal}* · CA : *${fcfa(caTotal)} FCFA*\\n`;\n}\n\nreturn [{ json: { message: m } }];"
+        },
+        "position": [
+          864,
+          512
+        ],
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2
+      },
+      {
+        "id": "13adf40d-3344-48b1-ba90-af337057e594",
+        "name": "When Executed by Another Workflow",
+        "parameters": {
+          "workflowInputs": {
+            "values": [
+              {
+                "name": "message",
+                "type": "object"
+              },
+              {
+                "name": "slug"
+              },
+              {
+                "name": "nom_boutique"
+              },
+              {
+                "name": "sheet_document_id"
+              },
+              {
+                "name": "sheet_commandes"
+              },
+              {
+                "name": "telegram_marchand"
+              },
+              {
+                "name": "whatsapp_marchand"
+              }
+            ]
+          }
+        },
+        "position": [
+          -1184,
+          64
+        ],
+        "type": "n8n-nodes-base.executeWorkflowTrigger",
+        "typeVersion": 1.2
+      },
+      {
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "QoKeVRwGrk1YqN9Q",
+            "name": "Header Auth account 2"
+          }
+        },
+        "id": "36cfeb6d-570f-42ea-ae0e-5b629b97c006",
+        "maxTries": 3,
+        "name": "Donnees dashboard",
+        "notes": "Un seul aller-retour sert les huit commandes. Tout est calcule en base et groupe par boutique. Passe par l'application : n8n Cloud n'a pas de route IPv6 vers Supabase.",
+        "parameters": {
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "jsonBody": "={\n  \"type\": \"dashboard\",\n  \"boutique\": {{ JSON.stringify($('When Executed by Another Workflow').first().json.slug || '') }}\n}",
+          "method": "POST",
+          "options": {},
+          "sendBody": true,
+          "specifyBody": "json",
+          "url": "https://www.djiguiflow.com/api/rapports"
+        },
+        "position": [
+          -112,
+          -256
+        ],
+        "retryOnFail": true,
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "waitBetweenTries": 2000
+      },
+      {
+        "disabled": false,
+        "id": "e8dd0595-1a8b-4045-a911-0aac518e89b4",
+        "maxTries": 3,
+        "name": "Répondre au gérant",
+        "notes": "Les huit commandes du tableau de bord aboutissaient chacune a son propre noeud d envoi, identiques a la position pres. Un seul suffit : la reponse repart dans la conversation d ou vient la commande.",
+        "onError": "continueRegularOutput",
+        "parameters": {
+          "mode": "once",
+          "options": {},
+          "workflowId": {
+            "__rl": true,
+            "cachedResultName": "Envoyer réponse client",
+            "mode": "list",
+            "value": "JkNvcqsZaY22dfk5"
+          },
+          "workflowInputs": {
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": true,
+            "mappingMode": "defineBelow",
+            "matchingColumns": [],
+            "schema": [],
+            "value": {
+              "boutique": "={{ $('When Executed by Another Workflow').first().json.slug }}",
+              "canal": "telegram",
+              "destinataire": "={{ $('Edit Fields').first().json.chat_id }}",
+              "format": "html",
+              "message": "={{ $json.message_telegram }}",
+              "reply_markup": "",
+              "sheet_document_id": "={{ $('When Executed by Another Workflow').first().json.sheet_document_id }}"
+            }
+          }
+        },
+        "position": [
+          1616,
+          176
+        ],
+        "retryOnFail": false,
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.3,
+        "waitBetweenTries": 2000
+      },
+      {
+        "disabled": false,
+        "id": "6d1100b7-700b-4c1c-85ee-dbfe59ee4d3a",
+        "maxTries": 3,
+        "name": "Copie WhatsApp au gérant",
+        "notes": "Double envoi voulu : le gerant lit sur Telegram, garde une trace sur WhatsApp. Le numero vient de sa fiche, plus d une constante.",
+        "onError": "continueRegularOutput",
+        "parameters": {
+          "mode": "once",
+          "options": {},
+          "workflowId": {
+            "__rl": true,
+            "cachedResultName": "Envoyer réponse client",
+            "mode": "list",
+            "value": "JkNvcqsZaY22dfk5"
+          },
+          "workflowInputs": {
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": true,
+            "mappingMode": "defineBelow",
+            "matchingColumns": [],
+            "schema": [],
+            "value": {
+              "boutique": "={{ $('When Executed by Another Workflow').first().json.slug }}",
+              "canal": "whatsapp",
+              "destinataire": "={{ $('When Executed by Another Workflow').first().json.whatsapp_marchand }}",
+              "message": "={{ $json.message_whatsapp }}",
+              "reply_markup": "",
+              "sheet_document_id": "={{ $('When Executed by Another Workflow').first().json.sheet_document_id }}"
+            }
+          }
+        },
+        "position": [
+          1872,
+          176
+        ],
+        "retryOnFail": false,
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.3,
+        "waitBetweenTries": 2000
+      },
+      {
+        "id": "a9da9dd2-366f-44c3-8f6a-2a51a23a155e",
+        "name": "Deux variantes",
+        "notes": "Telegram lit du HTML et il faut le lui demander ; WhatsApp met en gras entre asterisques tout seul. Un seul message compose, deux balisages.",
+        "parameters": {
+          "jsCode": "// Les huit commandes composent un seul message, balise a l'asterisque. Or les\n// deux canaux ne lisent pas le meme balisage : WhatsApp met en gras entre\n// asterisques nativement, Telegram non — il faut lui envoyer du HTML et le\n// lui dire. Sans cette traduction, le gerant lisait ses asterisques en clair\n// a chaque commande, sur Telegram uniquement.\nconst brut = String($input.first().json.message || '');\n\n// On echappe AVANT de baliser : l'inverse transformerait nos propres balises\n// en entites. Une esperluette dans un nom de produit fait echouer l'envoi\n// entier cote Telegram, et le gerant ne recoit alors rien du tout.\nconst echappe = brut\n  .replace(/&/g, '&amp;')\n  .replace(/</g, '&lt;')\n  .replace(/>/g, '&gt;');\n\n// Paires d'asterisques sur une meme ligne. Un asterisque isole reste litteral\n// plutot que d'ouvrir une balise qui ne se refermerait jamais.\nconst message_telegram = echappe.replace(/\\*([^*\\n]+)\\*/g, '<b>$1</b>');\n\nreturn [{ json: { message_telegram, message_whatsapp: brut } }];"
+        },
+        "position": [
+          1424,
+          176
+        ],
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2
+      }
+    ],
+    "workflowId": "Ebtap4TXarL5eZvg",
+    "workflowPublishHistory": [
+      {
+        "event": "activated",
+        "id": 10,
+        "userId": "81519f6f-0887-498a-ad83-5ffd6d591e9a",
+        "workflowId": "Ebtap4TXarL5eZvg"
+      }
+    ]
+  },
+  "connections": {
+    "Calcul CA": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Deux variantes",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Calcul Clients": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Deux variantes",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Calcul Retard": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Deux variantes",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Calcul Stock": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Deux variantes",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Calcul Top": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Deux variantes",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Calcul Total": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Deux variantes",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Calculs Stats": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Deux variantes",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Deux variantes": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Répondre au gérant",
+            "type": "main"
+          },
+          {
+            "index": 0,
+            "node": "Copie WhatsApp au gérant",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Donnees dashboard",
+            "type": "main"
+          },
+          {
+            "index": 0,
+            "node": "Switch",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Message Inconnu": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Deux variantes",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Calculs Stats",
+            "type": "main"
+          }
+        ],
+        [
+          {
+            "index": 0,
+            "node": "Calcul Top",
+            "type": "main"
+          }
+        ],
+        [
+          {
+            "index": 0,
+            "node": "Calcul Retard",
+            "type": "main"
+          }
+        ],
+        [
+          {
+            "index": 0,
+            "node": "Calcul Clients",
+            "type": "main"
+          }
+        ],
+        [
+          {
+            "index": 0,
+            "node": "Calcul CA",
+            "type": "main"
+          }
+        ],
+        [
+          {
+            "index": 0,
+            "node": "Calcul Stock",
+            "type": "main"
+          }
+        ],
+        [
+          {
+            "index": 0,
+            "node": "Calcul Total",
+            "type": "main"
+          }
+        ],
+        [
+          {
+            "index": 0,
+            "node": "Message Inconnu",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Edit Fields",
+            "type": "main"
+          }
+        ]
+      ]
+    }
+  },
+  "description": null,
+  "id": "Ebtap4TXarL5eZvg",
+  "isArchived": false,
+  "name": "Dashboard Gérant",
+  "nodeGroups": [],
+  "nodes": [
+    {
+      "id": "e738317d-e5e6-4288-ac3d-1749ab96014e",
+      "name": "Switch",
+      "parameters": {
+        "options": {},
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "3182dc83-f564-413b-a93e-0f46904ebba6",
+                    "leftValue": "={{ $json.message_text }}",
+                    "operator": {
+                      "operation": "contains",
+                      "type": "string"
+                    },
+                    "rightValue": "/stats"
+                  }
+                ],
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                }
+              },
+              "outputKey": "Stats",
+              "renameOutput": true
+            },
+            {
+              "conditions": {
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "a9aab505-d990-4d4d-85ca-2ce3da0676e4",
+                    "leftValue": "={{ $json.message_text }}",
+                    "operator": {
+                      "operation": "contains",
+                      "type": "string"
+                    },
+                    "rightValue": "/top"
+                  }
+                ],
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                }
+              },
+              "outputKey": "Top",
+              "renameOutput": true
+            },
+            {
+              "conditions": {
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "b6805a19-0620-42df-8454-38b447b917ca",
+                    "leftValue": "={{ $json.message_text }}",
+                    "operator": {
+                      "operation": "contains",
+                      "type": "string"
+                    },
+                    "rightValue": "/retard"
+                  }
+                ],
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                }
+              },
+              "outputKey": "Retard",
+              "renameOutput": true
+            },
+            {
+              "conditions": {
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "0a6999f4-1f82-484f-9dbe-e7f1c83c172b",
+                    "leftValue": "={{ $json.message_text }}",
+                    "operator": {
+                      "operation": "contains",
+                      "type": "string"
+                    },
+                    "rightValue": "/clients"
+                  }
+                ],
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                }
+              },
+              "outputKey": "Clients",
+              "renameOutput": true
+            },
+            {
+              "conditions": {
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "4e39e6b8-5da3-4b29-8536-03109287fe57",
+                    "leftValue": "={{ $json.message_text }}",
+                    "operator": {
+                      "operation": "contains",
+                      "type": "string"
+                    },
+                    "rightValue": "/ca"
+                  }
+                ],
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                }
+              },
+              "outputKey": "CA",
+              "renameOutput": true
+            },
+            {
+              "conditions": {
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "50f3fa4b-3709-4a49-a822-2b6a7c4a7251",
+                    "leftValue": "={{ $json.message_text }}",
+                    "operator": {
+                      "operation": "contains",
+                      "type": "string"
+                    },
+                    "rightValue": "/stock"
+                  }
+                ],
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                }
+              },
+              "outputKey": "Stock",
+              "renameOutput": true
+            },
+            {
+              "conditions": {
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "a64b5af6-6855-4877-86c5-9001a8901738",
+                    "leftValue": "={{ $json.message_text }}",
+                    "operator": {
+                      "operation": "contains",
+                      "type": "string"
+                    },
+                    "rightValue": "/total"
+                  }
+                ],
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                }
+              },
+              "outputKey": "Total",
+              "renameOutput": true
+            },
+            {
+              "conditions": {
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "cb4f5f51-8563-49ea-a71b-5085f1703368",
+                    "leftValue": "true",
+                    "operator": {
+                      "name": "filter.operator.equals",
+                      "operation": "equals",
+                      "type": "string"
+                    },
+                    "rightValue": "true"
+                  }
+                ],
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                }
+              },
+              "outputKey": "Inconnu",
+              "renameOutput": true
+            }
+          ]
+        }
+      },
+      "position": [
+        32,
+        336
+      ],
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4
+    },
+    {
+      "id": "0f4ef751-1405-42c5-8341-835c1146736c",
+      "name": "Calculs Stats",
+      "parameters": {
+        "jsCode": "const d = $('Donnees dashboard').first().json || {};\nconst net = (v) => String(v ?? '').replace(/[*_`\\[\\]]/g, '').trim();\nconst fcfa = (n) => Number(n || 0).toLocaleString('fr-FR');\n\nconst jour = d.jour || [];\nconst semaine = d.semaine || [];\n\nlet m = `📊 *ETAT DU JOUR*\\n`;\nif (jour.length) {\n  for (const b of jour) {\n    m += `\\n🏪 *${net(b.boutique_nom)}*\\n`;\n    m += `▸ Commandes : *${b.commandes}* · livrees : *${b.livrees}*\\n`;\n    m += `▸ CA : *${fcfa(b.ca)} FCFA* · panier : *${fcfa(b.panier_moyen)} FCFA*\\n`;\n  }\n} else {\n  m += `\\nAucune commande aujourd hui.\\n`;\n}\n\nm += `\\n━━━━━━━━━━━━━━━━\\n📅 *7 DERNIERS JOURS*\\n`;\nif (semaine.length) {\n  for (const b of semaine) {\n    m += `\\n🏪 *${net(b.boutique_nom)}* : *${b.commandes}* commandes · *${fcfa(b.ca)} FCFA*\\n`;\n  }\n} else {\n  m += `\\nAucune commande cette semaine.\\n`;\n}\n\nreturn [{ json: { message: m } }];"
+      },
+      "position": [
+        1024,
+        -688
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "id": "e4222fc3-c6ea-46cd-93e3-73c766c69f44",
+      "name": "Calcul Top",
+      "parameters": {
+        "jsCode": "const d = $('Donnees dashboard').first().json || {};\nconst net = (v) => String(v ?? '').replace(/[*_`\\[\\]]/g, '').trim();\n\nconst plats = d.plats_tout || [];\nif (!plats.length) return [{ json: { message: '🍽️ Aucune vente enregistree.' } }];\n\nconst par = new Map();\nfor (const p of plats) {\n  const cle = p.boutique_nom || 'Boutique inconnue';\n  if (!par.has(cle)) par.set(cle, []);\n  par.get(cle).push(p);\n}\n\nlet m = `🍽️ *MEILLEURES VENTES*\\n`;\nfor (const [boutique, liste] of par) {\n  m += `\\n━━━━━━━━━━━━━━━━\\n🏪 *${net(boutique)}*\\n`;\n  liste.slice(0, 5).forEach((p, i) => {\n    m += `${i + 1}. ${net(p.produit)} : *${p.quantite}* vendu(s)\\n`;\n  });\n}\nreturn [{ json: { message: m } }];"
+      },
+      "position": [
+        1120,
+        -448
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "id": "b829f706-7a61-4b78-810d-01f619ef5208",
+      "name": "Calcul Retard",
+      "parameters": {
+        "jsCode": "const d = $('Donnees dashboard').first().json || {};\nconst net = (v) => String(v ?? '').replace(/[*_`\\[\\]]/g, '').trim();\n\nconst retards = d.retards || [];\nif (!retards.length) return [{ json: { message: '✅ Aucune commande en retard.' } }];\n\nconst par = new Map();\nfor (const r of retards) {\n  const cle = r.boutique_nom || 'Boutique inconnue';\n  if (!par.has(cle)) par.set(cle, []);\n  par.get(cle).push(r);\n}\n\nlet m = `⚠️ *COMMANDES EN RETARD*\\n`;\nfor (const [boutique, liste] of par) {\n  m += `\\n━━━━━━━━━━━━━━━━\\n🏪 *${net(boutique)}* — ${liste.length} commande(s)\\n`;\n  for (const r of liste) {\n    m += `\\n• ${net(r.order_id)} — *${r.minutes} min*\\n`;\n    m += `  👤 ${net(r.client_nom)} · 📞 ${net(r.client_telephone)}\\n`;\n    m += `  📍 ${net(r.client_adresse)}\\n`;\n    m += `  🛵 ${net(r.nom_livreur) || 'Non assigne'}\\n`;\n  }\n}\nreturn [{ json: { message: m } }];"
+      },
+      "position": [
+        1136,
+        -240
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "id": "862605c9-855d-46e9-88d0-d03e8525eca8",
+      "name": "Calcul Clients",
+      "parameters": {
+        "jsCode": "const d = $('Donnees dashboard').first().json || {};\nconst net = (v) => String(v ?? '').replace(/[*_`\\[\\]]/g, '').trim();\nconst fcfa = (n) => Number(n || 0).toLocaleString('fr-FR');\n\nconst clients = d.clients || [];\nif (!clients.length) return [{ json: { message: '🤝 Aucun client enregistre.' } }];\n\nconst par = new Map();\nfor (const c of clients) {\n  const cle = c.boutique_nom || 'Boutique inconnue';\n  if (!par.has(cle)) par.set(cle, []);\n  par.get(cle).push(c);\n}\n\nlet m = `🤝 *MEILLEURS CLIENTS*\\n`;\nfor (const [boutique, liste] of par) {\n  m += `\\n━━━━━━━━━━━━━━━━\\n🏪 *${net(boutique)}*\\n`;\n  liste.slice(0, 5).forEach((c, i) => {\n    m += `${i + 1}. ${net(c.client)} · *${c.commandes}* commande(s) · *${fcfa(c.total)} FCFA*\\n`;\n    if (c.telephone) m += `   📞 ${net(c.telephone)}\\n`;\n  });\n}\nreturn [{ json: { message: m } }];"
+      },
+      "position": [
+        1184,
+        -32
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "id": "faefac25-17bb-4614-8e56-285d9e631905",
+      "name": "Calcul CA",
+      "parameters": {
+        "jsCode": "const d = $('Donnees dashboard').first().json || {};\nconst net = (v) => String(v ?? '').replace(/[*_`\\[\\]]/g, '').trim();\nconst fcfa = (n) => Number(n || 0).toLocaleString('fr-FR');\n\nconst bloc = (liste) => (liste && liste.length)\n  ? liste.map((b) => `🏪 *${net(b.boutique_nom)}* : *${fcfa(b.ca)} FCFA* (${b.commandes} cmd)`).join('\\n')\n  : '—';\n\nlet m = `💰 *CHIFFRE D AFFAIRES*\\n`;\nm += `\\n📅 *Aujourd hui*\\n${bloc(d.jour)}\\n`;\nm += `\\n📅 *7 derniers jours*\\n${bloc(d.semaine)}\\n`;\nm += `\\n📅 *Depuis l origine*\\n${bloc(d.tout)}\\n`;\n\nreturn [{ json: { message: m } }];"
+      },
+      "position": [
+        1248,
+        176
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "id": "5201c094-843d-47e2-af72-67ce0fbd56f0",
+      "name": "Message Inconnu",
+      "parameters": {
+        "jsCode": "// Le gerant a tape autre chose qu'une commande connue : on lui rappelle\n// lesquelles existent plutot que de rester muet.\nconst m = [\n  '🤖 *Commandes disponibles*',\n  '',\n  '/stats — activite du jour et de la semaine',\n  '/ca — chiffre d affaires sur trois periodes',\n  '/top — meilleures ventes',\n  '/clients — meilleurs clients',\n  '/retard — commandes en souffrance',\n  '/stock — produits sous seuil',\n  '/total — cumul depuis l origine',\n].join('\\n');\n\nreturn [{ json: { message: m } }];"
+      },
+      "position": [
+        864,
+        704
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "id": "53d12e29-e022-412e-9108-227f52c5e93f",
+      "name": "Edit Fields",
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c482c82a-4234-44f5-a992-e432a240648c",
+              "name": "message_text",
+              "type": "string",
+              "value": "={{ ($json.message && $json.message.text) || '' }}"
+            },
+            {
+              "id": "fa18e0b3-d78b-4259-a14b-13ba3f1547e5",
+              "name": "chat_id",
+              "type": "string",
+              "value": "={{ ($json.message && $json.message.chat && $json.message.chat.id) || '' }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "position": [
+        -960,
+        64
+      ],
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4
+    },
+    {
+      "id": "6c6124e8-352b-4c38-abc5-e0ac0c104767",
+      "name": "Calcul Stock",
+      "parameters": {
+        "jsCode": "const d = $('Donnees dashboard').first().json || {};\nconst net = (v) => String(v ?? '').replace(/[*_`\\[\\]]/g, '').trim();\n\nconst stocks = d.stocks || [];\nif (!stocks.length) return [{ json: { message: '✅ Aucun produit sous seuil.' } }];\n\nconst par = new Map();\nfor (const s of stocks) {\n  const cle = s.boutique_nom || 'Boutique inconnue';\n  if (!par.has(cle)) par.set(cle, []);\n  par.get(cle).push(s);\n}\n\nlet m = `🚨 *STOCKS SOUS SEUIL*\\n`;\nfor (const [boutique, liste] of par) {\n  m += `\\n━━━━━━━━━━━━━━━━\\n🏪 *${net(boutique)}*\\n`;\n  for (const s of liste) {\n    m += s.niveau === 'critique'\n      ? `🔴 *${net(s.produit)}* : ${s.restant} restant(s) (seuil ${s.seuil})\\n`\n      : `🟠 *${net(s.produit)}* : ${s.restant} restant(s) (seuil ${s.seuil})\\n`;\n  }\n}\nreturn [{ json: { message: m } }];"
+      },
+      "position": [
+        864,
+        336
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "id": "c7757e3c-6189-4b02-8241-31698c774b6b",
+      "name": "Calcul Total",
+      "parameters": {
+        "jsCode": "const d = $('Donnees dashboard').first().json || {};\nconst net = (v) => String(v ?? '').replace(/[*_`\\[\\]]/g, '').trim();\nconst fcfa = (n) => Number(n || 0).toLocaleString('fr-FR');\n\nconst tout = d.tout || [];\nif (!tout.length) return [{ json: { message: '📈 Aucune commande enregistree.' } }];\n\nlet m = `📈 *CUMUL DEPUIS L ORIGINE*\\n`;\nlet caTotal = 0;\nlet cmdTotal = 0;\n\nfor (const b of tout) {\n  caTotal += Number(b.ca || 0);\n  cmdTotal += Number(b.commandes || 0);\n  m += `\\n━━━━━━━━━━━━━━━━\\n🏪 *${net(b.boutique_nom)}*\\n`;\n  m += `▸ Commandes : *${b.commandes}* · livrees : *${b.livrees}* · annulees : *${b.annulees}*\\n`;\n  m += `▸ CA : *${fcfa(b.ca)} FCFA* · panier : *${fcfa(b.panier_moyen)} FCFA*\\n`;\n  if (b.avis > 0) m += `▸ Satisfaction : *${String(b.note_moyenne).replace('.', ',')}/5* (${b.avis} avis)\\n`;\n}\n\nif (tout.length > 1) {\n  m += `\\n━━━━━━━━━━━━━━━━\\n🌐 *TOUTES BOUTIQUES*\\n`;\n  m += `▸ Commandes : *${cmdTotal}* · CA : *${fcfa(caTotal)} FCFA*\\n`;\n}\n\nreturn [{ json: { message: m } }];"
+      },
+      "position": [
+        864,
+        512
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "id": "13adf40d-3344-48b1-ba90-af337057e594",
+      "name": "When Executed by Another Workflow",
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "message",
+              "type": "object"
+            },
+            {
+              "name": "slug"
+            },
+            {
+              "name": "nom_boutique"
+            },
+            {
+              "name": "sheet_document_id"
+            },
+            {
+              "name": "sheet_commandes"
+            },
+            {
+              "name": "telegram_marchand"
+            },
+            {
+              "name": "whatsapp_marchand"
+            }
+          ]
+        }
+      },
+      "position": [
+        -1184,
+        64
+      ],
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2
+    },
+    {
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "QoKeVRwGrk1YqN9Q",
+          "name": "Header Auth account 2"
+        }
+      },
+      "id": "36cfeb6d-570f-42ea-ae0e-5b629b97c006",
+      "maxTries": 3,
+      "name": "Donnees dashboard",
+      "notes": "Un seul aller-retour sert les huit commandes. Tout est calcule en base et groupe par boutique. Passe par l'application : n8n Cloud n'a pas de route IPv6 vers Supabase.",
+      "parameters": {
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "jsonBody": "={\n  \"type\": \"dashboard\",\n  \"boutique\": {{ JSON.stringify($('When Executed by Another Workflow').first().json.slug || '') }}\n}",
+        "method": "POST",
+        "options": {},
+        "sendBody": true,
+        "specifyBody": "json",
+        "url": "https://www.djiguiflow.com/api/rapports"
+      },
+      "position": [
+        -112,
+        -256
+      ],
+      "retryOnFail": true,
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "waitBetweenTries": 2000
+    },
+    {
+      "disabled": false,
+      "id": "e8dd0595-1a8b-4045-a911-0aac518e89b4",
+      "maxTries": 3,
+      "name": "Répondre au gérant",
+      "notes": "Les huit commandes du tableau de bord aboutissaient chacune a son propre noeud d envoi, identiques a la position pres. Un seul suffit : la reponse repart dans la conversation d ou vient la commande.",
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "mode": "once",
+        "options": {},
+        "workflowId": {
+          "__rl": true,
+          "cachedResultName": "Envoyer réponse client",
+          "mode": "list",
+          "value": "JkNvcqsZaY22dfk5"
+        },
+        "workflowInputs": {
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true,
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "schema": [],
+          "value": {
+            "boutique": "={{ $('When Executed by Another Workflow').first().json.slug }}",
+            "canal": "telegram",
+            "destinataire": "={{ $('Edit Fields').first().json.chat_id }}",
+            "format": "html",
+            "message": "={{ $json.message_telegram }}",
+            "reply_markup": "",
+            "sheet_document_id": "={{ $('When Executed by Another Workflow').first().json.sheet_document_id }}"
+          }
+        }
+      },
+      "position": [
+        1616,
+        176
+      ],
+      "retryOnFail": false,
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "disabled": false,
+      "id": "6d1100b7-700b-4c1c-85ee-dbfe59ee4d3a",
+      "maxTries": 3,
+      "name": "Copie WhatsApp au gérant",
+      "notes": "Double envoi voulu : le gerant lit sur Telegram, garde une trace sur WhatsApp. Le numero vient de sa fiche, plus d une constante.",
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "mode": "once",
+        "options": {},
+        "workflowId": {
+          "__rl": true,
+          "cachedResultName": "Envoyer réponse client",
+          "mode": "list",
+          "value": "JkNvcqsZaY22dfk5"
+        },
+        "workflowInputs": {
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true,
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "schema": [],
+          "value": {
+            "boutique": "={{ $('When Executed by Another Workflow').first().json.slug }}",
+            "canal": "whatsapp",
+            "destinataire": "={{ $('When Executed by Another Workflow').first().json.whatsapp_marchand }}",
+            "message": "={{ $json.message_whatsapp }}",
+            "reply_markup": "",
+            "sheet_document_id": "={{ $('When Executed by Another Workflow').first().json.sheet_document_id }}"
+          }
+        }
+      },
+      "position": [
+        1872,
+        176
+      ],
+      "retryOnFail": false,
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "id": "a9da9dd2-366f-44c3-8f6a-2a51a23a155e",
+      "name": "Deux variantes",
+      "notes": "Telegram lit du HTML et il faut le lui demander ; WhatsApp met en gras entre asterisques tout seul. Un seul message compose, deux balisages.",
+      "parameters": {
+        "jsCode": "// Les huit commandes composent un seul message, balise a l'asterisque. Or les\n// deux canaux ne lisent pas le meme balisage : WhatsApp met en gras entre\n// asterisques nativement, Telegram non — il faut lui envoyer du HTML et le\n// lui dire. Sans cette traduction, le gerant lisait ses asterisques en clair\n// a chaque commande, sur Telegram uniquement.\nconst brut = String($input.first().json.message || '');\n\n// On echappe AVANT de baliser : l'inverse transformerait nos propres balises\n// en entites. Une esperluette dans un nom de produit fait echouer l'envoi\n// entier cote Telegram, et le gerant ne recoit alors rien du tout.\nconst echappe = brut\n  .replace(/&/g, '&amp;')\n  .replace(/</g, '&lt;')\n  .replace(/>/g, '&gt;');\n\n// Paires d'asterisques sur une meme ligne. Un asterisque isole reste litteral\n// plutot que d'ouvrir une balise qui ne se refermerait jamais.\nconst message_telegram = echappe.replace(/\\*([^*\\n]+)\\*/g, '<b>$1</b>');\n\nreturn [{ json: { message_telegram, message_whatsapp: brut } }];"
+      },
+      "position": [
+        1424,
+        176
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    }
+  ],
+  "settings": {
+    "availableInMCP": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": "NfWU666FLz9jR1Zv",
+    "executionOrder": "v1"
+  },
+  "sourceWorkflowId": null,
+  "tags": [],
+  "versionCounter": 3
+}

@@ -1,0 +1,186 @@
+{
+  "active": true,
+  "activeVersion": {
+    "authors": "JEAN PAUL OULAI",
+    "autosaved": false,
+    "connections": {
+      "Toutes les 15 minutes": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Relancer et fermer",
+              "type": "main"
+            }
+          ]
+        ]
+      }
+    },
+    "description": null,
+    "name": null,
+    "nodeGroups": [],
+    "nodes": [
+      {
+        "id": "e751558e-0c65-4a75-bef8-921f34ec5588",
+        "name": "Comment ca marche",
+        "parameters": {
+          "content": "## Paniers abandonnes sur WhatsApp\n\nL assistante ECRIT la commande avant de demander confirmation. Un panier\nabandonne n est donc pas un fantome : c est une ligne portant\nconfirmation_statut = demandee dont la reponse du client n est jamais revenue.\n\nToutes les 15 min, l application :\n\n1. RELANCE une fois, 45 min apres, dans la conversation que le client a\n   lui-meme ouverte. Passe par le frein : liste STOP et plafond du jour\n   s appliquent.\n2. FERME a 24 h en passant la commande en abandonnee. Sans cela ces lignes\n   restent en attente pour toujours et faussent le tableau de bord.\n\nLa regle vit dans /api/internal/commandes/abandons, ou elle est lisible et\neprouvable. Ce workflow ne fait que sonner l heure.\n\nLe reessai est sans danger : la relance est MARQUEE avant d etre envoyee,\nune commande deja marquee n est donc jamais reprise.",
+          "height": 320,
+          "width": 560
+        },
+        "position": [
+          112,
+          64
+        ],
+        "type": "n8n-nodes-base.stickyNote",
+        "typeVersion": 1
+      },
+      {
+        "id": "d3f182a2-ab1b-4ce5-b0ff-07f2e44a1fea",
+        "name": "Toutes les 15 minutes",
+        "parameters": {
+          "rule": {
+            "interval": [
+              {
+                "expression": "*/15 * * * *",
+                "field": "cronExpression"
+              }
+            ]
+          }
+        },
+        "position": [
+          0,
+          0
+        ],
+        "type": "n8n-nodes-base.scheduleTrigger",
+        "typeVersion": 1.2
+      },
+      {
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "QoKeVRwGrk1YqN9Q",
+            "name": "Header Auth account 2"
+          }
+        },
+        "id": "28566657-a44c-4f90-bd62-bfdf7f414d6e",
+        "maxTries": 2,
+        "name": "Relancer et fermer",
+        "notes": "Toute la regle est dans l application : delais, contenu du message, frein anti-bannissement. Ce workflow n est qu une horloge.",
+        "parameters": {
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "method": "POST",
+          "options": {},
+          "url": "https://www.djiguiflow.com/api/internal/commandes/abandons"
+        },
+        "position": [
+          224,
+          0
+        ],
+        "retryOnFail": true,
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "waitBetweenTries": 5000
+      }
+    ],
+    "workflowId": "H5bMJktmCNCCFvgC",
+    "workflowPublishHistory": [
+      {
+        "event": "activated",
+        "id": 122,
+        "userId": "81519f6f-0887-498a-ad83-5ffd6d591e9a",
+        "workflowId": "H5bMJktmCNCCFvgC"
+      }
+    ]
+  },
+  "connections": {
+    "Toutes les 15 minutes": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Relancer et fermer",
+            "type": "main"
+          }
+        ]
+      ]
+    }
+  },
+  "description": "Toutes les 15 min : relance une fois les commandes dont la confirmation n est jamais revenue, puis ferme celles de plus de 24 h. n8n ne sert que d horloge, la regle vit dans /api/internal/commandes/abandons.",
+  "id": "H5bMJktmCNCCFvgC",
+  "isArchived": false,
+  "name": "Paniers abandonnes",
+  "nodeGroups": [],
+  "nodes": [
+    {
+      "id": "e751558e-0c65-4a75-bef8-921f34ec5588",
+      "name": "Comment ca marche",
+      "parameters": {
+        "content": "## Paniers abandonnes sur WhatsApp\n\nL assistante ECRIT la commande avant de demander confirmation. Un panier\nabandonne n est donc pas un fantome : c est une ligne portant\nconfirmation_statut = demandee dont la reponse du client n est jamais revenue.\n\nToutes les 15 min, l application :\n\n1. RELANCE une fois, 45 min apres, dans la conversation que le client a\n   lui-meme ouverte. Passe par le frein : liste STOP et plafond du jour\n   s appliquent.\n2. FERME a 24 h en passant la commande en abandonnee. Sans cela ces lignes\n   restent en attente pour toujours et faussent le tableau de bord.\n\nLa regle vit dans /api/internal/commandes/abandons, ou elle est lisible et\neprouvable. Ce workflow ne fait que sonner l heure.\n\nLe reessai est sans danger : la relance est MARQUEE avant d etre envoyee,\nune commande deja marquee n est donc jamais reprise.",
+        "height": 320,
+        "width": 560
+      },
+      "position": [
+        112,
+        64
+      ],
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1
+    },
+    {
+      "id": "d3f182a2-ab1b-4ce5-b0ff-07f2e44a1fea",
+      "name": "Toutes les 15 minutes",
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "expression": "*/15 * * * *",
+              "field": "cronExpression"
+            }
+          ]
+        }
+      },
+      "position": [
+        0,
+        0
+      ],
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2
+    },
+    {
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "QoKeVRwGrk1YqN9Q",
+          "name": "Header Auth account 2"
+        }
+      },
+      "id": "28566657-a44c-4f90-bd62-bfdf7f414d6e",
+      "maxTries": 2,
+      "name": "Relancer et fermer",
+      "notes": "Toute la regle est dans l application : delais, contenu du message, frein anti-bannissement. Ce workflow n est qu une horloge.",
+      "parameters": {
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "method": "POST",
+        "options": {},
+        "url": "https://www.djiguiflow.com/api/internal/commandes/abandons"
+      },
+      "position": [
+        224,
+        0
+      ],
+      "retryOnFail": true,
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "waitBetweenTries": 5000
+    }
+  ],
+  "settings": {
+    "availableInMCP": true,
+    "errorWorkflow": "NfWU666FLz9jR1Zv",
+    "executionOrder": "v1"
+  },
+  "sourceWorkflowId": null,
+  "tags": [],
+  "versionCounter": 3
+}

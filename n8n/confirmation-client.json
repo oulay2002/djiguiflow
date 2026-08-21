@@ -1,0 +1,1436 @@
+{
+  "active": true,
+  "activeVersion": {
+    "authors": "JEAN PAUL OULAI (via MCP)",
+    "autosaved": false,
+    "connections": {
+      "Code in JavaScript": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Switch",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Contexte boutique": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Code in JavaScript",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Notifier Marchands - Commande acceptée": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Lancer livreurs",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Switch": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Notifier client - Commande acceptée",
+              "type": "main"
+            },
+            {
+              "index": 0,
+              "node": "Sync Supabase",
+              "type": "main"
+            }
+          ],
+          [
+            {
+              "index": 0,
+              "node": "Notifier Marchands - Commande acceptée",
+              "type": "main"
+            },
+            {
+              "index": 0,
+              "node": "Decompter le stock",
+              "type": "main"
+            }
+          ],
+          [
+            {
+              "index": 0,
+              "node": "Notifier Marchands - Commande refusée",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Webhook": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Contexte boutique",
+              "type": "main"
+            }
+          ]
+        ]
+      }
+    },
+    "description": null,
+    "name": null,
+    "nodeGroups": [],
+    "nodes": [
+      {
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "vkSCoRL3hmMp5S2G",
+            "name": "Header Auth account"
+          }
+        },
+        "id": "544c60f4-fc9d-46fd-9536-40a8da46e6b6",
+        "name": "Webhook",
+        "parameters": {
+          "authentication": "headerAuth",
+          "httpMethod": "POST",
+          "options": {},
+          "path": "confirmation-client"
+        },
+        "position": [
+          0,
+          192
+        ],
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2.1,
+        "webhookId": "7ea169ca-3347-41b2-bc4b-1e2b533156e1"
+      },
+      {
+        "id": "02b77946-bc72-432f-bdc8-9f1481d563bf",
+        "name": "Code in JavaScript",
+        "parameters": {
+          "jsCode": "const wh = $('Webhook').first().json;\nlet b = wh.body || wh;\n\n// La commande arrive parfois serialisee dans un champ confirmation, avec un\n// signe egal en tete herite d'une expression n8n.\nif (b.confirmation) {\n  let s = typeof b.confirmation === 'string' ? b.confirmation.trim() : null;\n  if (s && s.startsWith('=')) s = s.slice(1).trim();\n  try {\n    if (s) b = JSON.parse(s);\n    else if (typeof b.confirmation === 'object') b = b.confirmation;\n  } catch (e) {}\n}\n\n// Le contexte vient de l'application, plus de l'onglet Marchands : une\n// feuille renommee ne casse plus la confirmation d'une commande.\nconst m = $('Contexte boutique').first().json || {};\n\nconst out = { ...b };\nout.reference = b.reference || b.order_id || '';\nout.phone = b.phone || b.chat_id || b.destinataire || '';\nout.nom = b.nom || b.customer_name || 'Client';\nout.total = b.total ?? b.total_price ?? 0;\nout.slug = String(m.slug || '');\nout.whatsapp_marchand = String(m.telephone || '');\nout.nom_boutique = String(m.nom || '');\n\n// Groupe de livreurs du marchand. Il etait lu mais jamais transmis a\n// « Lancer livreurs », qui recevait donc null : Telegram repondait\n// « chat not found » et aucun livreur n'etait alerte.\nout.groupe_livreurs = String(m.groupe_livreurs || '');\n\n// JID WhatsApp FIABLE du client : le chat qui parle au bot,\n// sinon le telephone saisi normalise (0... -> 225...)\nconst telBrut = String(out.phone || '').trim();\nout.whatsapp_client = String(b.chat_id || '').trim()\n  || (telBrut.startsWith('0') ? '225' + telBrut : telBrut);\n\n// CANAL REEL DU CLIENT. Les notifications partaient en dur sur WhatsApp,\n// alors que le lien de confirmation vise le chat_id. Une commande passee sur\n// Telegram voyait donc son lien expedie a WaSender comme si l'identifiant\n// Telegram etait un numero : l'envoi echouait, le client ne recevait rien, ne\n// confirmait jamais, et la commande restait en suspens en silence.\nout.canal_client = String(b.canal || '').trim().toLowerCase() === 'telegram'\n  ? 'telegram'\n  : 'whatsapp';\n\nout.destinataire_client = out.canal_client === 'telegram'\n  ? String(b.chat_id || b.destinataire || '').trim()\n  : out.whatsapp_client;\n\nreturn [{ json: out }];"
+        },
+        "position": [
+          448,
+          192
+        ],
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2
+      },
+      {
+        "id": "5fbe3013-4000-4d9b-91f8-da8e87c19e41",
+        "name": "Switch",
+        "parameters": {
+          "options": {},
+          "rules": {
+            "values": [
+              {
+                "conditions": {
+                  "combinator": "and",
+                  "conditions": [
+                    {
+                      "id": "11b9dc99-7284-48a3-8fa9-7b7e5e8aec99",
+                      "leftValue": "demande",
+                      "operator": {
+                        "operation": "equals",
+                        "type": "string"
+                      },
+                      "rightValue": "={{ $json.type }}"
+                    }
+                  ],
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "strict",
+                    "version": 3
+                  }
+                },
+                "outputKey": "demande",
+                "renameOutput": true
+              },
+              {
+                "conditions": {
+                  "combinator": "and",
+                  "conditions": [
+                    {
+                      "id": "bf3e5605-ac03-4bcf-99ea-73692a4bf82e",
+                      "leftValue": "confirmee",
+                      "operator": {
+                        "name": "filter.operator.equals",
+                        "operation": "equals",
+                        "type": "string"
+                      },
+                      "rightValue": "={{ $json.type }}"
+                    }
+                  ],
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "strict",
+                    "version": 3
+                  }
+                },
+                "outputKey": "confirmee",
+                "renameOutput": true
+              },
+              {
+                "conditions": {
+                  "combinator": "and",
+                  "conditions": [
+                    {
+                      "id": "384137ce-7d46-4805-b36a-cfe67b961fff",
+                      "leftValue": "refusee",
+                      "operator": {
+                        "name": "filter.operator.equals",
+                        "operation": "equals",
+                        "type": "string"
+                      },
+                      "rightValue": "={{ $json.type }}"
+                    }
+                  ],
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "strict",
+                    "version": 3
+                  }
+                },
+                "outputKey": "refusée",
+                "renameOutput": true
+              }
+            ]
+          }
+        },
+        "position": [
+          672,
+          176
+        ],
+        "type": "n8n-nodes-base.switch",
+        "typeVersion": 3.4
+      },
+      {
+        "disabled": false,
+        "id": "bedd6438-facb-4796-8b60-092a7b69abf2",
+        "maxTries": 3,
+        "name": "Notifier client - Commande acceptée",
+        "onError": "continueRegularOutput",
+        "parameters": {
+          "options": {},
+          "workflowId": {
+            "__rl": true,
+            "cachedResultName": "Envoyer réponse client",
+            "mode": "list",
+            "value": "JkNvcqsZaY22dfk5"
+          },
+          "workflowInputs": {
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": true,
+            "mappingMode": "defineBelow",
+            "matchingColumns": [],
+            "schema": [
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "canal",
+                "id": "canal",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "destinataire",
+                "id": "destinataire",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "message",
+                "id": "message",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              }
+            ],
+            "value": {
+              "boutique": "={{ $json.slug }}",
+              "canal": "={{ $json.canal_client }}",
+              "destinataire": "={{ $json.destinataire_client }}",
+              "message": "=🍽️ Bonjour {{ $json.nom }},\n\nVotre commande {{ $json.reference }} ({{ $json.total }} F) chez {{ $json.nom_boutique }} est bien reçue.\n\nAvant de lancer la préparation, confirmez-vous être disponible pour la réception ?\n\n✅ Je confirme :\nhttps://www.djiguiflow.com/api/confirmation?ref={{ $json.reference }}&r=oui\n\n❌ J'annule :\nhttps://www.djiguiflow.com/api/confirmation?ref={{ $json.reference }}&r=non"
+            }
+          }
+        },
+        "position": [
+          896,
+          0
+        ],
+        "retryOnFail": false,
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.3,
+        "waitBetweenTries": 2000
+      },
+      {
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "QoKeVRwGrk1YqN9Q",
+            "name": "Header Auth account 2"
+          }
+        },
+        "disabled": false,
+        "id": "3474107f-b8ea-4e0b-8519-c90670036e4e",
+        "maxTries": 3,
+        "name": "Sync Supabase",
+        "notes": "canal etait ecrit EN DUR a whatsapp. Toute commande nee de ce flux etait estampillee WhatsApp, meme pour un client Telegram : les frais de livraison, le suivi et la demande d avis partaient alors vers un numero au lieu de la conversation. Le canal etait pourtant deja calcule ici, sous le nom canal_client. Constate le 20 aout 2026.",
+        "parameters": {
+          "authentication": "genericCredentialType",
+          "bodyParameters": {
+            "parameters": [
+              {
+                "name": "reference",
+                "value": "={{ $('Code in JavaScript').first().json.reference }}"
+              },
+              {
+                "name": "boutique_id",
+                "value": "={{ $('Code in JavaScript').first().json.boutique_id }}"
+              },
+              {
+                "name": "customer_name",
+                "value": "={{ $('Code in JavaScript').first().json.nom }}"
+              },
+              {
+                "name": "phone",
+                "value": "={{ $('Code in JavaScript').first().json.phone }}"
+              },
+              {
+                "name": "chat_id",
+                "value": "={{ $('Code in JavaScript').first().json.chat_id }}"
+              },
+              {
+                "name": "address",
+                "value": "={{ $('Code in JavaScript').first().json.address }}"
+              },
+              {
+                "name": "total_price",
+                "value": "={{ $('Code in JavaScript').first().json.total }}"
+              },
+              {
+                "name": "canal",
+                "value": "={{ $('Code in JavaScript').first().json.canal_client }}"
+              },
+              {
+                "name": "items",
+                "value": "={{ [].concat($('Code in JavaScript').first().json.items || []).join(', ') }}"
+              },
+              {
+                "name": "confirmation_demandee",
+                "value": "1"
+              }
+            ]
+          },
+          "genericAuthType": "httpHeaderAuth",
+          "method": "POST",
+          "options": {},
+          "sendBody": true,
+          "url": "https://www.djiguiflow.com/api/commandes/sync"
+        },
+        "position": [
+          1120,
+          0
+        ],
+        "retryOnFail": true,
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "waitBetweenTries": 2000
+      },
+      {
+        "disabled": false,
+        "id": "1a848fa9-9b93-40e8-a55d-1d504238ee44",
+        "maxTries": 3,
+        "name": "Notifier Marchands - Commande acceptée",
+        "onError": "continueRegularOutput",
+        "parameters": {
+          "options": {},
+          "workflowId": {
+            "__rl": true,
+            "cachedResultName": "Envoyer réponse client",
+            "mode": "list",
+            "value": "JkNvcqsZaY22dfk5"
+          },
+          "workflowInputs": {
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": true,
+            "mappingMode": "defineBelow",
+            "matchingColumns": [],
+            "schema": [
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "canal",
+                "id": "canal",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "destinataire",
+                "id": "destinataire",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "message",
+                "id": "message",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              }
+            ],
+            "value": {
+              "boutique": "={{ $json.slug }}",
+              "canal": "=whatsapp",
+              "destinataire": "={{ $json.whatsapp_marchand }}",
+              "message": "=✅ COMMANDE CONFIRMÉE — {{ $json.reference }}\n\nLe client a confirmé sa commande et sa présence pour reception.\nTu peux préparer sereinement : ZÉRO risque de retour. 🎉"
+            }
+          }
+        },
+        "position": [
+          896,
+          192
+        ],
+        "retryOnFail": false,
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.3,
+        "waitBetweenTries": 2000
+      },
+      {
+        "disabled": false,
+        "id": "3e1334f5-02dc-4ef4-b534-b15b28d4d296",
+        "maxTries": 3,
+        "name": "Lancer livreurs",
+        "parameters": {
+          "options": {},
+          "workflowId": {
+            "__rl": true,
+            "cachedResultName": "Livraison Zahara",
+            "mode": "list",
+            "value": "whr4BFlseHHQURZl"
+          },
+          "workflowInputs": {
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": true,
+            "mappingMode": "defineBelow",
+            "matchingColumns": [],
+            "schema": [
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "chat_id",
+                "id": "chat_id",
+                "required": false,
+                "type": "number"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "customer_name",
+                "id": "customer_name",
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "phone",
+                "id": "phone",
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "address",
+                "id": "address",
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "items",
+                "id": "items",
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "total_price",
+                "id": "total_price",
+                "required": false,
+                "type": "number"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "canal",
+                "id": "canal",
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "destinataire",
+                "id": "destinataire",
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "order_id",
+                "id": "order_id",
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "groupeLivreurs",
+                "id": "groupeLivreurs",
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "boutique_nom",
+                "id": "boutique_nom",
+                "required": false,
+                "type": "string"
+              }
+            ],
+            "value": {
+              "address": "={{ $('Code in JavaScript').first().json.address }}",
+              "boutique_nom": "={{ $('Code in JavaScript').first().json.nom_boutique }}",
+              "canal": "={{ $('Code in JavaScript').first().json.canal }}",
+              "chat_id": "={{ Number($('Code in JavaScript').first().json.chat_id) }}",
+              "customer_name": "={{ $('Code in JavaScript').first().json.nom }}",
+              "destinataire": "={{ $('Code in JavaScript').first().json.phone }}",
+              "groupeLivreurs": "={{ $('Code in JavaScript').first().json.groupe_livreurs }}",
+              "items": "={{ [].concat($('Code in JavaScript').first().json.items || []).join(', ') }}",
+              "order_id": "={{ $('Code in JavaScript').first().json.reference }}",
+              "phone": "={{ $('Code in JavaScript').first().json.phone }}",
+              "total_price": "={{ Number($('Code in JavaScript').first().json.total) }}"
+            }
+          }
+        },
+        "position": [
+          1120,
+          192
+        ],
+        "retryOnFail": true,
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.3,
+        "waitBetweenTries": 2000
+      },
+      {
+        "disabled": false,
+        "id": "97e76f63-897b-4625-8e8a-8984d093f758",
+        "maxTries": 3,
+        "name": "Notifier Marchands - Commande refusée",
+        "onError": "continueRegularOutput",
+        "parameters": {
+          "options": {},
+          "workflowId": {
+            "__rl": true,
+            "cachedResultName": "Envoyer réponse client",
+            "mode": "list",
+            "value": "JkNvcqsZaY22dfk5"
+          },
+          "workflowInputs": {
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": true,
+            "mappingMode": "defineBelow",
+            "matchingColumns": [],
+            "schema": [
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "canal",
+                "id": "canal",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "destinataire",
+                "id": "destinataire",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "message",
+                "id": "message",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              }
+            ],
+            "value": {
+              "boutique": "={{ $json.slug }}",
+              "canal": "=whatsapp",
+              "destinataire": "={{ $json.whatsapp_marchand }}",
+              "message": "=❌ COMMANDE ANNULÉE — {{ $json.reference }}\n\nLe client a annulé. Ne prépare pas.\nAucun coût engagé, stock intact. 💪"
+            }
+          }
+        },
+        "position": [
+          896,
+          384
+        ],
+        "retryOnFail": false,
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.3,
+        "waitBetweenTries": 2000
+      },
+      {
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "QoKeVRwGrk1YqN9Q",
+            "name": "Header Auth account 2"
+          }
+        },
+        "id": "bf604a78-6a0b-440e-b889-91a82cc85309",
+        "maxTries": 3,
+        "name": "Contexte boutique",
+        "notes": "Le corps du webhook porte parfois la commande serialisee dans un champ confirmation : on la deplie ici comme le fait le noeud suivant, pour en tirer l identifiant de boutique.",
+        "parameters": {
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "jsonBody": "={{ (() => { let b = $json.body || $json; if (b.confirmation) { let s = typeof b.confirmation === 'string' ? b.confirmation.trim() : null; if (s && s.startsWith('=')) s = s.slice(1).trim(); try { if (s) b = JSON.parse(s); else if (typeof b.confirmation === 'object') b = b.confirmation; } catch (e) {} } return JSON.stringify({ boutique: String(b.boutique_id || '') }); })() }}",
+          "method": "POST",
+          "options": {},
+          "sendBody": true,
+          "specifyBody": "json",
+          "url": "https://www.djiguiflow.com/api/canaux/contexte"
+        },
+        "position": [
+          224,
+          192
+        ],
+        "retryOnFail": true,
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "waitBetweenTries": 2000
+      },
+      {
+        "id": "sticky-marqueur-confirmation",
+        "name": "Pourquoi ce marqueur",
+        "parameters": {
+          "content": "## confirmation_demandee = 1\n\nCe noeud ne tourne que sur la branche `demande` du Switch. Le champ pose\n`confirmation_statut = demandee` en base, et JAMAIS par-dessus une valeur\nexistante : ecraser un `confirmee` annulerait une confirmation que le client\nvient de donner.\n\nSans lui, `confirmation_statut` valait NULL dans deux cas opposes : « on a\ndemande, il n a pas repondu » et « on n a jamais demande ». Impossible de\nreconnaitre un panier abandonne, donc impossible de le rattraper.\n\nC est /api/internal/commandes/abandons qui relance puis ferme, appele toutes\nles 15 min par « Paniers abandonnes ».",
+          "height": 220,
+          "width": 540
+        },
+        "position": [
+          -200,
+          -320
+        ],
+        "type": "n8n-nodes-base.stickyNote",
+        "typeVersion": 1
+      },
+      {
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "QoKeVRwGrk1YqN9Q",
+            "name": "Header Auth account 2"
+          }
+        },
+        "id": "f8bf3069-cc51-4812-a718-e532dddb8b1e",
+        "name": "Decompter le stock",
+        "notes": "Le stock ne se decomptait que sur la vitrine : une commande prise par l'assistante laissait le stock intact, et le marchand devait refaire son inventaire a la main. La route est idempotente — elle se reserve sur stock_decremente_le — donc un reessai ne peut pas vider le stock deux fois.",
+        "parameters": {
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "jsonBody": "={\n  \"reference\": {{ JSON.stringify($('Code in JavaScript').first().json.reference) }}\n}",
+          "method": "POST",
+          "options": {},
+          "sendBody": true,
+          "specifyBody": "json",
+          "url": "https://www.djiguiflow.com/api/internal/commandes/stock"
+        },
+        "position": [
+          900,
+          320
+        ],
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2
+      }
+    ],
+    "workflowId": "Ks6tpQSDYSQ3UG1o",
+    "workflowPublishHistory": [
+      {
+        "event": "activated",
+        "id": 176,
+        "userId": "81519f6f-0887-498a-ad83-5ffd6d591e9a",
+        "workflowId": "Ks6tpQSDYSQ3UG1o"
+      }
+    ]
+  },
+  "connections": {
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Switch",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Contexte boutique": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Code in JavaScript",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Notifier Marchands - Commande acceptée": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Lancer livreurs",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Notifier client - Commande acceptée",
+            "type": "main"
+          },
+          {
+            "index": 0,
+            "node": "Sync Supabase",
+            "type": "main"
+          }
+        ],
+        [
+          {
+            "index": 0,
+            "node": "Notifier Marchands - Commande acceptée",
+            "type": "main"
+          },
+          {
+            "index": 0,
+            "node": "Decompter le stock",
+            "type": "main"
+          }
+        ],
+        [
+          {
+            "index": 0,
+            "node": "Notifier Marchands - Commande refusée",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Contexte boutique",
+            "type": "main"
+          }
+        ]
+      ]
+    }
+  },
+  "description": null,
+  "id": "Ks6tpQSDYSQ3UG1o",
+  "isArchived": false,
+  "name": "Confirmation Client",
+  "nodeGroups": [],
+  "nodes": [
+    {
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "vkSCoRL3hmMp5S2G",
+          "name": "Header Auth account"
+        }
+      },
+      "id": "544c60f4-fc9d-46fd-9536-40a8da46e6b6",
+      "name": "Webhook",
+      "parameters": {
+        "authentication": "headerAuth",
+        "httpMethod": "POST",
+        "options": {},
+        "path": "confirmation-client"
+      },
+      "position": [
+        0,
+        192
+      ],
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "webhookId": "7ea169ca-3347-41b2-bc4b-1e2b533156e1"
+    },
+    {
+      "id": "02b77946-bc72-432f-bdc8-9f1481d563bf",
+      "name": "Code in JavaScript",
+      "parameters": {
+        "jsCode": "const wh = $('Webhook').first().json;\nlet b = wh.body || wh;\n\n// La commande arrive parfois serialisee dans un champ confirmation, avec un\n// signe egal en tete herite d'une expression n8n.\nif (b.confirmation) {\n  let s = typeof b.confirmation === 'string' ? b.confirmation.trim() : null;\n  if (s && s.startsWith('=')) s = s.slice(1).trim();\n  try {\n    if (s) b = JSON.parse(s);\n    else if (typeof b.confirmation === 'object') b = b.confirmation;\n  } catch (e) {}\n}\n\n// Le contexte vient de l'application, plus de l'onglet Marchands : une\n// feuille renommee ne casse plus la confirmation d'une commande.\nconst m = $('Contexte boutique').first().json || {};\n\nconst out = { ...b };\nout.reference = b.reference || b.order_id || '';\nout.phone = b.phone || b.chat_id || b.destinataire || '';\nout.nom = b.nom || b.customer_name || 'Client';\nout.total = b.total ?? b.total_price ?? 0;\nout.slug = String(m.slug || '');\nout.whatsapp_marchand = String(m.telephone || '');\nout.nom_boutique = String(m.nom || '');\n\n// Groupe de livreurs du marchand. Il etait lu mais jamais transmis a\n// « Lancer livreurs », qui recevait donc null : Telegram repondait\n// « chat not found » et aucun livreur n'etait alerte.\nout.groupe_livreurs = String(m.groupe_livreurs || '');\n\n// JID WhatsApp FIABLE du client : le chat qui parle au bot,\n// sinon le telephone saisi normalise (0... -> 225...)\nconst telBrut = String(out.phone || '').trim();\nout.whatsapp_client = String(b.chat_id || '').trim()\n  || (telBrut.startsWith('0') ? '225' + telBrut : telBrut);\n\n// CANAL REEL DU CLIENT. Les notifications partaient en dur sur WhatsApp,\n// alors que le lien de confirmation vise le chat_id. Une commande passee sur\n// Telegram voyait donc son lien expedie a WaSender comme si l'identifiant\n// Telegram etait un numero : l'envoi echouait, le client ne recevait rien, ne\n// confirmait jamais, et la commande restait en suspens en silence.\nout.canal_client = String(b.canal || '').trim().toLowerCase() === 'telegram'\n  ? 'telegram'\n  : 'whatsapp';\n\nout.destinataire_client = out.canal_client === 'telegram'\n  ? String(b.chat_id || b.destinataire || '').trim()\n  : out.whatsapp_client;\n\nreturn [{ json: out }];"
+      },
+      "position": [
+        448,
+        192
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "id": "5fbe3013-4000-4d9b-91f8-da8e87c19e41",
+      "name": "Switch",
+      "parameters": {
+        "options": {},
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "11b9dc99-7284-48a3-8fa9-7b7e5e8aec99",
+                    "leftValue": "demande",
+                    "operator": {
+                      "operation": "equals",
+                      "type": "string"
+                    },
+                    "rightValue": "={{ $json.type }}"
+                  }
+                ],
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                }
+              },
+              "outputKey": "demande",
+              "renameOutput": true
+            },
+            {
+              "conditions": {
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "bf3e5605-ac03-4bcf-99ea-73692a4bf82e",
+                    "leftValue": "confirmee",
+                    "operator": {
+                      "name": "filter.operator.equals",
+                      "operation": "equals",
+                      "type": "string"
+                    },
+                    "rightValue": "={{ $json.type }}"
+                  }
+                ],
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                }
+              },
+              "outputKey": "confirmee",
+              "renameOutput": true
+            },
+            {
+              "conditions": {
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "384137ce-7d46-4805-b36a-cfe67b961fff",
+                    "leftValue": "refusee",
+                    "operator": {
+                      "name": "filter.operator.equals",
+                      "operation": "equals",
+                      "type": "string"
+                    },
+                    "rightValue": "={{ $json.type }}"
+                  }
+                ],
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                }
+              },
+              "outputKey": "refusée",
+              "renameOutput": true
+            }
+          ]
+        }
+      },
+      "position": [
+        672,
+        176
+      ],
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4
+    },
+    {
+      "disabled": false,
+      "id": "bedd6438-facb-4796-8b60-092a7b69abf2",
+      "maxTries": 3,
+      "name": "Notifier client - Commande acceptée",
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "options": {},
+        "workflowId": {
+          "__rl": true,
+          "cachedResultName": "Envoyer réponse client",
+          "mode": "list",
+          "value": "JkNvcqsZaY22dfk5"
+        },
+        "workflowInputs": {
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true,
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "schema": [
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "canal",
+              "id": "canal",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "destinataire",
+              "id": "destinataire",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "message",
+              "id": "message",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            }
+          ],
+          "value": {
+            "boutique": "={{ $json.slug }}",
+            "canal": "={{ $json.canal_client }}",
+            "destinataire": "={{ $json.destinataire_client }}",
+            "message": "=🍽️ Bonjour {{ $json.nom }},\n\nVotre commande {{ $json.reference }} ({{ $json.total }} F) chez {{ $json.nom_boutique }} est bien reçue.\n\nAvant de lancer la préparation, confirmez-vous être disponible pour la réception ?\n\n✅ Je confirme :\nhttps://www.djiguiflow.com/api/confirmation?ref={{ $json.reference }}&r=oui\n\n❌ J'annule :\nhttps://www.djiguiflow.com/api/confirmation?ref={{ $json.reference }}&r=non"
+          }
+        }
+      },
+      "position": [
+        896,
+        0
+      ],
+      "retryOnFail": false,
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "QoKeVRwGrk1YqN9Q",
+          "name": "Header Auth account 2"
+        }
+      },
+      "disabled": false,
+      "id": "3474107f-b8ea-4e0b-8519-c90670036e4e",
+      "maxTries": 3,
+      "name": "Sync Supabase",
+      "notes": "canal etait ecrit EN DUR a whatsapp. Toute commande nee de ce flux etait estampillee WhatsApp, meme pour un client Telegram : les frais de livraison, le suivi et la demande d avis partaient alors vers un numero au lieu de la conversation. Le canal etait pourtant deja calcule ici, sous le nom canal_client. Constate le 20 aout 2026.",
+      "parameters": {
+        "authentication": "genericCredentialType",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "reference",
+              "value": "={{ $('Code in JavaScript').first().json.reference }}"
+            },
+            {
+              "name": "boutique_id",
+              "value": "={{ $('Code in JavaScript').first().json.boutique_id }}"
+            },
+            {
+              "name": "customer_name",
+              "value": "={{ $('Code in JavaScript').first().json.nom }}"
+            },
+            {
+              "name": "phone",
+              "value": "={{ $('Code in JavaScript').first().json.phone }}"
+            },
+            {
+              "name": "chat_id",
+              "value": "={{ $('Code in JavaScript').first().json.chat_id }}"
+            },
+            {
+              "name": "address",
+              "value": "={{ $('Code in JavaScript').first().json.address }}"
+            },
+            {
+              "name": "total_price",
+              "value": "={{ $('Code in JavaScript').first().json.total }}"
+            },
+            {
+              "name": "canal",
+              "value": "={{ $('Code in JavaScript').first().json.canal_client }}"
+            },
+            {
+              "name": "items",
+              "value": "={{ [].concat($('Code in JavaScript').first().json.items || []).join(', ') }}"
+            },
+            {
+              "name": "confirmation_demandee",
+              "value": "1"
+            }
+          ]
+        },
+        "genericAuthType": "httpHeaderAuth",
+        "method": "POST",
+        "options": {},
+        "sendBody": true,
+        "url": "https://www.djiguiflow.com/api/commandes/sync"
+      },
+      "position": [
+        1120,
+        0
+      ],
+      "retryOnFail": true,
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "waitBetweenTries": 2000
+    },
+    {
+      "disabled": false,
+      "id": "1a848fa9-9b93-40e8-a55d-1d504238ee44",
+      "maxTries": 3,
+      "name": "Notifier Marchands - Commande acceptée",
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "options": {},
+        "workflowId": {
+          "__rl": true,
+          "cachedResultName": "Envoyer réponse client",
+          "mode": "list",
+          "value": "JkNvcqsZaY22dfk5"
+        },
+        "workflowInputs": {
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true,
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "schema": [
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "canal",
+              "id": "canal",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "destinataire",
+              "id": "destinataire",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "message",
+              "id": "message",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            }
+          ],
+          "value": {
+            "boutique": "={{ $json.slug }}",
+            "canal": "=whatsapp",
+            "destinataire": "={{ $json.whatsapp_marchand }}",
+            "message": "=✅ COMMANDE CONFIRMÉE — {{ $json.reference }}\n\nLe client a confirmé sa commande et sa présence pour reception.\nTu peux préparer sereinement : ZÉRO risque de retour. 🎉"
+          }
+        }
+      },
+      "position": [
+        896,
+        192
+      ],
+      "retryOnFail": false,
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "disabled": false,
+      "id": "3e1334f5-02dc-4ef4-b534-b15b28d4d296",
+      "maxTries": 3,
+      "name": "Lancer livreurs",
+      "parameters": {
+        "options": {},
+        "workflowId": {
+          "__rl": true,
+          "cachedResultName": "Livraison Zahara",
+          "mode": "list",
+          "value": "whr4BFlseHHQURZl"
+        },
+        "workflowInputs": {
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true,
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "schema": [
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "chat_id",
+              "id": "chat_id",
+              "required": false,
+              "type": "number"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "customer_name",
+              "id": "customer_name",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "phone",
+              "id": "phone",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "address",
+              "id": "address",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "items",
+              "id": "items",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "total_price",
+              "id": "total_price",
+              "required": false,
+              "type": "number"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "canal",
+              "id": "canal",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "destinataire",
+              "id": "destinataire",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "order_id",
+              "id": "order_id",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "groupeLivreurs",
+              "id": "groupeLivreurs",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "boutique_nom",
+              "id": "boutique_nom",
+              "required": false,
+              "type": "string"
+            }
+          ],
+          "value": {
+            "address": "={{ $('Code in JavaScript').first().json.address }}",
+            "boutique_nom": "={{ $('Code in JavaScript').first().json.nom_boutique }}",
+            "canal": "={{ $('Code in JavaScript').first().json.canal }}",
+            "chat_id": "={{ Number($('Code in JavaScript').first().json.chat_id) }}",
+            "customer_name": "={{ $('Code in JavaScript').first().json.nom }}",
+            "destinataire": "={{ $('Code in JavaScript').first().json.phone }}",
+            "groupeLivreurs": "={{ $('Code in JavaScript').first().json.groupe_livreurs }}",
+            "items": "={{ [].concat($('Code in JavaScript').first().json.items || []).join(', ') }}",
+            "order_id": "={{ $('Code in JavaScript').first().json.reference }}",
+            "phone": "={{ $('Code in JavaScript').first().json.phone }}",
+            "total_price": "={{ Number($('Code in JavaScript').first().json.total) }}"
+          }
+        }
+      },
+      "position": [
+        1120,
+        192
+      ],
+      "retryOnFail": true,
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "disabled": false,
+      "id": "97e76f63-897b-4625-8e8a-8984d093f758",
+      "maxTries": 3,
+      "name": "Notifier Marchands - Commande refusée",
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "options": {},
+        "workflowId": {
+          "__rl": true,
+          "cachedResultName": "Envoyer réponse client",
+          "mode": "list",
+          "value": "JkNvcqsZaY22dfk5"
+        },
+        "workflowInputs": {
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true,
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "schema": [
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "canal",
+              "id": "canal",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "destinataire",
+              "id": "destinataire",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "message",
+              "id": "message",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            }
+          ],
+          "value": {
+            "boutique": "={{ $json.slug }}",
+            "canal": "=whatsapp",
+            "destinataire": "={{ $json.whatsapp_marchand }}",
+            "message": "=❌ COMMANDE ANNULÉE — {{ $json.reference }}\n\nLe client a annulé. Ne prépare pas.\nAucun coût engagé, stock intact. 💪"
+          }
+        }
+      },
+      "position": [
+        896,
+        384
+      ],
+      "retryOnFail": false,
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "QoKeVRwGrk1YqN9Q",
+          "name": "Header Auth account 2"
+        }
+      },
+      "id": "bf604a78-6a0b-440e-b889-91a82cc85309",
+      "maxTries": 3,
+      "name": "Contexte boutique",
+      "notes": "Le corps du webhook porte parfois la commande serialisee dans un champ confirmation : on la deplie ici comme le fait le noeud suivant, pour en tirer l identifiant de boutique.",
+      "parameters": {
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "jsonBody": "={{ (() => { let b = $json.body || $json; if (b.confirmation) { let s = typeof b.confirmation === 'string' ? b.confirmation.trim() : null; if (s && s.startsWith('=')) s = s.slice(1).trim(); try { if (s) b = JSON.parse(s); else if (typeof b.confirmation === 'object') b = b.confirmation; } catch (e) {} } return JSON.stringify({ boutique: String(b.boutique_id || '') }); })() }}",
+        "method": "POST",
+        "options": {},
+        "sendBody": true,
+        "specifyBody": "json",
+        "url": "https://www.djiguiflow.com/api/canaux/contexte"
+      },
+      "position": [
+        224,
+        192
+      ],
+      "retryOnFail": true,
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "waitBetweenTries": 2000
+    },
+    {
+      "id": "sticky-marqueur-confirmation",
+      "name": "Pourquoi ce marqueur",
+      "parameters": {
+        "content": "## confirmation_demandee = 1\n\nCe noeud ne tourne que sur la branche `demande` du Switch. Le champ pose\n`confirmation_statut = demandee` en base, et JAMAIS par-dessus une valeur\nexistante : ecraser un `confirmee` annulerait une confirmation que le client\nvient de donner.\n\nSans lui, `confirmation_statut` valait NULL dans deux cas opposes : « on a\ndemande, il n a pas repondu » et « on n a jamais demande ». Impossible de\nreconnaitre un panier abandonne, donc impossible de le rattraper.\n\nC est /api/internal/commandes/abandons qui relance puis ferme, appele toutes\nles 15 min par « Paniers abandonnes ».",
+        "height": 220,
+        "width": 540
+      },
+      "position": [
+        -200,
+        -320
+      ],
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1
+    },
+    {
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "QoKeVRwGrk1YqN9Q",
+          "name": "Header Auth account 2"
+        }
+      },
+      "id": "f8bf3069-cc51-4812-a718-e532dddb8b1e",
+      "name": "Decompter le stock",
+      "notes": "Le stock ne se decomptait que sur la vitrine : une commande prise par l'assistante laissait le stock intact, et le marchand devait refaire son inventaire a la main. La route est idempotente — elle se reserve sur stock_decremente_le — donc un reessai ne peut pas vider le stock deux fois.",
+      "parameters": {
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "jsonBody": "={\n  \"reference\": {{ JSON.stringify($('Code in JavaScript').first().json.reference) }}\n}",
+        "method": "POST",
+        "options": {},
+        "sendBody": true,
+        "specifyBody": "json",
+        "url": "https://www.djiguiflow.com/api/internal/commandes/stock"
+      },
+      "position": [
+        900,
+        320
+      ],
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2
+    }
+  ],
+  "settings": {
+    "availableInMCP": true,
+    "errorWorkflow": "NfWU666FLz9jR1Zv",
+    "executionOrder": "v1"
+  },
+  "sourceWorkflowId": null,
+  "tags": [],
+  "versionCounter": 9
+}

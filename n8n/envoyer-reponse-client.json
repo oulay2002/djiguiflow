@@ -1,0 +1,1611 @@
+{
+  "active": true,
+  "activeVersion": {
+    "authors": "JEAN PAUL OULAI",
+    "autosaved": false,
+    "connections": {
+      "Boutique fournie ?": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Envoi via DjiguiFlow",
+              "type": "main"
+            }
+          ],
+          [
+            {
+              "index": 0,
+              "node": "Log envoi invalide",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Envoi via DjiguiFlow": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Log succès",
+              "type": "main"
+            }
+          ],
+          [
+            {
+              "index": 0,
+              "node": "Log échec",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "HTTP Request": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Log succès",
+              "type": "main"
+            }
+          ],
+          [
+            {
+              "index": 0,
+              "node": "Log échec",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Journal possible ?": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Écrire log",
+              "type": "main"
+            }
+          ],
+          [
+            {
+              "index": 0,
+              "node": "Verdict",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Log envoi invalide": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Journal possible ?",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Log succès": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Journal possible ?",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Log succès1": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Journal possible ?",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Log échec": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Journal possible ?",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Log échec1": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Journal possible ?",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Router canal": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Log envoi invalide",
+              "type": "main"
+            }
+          ],
+          [
+            {
+              "index": 0,
+              "node": "HTTP Request",
+              "type": "main"
+            }
+          ],
+          [
+            {
+              "index": 0,
+              "node": "Send a text message",
+              "type": "main"
+            }
+          ],
+          [
+            {
+              "index": 0,
+              "node": "Log envoi invalide",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Send a text message": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Log succès1",
+              "type": "main"
+            }
+          ],
+          [
+            {
+              "index": 0,
+              "node": "Log échec1",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Verdict": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Signaler l echec",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "When Executed by Another Workflow": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Boutique fournie ?",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Écrire log": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Verdict",
+              "type": "main"
+            }
+          ]
+        ]
+      }
+    },
+    "description": null,
+    "name": null,
+    "nodeGroups": [],
+    "nodes": [
+      {
+        "id": "b582ee31-64f0-4613-bd99-aba8790696cd",
+        "name": "When Executed by Another Workflow",
+        "parameters": {
+          "workflowInputs": {
+            "values": [
+              {
+                "name": "canal"
+              },
+              {
+                "name": "destinataire"
+              },
+              {
+                "name": "message"
+              },
+              {
+                "name": "boutique"
+              },
+              {
+                "name": "reply_markup"
+              },
+              {
+                "name": "format"
+              },
+              {
+                "name": "sheet_document_id"
+              }
+            ]
+          }
+        },
+        "position": [
+          -864,
+          96
+        ],
+        "type": "n8n-nodes-base.executeWorkflowTrigger",
+        "typeVersion": 1.2
+      },
+      {
+        "credentials": {
+          "httpBearerAuth": {
+            "id": "Z8z2zH3lN7ZjkVK6",
+            "name": "Bearer Auth account"
+          }
+        },
+        "id": "08a069ac-0bea-425e-b477-df96a6f09e4c",
+        "maxTries": 3,
+        "name": "HTTP Request",
+        "onError": "continueErrorOutput",
+        "parameters": {
+          "authentication": "genericCredentialType",
+          "bodyParameters": {
+            "parameters": [
+              {
+                "name": "to",
+                "value": "={{ String($json.destinataire).replace(/[^0-9]/g, \"\") }}@s.whatsapp.net"
+              },
+              {
+                "name": "text",
+                "value": "={{ $json.message }}"
+              }
+            ]
+          },
+          "genericAuthType": "httpBearerAuth",
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          },
+          "method": "POST",
+          "options": {},
+          "sendBody": true,
+          "sendHeaders": true,
+          "url": "https://www.wasenderapi.com/api/send-message"
+        },
+        "position": [
+          304,
+          64
+        ],
+        "retryOnFail": false,
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "waitBetweenTries": 2000
+      },
+      {
+        "credentials": {
+          "telegramApi": {
+            "id": "0Eq9PtopVq9ndbf2",
+            "name": "Telegram account"
+          }
+        },
+        "id": "c974032c-ef89-4706-a853-65d00d749add",
+        "maxTries": 3,
+        "name": "Send a text message",
+        "onError": "continueErrorOutput",
+        "parameters": {
+          "additionalFields": {
+            "appendAttribution": false,
+            "parse_mode": "={{ $json.format === 'html' ? 'HTML' : '' }}"
+          },
+          "chatId": "={{ $json.destinataire }}",
+          "text": "={{ $json.message }}"
+        },
+        "position": [
+          512,
+          192
+        ],
+        "retryOnFail": false,
+        "type": "n8n-nodes-base.telegram",
+        "typeVersion": 1.2,
+        "waitBetweenTries": 2000,
+        "webhookId": "d469ef12-80e2-4c1d-a20b-39c4353d27ec"
+      },
+      {
+        "id": "ff7bd4cf-f188-43c8-b1a9-d168928e32bc",
+        "name": "Log succès",
+        "parameters": {
+          "jsCode": "const t = $('When Executed by Another Workflow').first().json;\nreturn [{ json: {\n  timestamp: $now.toISO(),\n  canal: String(t.canal || ''),\n  destinataire: String(t.destinataire || ''),\n  message: String(t.message || '').slice(0, 200),\n  statut: 'ok',\n  erreur: ''\n}}];"
+        },
+        "position": [
+          656,
+          -96
+        ],
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2
+      },
+      {
+        "id": "dea815d0-dd0f-47b0-9fe0-854c2c3f1db8",
+        "name": "Log échec",
+        "parameters": {
+          "jsCode": "const t = $('When Executed by Another Workflow').first().json;\nconst e = $input.first().json || {};\nconst msg = e?.error?.message || e?.message || 'erreur inconnue';\nreturn [{ json: {\n  timestamp: $now.toISO(),\n  canal: String(t.canal || ''),\n  destinataire: String(t.destinataire || ''),\n  message: String(t.message || '').slice(0, 200),\n  statut: 'ERREUR',\n  erreur: String(msg).slice(0, 300)\n}}];"
+        },
+        "position": [
+          672,
+          64
+        ],
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2
+      },
+      {
+        "id": "3907e545-69d9-4c48-bc8f-1be3615d944e",
+        "name": "Log succès1",
+        "parameters": {
+          "jsCode": "const t = $('When Executed by Another Workflow').first().json;\nreturn [{ json: {\n  timestamp: $now.toISO(),\n  canal: String(t.canal || ''),\n  destinataire: String(t.destinataire || ''),\n  message: String(t.message || '').slice(0, 200),\n  statut: 'ok',\n  erreur: ''\n}}];"
+        },
+        "position": [
+          688,
+          224
+        ],
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2
+      },
+      {
+        "id": "c53ceef6-44a2-4864-8442-6b536df9abc2",
+        "name": "Log échec1",
+        "parameters": {
+          "jsCode": "const t = $('When Executed by Another Workflow').first().json;\nconst e = $input.first().json || {};\nconst msg = e?.error?.message || e?.message || 'erreur inconnue';\nreturn [{ json: {\n  timestamp: $now.toISO(),\n  canal: String(t.canal || ''),\n  destinataire: String(t.destinataire || ''),\n  message: String(t.message || '').slice(0, 200),\n  statut: 'ERREUR',\n  erreur: String(msg).slice(0, 300)\n}}];"
+        },
+        "position": [
+          704,
+          384
+        ],
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2
+      },
+      {
+        "credentials": {
+          "googleSheetsOAuth2Api": {
+            "id": "9Q14ADLSkwfm2Y5H",
+            "name": "Google Sheets account"
+          }
+        },
+        "id": "fd6c2fe6-2d28-4981-873a-16aa6678f6ef",
+        "maxTries": 2,
+        "name": "Écrire log",
+        "onError": "continueRegularOutput",
+        "parameters": {
+          "columns": {
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": false,
+            "mappingMode": "defineBelow",
+            "matchingColumns": [],
+            "schema": [
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "timestamp",
+                "id": "timestamp",
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "canal",
+                "id": "canal",
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "destinataire",
+                "id": "destinataire",
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "message",
+                "id": "message",
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": " statut",
+                "id": " statut",
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "erreur",
+                "id": "erreur",
+                "required": false,
+                "type": "string"
+              }
+            ],
+            "value": {
+              " statut": "={{ $json.statut }}",
+              "canal": "={{ $json.canal }}",
+              "destinataire": "={{ $json.destinataire }}",
+              "erreur": "={{ $json.erreur }}",
+              "message": "={{ $json.message }}",
+              "timestamp": "={{ $json.timestamp }}"
+            }
+          },
+          "documentId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $('When Executed by Another Workflow').first().json.sheet_document_id }}"
+          },
+          "operation": "append",
+          "options": {},
+          "sheetName": {
+            "__rl": true,
+            "mode": "name",
+            "value": "Logs_Envois"
+          }
+        },
+        "position": [
+          1136,
+          128
+        ],
+        "retryOnFail": true,
+        "type": "n8n-nodes-base.googleSheets",
+        "typeVersion": 4.7,
+        "waitBetweenTries": 1000
+      },
+      {
+        "id": "e050b941-af21-4a89-98fb-fbc84a4fb62d",
+        "name": "Router canal",
+        "parameters": {
+          "looseTypeValidation": true,
+          "options": {},
+          "rules": {
+            "values": [
+              {
+                "conditions": {
+                  "combinator": "and",
+                  "conditions": [
+                    {
+                      "id": "r-boutons-perdus",
+                      "leftValue": "={{ $json.reply_markup }}",
+                      "operator": {
+                        "operation": "notEmpty",
+                        "singleValue": true,
+                        "type": "string"
+                      },
+                      "rightValue": ""
+                    }
+                  ],
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "loose",
+                    "version": 3
+                  }
+                },
+                "outputKey": "Boutons perdus",
+                "renameOutput": true
+              },
+              {
+                "conditions": {
+                  "combinator": "and",
+                  "conditions": [
+                    {
+                      "id": "r0-canal",
+                      "leftValue": "={{ $json.canal }}",
+                      "operator": {
+                        "operation": "equals",
+                        "type": "string"
+                      },
+                      "rightValue": "whatsapp"
+                    },
+                    {
+                      "id": "r0-dest",
+                      "leftValue": "={{ $json.destinataire }}",
+                      "operator": {
+                        "operation": "notEmpty",
+                        "singleValue": true,
+                        "type": "string"
+                      },
+                      "rightValue": ""
+                    }
+                  ],
+                  "options": {
+                    "caseSensitive": false,
+                    "leftValue": "",
+                    "typeValidation": "loose",
+                    "version": 3
+                  }
+                },
+                "outputKey": "WhatsApp",
+                "renameOutput": true
+              },
+              {
+                "conditions": {
+                  "combinator": "and",
+                  "conditions": [
+                    {
+                      "id": "r1-canal",
+                      "leftValue": "={{ $json.canal }}",
+                      "operator": {
+                        "operation": "equals",
+                        "type": "string"
+                      },
+                      "rightValue": "telegram"
+                    },
+                    {
+                      "id": "r1-dest",
+                      "leftValue": "={{ $json.destinataire }}",
+                      "operator": {
+                        "operation": "notEmpty",
+                        "singleValue": true,
+                        "type": "string"
+                      },
+                      "rightValue": ""
+                    }
+                  ],
+                  "options": {
+                    "caseSensitive": false,
+                    "leftValue": "",
+                    "typeValidation": "loose",
+                    "version": 3
+                  }
+                },
+                "outputKey": "Telegram",
+                "renameOutput": true
+              },
+              {
+                "conditions": {
+                  "combinator": "and",
+                  "conditions": [
+                    {
+                      "id": "r2-catchall",
+                      "leftValue": "true",
+                      "operator": {
+                        "name": "filter.operator.equals",
+                        "operation": "equals",
+                        "type": "string"
+                      },
+                      "rightValue": "true"
+                    }
+                  ],
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "loose",
+                    "version": 3
+                  }
+                },
+                "outputKey": "Invalide",
+                "renameOutput": true
+              }
+            ]
+          }
+        },
+        "position": [
+          32,
+          304
+        ],
+        "type": "n8n-nodes-base.switch",
+        "typeVersion": 3.4
+      },
+      {
+        "id": "beee8417-aff0-4fc8-bda7-071041fffbda",
+        "name": "Log envoi invalide",
+        "parameters": {
+          "jsCode": "const t = $('When Executed by Another Workflow').first().json;\n\n// Deux echecs distincts aboutissent ici, et les confondre ferait chercher au\n// mauvais endroit.\nconst boutons = String(t.reply_markup ?? '').trim();\nconst raison = boutons\n  ? 'Boutons perdus - appel sans boutique avec reply_markup. Le noeud Telegram'\n    + ' de n8n ne sait pas relayer un reply_markup brut : le message serait'\n    + ' parti sans ses boutons, et personne ne l aurait vu. Faire passer cet'\n    + ' appelant par l API DjiguiFlow en lui transmettant `boutique`.'\n  : `Envoi impossible - canal='${t.canal || 'vide'}' destinataire='${t.destinataire || 'vide'}'`;\n\nreturn [{ json: {\n  timestamp: $now.toISO(),\n  canal: String(t.canal || ''),\n  destinataire: String(t.destinataire || ''),\n  message: String(t.message || '').slice(0, 200),\n  statut: 'ERREUR',\n  erreur: raison.slice(0, 300),\n  // Rien n a ete tente : le defaut est dans l appel, pas chez le fournisseur.\n  // `Signaler l echec` s en sert pour ne pas ameuter l exploitant.\n  origine: 'appelant',\n}}];"
+        },
+        "position": [
+          672,
+          560
+        ],
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2
+      },
+      {
+        "id": "c6f516a3-7857-4087-849f-544cdf33868d",
+        "name": "Boutique fournie ?",
+        "notes": "Aiguille vers l API DjiguiFlow quand l appelant sait de quelle boutique il parle, sinon vers l ancien chemin. Permet de migrer les appelants un par un.",
+        "parameters": {
+          "conditions": {
+            "combinator": "and",
+            "conditions": [
+              {
+                "id": "b1000000-0000-4000-8000-000000000001",
+                "leftValue": "={{ $json.boutique }}",
+                "operator": {
+                  "operation": "notEmpty",
+                  "singleValue": true,
+                  "type": "string"
+                },
+                "rightValue": ""
+              }
+            ],
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            }
+          },
+          "looseTypeValidation": true,
+          "options": {}
+        },
+        "position": [
+          -464,
+          96
+        ],
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3
+      },
+      {
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "QoKeVRwGrk1YqN9Q",
+            "name": "Header Auth account 2"
+          }
+        },
+        "id": "57e93ee3-f2f9-4835-87f3-709f0ab6f5e9",
+        "maxTries": 3,
+        "name": "Envoi via DjiguiFlow",
+        "notes": "Le jeton du marchand reste cote serveur : n8n demande un envoi, il n obtient jamais de quoi envoyer lui-meme.",
+        "onError": "continueErrorOutput",
+        "parameters": {
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "jsonBody": "={\n  \"boutique\": \"{{ $json.boutique }}\",\n  \"canal\": \"{{ $json.canal }}\",\n  \"destinataire\": \"{{ $json.destinataire }}\",\n  \"message\": {{ JSON.stringify($json.message) }},\n  \"reply_markup\": {{ JSON.stringify($json.reply_markup || '') }},\n  \"format\": {{ JSON.stringify($json.format || 'texte') }}\n}",
+          "method": "POST",
+          "options": {},
+          "sendBody": true,
+          "specifyBody": "json",
+          "url": "https://www.djiguiflow.com/api/canaux/envoyer"
+        },
+        "position": [
+          128,
+          -96
+        ],
+        "retryOnFail": false,
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "waitBetweenTries": 2000
+      },
+      {
+        "id": "df51c2d6-c855-4d7d-991d-1804a1b51401",
+        "name": "Journal possible ?",
+        "notes": "Sans classeur fourni par l'appelant, on n'ecrit nulle part. Ecrire « quelque part par defaut » est ce qui a fait atterrir la clientele de chaque marchand dans le classeur de Zahara.",
+        "parameters": {
+          "conditions": {
+            "combinator": "and",
+            "conditions": [
+              {
+                "id": "classeur-fourni",
+                "leftValue": "={{ $('When Executed by Another Workflow').first().json.sheet_document_id }}",
+                "operator": {
+                  "operation": "notEmpty",
+                  "singleValue": true,
+                  "type": "string"
+                },
+                "rightValue": ""
+              }
+            ],
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            }
+          },
+          "looseTypeValidation": true,
+          "options": {}
+        },
+        "position": [
+          912,
+          128
+        ],
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3
+      },
+      {
+        "id": "c81c5484-979b-4166-ba52-b77dbe8faa2b",
+        "name": "Verdict",
+        "notes": "Le seul moyen, pour un appelant, de savoir si le message est reellement parti.",
+        "parameters": {
+          "jsCode": "// Verdict rendu a l appelant.\n//\n// CE NOEUD NE DOIT JAMAIS LEVER. S il leve, le message est DEJA PARTI, et\n// l appelant — qui porte un reessai — rejoue tout le sous-workflow : le\n// client recoit deux ou trois fois le meme message. C est arrive le 14 aout.\n//\n// La cause : la lecture se faisait par `$('Journal possible ?').first()`, qui\n// ne lit que la PREMIERE sortie de l aiguillage. Quand l appel n a pas de\n// classeur a journaliser, l aiguillage part sur la SECONDE : la premiere est\n// vide, `.first()` rend `undefined`, et `.json` plante dessus.\n//\n// On lit donc les noeuds de journal directement. Un seul s execute par\n// chemin ; les autres levent « unexecuted », ce que le try avale.\nconst JOURNAUX = [\n  'Log succès',\n  'Log échec',\n  'Log succès1',\n  'Log échec1',\n  'Log envoi invalide',\n];\n\nlet l = {};\nfor (const nom of JOURNAUX) {\n  try {\n    const item = $(nom).first();\n    if (item && item.json) { l = item.json; break; }\n  } catch (e) {\n    // Noeud non emprunte sur ce chemin : c est normal.\n  }\n}\n\nlet t = {};\ntry {\n  t = $('When Executed by Another Workflow').first().json || {};\n} catch (e) {\n  t = {};\n}\n\nconst journalTrouve = Object.keys(l).length > 0;\nconst ok = String(l.statut || '') === 'ok';\n\n// Un destinataire vide n est pas une panne : c est un marchand qui n a pas\n// renseigne son Telegram, ou un client sans numero.\nconst sansDestinataire = !String(t.destinataire == null ? '' : t.destinataire).trim();\n\n// Journal introuvable : on ne sait pas. On classe en « appelant » pour que\n// `Signaler l echec` ne leve PAS — un doute ne doit jamais couter un doublon\n// chez le client.\nreturn [{ json: {\n  ok,\n  statut: ok ? 'ok' : 'ERREUR',\n  timestamp: String(l.timestamp || ''),\n  canal: String(l.canal || t.canal || ''),\n  destinataire: String(l.destinataire || t.destinataire || ''),\n  message: String(l.message || ''),\n  erreur: String(l.erreur || (journalTrouve ? '' : 'journal introuvable')),\n  origine: (sansDestinataire || !journalTrouve) ? 'appelant' : String(l.origine || 'fournisseur'),\n} }];\n"
+        },
+        "position": [
+          1376,
+          128
+        ],
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2
+      },
+      {
+        "id": "f2dafe8b-81f1-4fcf-98a5-4e536aedd9e6",
+        "name": "Signaler l echec",
+        "notes": "Rend l echec bruyant pour les quatorze appelants a la fois, sans en modifier aucun.",
+        "parameters": {
+          "jsCode": "// Un envoi rate doit etre bruyant.\n//\n// Les noeuds d envoi portent `onError: continueErrorOutput` pour que le journal\n// soit ecrit quoi qu il arrive. L effet de bord etait qu aucun appelant\n// n apprenait jamais l echec, et ils sont quatorze. On leve donc ICI, apres le\n// journal : ce sous-workflow declare `Alerte Erreurs` comme workflow d erreur,\n// l exploitant est prevenu meme si l appelant choisit de continuer.\n//\n// L ETRANGLEMENT N EST PLUS ICI, ET N Y A JAMAIS FONCTIONNE. Il prenait la\n// forme d une memoire `$getWorkflowStaticData` marquant un `canal|destinataire`\n// deja signale dans la journee. Or n8n ne persiste la memoire statique qu au\n// terme d une execution REUSSIE — et cette execution-ci se termine justement\n// par le `throw` ci-dessous. Le marquage etait donc rejete a chaque passage, et\n// le garde-fou ne filtrait rien. Constate le 14 aout : executions 5365, 5367 et\n// 5369, meme destinataire, la meme seconde, trois levees.\n//\n// L etranglement vit desormais dans `Alerte Erreurs`, dont les executions\n// reussissent et dont la memoire, elle, tient.\nconst v = $input.first().json || {};\n\n// `origine: 'appelant'` — ni canal ni destinataire exploitables. C est un\n// defaut d appel, deja journalise, et il se repeterait a chaque message d un\n// client sans numero : le signaler noierait le canal technique.\nif (v.ok === true || v.origine === 'appelant') return [{ json: v }];\n\n// CANAL NON EQUIPE : ce n est pas un incident, c est une configuration.\n//\n// Un marchand qui n a pas connecte WhatsApp — c est-a-dire tout nouvel inscrit\n// — fait echouer en 424 chacun des SEPT workflows qui previennent sur les deux\n// canaux : nouvelle commande, resume quotidien, resume hebdo, contenus hebdo,\n// alerte stock, dashboard gerant, relance d echeance. A chaque envoi, tous les\n// jours. Le canal technique se remplirait de bruit, et le bruit finit par\n// masquer les vraies pannes — exactement ce que ce garde-fou existe pour\n// eviter.\n//\n// Le marchand, lui, EST prevenu : son tableau de bord affiche en rouge ce qu il\n// n a pas encore branche. C est la que cette information a sa place, pas dans\n// une alerte d exploitation.\n//\n// Meme raisonnement que le `origine: 'appelant'` ci-dessus : deja journalise,\n// repetitif, et sans action possible de notre cote.\nconst texteErreur = String(v.erreur == null ? '' : v.erreur);\nif (/\b424\b/.test(texteErreur) || /aucun jeton/i.test(texteErreur)) {\n  return [{ json: { ...v, signale: false, motif_silence: 'canal non equipe' } }];\n}\n\n// Sur une seule ligne et sans deux-points : n8n scinde sinon le texte de\n// l Error, et `Alerte Erreurs` n en lit que la seconde moitie.\nconst assainir = (s) => String(s == null ? '' : s)\n  .replace(/[_*`\\[\\]:]/g, ' ').replace(/\\s+/g, ' ').trim();\n\nthrow new Error(\n  `Message non delivre sur ${assainir(v.canal) || 'canal inconnu'} vers `\n  + `${assainir(v.destinataire) || 'destinataire vide'}, cause `\n  + assainir(v.erreur || 'sans detail').slice(0, 300),\n);"
+        },
+        "position": [
+          1600,
+          128
+        ],
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2
+      },
+      {
+        "id": "5c1295c5-0508-42ca-a534-6f2d35761aa8",
+        "name": "Sans boutique, aucun envoi",
+        "parameters": {
+          "content": "## Sans boutique nommee, ON N ENVOIE PAS\n\nCe workflow avait un repli herite de l epoque mono-marchand : quand l appelant\nne nommait pas la boutique, on envoyait quand meme — via « Router canal », donc\nvia un noeud Telegram portant une credential FIGEE, celle d un marchand precis.\n\nAvec deux marchands, ce repli est devenu une FUITE. Le 19 aout 2026, trois\nnotifications de livraison destinees a un client de Rose Monde\n(RMO-19082026-1745678901234) lui sont arrivees par le bot de Zahara.\n\nLa branche mene desormais au journal d envoi invalide, qui remonte au canal\ntechnique. Un envoi qu on ne sait pas attribuer doit echouer bruyamment,\njamais partir au hasard.",
+          "height": 260,
+          "width": 560
+        },
+        "position": [
+          -140,
+          460
+        ],
+        "type": "n8n-nodes-base.stickyNote",
+        "typeVersion": 1
+      }
+    ],
+    "workflowId": "JkNvcqsZaY22dfk5",
+    "workflowPublishHistory": [
+      {
+        "event": "activated",
+        "id": 186,
+        "userId": "81519f6f-0887-498a-ad83-5ffd6d591e9a",
+        "workflowId": "JkNvcqsZaY22dfk5"
+      },
+      {
+        "event": "activated",
+        "id": 188,
+        "userId": "81519f6f-0887-498a-ad83-5ffd6d591e9a",
+        "workflowId": "JkNvcqsZaY22dfk5"
+      },
+      {
+        "event": "deactivated",
+        "id": 185,
+        "userId": "81519f6f-0887-498a-ad83-5ffd6d591e9a",
+        "workflowId": "JkNvcqsZaY22dfk5"
+      },
+      {
+        "event": "deactivated",
+        "id": 187,
+        "userId": "81519f6f-0887-498a-ad83-5ffd6d591e9a",
+        "workflowId": "JkNvcqsZaY22dfk5"
+      }
+    ]
+  },
+  "connections": {
+    "Boutique fournie ?": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Envoi via DjiguiFlow",
+            "type": "main"
+          }
+        ],
+        [
+          {
+            "index": 0,
+            "node": "Log envoi invalide",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Envoi via DjiguiFlow": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Log succès",
+            "type": "main"
+          }
+        ],
+        [
+          {
+            "index": 0,
+            "node": "Log échec",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Log succès",
+            "type": "main"
+          }
+        ],
+        [
+          {
+            "index": 0,
+            "node": "Log échec",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Journal possible ?": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Écrire log",
+            "type": "main"
+          }
+        ],
+        [
+          {
+            "index": 0,
+            "node": "Verdict",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Log envoi invalide": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Journal possible ?",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Log succès": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Journal possible ?",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Log succès1": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Journal possible ?",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Log échec": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Journal possible ?",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Log échec1": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Journal possible ?",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Router canal": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Log envoi invalide",
+            "type": "main"
+          }
+        ],
+        [
+          {
+            "index": 0,
+            "node": "HTTP Request",
+            "type": "main"
+          }
+        ],
+        [
+          {
+            "index": 0,
+            "node": "Send a text message",
+            "type": "main"
+          }
+        ],
+        [
+          {
+            "index": 0,
+            "node": "Log envoi invalide",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Send a text message": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Log succès1",
+            "type": "main"
+          }
+        ],
+        [
+          {
+            "index": 0,
+            "node": "Log échec1",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Verdict": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Signaler l echec",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Boutique fournie ?",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Écrire log": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Verdict",
+            "type": "main"
+          }
+        ]
+      ]
+    }
+  },
+  "description": null,
+  "id": "JkNvcqsZaY22dfk5",
+  "isArchived": false,
+  "name": "Envoyer réponse client",
+  "nodeGroups": [],
+  "nodes": [
+    {
+      "id": "b582ee31-64f0-4613-bd99-aba8790696cd",
+      "name": "When Executed by Another Workflow",
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "canal"
+            },
+            {
+              "name": "destinataire"
+            },
+            {
+              "name": "message"
+            },
+            {
+              "name": "boutique"
+            },
+            {
+              "name": "reply_markup"
+            },
+            {
+              "name": "format"
+            },
+            {
+              "name": "sheet_document_id"
+            }
+          ]
+        }
+      },
+      "position": [
+        -864,
+        96
+      ],
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2
+    },
+    {
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "Z8z2zH3lN7ZjkVK6",
+          "name": "Bearer Auth account"
+        }
+      },
+      "id": "08a069ac-0bea-425e-b477-df96a6f09e4c",
+      "maxTries": 3,
+      "name": "HTTP Request",
+      "onError": "continueErrorOutput",
+      "parameters": {
+        "authentication": "genericCredentialType",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "to",
+              "value": "={{ String($json.destinataire).replace(/[^0-9]/g, \"\") }}@s.whatsapp.net"
+            },
+            {
+              "name": "text",
+              "value": "={{ $json.message }}"
+            }
+          ]
+        },
+        "genericAuthType": "httpBearerAuth",
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "method": "POST",
+        "options": {},
+        "sendBody": true,
+        "sendHeaders": true,
+        "url": "https://www.wasenderapi.com/api/send-message"
+      },
+      "position": [
+        304,
+        64
+      ],
+      "retryOnFail": false,
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "waitBetweenTries": 2000
+    },
+    {
+      "credentials": {
+        "telegramApi": {
+          "id": "0Eq9PtopVq9ndbf2",
+          "name": "Telegram account"
+        }
+      },
+      "id": "c974032c-ef89-4706-a853-65d00d749add",
+      "maxTries": 3,
+      "name": "Send a text message",
+      "onError": "continueErrorOutput",
+      "parameters": {
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "={{ $json.format === 'html' ? 'HTML' : '' }}"
+        },
+        "chatId": "={{ $json.destinataire }}",
+        "text": "={{ $json.message }}"
+      },
+      "position": [
+        512,
+        192
+      ],
+      "retryOnFail": false,
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "waitBetweenTries": 2000,
+      "webhookId": "d469ef12-80e2-4c1d-a20b-39c4353d27ec"
+    },
+    {
+      "id": "ff7bd4cf-f188-43c8-b1a9-d168928e32bc",
+      "name": "Log succès",
+      "parameters": {
+        "jsCode": "const t = $('When Executed by Another Workflow').first().json;\nreturn [{ json: {\n  timestamp: $now.toISO(),\n  canal: String(t.canal || ''),\n  destinataire: String(t.destinataire || ''),\n  message: String(t.message || '').slice(0, 200),\n  statut: 'ok',\n  erreur: ''\n}}];"
+      },
+      "position": [
+        656,
+        -96
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "id": "dea815d0-dd0f-47b0-9fe0-854c2c3f1db8",
+      "name": "Log échec",
+      "parameters": {
+        "jsCode": "const t = $('When Executed by Another Workflow').first().json;\nconst e = $input.first().json || {};\nconst msg = e?.error?.message || e?.message || 'erreur inconnue';\nreturn [{ json: {\n  timestamp: $now.toISO(),\n  canal: String(t.canal || ''),\n  destinataire: String(t.destinataire || ''),\n  message: String(t.message || '').slice(0, 200),\n  statut: 'ERREUR',\n  erreur: String(msg).slice(0, 300)\n}}];"
+      },
+      "position": [
+        672,
+        64
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "id": "3907e545-69d9-4c48-bc8f-1be3615d944e",
+      "name": "Log succès1",
+      "parameters": {
+        "jsCode": "const t = $('When Executed by Another Workflow').first().json;\nreturn [{ json: {\n  timestamp: $now.toISO(),\n  canal: String(t.canal || ''),\n  destinataire: String(t.destinataire || ''),\n  message: String(t.message || '').slice(0, 200),\n  statut: 'ok',\n  erreur: ''\n}}];"
+      },
+      "position": [
+        688,
+        224
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "id": "c53ceef6-44a2-4864-8442-6b536df9abc2",
+      "name": "Log échec1",
+      "parameters": {
+        "jsCode": "const t = $('When Executed by Another Workflow').first().json;\nconst e = $input.first().json || {};\nconst msg = e?.error?.message || e?.message || 'erreur inconnue';\nreturn [{ json: {\n  timestamp: $now.toISO(),\n  canal: String(t.canal || ''),\n  destinataire: String(t.destinataire || ''),\n  message: String(t.message || '').slice(0, 200),\n  statut: 'ERREUR',\n  erreur: String(msg).slice(0, 300)\n}}];"
+      },
+      "position": [
+        704,
+        384
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "9Q14ADLSkwfm2Y5H",
+          "name": "Google Sheets account"
+        }
+      },
+      "id": "fd6c2fe6-2d28-4981-873a-16aa6678f6ef",
+      "maxTries": 2,
+      "name": "Écrire log",
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "columns": {
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false,
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "schema": [
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "timestamp",
+              "id": "timestamp",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "canal",
+              "id": "canal",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "destinataire",
+              "id": "destinataire",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "message",
+              "id": "message",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": " statut",
+              "id": " statut",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "erreur",
+              "id": "erreur",
+              "required": false,
+              "type": "string"
+            }
+          ],
+          "value": {
+            " statut": "={{ $json.statut }}",
+            "canal": "={{ $json.canal }}",
+            "destinataire": "={{ $json.destinataire }}",
+            "erreur": "={{ $json.erreur }}",
+            "message": "={{ $json.message }}",
+            "timestamp": "={{ $json.timestamp }}"
+          }
+        },
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('When Executed by Another Workflow').first().json.sheet_document_id }}"
+        },
+        "operation": "append",
+        "options": {},
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Logs_Envois"
+        }
+      },
+      "position": [
+        1136,
+        128
+      ],
+      "retryOnFail": true,
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "waitBetweenTries": 1000
+    },
+    {
+      "id": "e050b941-af21-4a89-98fb-fbc84a4fb62d",
+      "name": "Router canal",
+      "parameters": {
+        "looseTypeValidation": true,
+        "options": {},
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "r-boutons-perdus",
+                    "leftValue": "={{ $json.reply_markup }}",
+                    "operator": {
+                      "operation": "notEmpty",
+                      "singleValue": true,
+                      "type": "string"
+                    },
+                    "rightValue": ""
+                  }
+                ],
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 3
+                }
+              },
+              "outputKey": "Boutons perdus",
+              "renameOutput": true
+            },
+            {
+              "conditions": {
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "r0-canal",
+                    "leftValue": "={{ $json.canal }}",
+                    "operator": {
+                      "operation": "equals",
+                      "type": "string"
+                    },
+                    "rightValue": "whatsapp"
+                  },
+                  {
+                    "id": "r0-dest",
+                    "leftValue": "={{ $json.destinataire }}",
+                    "operator": {
+                      "operation": "notEmpty",
+                      "singleValue": true,
+                      "type": "string"
+                    },
+                    "rightValue": ""
+                  }
+                ],
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 3
+                }
+              },
+              "outputKey": "WhatsApp",
+              "renameOutput": true
+            },
+            {
+              "conditions": {
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "r1-canal",
+                    "leftValue": "={{ $json.canal }}",
+                    "operator": {
+                      "operation": "equals",
+                      "type": "string"
+                    },
+                    "rightValue": "telegram"
+                  },
+                  {
+                    "id": "r1-dest",
+                    "leftValue": "={{ $json.destinataire }}",
+                    "operator": {
+                      "operation": "notEmpty",
+                      "singleValue": true,
+                      "type": "string"
+                    },
+                    "rightValue": ""
+                  }
+                ],
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 3
+                }
+              },
+              "outputKey": "Telegram",
+              "renameOutput": true
+            },
+            {
+              "conditions": {
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "r2-catchall",
+                    "leftValue": "true",
+                    "operator": {
+                      "name": "filter.operator.equals",
+                      "operation": "equals",
+                      "type": "string"
+                    },
+                    "rightValue": "true"
+                  }
+                ],
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 3
+                }
+              },
+              "outputKey": "Invalide",
+              "renameOutput": true
+            }
+          ]
+        }
+      },
+      "position": [
+        32,
+        304
+      ],
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4
+    },
+    {
+      "id": "beee8417-aff0-4fc8-bda7-071041fffbda",
+      "name": "Log envoi invalide",
+      "parameters": {
+        "jsCode": "const t = $('When Executed by Another Workflow').first().json;\n\n// Deux echecs distincts aboutissent ici, et les confondre ferait chercher au\n// mauvais endroit.\nconst boutons = String(t.reply_markup ?? '').trim();\nconst raison = boutons\n  ? 'Boutons perdus - appel sans boutique avec reply_markup. Le noeud Telegram'\n    + ' de n8n ne sait pas relayer un reply_markup brut : le message serait'\n    + ' parti sans ses boutons, et personne ne l aurait vu. Faire passer cet'\n    + ' appelant par l API DjiguiFlow en lui transmettant `boutique`.'\n  : `Envoi impossible - canal='${t.canal || 'vide'}' destinataire='${t.destinataire || 'vide'}'`;\n\nreturn [{ json: {\n  timestamp: $now.toISO(),\n  canal: String(t.canal || ''),\n  destinataire: String(t.destinataire || ''),\n  message: String(t.message || '').slice(0, 200),\n  statut: 'ERREUR',\n  erreur: raison.slice(0, 300),\n  // Rien n a ete tente : le defaut est dans l appel, pas chez le fournisseur.\n  // `Signaler l echec` s en sert pour ne pas ameuter l exploitant.\n  origine: 'appelant',\n}}];"
+      },
+      "position": [
+        672,
+        560
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "id": "c6f516a3-7857-4087-849f-544cdf33868d",
+      "name": "Boutique fournie ?",
+      "notes": "Aiguille vers l API DjiguiFlow quand l appelant sait de quelle boutique il parle, sinon vers l ancien chemin. Permet de migrer les appelants un par un.",
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "b1000000-0000-4000-8000-000000000001",
+              "leftValue": "={{ $json.boutique }}",
+              "operator": {
+                "operation": "notEmpty",
+                "singleValue": true,
+                "type": "string"
+              },
+              "rightValue": ""
+            }
+          ],
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          }
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "position": [
+        -464,
+        96
+      ],
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3
+    },
+    {
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "QoKeVRwGrk1YqN9Q",
+          "name": "Header Auth account 2"
+        }
+      },
+      "id": "57e93ee3-f2f9-4835-87f3-709f0ab6f5e9",
+      "maxTries": 3,
+      "name": "Envoi via DjiguiFlow",
+      "notes": "Le jeton du marchand reste cote serveur : n8n demande un envoi, il n obtient jamais de quoi envoyer lui-meme.",
+      "onError": "continueErrorOutput",
+      "parameters": {
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "jsonBody": "={\n  \"boutique\": \"{{ $json.boutique }}\",\n  \"canal\": \"{{ $json.canal }}\",\n  \"destinataire\": \"{{ $json.destinataire }}\",\n  \"message\": {{ JSON.stringify($json.message) }},\n  \"reply_markup\": {{ JSON.stringify($json.reply_markup || '') }},\n  \"format\": {{ JSON.stringify($json.format || 'texte') }}\n}",
+        "method": "POST",
+        "options": {},
+        "sendBody": true,
+        "specifyBody": "json",
+        "url": "https://www.djiguiflow.com/api/canaux/envoyer"
+      },
+      "position": [
+        128,
+        -96
+      ],
+      "retryOnFail": false,
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "waitBetweenTries": 2000
+    },
+    {
+      "id": "df51c2d6-c855-4d7d-991d-1804a1b51401",
+      "name": "Journal possible ?",
+      "notes": "Sans classeur fourni par l'appelant, on n'ecrit nulle part. Ecrire « quelque part par defaut » est ce qui a fait atterrir la clientele de chaque marchand dans le classeur de Zahara.",
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "classeur-fourni",
+              "leftValue": "={{ $('When Executed by Another Workflow').first().json.sheet_document_id }}",
+              "operator": {
+                "operation": "notEmpty",
+                "singleValue": true,
+                "type": "string"
+              },
+              "rightValue": ""
+            }
+          ],
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          }
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "position": [
+        912,
+        128
+      ],
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3
+    },
+    {
+      "id": "c81c5484-979b-4166-ba52-b77dbe8faa2b",
+      "name": "Verdict",
+      "notes": "Le seul moyen, pour un appelant, de savoir si le message est reellement parti.",
+      "parameters": {
+        "jsCode": "// Verdict rendu a l appelant.\n//\n// CE NOEUD NE DOIT JAMAIS LEVER. S il leve, le message est DEJA PARTI, et\n// l appelant — qui porte un reessai — rejoue tout le sous-workflow : le\n// client recoit deux ou trois fois le meme message. C est arrive le 14 aout.\n//\n// La cause : la lecture se faisait par `$('Journal possible ?').first()`, qui\n// ne lit que la PREMIERE sortie de l aiguillage. Quand l appel n a pas de\n// classeur a journaliser, l aiguillage part sur la SECONDE : la premiere est\n// vide, `.first()` rend `undefined`, et `.json` plante dessus.\n//\n// On lit donc les noeuds de journal directement. Un seul s execute par\n// chemin ; les autres levent « unexecuted », ce que le try avale.\nconst JOURNAUX = [\n  'Log succès',\n  'Log échec',\n  'Log succès1',\n  'Log échec1',\n  'Log envoi invalide',\n];\n\nlet l = {};\nfor (const nom of JOURNAUX) {\n  try {\n    const item = $(nom).first();\n    if (item && item.json) { l = item.json; break; }\n  } catch (e) {\n    // Noeud non emprunte sur ce chemin : c est normal.\n  }\n}\n\nlet t = {};\ntry {\n  t = $('When Executed by Another Workflow').first().json || {};\n} catch (e) {\n  t = {};\n}\n\nconst journalTrouve = Object.keys(l).length > 0;\nconst ok = String(l.statut || '') === 'ok';\n\n// Un destinataire vide n est pas une panne : c est un marchand qui n a pas\n// renseigne son Telegram, ou un client sans numero.\nconst sansDestinataire = !String(t.destinataire == null ? '' : t.destinataire).trim();\n\n// Journal introuvable : on ne sait pas. On classe en « appelant » pour que\n// `Signaler l echec` ne leve PAS — un doute ne doit jamais couter un doublon\n// chez le client.\nreturn [{ json: {\n  ok,\n  statut: ok ? 'ok' : 'ERREUR',\n  timestamp: String(l.timestamp || ''),\n  canal: String(l.canal || t.canal || ''),\n  destinataire: String(l.destinataire || t.destinataire || ''),\n  message: String(l.message || ''),\n  erreur: String(l.erreur || (journalTrouve ? '' : 'journal introuvable')),\n  origine: (sansDestinataire || !journalTrouve) ? 'appelant' : String(l.origine || 'fournisseur'),\n} }];\n"
+      },
+      "position": [
+        1376,
+        128
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "id": "f2dafe8b-81f1-4fcf-98a5-4e536aedd9e6",
+      "name": "Signaler l echec",
+      "notes": "Rend l echec bruyant pour les quatorze appelants a la fois, sans en modifier aucun.",
+      "parameters": {
+        "jsCode": "// Un envoi rate doit etre bruyant.\n//\n// Les noeuds d envoi portent `onError: continueErrorOutput` pour que le journal\n// soit ecrit quoi qu il arrive. L effet de bord etait qu aucun appelant\n// n apprenait jamais l echec, et ils sont quatorze. On leve donc ICI, apres le\n// journal : ce sous-workflow declare `Alerte Erreurs` comme workflow d erreur,\n// l exploitant est prevenu meme si l appelant choisit de continuer.\n//\n// L ETRANGLEMENT N EST PLUS ICI, ET N Y A JAMAIS FONCTIONNE. Il prenait la\n// forme d une memoire `$getWorkflowStaticData` marquant un `canal|destinataire`\n// deja signale dans la journee. Or n8n ne persiste la memoire statique qu au\n// terme d une execution REUSSIE — et cette execution-ci se termine justement\n// par le `throw` ci-dessous. Le marquage etait donc rejete a chaque passage, et\n// le garde-fou ne filtrait rien. Constate le 14 aout : executions 5365, 5367 et\n// 5369, meme destinataire, la meme seconde, trois levees.\n//\n// L etranglement vit desormais dans `Alerte Erreurs`, dont les executions\n// reussissent et dont la memoire, elle, tient.\nconst v = $input.first().json || {};\n\n// `origine: 'appelant'` — ni canal ni destinataire exploitables. C est un\n// defaut d appel, deja journalise, et il se repeterait a chaque message d un\n// client sans numero : le signaler noierait le canal technique.\nif (v.ok === true || v.origine === 'appelant') return [{ json: v }];\n\n// CANAL NON EQUIPE : ce n est pas un incident, c est une configuration.\n//\n// Un marchand qui n a pas connecte WhatsApp — c est-a-dire tout nouvel inscrit\n// — fait echouer en 424 chacun des SEPT workflows qui previennent sur les deux\n// canaux : nouvelle commande, resume quotidien, resume hebdo, contenus hebdo,\n// alerte stock, dashboard gerant, relance d echeance. A chaque envoi, tous les\n// jours. Le canal technique se remplirait de bruit, et le bruit finit par\n// masquer les vraies pannes — exactement ce que ce garde-fou existe pour\n// eviter.\n//\n// Le marchand, lui, EST prevenu : son tableau de bord affiche en rouge ce qu il\n// n a pas encore branche. C est la que cette information a sa place, pas dans\n// une alerte d exploitation.\n//\n// Meme raisonnement que le `origine: 'appelant'` ci-dessus : deja journalise,\n// repetitif, et sans action possible de notre cote.\nconst texteErreur = String(v.erreur == null ? '' : v.erreur);\nif (/\b424\b/.test(texteErreur) || /aucun jeton/i.test(texteErreur)) {\n  return [{ json: { ...v, signale: false, motif_silence: 'canal non equipe' } }];\n}\n\n// Sur une seule ligne et sans deux-points : n8n scinde sinon le texte de\n// l Error, et `Alerte Erreurs` n en lit que la seconde moitie.\nconst assainir = (s) => String(s == null ? '' : s)\n  .replace(/[_*`\\[\\]:]/g, ' ').replace(/\\s+/g, ' ').trim();\n\nthrow new Error(\n  `Message non delivre sur ${assainir(v.canal) || 'canal inconnu'} vers `\n  + `${assainir(v.destinataire) || 'destinataire vide'}, cause `\n  + assainir(v.erreur || 'sans detail').slice(0, 300),\n);"
+      },
+      "position": [
+        1600,
+        128
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "id": "5c1295c5-0508-42ca-a534-6f2d35761aa8",
+      "name": "Sans boutique, aucun envoi",
+      "parameters": {
+        "content": "## Sans boutique nommee, ON N ENVOIE PAS\n\nCe workflow avait un repli herite de l epoque mono-marchand : quand l appelant\nne nommait pas la boutique, on envoyait quand meme — via « Router canal », donc\nvia un noeud Telegram portant une credential FIGEE, celle d un marchand precis.\n\nAvec deux marchands, ce repli est devenu une FUITE. Le 19 aout 2026, trois\nnotifications de livraison destinees a un client de Rose Monde\n(RMO-19082026-1745678901234) lui sont arrivees par le bot de Zahara.\n\nLa branche mene desormais au journal d envoi invalide, qui remonte au canal\ntechnique. Un envoi qu on ne sait pas attribuer doit echouer bruyamment,\njamais partir au hasard.",
+        "height": 260,
+        "width": 560
+      },
+      "position": [
+        -140,
+        460
+      ],
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1
+    }
+  ],
+  "settings": {
+    "availableInMCP": true,
+    "binaryMode": "separate",
+    "errorWorkflow": "NfWU666FLz9jR1Zv",
+    "executionOrder": "v1"
+  },
+  "sourceWorkflowId": null,
+  "tags": [],
+  "versionCounter": 12
+}

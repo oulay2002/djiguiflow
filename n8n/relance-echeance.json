@@ -1,0 +1,475 @@
+{
+  "active": true,
+  "activeVersion": {
+    "authors": "JEAN PAUL OULAI",
+    "autosaved": false,
+    "connections": {
+      "Chaque matin": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Echeances du jour",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Composer les relances": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Relance Telegram",
+              "type": "main"
+            },
+            {
+              "index": 0,
+              "node": "Relance WhatsApp",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Echeances du jour": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Lire le registre",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Lire le registre": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Composer les relances",
+              "type": "main"
+            }
+          ]
+        ]
+      }
+    },
+    "description": null,
+    "name": null,
+    "nodeGroups": [],
+    "nodes": [
+      {
+        "id": "d6a3cd70-0889-4951-8780-6cc4f116340b",
+        "name": "Chaque matin",
+        "parameters": {
+          "rule": {
+            "interval": [
+              {
+                "daysInterval": 1,
+                "field": "days",
+                "triggerAtHour": 9
+              }
+            ]
+          }
+        },
+        "position": [
+          0,
+          96
+        ],
+        "type": "n8n-nodes-base.scheduleTrigger",
+        "typeVersion": 1.3
+      },
+      {
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "QoKeVRwGrk1YqN9Q",
+            "name": "Header Auth account 2"
+          }
+        },
+        "id": "25e04e33-7973-485f-a034-9c98a3844617",
+        "maxTries": 3,
+        "name": "Echeances du jour",
+        "notes": "Ne rend que les comptes aux jalons J-7, J-3, J-1 et le jour de l'expiration. Les autres jours, la liste est vide et la chaine s'arrete d'elle-meme.",
+        "parameters": {
+          "authentication": "genericCredentialType",
+          "contentType": "json",
+          "genericAuthType": "httpHeaderAuth",
+          "jsonBody": "={}",
+          "method": "POST",
+          "options": {},
+          "sendBody": true,
+          "specifyBody": "json",
+          "url": "https://www.djiguiflow.com/api/internal/abonnements/echeances"
+        },
+        "position": [
+          224,
+          96
+        ],
+        "retryOnFail": true,
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "waitBetweenTries": 2000
+      },
+      {
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "QoKeVRwGrk1YqN9Q",
+            "name": "Header Auth account 2"
+          }
+        },
+        "id": "a3c19873-c621-4141-adae-7cc8d4a6854a",
+        "maxTries": 3,
+        "name": "Lire le registre",
+        "notes": "Une relance planifiee n'a pas de marchand appelant : il faut lui dire ou joindre chacun.",
+        "parameters": {
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "options": {},
+          "url": "https://www.djiguiflow.com/api/internal/boutiques"
+        },
+        "position": [
+          448,
+          96
+        ],
+        "retryOnFail": true,
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "waitBetweenTries": 2000
+      },
+      {
+        "id": "1ab2b48c-75e0-4f10-bda0-d59dd43094f1",
+        "name": "Composer les relances",
+        "parameters": {
+          "jsCode": "const echeances = $('Echeances du jour').first().json.echeances || [];\nif (!echeances.length) return [];\n\n// Ou joindre chaque marchand. Une relance ne doit jamais partir vers le chat\n// d'une autre boutique que celle dont elle parle.\nconst annuaire = {};\nfor (const m of ($('Lire le registre').first().json.marchands) || []) {\n  annuaire[String(m.id || '').trim()] = m;\n}\n\nreturn echeances.map((e) => {\n  const m = annuaire[String(e.slug || '').trim()] || {};\n  return { json: {\n    slug: String(e.slug || '').trim(),\n    message: String(e.message || ''),\n    telegram: String(m.telegramMarchand || '').trim(),\n    whatsapp: String(m.whatsapp || '').trim(),\n  } };\n});"
+        },
+        "position": [
+          672,
+          96
+        ],
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2
+      },
+      {
+        "id": "544d346a-5952-4f5f-89b2-6f333bdc9625",
+        "maxTries": 3,
+        "name": "Relance Telegram",
+        "notes": "Texte brut, sans balisage : une balise mal fermee ferait echouer l'envoi, et une relance perdue est pire qu'une relance laide.",
+        "onError": "continueRegularOutput",
+        "parameters": {
+          "mode": "each",
+          "options": {},
+          "workflowId": {
+            "__rl": true,
+            "cachedResultName": "Envoyer réponse client",
+            "mode": "list",
+            "value": "JkNvcqsZaY22dfk5"
+          },
+          "workflowInputs": {
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": true,
+            "mappingMode": "defineBelow",
+            "matchingColumns": [],
+            "schema": [],
+            "value": {
+              "boutique": "={{ $json.slug }}",
+              "canal": "telegram",
+              "destinataire": "={{ $json.telegram }}",
+              "message": "={{ $json.message }}",
+              "reply_markup": ""
+            }
+          }
+        },
+        "position": [
+          896,
+          0
+        ],
+        "retryOnFail": false,
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.3,
+        "waitBetweenTries": 2000
+      },
+      {
+        "id": "9472133a-ba1f-4569-81a7-370efee3cf19",
+        "maxTries": 3,
+        "name": "Relance WhatsApp",
+        "onError": "continueRegularOutput",
+        "parameters": {
+          "mode": "each",
+          "options": {},
+          "workflowId": {
+            "__rl": true,
+            "cachedResultName": "Envoyer réponse client",
+            "mode": "list",
+            "value": "JkNvcqsZaY22dfk5"
+          },
+          "workflowInputs": {
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": true,
+            "mappingMode": "defineBelow",
+            "matchingColumns": [],
+            "schema": [],
+            "value": {
+              "boutique": "={{ $json.slug }}",
+              "canal": "whatsapp",
+              "destinataire": "={{ $json.whatsapp }}",
+              "message": "={{ $json.message }}",
+              "reply_markup": ""
+            }
+          }
+        },
+        "position": [
+          896,
+          192
+        ],
+        "retryOnFail": false,
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.3,
+        "waitBetweenTries": 2000
+      }
+    ],
+    "workflowId": "EtqPL7DyndW9Jvry",
+    "workflowPublishHistory": [
+      {
+        "event": "activated",
+        "id": 15,
+        "userId": "81519f6f-0887-498a-ad83-5ffd6d591e9a",
+        "workflowId": "EtqPL7DyndW9Jvry"
+      }
+    ]
+  },
+  "connections": {
+    "Chaque matin": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Echeances du jour",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Composer les relances": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Relance Telegram",
+            "type": "main"
+          },
+          {
+            "index": 0,
+            "node": "Relance WhatsApp",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Echeances du jour": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Lire le registre",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Lire le registre": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Composer les relances",
+            "type": "main"
+          }
+        ]
+      ]
+    }
+  },
+  "description": null,
+  "id": "EtqPL7DyndW9Jvry",
+  "isArchived": false,
+  "name": "Relance Echeance",
+  "nodeGroups": [],
+  "nodes": [
+    {
+      "id": "d6a3cd70-0889-4951-8780-6cc4f116340b",
+      "name": "Chaque matin",
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "daysInterval": 1,
+              "field": "days",
+              "triggerAtHour": 9
+            }
+          ]
+        }
+      },
+      "position": [
+        0,
+        96
+      ],
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3
+    },
+    {
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "QoKeVRwGrk1YqN9Q",
+          "name": "Header Auth account 2"
+        }
+      },
+      "id": "25e04e33-7973-485f-a034-9c98a3844617",
+      "maxTries": 3,
+      "name": "Echeances du jour",
+      "notes": "Ne rend que les comptes aux jalons J-7, J-3, J-1 et le jour de l'expiration. Les autres jours, la liste est vide et la chaine s'arrete d'elle-meme.",
+      "parameters": {
+        "authentication": "genericCredentialType",
+        "contentType": "json",
+        "genericAuthType": "httpHeaderAuth",
+        "jsonBody": "={}",
+        "method": "POST",
+        "options": {},
+        "sendBody": true,
+        "specifyBody": "json",
+        "url": "https://www.djiguiflow.com/api/internal/abonnements/echeances"
+      },
+      "position": [
+        224,
+        96
+      ],
+      "retryOnFail": true,
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "waitBetweenTries": 2000
+    },
+    {
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "QoKeVRwGrk1YqN9Q",
+          "name": "Header Auth account 2"
+        }
+      },
+      "id": "a3c19873-c621-4141-adae-7cc8d4a6854a",
+      "maxTries": 3,
+      "name": "Lire le registre",
+      "notes": "Une relance planifiee n'a pas de marchand appelant : il faut lui dire ou joindre chacun.",
+      "parameters": {
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {},
+        "url": "https://www.djiguiflow.com/api/internal/boutiques"
+      },
+      "position": [
+        448,
+        96
+      ],
+      "retryOnFail": true,
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "waitBetweenTries": 2000
+    },
+    {
+      "id": "1ab2b48c-75e0-4f10-bda0-d59dd43094f1",
+      "name": "Composer les relances",
+      "parameters": {
+        "jsCode": "const echeances = $('Echeances du jour').first().json.echeances || [];\nif (!echeances.length) return [];\n\n// Ou joindre chaque marchand. Une relance ne doit jamais partir vers le chat\n// d'une autre boutique que celle dont elle parle.\nconst annuaire = {};\nfor (const m of ($('Lire le registre').first().json.marchands) || []) {\n  annuaire[String(m.id || '').trim()] = m;\n}\n\nreturn echeances.map((e) => {\n  const m = annuaire[String(e.slug || '').trim()] || {};\n  return { json: {\n    slug: String(e.slug || '').trim(),\n    message: String(e.message || ''),\n    telegram: String(m.telegramMarchand || '').trim(),\n    whatsapp: String(m.whatsapp || '').trim(),\n  } };\n});"
+      },
+      "position": [
+        672,
+        96
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "id": "544d346a-5952-4f5f-89b2-6f333bdc9625",
+      "maxTries": 3,
+      "name": "Relance Telegram",
+      "notes": "Texte brut, sans balisage : une balise mal fermee ferait echouer l'envoi, et une relance perdue est pire qu'une relance laide.",
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "mode": "each",
+        "options": {},
+        "workflowId": {
+          "__rl": true,
+          "cachedResultName": "Envoyer réponse client",
+          "mode": "list",
+          "value": "JkNvcqsZaY22dfk5"
+        },
+        "workflowInputs": {
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true,
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "schema": [],
+          "value": {
+            "boutique": "={{ $json.slug }}",
+            "canal": "telegram",
+            "destinataire": "={{ $json.telegram }}",
+            "message": "={{ $json.message }}",
+            "reply_markup": ""
+          }
+        }
+      },
+      "position": [
+        896,
+        0
+      ],
+      "retryOnFail": false,
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "id": "9472133a-ba1f-4569-81a7-370efee3cf19",
+      "maxTries": 3,
+      "name": "Relance WhatsApp",
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "mode": "each",
+        "options": {},
+        "workflowId": {
+          "__rl": true,
+          "cachedResultName": "Envoyer réponse client",
+          "mode": "list",
+          "value": "JkNvcqsZaY22dfk5"
+        },
+        "workflowInputs": {
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true,
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "schema": [],
+          "value": {
+            "boutique": "={{ $json.slug }}",
+            "canal": "whatsapp",
+            "destinataire": "={{ $json.whatsapp }}",
+            "message": "={{ $json.message }}",
+            "reply_markup": ""
+          }
+        }
+      },
+      "position": [
+        896,
+        192
+      ],
+      "retryOnFail": false,
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "waitBetweenTries": 2000
+    }
+  ],
+  "settings": {
+    "availableInMCP": true,
+    "errorWorkflow": "NfWU666FLz9jR1Zv",
+    "executionOrder": "v1",
+    "timezone": "Africa/Abidjan"
+  },
+  "sourceWorkflowId": null,
+  "tags": [],
+  "versionCounter": 5
+}

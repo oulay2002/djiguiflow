@@ -1,0 +1,213 @@
+{
+  "active": true,
+  "activeVersion": {
+    "authors": "JEAN PAUL OULAI",
+    "autosaved": false,
+    "connections": {
+      "Rattraper les paiements": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Signaler les paiements bloques",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Toutes les 15 minutes": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Rattraper les paiements",
+              "type": "main"
+            }
+          ]
+        ]
+      }
+    },
+    "description": null,
+    "name": null,
+    "nodeGroups": [],
+    "nodes": [
+      {
+        "id": "e1a70006-0000-4000-8000-000000000001",
+        "name": "Toutes les 15 minutes",
+        "parameters": {
+          "rule": {
+            "interval": [
+              {
+                "expression": "*/15 * * * *",
+                "field": "cronExpression"
+              }
+            ]
+          }
+        },
+        "position": [
+          0,
+          0
+        ],
+        "type": "n8n-nodes-base.scheduleTrigger",
+        "typeVersion": 1.3
+      },
+      {
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "QoKeVRwGrk1YqN9Q",
+            "name": "Header Auth account 2"
+          }
+        },
+        "id": "e1a70006-0000-4000-8000-000000000002",
+        "maxTries": 2,
+        "name": "Rattraper les paiements",
+        "notes": "Ne jamais lui poser onError. Une panne ici laisse des marchands sans leur acces.",
+        "parameters": {
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "jsonBody": "{}",
+          "method": "POST",
+          "options": {},
+          "sendBody": true,
+          "specifyBody": "json",
+          "url": "https://www.djiguiflow.com/api/internal/billing/rattrapage"
+        },
+        "position": [
+          220,
+          0
+        ],
+        "retryOnFail": true,
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "waitBetweenTries": 5000
+      },
+      {
+        "id": "77770000-0000-4000-8000-000000000001",
+        "name": "Signaler les paiements bloques",
+        "notes": "Doit LEVER quand un paiement reste bloque. Ne jamais lui poser onError : c est sa levee qui reveille l exploitant.",
+        "parameters": {
+          "jsCode": "// Le rattrapage rate en SILENCE : il rend honores 0 et l'execution reste\n// verte. Un paiement bloque, c'est un marchand qui a peut-etre paye sans\n// recevoir son acces — le pire etat possible, et celui que personne ne\n// regarde. Lever ici declenche « Alerte Erreurs » par settings.errorWorkflow.\n//\n// LE MESSAGE N'A NI DEUX-POINTS NI RETOUR A LA LIGNE. n8n scinde le texte\n// d'une Error sur ces caracteres, et l'alerte n'en recevrait qu'un fragment.\nconst r = $input.first().json || {};\nconst bloques = Number(r.bloques || 0);\n\nif (bloques > 0) {\n  const refs = (r.detailBloques || [])\n    .map((b) => `${b.reference} (${b.etat}, ${b.heures}h)`)\n    .join(' — ');\n  throw new Error(\n    `${bloques} paiement(s) bloque(s) depuis plus de ${r.seuilAlerteH}h — ${refs}`,\n  );\n}\n\nreturn [{ json: { examines: r.examines, honores: r.honores, bloques: 0 } }];"
+        },
+        "position": [
+          440,
+          0
+        ],
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2
+      }
+    ],
+    "workflowId": "XfUZn8V2TAOXG7yV",
+    "workflowPublishHistory": [
+      {
+        "event": "activated",
+        "id": 89,
+        "userId": "81519f6f-0887-498a-ad83-5ffd6d591e9a",
+        "workflowId": "XfUZn8V2TAOXG7yV"
+      }
+    ]
+  },
+  "connections": {
+    "Rattraper les paiements": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Signaler les paiements bloques",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Toutes les 15 minutes": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Rattraper les paiements",
+            "type": "main"
+          }
+        ]
+      ]
+    }
+  },
+  "description": null,
+  "id": "XfUZn8V2TAOXG7yV",
+  "isArchived": false,
+  "name": "Rattrapage paiements",
+  "nodeGroups": [],
+  "nodes": [
+    {
+      "id": "e1a70006-0000-4000-8000-000000000001",
+      "name": "Toutes les 15 minutes",
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "expression": "*/15 * * * *",
+              "field": "cronExpression"
+            }
+          ]
+        }
+      },
+      "position": [
+        0,
+        0
+      ],
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3
+    },
+    {
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "QoKeVRwGrk1YqN9Q",
+          "name": "Header Auth account 2"
+        }
+      },
+      "id": "e1a70006-0000-4000-8000-000000000002",
+      "maxTries": 2,
+      "name": "Rattraper les paiements",
+      "notes": "Ne jamais lui poser onError. Une panne ici laisse des marchands sans leur acces.",
+      "parameters": {
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "jsonBody": "{}",
+        "method": "POST",
+        "options": {},
+        "sendBody": true,
+        "specifyBody": "json",
+        "url": "https://www.djiguiflow.com/api/internal/billing/rattrapage"
+      },
+      "position": [
+        220,
+        0
+      ],
+      "retryOnFail": true,
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "waitBetweenTries": 5000
+    },
+    {
+      "id": "77770000-0000-4000-8000-000000000001",
+      "name": "Signaler les paiements bloques",
+      "notes": "Doit LEVER quand un paiement reste bloque. Ne jamais lui poser onError : c est sa levee qui reveille l exploitant.",
+      "parameters": {
+        "jsCode": "// Le rattrapage rate en SILENCE : il rend honores 0 et l'execution reste\n// verte. Un paiement bloque, c'est un marchand qui a peut-etre paye sans\n// recevoir son acces — le pire etat possible, et celui que personne ne\n// regarde. Lever ici declenche « Alerte Erreurs » par settings.errorWorkflow.\n//\n// LE MESSAGE N'A NI DEUX-POINTS NI RETOUR A LA LIGNE. n8n scinde le texte\n// d'une Error sur ces caracteres, et l'alerte n'en recevrait qu'un fragment.\nconst r = $input.first().json || {};\nconst bloques = Number(r.bloques || 0);\n\nif (bloques > 0) {\n  const refs = (r.detailBloques || [])\n    .map((b) => `${b.reference} (${b.etat}, ${b.heures}h)`)\n    .join(' — ');\n  throw new Error(\n    `${bloques} paiement(s) bloque(s) depuis plus de ${r.seuilAlerteH}h — ${refs}`,\n  );\n}\n\nreturn [{ json: { examines: r.examines, honores: r.honores, bloques: 0 } }];"
+      },
+      "position": [
+        440,
+        0
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    }
+  ],
+  "settings": {
+    "availableInMCP": true,
+    "errorWorkflow": "NfWU666FLz9jR1Zv",
+    "executionOrder": "v1",
+    "timezone": "Africa/Abidjan"
+  },
+  "sourceWorkflowId": null,
+  "tags": [],
+  "versionCounter": 3
+}

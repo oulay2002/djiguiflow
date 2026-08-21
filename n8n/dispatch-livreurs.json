@@ -1,0 +1,508 @@
+{
+  "active": true,
+  "activeVersion": {
+    "authors": "JEAN PAUL OULAI (via MCP)",
+    "autosaved": false,
+    "connections": {
+      "Articles lisibles": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Envoyer la course au groupe",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Contexte boutique": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Course exploitable ?",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Course exploitable ?": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Articles lisibles",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Edit Fields": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Contexte boutique",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "When Executed by Another Workflow": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Edit Fields",
+              "type": "main"
+            }
+          ]
+        ]
+      }
+    },
+    "description": null,
+    "name": null,
+    "nodeGroups": [],
+    "nodes": [
+      {
+        "id": "4f60e084-4b17-4c5d-a08d-8810f9298f03",
+        "name": "When Executed by Another Workflow",
+        "parameters": {
+          "workflowInputs": {
+            "values": [
+              {
+                "name": "chat_id",
+                "type": "number"
+              },
+              {
+                "name": "customer_name"
+              },
+              {
+                "name": "phone"
+              },
+              {
+                "name": "address"
+              },
+              {
+                "name": "items"
+              },
+              {
+                "name": "total_price",
+                "type": "number"
+              },
+              {
+                "name": "canal"
+              },
+              {
+                "name": "destinataire"
+              },
+              {
+                "name": "order_id"
+              },
+              {
+                "name": "groupeLivreurs"
+              },
+              {
+                "name": "boutique_nom"
+              }
+            ]
+          }
+        },
+        "position": [
+          -80,
+          0
+        ],
+        "type": "n8n-nodes-base.executeWorkflowTrigger",
+        "typeVersion": 1.2
+      },
+      {
+        "id": "20342b6d-c6ec-4a4c-9984-abf3bda84830",
+        "name": "Edit Fields",
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "12da83bb-4571-4230-8744-001b603297c5",
+                "name": "order_id",
+                "type": "string",
+                "value": "={{ String($json.order_id || '').trim() }}"
+              },
+              {
+                "id": "12da83bb-4571-4230-8744-001b603297c6",
+                "name": "priorite",
+                "type": "string",
+                "value": "={{ String($json.address || '').toLowerCase().includes('cocody') ? 'EXPRESS' : 'STANDARD' }}"
+              }
+            ]
+          },
+          "includeOtherFields": true,
+          "options": {}
+        },
+        "position": [
+          112,
+          0
+        ],
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4
+      },
+      {
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "QoKeVRwGrk1YqN9Q",
+            "name": "Header Auth account 2"
+          }
+        },
+        "id": "3fbd58f4-dd4b-4478-8649-7b1a202c370d",
+        "maxTries": 3,
+        "name": "Contexte boutique",
+        "notes": "Confirmation Client ne transmet pas groupeLivreurs. On le retrouve a partir de la reference de commande, plutot que de retomber sur un groupe code en dur qui alerterait les livreurs d une autre boutique.",
+        "parameters": {
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "jsonBody": "={\n  \"commande\": \"{{ $json.order_id }}\"\n}",
+          "method": "POST",
+          "options": {},
+          "sendBody": true,
+          "specifyBody": "json",
+          "url": "https://www.djiguiflow.com/api/canaux/contexte"
+        },
+        "position": [
+          304,
+          0
+        ],
+        "retryOnFail": true,
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "waitBetweenTries": 2000
+      },
+      {
+        "disabled": false,
+        "id": "a56e8298-98ee-48aa-bdc2-770c2afebc0e",
+        "maxTries": 3,
+        "name": "Envoyer la course au groupe",
+        "notes": "Le bot qui poste est celui qui recevra les clics : il doit donc etre celui du marchand, dont le webhook vise le routeur. Un noeud Telegram de n8n posterait avec une credential partagee et les boutons seraient sans effet.",
+        "parameters": {
+          "mode": "once",
+          "options": {},
+          "workflowId": {
+            "__rl": true,
+            "cachedResultName": "Envoyer réponse client",
+            "mode": "list",
+            "value": "JkNvcqsZaY22dfk5"
+          },
+          "workflowInputs": {
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": true,
+            "mappingMode": "defineBelow",
+            "matchingColumns": [],
+            "schema": [],
+            "value": {
+              "boutique": "={{ $json.slug || $json.boutique_id }}",
+              "canal": "telegram",
+              "destinataire": "={{ $json.groupe }}",
+              "format": "html",
+              "message": "={{ $('Edit Fields').first().json.priorite === 'EXPRESS' ? '⚡ <b>EXPRESS</b> — ' : '' }}🚨 <b>Nouvelle commande a livrer !</b>{{ $json.nom ? ' — ' + String($json.nom).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') : '' }}\n\n📦 Commande : <code>{{ String($('Edit Fields').first().json.order_id || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') }}</code>\n👤 Client : {{ String($('Edit Fields').first().json.customer_name || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') }}\n📞 Telephone : {{ String($('Edit Fields').first().json.phone || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') }}\n📍 Adresse : {{ String($('Edit Fields').first().json.address || '').trim() ? '<a href=\"https://www.google.com/maps/search/' + encodeURIComponent(String($('Edit Fields').first().json.address).trim()) + '\">' + String($('Edit Fields').first().json.address).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</a>' : 'non precisee' }}\n🍔 Articles :{{ $json.articles_lisibles }}\n💰 Total : {{ Number($('Edit Fields').first().json.total_price || 0).toLocaleString('fr-FR') }} FCFA\n\nQui prend cette livraison ?",
+              "reply_markup": "={{ JSON.stringify({ inline_keyboard: [[ { text: \"✅ J'accepte\", callback_data: 'accept_' + $('Edit Fields').first().json.chat_id + '_' + String($('Edit Fields').first().json.order_id).trim() }, { text: '❌ Je refuse', callback_data: 'refuse_' + $('Edit Fields').first().json.chat_id + '_' + String($('Edit Fields').first().json.order_id).trim() } ]] }) }}"
+            }
+          }
+        },
+        "position": [
+          560,
+          0
+        ],
+        "retryOnFail": false,
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.3,
+        "waitBetweenTries": 2000
+      },
+      {
+        "id": "af14153e-4256-48ea-b13f-1bc25510ae84",
+        "name": "Course exploitable ?",
+        "notes": "Echouer ici, avec un message qui nomme la cause, plutot que d'envoyer une course que personne ne pourra accepter.",
+        "parameters": {
+          "jsCode": "const t = $('Edit Fields').first().json;\nconst ctx = $input.first().json || {};\n\nconst reference = String(t.order_id || '').trim();\nconst groupe = String(t.groupeLivreurs || ctx.groupe_livreurs || '').trim();\n\n// LES MESSAGES CI-DESSOUS N'ONT NI DEUX-POINTS NI RETOUR A LA LIGNE.\n// n8n scinde le texte d'une Error sur ces caracteres, et « Alerte Erreurs »\n// n'en recevait qu'un fragment — ce qui vide de son sens un garde-fou dont\n// tout l'interet est de nommer sa cause.\n\n// Les boutons portent l'order_id, et « Acceptation Livraison » apparie la\n// commande par lui. On inventait ici une reference `CMD-<chat_id>-<horodatage>`\n// quand elle manquait : elle ne correspondait a aucune ligne, l'erreur qui\n// suivait annoncait « Boutique introuvable », et on allait chercher le\n// probleme au mauvais endroit.\nif (!reference) {\n  throw new Error(\"Dispatch impossible — l'appelant n'a transmis aucun order_id\");\n}\n\n// Sans groupe de livreurs, l'envoi partait vers un destinataire vide. Il\n// echouait en silence : le client avait sa confirmation, et personne n'etait\n// alerte.\nif (!groupe) {\n  const qui = ctx.slug || ctx.nom || 'boutique inconnue';\n  throw new Error(`Dispatch impossible — la boutique « ${qui} » n'a pas de groupe de livreurs configure`);\n}\n\nreturn [{ json: { ...ctx, reference, groupe } }];"
+        },
+        "position": [
+          432,
+          0
+        ],
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2
+      },
+      {
+        "id": "551cc5be-4fd2-4aca-b198-fb0c243f2757",
+        "name": "Articles lisibles",
+        "notes": "Le livreur recevait du JSON brut. La mise en forme se fait ICI et non dans l'expression du message : un JSON.parse qui leve dans une expression ferait echouer l'envoi, et le livreur ne serait jamais prevenu.",
+        "parameters": {
+          "jsCode": "// Le livreur lisait ceci :\n//   Articles : [{\"plat\":\"Pizza Margherita\",\"quantité\":1,\"prix_unitaire\":7000}]\n// Il doit lire ceci :\n//   Articles :\n//      • 1 × Pizza Margherita — 7 000 F\n//\n// POURQUOI UN NOEUD DE CODE ET NON UNE EXPRESSION. Un JSON.parse qui leve dans\n// l'expression du message ferait echouer TOUT l'envoi : le livreur ne serait\n// jamais prevenu, et la commande resterait en cuisine. Ici, le try/catch est\n// explicite et le pire cas rend le texte d'origine.\n\nconst echapper = (t) => String(t ?? '')\n  .replace(/&/g, '&amp;')\n  .replace(/</g, '&lt;')\n  .replace(/>/g, '&gt;');\n\nconst brut = String($('Edit Fields').first().json.items ?? '');\n\nlet lignes = null;\ntry {\n  lignes = JSON.parse(brut);\n} catch (e) {\n  lignes = null;\n}\n\nlet articles_lisibles;\nif (Array.isArray(lignes) && lignes.length) {\n  articles_lisibles = '\\n' + lignes.map((l) => {\n    const q = Number(l['quantité'] ?? l.quantite ?? 1) || 1;\n    const nom = echapper(l.plat ?? l.nom ?? '?');\n    const pu = Number(l.prix_unitaire ?? l.prix ?? 0);\n    const prix = pu ? ' — ' + (q * pu).toLocaleString('fr-FR') + ' F' : '';\n    return '   • ' + q + ' × ' + nom + prix;\n  }).join('\\n');\n} else {\n  // Format inattendu : on rend le texte d'origine plutot que rien. Le livreur\n  // doit pouvoir livrer meme quand la donnee nous surprend.\n  articles_lisibles = ' ' + echapper(brut);\n}\n\nreturn $input.all().map((item) => ({\n  json: { ...item.json, articles_lisibles },\n}));"
+        },
+        "position": [
+          400,
+          0
+        ],
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2
+      }
+    ],
+    "workflowId": "whr4BFlseHHQURZl",
+    "workflowPublishHistory": [
+      {
+        "event": "activated",
+        "id": 113,
+        "userId": "81519f6f-0887-498a-ad83-5ffd6d591e9a",
+        "workflowId": "whr4BFlseHHQURZl"
+      }
+    ]
+  },
+  "connections": {
+    "Articles lisibles": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Envoyer la course au groupe",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Contexte boutique": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Course exploitable ?",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Course exploitable ?": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Articles lisibles",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Contexte boutique",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Edit Fields",
+            "type": "main"
+          }
+        ]
+      ]
+    }
+  },
+  "description": null,
+  "id": "whr4BFlseHHQURZl",
+  "isArchived": false,
+  "name": "Dispatch livreurs",
+  "nodeGroups": [],
+  "nodes": [
+    {
+      "id": "4f60e084-4b17-4c5d-a08d-8810f9298f03",
+      "name": "When Executed by Another Workflow",
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "chat_id",
+              "type": "number"
+            },
+            {
+              "name": "customer_name"
+            },
+            {
+              "name": "phone"
+            },
+            {
+              "name": "address"
+            },
+            {
+              "name": "items"
+            },
+            {
+              "name": "total_price",
+              "type": "number"
+            },
+            {
+              "name": "canal"
+            },
+            {
+              "name": "destinataire"
+            },
+            {
+              "name": "order_id"
+            },
+            {
+              "name": "groupeLivreurs"
+            },
+            {
+              "name": "boutique_nom"
+            }
+          ]
+        }
+      },
+      "position": [
+        -80,
+        0
+      ],
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2
+    },
+    {
+      "id": "20342b6d-c6ec-4a4c-9984-abf3bda84830",
+      "name": "Edit Fields",
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "12da83bb-4571-4230-8744-001b603297c5",
+              "name": "order_id",
+              "type": "string",
+              "value": "={{ String($json.order_id || '').trim() }}"
+            },
+            {
+              "id": "12da83bb-4571-4230-8744-001b603297c6",
+              "name": "priorite",
+              "type": "string",
+              "value": "={{ String($json.address || '').toLowerCase().includes('cocody') ? 'EXPRESS' : 'STANDARD' }}"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "position": [
+        112,
+        0
+      ],
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4
+    },
+    {
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "QoKeVRwGrk1YqN9Q",
+          "name": "Header Auth account 2"
+        }
+      },
+      "id": "3fbd58f4-dd4b-4478-8649-7b1a202c370d",
+      "maxTries": 3,
+      "name": "Contexte boutique",
+      "notes": "Confirmation Client ne transmet pas groupeLivreurs. On le retrouve a partir de la reference de commande, plutot que de retomber sur un groupe code en dur qui alerterait les livreurs d une autre boutique.",
+      "parameters": {
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "jsonBody": "={\n  \"commande\": \"{{ $json.order_id }}\"\n}",
+        "method": "POST",
+        "options": {},
+        "sendBody": true,
+        "specifyBody": "json",
+        "url": "https://www.djiguiflow.com/api/canaux/contexte"
+      },
+      "position": [
+        304,
+        0
+      ],
+      "retryOnFail": true,
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "waitBetweenTries": 2000
+    },
+    {
+      "disabled": false,
+      "id": "a56e8298-98ee-48aa-bdc2-770c2afebc0e",
+      "maxTries": 3,
+      "name": "Envoyer la course au groupe",
+      "notes": "Le bot qui poste est celui qui recevra les clics : il doit donc etre celui du marchand, dont le webhook vise le routeur. Un noeud Telegram de n8n posterait avec une credential partagee et les boutons seraient sans effet.",
+      "parameters": {
+        "mode": "once",
+        "options": {},
+        "workflowId": {
+          "__rl": true,
+          "cachedResultName": "Envoyer réponse client",
+          "mode": "list",
+          "value": "JkNvcqsZaY22dfk5"
+        },
+        "workflowInputs": {
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true,
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "schema": [],
+          "value": {
+            "boutique": "={{ $json.slug || $json.boutique_id }}",
+            "canal": "telegram",
+            "destinataire": "={{ $json.groupe }}",
+            "format": "html",
+            "message": "={{ $('Edit Fields').first().json.priorite === 'EXPRESS' ? '⚡ <b>EXPRESS</b> — ' : '' }}🚨 <b>Nouvelle commande a livrer !</b>{{ $json.nom ? ' — ' + String($json.nom).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') : '' }}\n\n📦 Commande : <code>{{ String($('Edit Fields').first().json.order_id || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') }}</code>\n👤 Client : {{ String($('Edit Fields').first().json.customer_name || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') }}\n📞 Telephone : {{ String($('Edit Fields').first().json.phone || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') }}\n📍 Adresse : {{ String($('Edit Fields').first().json.address || '').trim() ? '<a href=\"https://www.google.com/maps/search/' + encodeURIComponent(String($('Edit Fields').first().json.address).trim()) + '\">' + String($('Edit Fields').first().json.address).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</a>' : 'non precisee' }}\n🍔 Articles :{{ $json.articles_lisibles }}\n💰 Total : {{ Number($('Edit Fields').first().json.total_price || 0).toLocaleString('fr-FR') }} FCFA\n\nQui prend cette livraison ?",
+            "reply_markup": "={{ JSON.stringify({ inline_keyboard: [[ { text: \"✅ J'accepte\", callback_data: 'accept_' + $('Edit Fields').first().json.chat_id + '_' + String($('Edit Fields').first().json.order_id).trim() }, { text: '❌ Je refuse', callback_data: 'refuse_' + $('Edit Fields').first().json.chat_id + '_' + String($('Edit Fields').first().json.order_id).trim() } ]] }) }}"
+          }
+        }
+      },
+      "position": [
+        560,
+        0
+      ],
+      "retryOnFail": false,
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "id": "af14153e-4256-48ea-b13f-1bc25510ae84",
+      "name": "Course exploitable ?",
+      "notes": "Echouer ici, avec un message qui nomme la cause, plutot que d'envoyer une course que personne ne pourra accepter.",
+      "parameters": {
+        "jsCode": "const t = $('Edit Fields').first().json;\nconst ctx = $input.first().json || {};\n\nconst reference = String(t.order_id || '').trim();\nconst groupe = String(t.groupeLivreurs || ctx.groupe_livreurs || '').trim();\n\n// LES MESSAGES CI-DESSOUS N'ONT NI DEUX-POINTS NI RETOUR A LA LIGNE.\n// n8n scinde le texte d'une Error sur ces caracteres, et « Alerte Erreurs »\n// n'en recevait qu'un fragment — ce qui vide de son sens un garde-fou dont\n// tout l'interet est de nommer sa cause.\n\n// Les boutons portent l'order_id, et « Acceptation Livraison » apparie la\n// commande par lui. On inventait ici une reference `CMD-<chat_id>-<horodatage>`\n// quand elle manquait : elle ne correspondait a aucune ligne, l'erreur qui\n// suivait annoncait « Boutique introuvable », et on allait chercher le\n// probleme au mauvais endroit.\nif (!reference) {\n  throw new Error(\"Dispatch impossible — l'appelant n'a transmis aucun order_id\");\n}\n\n// Sans groupe de livreurs, l'envoi partait vers un destinataire vide. Il\n// echouait en silence : le client avait sa confirmation, et personne n'etait\n// alerte.\nif (!groupe) {\n  const qui = ctx.slug || ctx.nom || 'boutique inconnue';\n  throw new Error(`Dispatch impossible — la boutique « ${qui} » n'a pas de groupe de livreurs configure`);\n}\n\nreturn [{ json: { ...ctx, reference, groupe } }];"
+      },
+      "position": [
+        432,
+        0
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "id": "551cc5be-4fd2-4aca-b198-fb0c243f2757",
+      "name": "Articles lisibles",
+      "notes": "Le livreur recevait du JSON brut. La mise en forme se fait ICI et non dans l'expression du message : un JSON.parse qui leve dans une expression ferait echouer l'envoi, et le livreur ne serait jamais prevenu.",
+      "parameters": {
+        "jsCode": "// Le livreur lisait ceci :\n//   Articles : [{\"plat\":\"Pizza Margherita\",\"quantité\":1,\"prix_unitaire\":7000}]\n// Il doit lire ceci :\n//   Articles :\n//      • 1 × Pizza Margherita — 7 000 F\n//\n// POURQUOI UN NOEUD DE CODE ET NON UNE EXPRESSION. Un JSON.parse qui leve dans\n// l'expression du message ferait echouer TOUT l'envoi : le livreur ne serait\n// jamais prevenu, et la commande resterait en cuisine. Ici, le try/catch est\n// explicite et le pire cas rend le texte d'origine.\n\nconst echapper = (t) => String(t ?? '')\n  .replace(/&/g, '&amp;')\n  .replace(/</g, '&lt;')\n  .replace(/>/g, '&gt;');\n\nconst brut = String($('Edit Fields').first().json.items ?? '');\n\nlet lignes = null;\ntry {\n  lignes = JSON.parse(brut);\n} catch (e) {\n  lignes = null;\n}\n\nlet articles_lisibles;\nif (Array.isArray(lignes) && lignes.length) {\n  articles_lisibles = '\\n' + lignes.map((l) => {\n    const q = Number(l['quantité'] ?? l.quantite ?? 1) || 1;\n    const nom = echapper(l.plat ?? l.nom ?? '?');\n    const pu = Number(l.prix_unitaire ?? l.prix ?? 0);\n    const prix = pu ? ' — ' + (q * pu).toLocaleString('fr-FR') + ' F' : '';\n    return '   • ' + q + ' × ' + nom + prix;\n  }).join('\\n');\n} else {\n  // Format inattendu : on rend le texte d'origine plutot que rien. Le livreur\n  // doit pouvoir livrer meme quand la donnee nous surprend.\n  articles_lisibles = ' ' + echapper(brut);\n}\n\nreturn $input.all().map((item) => ({\n  json: { ...item.json, articles_lisibles },\n}));"
+      },
+      "position": [
+        400,
+        0
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    }
+  ],
+  "settings": {
+    "availableInMCP": true,
+    "errorWorkflow": "NfWU666FLz9jR1Zv",
+    "executionOrder": "v1"
+  },
+  "sourceWorkflowId": null,
+  "tags": [],
+  "versionCounter": 5
+}

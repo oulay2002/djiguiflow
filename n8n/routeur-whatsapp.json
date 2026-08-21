@@ -1,0 +1,3038 @@
+{
+  "active": true,
+  "activeVersion": {
+    "authors": "JEAN PAUL OULAI",
+    "autosaved": false,
+    "connections": {
+      "Aiguilleur note": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "If",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Alerte si mauvaise note": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Alerter le gérant",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Boutique ouverte ?": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Call 'Cerveau Zahara'1",
+              "type": "main"
+            }
+          ],
+          [
+            {
+              "index": 0,
+              "node": "Repondre ferme",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Boutique ouverte ? (bis)": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Call 'Cerveau Zahara'",
+              "type": "main"
+            }
+          ],
+          [
+            {
+              "index": 0,
+              "node": "Repondre ferme",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Charger fiche": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Normalisateur WA",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Demande stop ?": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Enregistrer le stop",
+              "type": "main"
+            }
+          ],
+          [
+            {
+              "index": 0,
+              "node": "Position ?",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Enregistrer la position": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Repondre position au client",
+              "type": "main"
+            },
+            {
+              "index": 0,
+              "node": "Position trouvee ?",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Enregistrer le stop": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Stop reconnu ?",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "If": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Alerte si mauvaise note",
+              "type": "main"
+            },
+            {
+              "index": 0,
+              "node": "Call 'Envoyer réponse client'",
+              "type": "main"
+            },
+            {
+              "index": 0,
+              "node": "Copier note dans Supabase",
+              "type": "main"
+            }
+          ],
+          [
+            {
+              "index": 0,
+              "node": "Boutique ouverte ? (bis)",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Lire commandes client": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Aiguilleur note",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Normalisateur WA": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Demande stop ?",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Note 1-5 ?": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Lire commandes client",
+              "type": "main"
+            }
+          ],
+          [
+            {
+              "index": 0,
+              "node": "Boutique ouverte ?",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Position ?": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Enregistrer la position",
+              "type": "main"
+            }
+          ],
+          [
+            {
+              "index": 0,
+              "node": "Note 1-5 ?",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Position trouvee ?": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Prevenir le groupe de la position",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Signature présente ?": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Charger fiche",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Stop reconnu ?": {
+        "main": [
+          null,
+          [
+            {
+              "index": 0,
+              "node": "Position ?",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Webhook": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Signature présente ?",
+              "type": "main"
+            }
+          ]
+        ]
+      }
+    },
+    "description": null,
+    "name": null,
+    "nodeGroups": [],
+    "nodes": [
+      {
+        "id": "92249692-caef-4f08-ba32-2a9f3452aed9",
+        "name": "Webhook",
+        "parameters": {
+          "httpMethod": "POST",
+          "options": {},
+          "path": "whatsapp/:slug"
+        },
+        "position": [
+          -720,
+          -16
+        ],
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2.1,
+        "webhookId": "1b96720c-e3b3-4638-a351-7f3704bd483e"
+      },
+      {
+        "id": "aeb041a4-7953-49ab-b2a2-1c6b94970cde",
+        "name": "Normalisateur WA",
+        "parameters": {
+          "jsCode": "const wh    = $('Webhook').first().json;   // le MESSAGE, toujours\nconst fiche = $('Charger fiche').first().json || {};  // la FICHE, toujours\n\nconst body     = wh.body || {};\nconst messages = body.data?.messages || {};\nconst key      = messages.key || {};\nconst fromMe   = key.fromMe === true;\nconst texte    = (messages.messageBody || '').trim();\nconst estCommande = texte.startsWith('/');\n\n// Une note arrive rarement nue. Le 16 aout, un client a repondu « '2 » : le\n// test exact /^[1-5]$/ l'a rejete, le message est parti a l'assistante, et la\n// note a ete perdue en silence. On tolere donc ce qui ENTOURE le chiffre —\n// apostrophe, guillemets, etoiles, ponctuation, « /5 » — mais JAMAIS une\n// lettre : « 2 pizzas » ou « 2 kg » doivent rester des phrases pour\n// l'assistante.\nfunction noteDe(txt) {\n  const t = String(txt).normalize('NFKC').trim().replace(/\\s*(?:\\/|sur)\\s*5\\s*$/i, '');\n  const m = t.match(/^[^\\p{L}\\p{N}]*([1-5])[^\\p{L}\\p{N}]*$/u);\n  return m ? Number(m[1]) : null;\n}\n\n// Calcule ICI, une seule fois : « Note 1-5 ? » et « Aiguilleur note » relisent\n// ce champ au lieu de refaire le test. Trois regex separees avaient fini par\n// diverger, et c'est ainsi qu'un message pouvait etre une note d'un cote et\n// une phrase de l'autre.\nconst note_detectee = noteDe(texte);\n\nif (!texte) return [];\nif (fromMe && !estCommande && note_detectee === null) return [];\n\nconst digits = String(key.cleanedSenderPn || '').replace(/\\D/g, '');\nconst phone  = digits ? (digits.startsWith('225') ? digits : '225' + digits) : '';\nconst jid    = String(key.senderPn || (digits ? digits + '@s.whatsapp.net' : ''));\nconst prenom = String(body.data?.pushName || 'Client');\n\nreturn [{ json: {\n  canal: 'whatsapp', phone, jid, texte, prenom, note_detectee,\n  timestamp: new Date().toISOString(),\n\n  // La fiche marchand greffee : tout l'aval devient generique.\n  // `slug` est la cle de tenant : il sert aux routes /api/boutiques/<slug>/...\n  slug:              fiche.slug || String(wh.params?.slug || ''),\n  boutique_id:       fiche.id || '',\n  nom_boutique:      fiche.nom || '',\n  // Le metier de la boutique : l'assistante y accorde son vocabulaire, pour\n  // ne pas souhaiter bon appetit au client d'une boutique de vetements.\n  secteur:           fiche.categorie || '',\n  sheet_commandes:   fiche.sheet_commandes || '',\n  sheet_menu:        fiche.sheet_menu || '',\n  sheet_notes:       fiche.sheet_notes || '',\n  groupe_livreurs:   fiche.groupe_livreurs || '',\n  telegram_marchand: fiche.telegram_marchand || '',\n  whatsapp_marchand: fiche.telephone || '',\n  sheet_document_id: fiche.sheet_document_id || '',\n}}];"
+        },
+        "position": [
+          -80,
+          -16
+        ],
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2
+      },
+      {
+        "id": "33cb3629-35b0-496d-9013-841542282041",
+        "name": "Call 'Cerveau Zahara'",
+        "parameters": {
+          "options": {},
+          "workflowId": {
+            "__rl": true,
+            "cachedResultName": "Cerveau Zahara",
+            "mode": "list",
+            "value": "gdL4r8lHftnRYgYl"
+          },
+          "workflowInputs": {
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": true,
+            "mappingMode": "defineBelow",
+            "matchingColumns": [],
+            "schema": [
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "canal",
+                "id": "canal",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "destinataire",
+                "id": "destinataire",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "texte",
+                "id": "texte",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "prenom",
+                "id": "prenom",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "boutique_id",
+                "id": "boutique_id",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "nom_boutique",
+                "id": "nom_boutique",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "sheet_commandes",
+                "id": "sheet_commandes",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "sheet_menu",
+                "id": "sheet_menu",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "sheet_notes",
+                "id": "sheet_notes",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "groupe_livreurs",
+                "id": "groupe_livreurs",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "telegram_marchand",
+                "id": "telegram_marchand",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "whatsapp_marchand",
+                "id": "whatsapp_marchand",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "sheet_document_id",
+                "id": "sheet_document_id",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "slug",
+                "id": "slug",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "secteur",
+                "id": "secteur",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              }
+            ],
+            "value": {
+              "boutique_id": "={{ $('Normalisateur WA').first().json.boutique_id }}",
+              "canal": "={{ $('Normalisateur WA').first().json.canal }}",
+              "destinataire": "={{ $('Normalisateur WA').first().json.phone }}",
+              "groupe_livreurs": "={{ $('Normalisateur WA').first().json.groupe_livreurs }}",
+              "nom_boutique": "={{ $('Normalisateur WA').first().json.nom_boutique }}",
+              "prenom": "={{ $('Normalisateur WA').first().json.prenom }}",
+              "secteur": "={{ $('Normalisateur WA').first().json.secteur }}",
+              "sheet_commandes": "={{ $('Normalisateur WA').first().json.sheet_commandes }}",
+              "sheet_document_id": "={{ $('Normalisateur WA').first().json.sheet_document_id }}",
+              "sheet_menu": "={{ $('Normalisateur WA').first().json.sheet_menu }}",
+              "sheet_notes": "={{ $('Normalisateur WA').first().json.sheet_notes }}",
+              "slug": "={{ $('Normalisateur WA').first().json.slug }}",
+              "telegram_marchand": "={{ $('Normalisateur WA').first().json.telegram_marchand }}",
+              "texte": "={{ $('Normalisateur WA').first().json.texte }}",
+              "whatsapp_marchand": "={{ $('Normalisateur WA').first().json.whatsapp_marchand }}"
+            }
+          }
+        },
+        "position": [
+          928,
+          208
+        ],
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.3
+      },
+      {
+        "alwaysOutputData": true,
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "QoKeVRwGrk1YqN9Q",
+            "name": "Header Auth account 2"
+          }
+        },
+        "id": "d68f7c7e-0bc9-41b5-8874-698f863db9a3",
+        "maxTries": 3,
+        "name": "Lire commandes client",
+        "notes": "Cherche dans SUPABASE les commandes que ce client pourrait etre en train de noter. C etait l onglet du marchand : depuis que la prise de commande n y ecrit plus, le contexte etait vide et un « 3 » partait chez l assistante au lieu d etre compris comme une note.",
+        "onError": "continueRegularOutput",
+        "parameters": {
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "jsonBody": "={\n  \"chat_id\": {{ JSON.stringify($('Normalisateur WA').first().json.phone) }},\n  \"boutique\": {{ JSON.stringify($('Normalisateur WA').first().json.slug || $('Normalisateur WA').first().json.boutique_id) }}\n}",
+          "method": "POST",
+          "options": {},
+          "sendBody": true,
+          "specifyBody": "json",
+          "url": "https://www.djiguiflow.com/api/internal/commandes/a-noter"
+        },
+        "position": [
+          336,
+          -32
+        ],
+        "retryOnFail": true,
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "waitBetweenTries": 2000
+      },
+      {
+        "id": "b23d2266-e736-48a3-8c3e-4a1058d3ef2d",
+        "name": "Aiguilleur note",
+        "parameters": {
+          "jsCode": "const wa = $('Normalisateur WA').first().json;\nconst rows = $input.all().map(i => i.json);\n\n// Au-dela de ce delai, un chiffre seul n'est plus une note : c'est un client\n// qui repond « 2 » pour dire deux articles.\nconst FENETRE_H = 48;\n\n// `heure_livraison` n'a pas de format garanti selon le noeud qui a ecrit la\n// ligne. On reconnait l'ISO et le format ivoirien, dans cet ordre : laisser\n// Date.parse voir « 07/08/2026 » lui ferait lire le 8 juillet.\nfunction instant(v) {\n  const s = String(v ?? '').trim();\n  if (!s) return NaN;\n  if (/^\\d{4}-\\d{2}-\\d{2}/.test(s)) return Date.parse(s);\n  const m = s.match(/^(\\d{1,2})\\/(\\d{1,2})\\/(\\d{4})(?:[ T](\\d{1,2}):(\\d{2}))?/);\n  if (!m) return NaN;\n  const p = (n) => String(n ?? 0).padStart(2, '0');\n  return Date.parse(`${m[3]}-${p(m[2])}-${p(m[1])}T${p(m[4])}:${m[5] ?? '00'}:00`);\n}\n\nlet vers = 'cerveau';\nlet note = null;\nlet order_id = '';\n\n// Le chiffre a deja ete reconnu, une seule fois, par « Normalisateur WA ».\n// Ne pas refaire le test ici : c'est en le dupliquant qu'un « '2 » avait pu\n// etre une note pour un noeud et une phrase pour le suivant.\nconst chiffre = wa.note_detectee;\n\nif (chiffre !== null && chiffre !== undefined) {\n  const maintenant = Date.now();\n\n  const livrees = rows\n    .filter((r) => {\n      const st = String(r.statut_livraison || '').toLowerCase();\n      return st.includes('livr') && !st.startsWith('en_');\n    })\n    .map((r) => ({ r, t: instant(r.heure_livraison) }))\n    // Un horodatage illisible n'est pas une preuve d'anciennete : on le garde,\n    // sinon un format inattendu ferait disparaitre toutes les notes d'un coup.\n    .filter((x) => !Number.isFinite(x.t) || maintenant - x.t <= FENETRE_H * 3600 * 1000);\n\n  if (livrees.length) {\n    // Tri chronologique reel. L'ancien comparait des chaines : juste en ISO,\n    // faux des que la date s'ecrit 13/08/2026 — le travers qui avait fait\n    // ressortir une vieille commande pendant les tests.\n    const cle = (x) => (Number.isFinite(x.t) ? x.t : 0);\n    livrees.sort((a, b) => cle(b) - cle(a));\n    vers = 'note';\n    note = chiffre;\n    order_id = String(livrees[0].r.order_id || '');\n  }\n}\n\nreturn [{ json: {\n  canal: wa.canal,\n  phone: wa.phone,\n  texte: wa.texte,\n  prenom: wa.prenom,\n  vers: vers,\n  note: note,\n  order_id: order_id\n}}];"
+        },
+        "position": [
+          496,
+          -16
+        ],
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2
+      },
+      {
+        "id": "1c290579-8599-4b2e-89eb-a6267faca5cc",
+        "name": "If",
+        "parameters": {
+          "conditions": {
+            "combinator": "and",
+            "conditions": [
+              {
+                "id": "54a85bcb-6e5d-41df-9fc6-a4cf160c56fd",
+                "leftValue": "={{ $json.vers }}",
+                "operator": {
+                  "name": "filter.operator.equals",
+                  "operation": "equals",
+                  "type": "string"
+                },
+                "rightValue": "note"
+              }
+            ],
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 3
+            }
+          },
+          "options": {}
+        },
+        "position": [
+          704,
+          -16
+        ],
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3
+      },
+      {
+        "credentials": {
+          "googleSheetsOAuth2Api": {
+            "id": "9Q14ADLSkwfm2Y5H",
+            "name": "Google Sheets account"
+          }
+        },
+        "disabled": true,
+        "id": "216c1a01-1e62-4e36-b3f9-2f18519efa4f",
+        "maxTries": 3,
+        "name": "Enregistrer note",
+        "notes": "HORS CHEMIN CRITIQUE. Ce miroir ajoutait la note dans l onglet du marchand, et gouvernait pourtant TROIS choses : l alerte au gerant sur mauvaise note, le remerciement au client, et la copie dans Supabase. Un marchand sans classeur les perdait toutes les trois.",
+        "parameters": {
+          "columns": {
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": false,
+            "mappingMode": "defineBelow",
+            "matchingColumns": [],
+            "schema": [
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "order_id",
+                "id": "order_id",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "client_chat_id",
+                "id": "client_chat_id",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "client_name",
+                "id": "client_name",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "note",
+                "id": "note",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "timestamp",
+                "id": "timestamp",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              }
+            ],
+            "value": {
+              "client_chat_id": "={{ $json.phone }}",
+              "client_name": "={{ $json.prenom }}",
+              "note": "={{ $json.note }}",
+              "order_id": "={{ $json.order_id }}",
+              "timestamp": "={{ $now.toISO() }}"
+            }
+          },
+          "documentId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $('Normalisateur WA').first().json.sheet_document_id }}"
+          },
+          "operation": "append",
+          "options": {},
+          "sheetName": {
+            "__rl": true,
+            "mode": "name",
+            "value": "={{ $('Normalisateur WA').first().json.sheet_notes || 'Notes' }}"
+          }
+        },
+        "position": [
+          896,
+          -144
+        ],
+        "retryOnFail": true,
+        "type": "n8n-nodes-base.googleSheets",
+        "typeVersion": 4.7,
+        "waitBetweenTries": 2000
+      },
+      {
+        "id": "0fc0a73e-abe7-43d5-8b8a-271bc758673c",
+        "maxTries": 3,
+        "name": "Call 'Envoyer réponse client'",
+        "onError": "continueRegularOutput",
+        "parameters": {
+          "options": {},
+          "workflowId": {
+            "__rl": true,
+            "cachedResultName": "Envoyer réponse client",
+            "mode": "list",
+            "value": "JkNvcqsZaY22dfk5"
+          },
+          "workflowInputs": {
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": true,
+            "mappingMode": "defineBelow",
+            "matchingColumns": [],
+            "schema": [
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "canal",
+                "id": "canal",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "destinataire",
+                "id": "destinataire",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "message",
+                "id": "message",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "boutique",
+                "id": "boutique",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              }
+            ],
+            "value": {
+              "boutique": "={{ $('Normalisateur WA').first().json.slug }}",
+              "canal": "whatsapp",
+              "destinataire": "={{ $('Aiguilleur note').first().json.phone }}",
+              "message": "=⭐ Merci {{ $('Aiguilleur note').first().json.prenom }} ! Ta note de {{ $('Aiguilleur note').first().json.note }}/5 est bien enregistrée. À très vite ! 🙏",
+              "sheet_document_id": "={{ $('Normalisateur WA').first().json.sheet_document_id }}"
+            }
+          }
+        },
+        "position": [
+          1200,
+          288
+        ],
+        "retryOnFail": false,
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.3,
+        "waitBetweenTries": 2000
+      },
+      {
+        "id": "20768781-61e9-46fe-8fb0-d25fa4d5bd37",
+        "name": "Call 'Cerveau Zahara'1",
+        "parameters": {
+          "options": {},
+          "workflowId": {
+            "__rl": true,
+            "cachedResultName": "Cerveau Zahara",
+            "mode": "list",
+            "value": "gdL4r8lHftnRYgYl"
+          },
+          "workflowInputs": {
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": true,
+            "mappingMode": "defineBelow",
+            "matchingColumns": [],
+            "schema": [
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "canal",
+                "id": "canal",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "destinataire",
+                "id": "destinataire",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "texte",
+                "id": "texte",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "prenom",
+                "id": "prenom",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "boutique_id",
+                "id": "boutique_id",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "nom_boutique",
+                "id": "nom_boutique",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "sheet_commandes",
+                "id": "sheet_commandes",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "sheet_menu",
+                "id": "sheet_menu",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "sheet_notes",
+                "id": "sheet_notes",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "groupe_livreurs",
+                "id": "groupe_livreurs",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "telegram_marchand",
+                "id": "telegram_marchand",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "whatsapp_marchand",
+                "id": "whatsapp_marchand",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "sheet_document_id",
+                "id": "sheet_document_id",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "slug",
+                "id": "slug",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "secteur",
+                "id": "secteur",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              }
+            ],
+            "value": {
+              "boutique_id": "={{ $json.boutique_id }}",
+              "canal": "={{ $json.canal }}",
+              "destinataire": "={{ $json.phone }}",
+              "groupe_livreurs": "={{ $json.groupe_livreurs }}",
+              "nom_boutique": "={{ $json.nom_boutique }}",
+              "prenom": "={{ $json.prenom }}",
+              "secteur": "={{ $json.secteur }}",
+              "sheet_commandes": "={{ $json.sheet_commandes }}",
+              "sheet_document_id": "={{ $json.sheet_document_id }}",
+              "sheet_menu": "={{ $json.sheet_menu }}",
+              "sheet_notes": "={{ $json.sheet_notes }}",
+              "slug": "={{ $json.slug }}",
+              "telegram_marchand": "={{ $json.telegram_marchand }}",
+              "texte": "={{ $json.texte }}",
+              "whatsapp_marchand": "={{ $json.whatsapp_marchand }}"
+            }
+          }
+        },
+        "position": [
+          400,
+          224
+        ],
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.3
+      },
+      {
+        "id": "18b944ec-41e1-4ff4-8e0a-25d836af160e",
+        "name": "Note 1-5 ?",
+        "parameters": {
+          "conditions": {
+            "combinator": "and",
+            "conditions": [
+              {
+                "id": "1a6ae076-b724-436b-b5a0-84992abe11fa",
+                "leftValue": "={{ $json.note_detectee !== null && $json.note_detectee !== undefined }}",
+                "operator": {
+                  "operation": "true",
+                  "singleValue": true,
+                  "type": "boolean"
+                },
+                "rightValue": ""
+              }
+            ],
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 3
+            }
+          },
+          "options": {}
+        },
+        "position": [
+          112,
+          -16
+        ],
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3
+      },
+      {
+        "id": "dde9da1c-c844-40d7-95a5-fe78a4758fba",
+        "name": "Signature présente ?",
+        "notes": "Remplace l authentification par credential, impossible a configurer ici. Le secret est celui envoye par wasenderapi (x-webhook-secret et x-webhook-signature portent la meme valeur). A migrer vers une credential Header Auth des que possible.",
+        "parameters": {
+          "conditions": {
+            "combinator": "and",
+            "conditions": [
+              {
+                "id": "wa-signature-presente",
+                "leftValue": "={{ !!($json.headers['x-webhook-secret'] || $json.headers['x-webhook-signature']) }}",
+                "operator": {
+                  "operation": "true",
+                  "singleValue": true,
+                  "type": "boolean"
+                },
+                "rightValue": ""
+              }
+            ],
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            }
+          },
+          "looseTypeValidation": true,
+          "options": {}
+        },
+        "position": [
+          -448,
+          -16
+        ],
+        "type": "n8n-nodes-base.filter",
+        "typeVersion": 2.2
+      },
+      {
+        "id": "5576d3d6-3990-482c-9ebc-b7808f4fef88",
+        "name": "Alerte si mauvaise note",
+        "parameters": {
+          "jsCode": "// Le gerant doit pouvoir RAPPELER le client, donc lire son nom et son numero.\n//\n// Ce noeud lisait `client_name` et `client_chat_id` : les colonnes de la\n// FEUILLE, puisqu'il recevait jusqu'ici la ligne que « Enregistrer note »\n// venait d'y ecrire. Ce miroir ayant quitte le chemin critique, l'entree est\n// desormais la sortie de l'aiguilleur, qui nomme les memes choses `prenom` et\n// `phone`. On accepte les deux : l'alerte doit survivre au cablage.\nconst j = $input.first().json;\nconst note = Number(j.note || 0);\n\n// Pas d'alerte pour les bonnes notes.\nif (note >= 4) return [];\n\nconst nom = j.prenom || j.client_name || 'Client';\nconst joindre = j.phone || j.client_chat_id || 'numero inconnu';\n\nreturn [{ json: {\n  message: `🚨 ALERTE MAUVAISE NOTE — ${nom} a noté ${note}/5 (commande ${j.order_id || ''}). Client à rappeler : ${joindre}`\n}}];"
+        },
+        "position": [
+          1184,
+          -144
+        ],
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2
+      },
+      {
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "QoKeVRwGrk1YqN9Q",
+            "name": "Header Auth account 2"
+          }
+        },
+        "id": "91b2dedb-569a-4f60-8180-605d0752874d",
+        "maxTries": 3,
+        "name": "Charger fiche",
+        "parameters": {
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "x-webhook-secret",
+                "value": "={{ $('Webhook').first().json.headers['x-webhook-secret'] || $('Webhook').first().json.headers['x-webhook-signature'] || '' }}"
+              }
+            ]
+          },
+          "options": {},
+          "sendHeaders": true,
+          "url": "=https://www.djiguiflow.com/api/internal/fiche?slug={{ encodeURIComponent($('Webhook').first().json.params.slug) }}"
+        },
+        "position": [
+          -256,
+          -16
+        ],
+        "retryOnFail": true,
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "waitBetweenTries": 2000
+      },
+      {
+        "id": "5a8788a8-db70-47b3-b26a-7d0bbd292cd8",
+        "maxTries": 2,
+        "name": "Alerter le gérant",
+        "notes": "Part du bot du marchand. Un noeud Telegram de n8n aurait alerte le gerant depuis le bot de la plateforme.",
+        "onError": "continueRegularOutput",
+        "parameters": {
+          "mode": "once",
+          "options": {},
+          "workflowId": {
+            "__rl": true,
+            "cachedResultName": "Envoyer réponse client",
+            "mode": "list",
+            "value": "JkNvcqsZaY22dfk5"
+          },
+          "workflowInputs": {
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": true,
+            "mappingMode": "defineBelow",
+            "matchingColumns": [],
+            "schema": [],
+            "value": {
+              "boutique": "={{ $('Normalisateur WA').first().json.slug }}",
+              "canal": "telegram",
+              "destinataire": "={{ $('Normalisateur WA').first().json.telegram_marchand }}",
+              "message": "={{ $json.message }}",
+              "reply_markup": "",
+              "sheet_document_id": "={{ $('Normalisateur WA').first().json.sheet_document_id }}"
+            }
+          }
+        },
+        "position": [
+          1360,
+          -144
+        ],
+        "retryOnFail": false,
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.3,
+        "waitBetweenTries": 1000
+      },
+      {
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "QoKeVRwGrk1YqN9Q",
+            "name": "Header Auth account 2"
+          }
+        },
+        "id": "9673d4a5-4ed7-4932-ae93-b72c70123c9a",
+        "maxTries": 3,
+        "name": "Copier note dans Supabase",
+        "notes": "Double ecriture volontaire : la feuille garde l historique, Supabase alimente les rapports. Remplace un noeud Postgres qui visait l hote direct Supabase, injoignable depuis n8n Cloud faute d IPv6 sortant.",
+        "onError": "stopWorkflow",
+        "parameters": {
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "jsonBody": "={\n  \"reference\": {{ JSON.stringify($('Aiguilleur note').first().json.order_id) }},\n  \"note\": {{ Number($('Aiguilleur note').first().json.note) }}\n}",
+          "method": "POST",
+          "options": {},
+          "sendBody": true,
+          "specifyBody": "json",
+          "url": "https://www.djiguiflow.com/api/internal/commandes/note"
+        },
+        "position": [
+          1216,
+          128
+        ],
+        "retryOnFail": true,
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "waitBetweenTries": 2000
+      },
+      {
+        "id": "c1a70005-0000-4000-8000-000000000001",
+        "name": "Position ?",
+        "notes": "Un lien Maps colle dans la conversation. C est le seul chemin qui marche sur WhatsApp : une epingle native partagee le 17 aout n a jamais atteint le webhook, aucune execution n en garde trace.",
+        "parameters": {
+          "conditions": {
+            "combinator": "and",
+            "conditions": [
+              {
+                "id": "wa-position",
+                "leftValue": "={{ /(?:google\\.[a-z.]+\\/maps|maps\\.google\\.|maps\\.app\\.goo\\.gl|goo\\.gl\\/maps)/i.test(String($json.texte || '')) }}",
+                "operator": {
+                  "operation": "true",
+                  "singleValue": true,
+                  "type": "boolean"
+                },
+                "rightValue": ""
+              }
+            ],
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 3
+            }
+          },
+          "options": {}
+        },
+        "position": [
+          16,
+          -16
+        ],
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3
+      },
+      {
+        "alwaysOutputData": true,
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "QoKeVRwGrk1YqN9Q",
+            "name": "Header Auth account 2"
+          }
+        },
+        "id": "c1a70005-0000-4000-8000-000000000002",
+        "maxTries": 2,
+        "name": "Enregistrer la position",
+        "notes": "Le corps est fabrique par un seul JSON.stringify : une valeur absente y devient null, la ou une interpolation aurait ecrit NaN et rendu le JSON invalide.",
+        "onError": "continueRegularOutput",
+        "parameters": {
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "jsonBody": "={{ JSON.stringify({ boutique: String($('Normalisateur WA').first().json.slug || ''), chat_id: String($('Normalisateur WA').first().json.phone || ''), telephone: String($('Normalisateur WA').first().json.phone || ''), texte: String($('Normalisateur WA').first().json.texte || '') }) }}",
+          "method": "POST",
+          "options": {},
+          "sendBody": true,
+          "specifyBody": "json",
+          "url": "https://www.djiguiflow.com/api/internal/commandes/position"
+        },
+        "position": [
+          16,
+          560
+        ],
+        "retryOnFail": true,
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "waitBetweenTries": 2000
+      },
+      {
+        "id": "c1a70005-0000-4000-8000-000000000003",
+        "name": "Repondre position au client",
+        "notes": "Au-dessus de la branche groupe : le client est servi en premier. La reference est nommee pour qu il voie si sa position s est attachee a la mauvaise commande.",
+        "onError": "continueRegularOutput",
+        "parameters": {
+          "mode": "once",
+          "options": {},
+          "workflowId": {
+            "__rl": true,
+            "cachedResultName": "Envoyer réponse client",
+            "mode": "list",
+            "value": "JkNvcqsZaY22dfk5"
+          },
+          "workflowInputs": {
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": true,
+            "mappingMode": "defineBelow",
+            "matchingColumns": [],
+            "schema": [],
+            "value": {
+              "boutique": "={{ $('Normalisateur WA').first().json.slug }}",
+              "canal": "whatsapp",
+              "destinataire": "={{ $('Normalisateur WA').first().json.phone }}",
+              "message": "={{ $json.ok !== true ? '⏳ Position non enregistrée pour le moment. Réessayez dans un instant.' : $json.etat === 'enregistree' ? '✅ Merci ' + String($json.client_nom || '') + ' ! Votre position est enregistrée pour la commande ' + String($json.reference || '') + '. Le livreur ira droit au but. 🛵' : $json.etat === 'illisible' ? '⚠️ Je n’ai pas pu lire cette position. Dans Google Maps, appuyez sur Partager puis Copier le lien, et collez-le ici.' : 'ℹ️ Merci ! Nous n’avons trouvé aucune commande en cours à rattacher à cette position. Renvoyez-la après avoir commandé.' }}",
+              "sheet_document_id": "={{ $('Normalisateur WA').first().json.sheet_document_id }}"
+            }
+          }
+        },
+        "position": [
+          240,
+          496
+        ],
+        "retryOnFail": false,
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.3
+      },
+      {
+        "id": "c1a70005-0000-4000-8000-000000000004",
+        "name": "Position trouvee ?",
+        "notes": "Sans commande appariee, il n y a rien a annoncer : une position orpheline ne sert a aucun livreur.",
+        "parameters": {
+          "conditions": {
+            "combinator": "and",
+            "conditions": [
+              {
+                "id": "wa-position-trouvee",
+                "leftValue": "={{ $json.trouve === true && !!String($('Normalisateur WA').first().json.groupe_livreurs || '').trim() }}",
+                "operator": {
+                  "operation": "true",
+                  "singleValue": true,
+                  "type": "boolean"
+                },
+                "rightValue": ""
+              }
+            ],
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 3
+            }
+          },
+          "options": {}
+        },
+        "position": [
+          240,
+          624
+        ],
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3
+      },
+      {
+        "id": "c1a70005-0000-4000-8000-000000000005",
+        "name": "Prevenir le groupe de la position",
+        "notes": "La position arrive APRES le dispatch : c est donc ici, et non dans le message initial, qu il faut la donner au livreur.",
+        "onError": "continueRegularOutput",
+        "parameters": {
+          "mode": "once",
+          "options": {},
+          "workflowId": {
+            "__rl": true,
+            "cachedResultName": "Envoyer réponse client",
+            "mode": "list",
+            "value": "JkNvcqsZaY22dfk5"
+          },
+          "workflowInputs": {
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": true,
+            "mappingMode": "defineBelow",
+            "matchingColumns": [],
+            "schema": [],
+            "value": {
+              "boutique": "={{ $('Normalisateur WA').first().json.slug }}",
+              "canal": "telegram",
+              "destinataire": "={{ $('Normalisateur WA').first().json.groupe_livreurs }}",
+              "message": "=📍 Position exacte reçue — commande {{ $json.reference }}\n🗺️ https://www.google.com/maps/search/{{ $json.latitude }},{{ $json.longitude }}\n\nOuvrez ce lien plutôt que l’adresse écrite : il mène à la porte.",
+              "reply_markup": "",
+              "sheet_document_id": "={{ $('Normalisateur WA').first().json.sheet_document_id }}"
+            }
+          }
+        },
+        "position": [
+          464,
+          624
+        ],
+        "retryOnFail": false,
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.3
+      },
+      {
+        "id": "c1a70006-0000-4000-8000-000000000001",
+        "name": "Boutique ouverte ?",
+        "notes": "L etat vient de la fiche, calcule par horaires.ts. Le routeur ne lit ni JSON d horaires ni creneau qui enjambe minuit — la regle vit a un seul endroit. Et c est ICI qu on ferme, pas dans le prompt du modele.",
+        "parameters": {
+          "conditions": {
+            "combinator": "and",
+            "conditions": [
+              {
+                "id": "wa-ouvert",
+                "leftValue": "={{ $('Charger fiche').first().json.ouvert !== false }}",
+                "operator": {
+                  "operation": "true",
+                  "singleValue": true,
+                  "type": "boolean"
+                },
+                "rightValue": ""
+              }
+            ],
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 3
+            }
+          },
+          "looseTypeValidation": true,
+          "options": {}
+        },
+        "position": [
+          240,
+          224
+        ],
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3
+      },
+      {
+        "id": "c1a70006-0000-4000-8000-000000000002",
+        "name": "Boutique ouverte ? (bis)",
+        "notes": "Meme barriere sur l autre entree du Cerveau — celle d un chiffre qui ne correspond a aucune livraison recente. Deux IF plutot qu un seul parce que les deux appels au Cerveau ne recoivent pas les memes champs.",
+        "parameters": {
+          "conditions": {
+            "combinator": "and",
+            "conditions": [
+              {
+                "id": "wa-ouvert-bis",
+                "leftValue": "={{ $('Charger fiche').first().json.ouvert !== false }}",
+                "operator": {
+                  "operation": "true",
+                  "singleValue": true,
+                  "type": "boolean"
+                },
+                "rightValue": ""
+              }
+            ],
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 3
+            }
+          },
+          "looseTypeValidation": true,
+          "options": {}
+        },
+        "position": [
+          880,
+          352
+        ],
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3
+      },
+      {
+        "id": "c1a70006-0000-4000-8000-000000000003",
+        "name": "Repondre ferme",
+        "notes": "Dire QUAND on rouvre, pas seulement qu on est ferme. Un client a qui l on repond « ferme » sans plus n a rien a faire de l information et va voir ailleurs.",
+        "onError": "continueRegularOutput",
+        "parameters": {
+          "mode": "once",
+          "options": {},
+          "workflowId": {
+            "__rl": true,
+            "cachedResultName": "Envoyer réponse client",
+            "mode": "list",
+            "value": "JkNvcqsZaY22dfk5"
+          },
+          "workflowInputs": {
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": true,
+            "mappingMode": "defineBelow",
+            "matchingColumns": [],
+            "schema": [],
+            "value": {
+              "boutique": "={{ $('Normalisateur WA').first().json.slug }}",
+              "canal": "whatsapp",
+              "destinataire": "={{ $('Normalisateur WA').first().json.phone }}",
+              "message": "=🕐 {{ $('Charger fiche').first().json.nom }} n’accepte pas de commande pour le moment.\n\n{{ $('Charger fiche').first().json.message_horaires }}\n\nÉcrivez-nous dès la réouverture, nous prendrons votre commande avec plaisir.",
+              "sheet_document_id": "={{ $('Normalisateur WA').first().json.sheet_document_id }}"
+            }
+          }
+        },
+        "position": [
+          700,
+          592
+        ],
+        "retryOnFail": false,
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.3
+      },
+      {
+        "id": "dfb168fc-97d6-4312-b71c-1976522d4930",
+        "name": "Demande stop ?",
+        "notes": "Tri GROSSIER. C'est la route /api/internal/relances/stop qui tranche : la regle vit dans relances.ts avec son banc d'essai, et une regle recopiee ici finirait par diverger.",
+        "parameters": {
+          "conditions": {
+            "combinator": "and",
+            "conditions": [
+              {
+                "id": "wa-stop",
+                "leftValue": "={{ /(stop|desabonn|desinscri|unsubscribe|arret|ne plus|laissez)/i.test(String($json.texte || '').normalize('NFD').replace(/[̀-ͯ]/g, '')) }}",
+                "operator": {
+                  "operation": "true",
+                  "singleValue": true,
+                  "type": "boolean"
+                },
+                "rightValue": ""
+              }
+            ],
+            "options": {
+              "caseSensitive": false,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            }
+          }
+        },
+        "position": [
+          -80,
+          200
+        ],
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2
+      },
+      {
+        "alwaysOutputData": true,
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "QoKeVRwGrk1YqN9Q",
+            "name": "Header Auth account 2"
+          }
+        },
+        "id": "36b299d8-1f08-41e6-bb66-0af8bbdd0b0d",
+        "name": "Enregistrer le stop",
+        "notes": "La route decide, enregistre et accuse reception au client. Elle repond reconnu:false quand ce n'etait pas une demande d'arret — « arretez le piment svp ».",
+        "onError": "continueRegularOutput",
+        "parameters": {
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "jsonBody": "={{ JSON.stringify({ boutique: $json.slug, telephone: $json.phone, destinataire: $json.phone, canal: 'whatsapp', texte: $json.texte }) }}",
+          "method": "POST",
+          "options": {},
+          "sendBody": true,
+          "specifyBody": "json",
+          "url": "https://djiguiflow.vercel.app/api/internal/relances/stop"
+        },
+        "position": [
+          120,
+          200
+        ],
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2
+      },
+      {
+        "id": "046fb00b-8be7-4e17-86cc-616d3a6585cf",
+        "name": "Stop reconnu ?",
+        "notes": "Faux positif ou route en panne : on rend la main a l'assistante. Sans cela, « arretez le piment » resterait sans reponse et la commande serait perdue en silence.",
+        "parameters": {
+          "conditions": {
+            "combinator": "and",
+            "conditions": [
+              {
+                "id": "wa-stop-reconnu",
+                "leftValue": "={{ $json.reconnu === true }}",
+                "operator": {
+                  "operation": "true",
+                  "singleValue": true,
+                  "type": "boolean"
+                },
+                "rightValue": ""
+              }
+            ],
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            }
+          }
+        },
+        "position": [
+          320,
+          200
+        ],
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2
+      }
+    ],
+    "workflowId": "xGw9MbvqvN3XAPpQ",
+    "workflowPublishHistory": [
+      {
+        "event": "activated",
+        "id": 208,
+        "userId": "81519f6f-0887-498a-ad83-5ffd6d591e9a",
+        "workflowId": "xGw9MbvqvN3XAPpQ"
+      },
+      {
+        "event": "activated",
+        "id": 210,
+        "userId": "81519f6f-0887-498a-ad83-5ffd6d591e9a",
+        "workflowId": "xGw9MbvqvN3XAPpQ"
+      },
+      {
+        "event": "deactivated",
+        "id": 207,
+        "userId": "81519f6f-0887-498a-ad83-5ffd6d591e9a",
+        "workflowId": "xGw9MbvqvN3XAPpQ"
+      },
+      {
+        "event": "deactivated",
+        "id": 209,
+        "userId": "81519f6f-0887-498a-ad83-5ffd6d591e9a",
+        "workflowId": "xGw9MbvqvN3XAPpQ"
+      }
+    ]
+  },
+  "connections": {
+    "Aiguilleur note": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "If",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Alerte si mauvaise note": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Alerter le gérant",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Boutique ouverte ?": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Call 'Cerveau Zahara'1",
+            "type": "main"
+          }
+        ],
+        [
+          {
+            "index": 0,
+            "node": "Repondre ferme",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Boutique ouverte ? (bis)": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Call 'Cerveau Zahara'",
+            "type": "main"
+          }
+        ],
+        [
+          {
+            "index": 0,
+            "node": "Repondre ferme",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Charger fiche": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Normalisateur WA",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Demande stop ?": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Enregistrer le stop",
+            "type": "main"
+          }
+        ],
+        [
+          {
+            "index": 0,
+            "node": "Position ?",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Enregistrer la position": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Repondre position au client",
+            "type": "main"
+          },
+          {
+            "index": 0,
+            "node": "Position trouvee ?",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Enregistrer le stop": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Stop reconnu ?",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Alerte si mauvaise note",
+            "type": "main"
+          },
+          {
+            "index": 0,
+            "node": "Call 'Envoyer réponse client'",
+            "type": "main"
+          },
+          {
+            "index": 0,
+            "node": "Copier note dans Supabase",
+            "type": "main"
+          }
+        ],
+        [
+          {
+            "index": 0,
+            "node": "Boutique ouverte ? (bis)",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Lire commandes client": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Aiguilleur note",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Normalisateur WA": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Demande stop ?",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Note 1-5 ?": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Lire commandes client",
+            "type": "main"
+          }
+        ],
+        [
+          {
+            "index": 0,
+            "node": "Boutique ouverte ?",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Position ?": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Enregistrer la position",
+            "type": "main"
+          }
+        ],
+        [
+          {
+            "index": 0,
+            "node": "Note 1-5 ?",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Position trouvee ?": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Prevenir le groupe de la position",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Signature présente ?": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Charger fiche",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Stop reconnu ?": {
+      "main": [
+        null,
+        [
+          {
+            "index": 0,
+            "node": "Position ?",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Signature présente ?",
+            "type": "main"
+          }
+        ]
+      ]
+    }
+  },
+  "description": null,
+  "id": "xGw9MbvqvN3XAPpQ",
+  "isArchived": false,
+  "name": "Routeur WhatsApp",
+  "nodeGroups": [],
+  "nodes": [
+    {
+      "id": "92249692-caef-4f08-ba32-2a9f3452aed9",
+      "name": "Webhook",
+      "parameters": {
+        "httpMethod": "POST",
+        "options": {},
+        "path": "whatsapp/:slug"
+      },
+      "position": [
+        -720,
+        -16
+      ],
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "webhookId": "1b96720c-e3b3-4638-a351-7f3704bd483e"
+    },
+    {
+      "id": "aeb041a4-7953-49ab-b2a2-1c6b94970cde",
+      "name": "Normalisateur WA",
+      "parameters": {
+        "jsCode": "const wh    = $('Webhook').first().json;   // le MESSAGE, toujours\nconst fiche = $('Charger fiche').first().json || {};  // la FICHE, toujours\n\nconst body     = wh.body || {};\nconst messages = body.data?.messages || {};\nconst key      = messages.key || {};\nconst fromMe   = key.fromMe === true;\nconst texte    = (messages.messageBody || '').trim();\nconst estCommande = texte.startsWith('/');\n\n// Une note arrive rarement nue. Le 16 aout, un client a repondu « '2 » : le\n// test exact /^[1-5]$/ l'a rejete, le message est parti a l'assistante, et la\n// note a ete perdue en silence. On tolere donc ce qui ENTOURE le chiffre —\n// apostrophe, guillemets, etoiles, ponctuation, « /5 » — mais JAMAIS une\n// lettre : « 2 pizzas » ou « 2 kg » doivent rester des phrases pour\n// l'assistante.\nfunction noteDe(txt) {\n  const t = String(txt).normalize('NFKC').trim().replace(/\\s*(?:\\/|sur)\\s*5\\s*$/i, '');\n  const m = t.match(/^[^\\p{L}\\p{N}]*([1-5])[^\\p{L}\\p{N}]*$/u);\n  return m ? Number(m[1]) : null;\n}\n\n// Calcule ICI, une seule fois : « Note 1-5 ? » et « Aiguilleur note » relisent\n// ce champ au lieu de refaire le test. Trois regex separees avaient fini par\n// diverger, et c'est ainsi qu'un message pouvait etre une note d'un cote et\n// une phrase de l'autre.\nconst note_detectee = noteDe(texte);\n\nif (!texte) return [];\nif (fromMe && !estCommande && note_detectee === null) return [];\n\nconst digits = String(key.cleanedSenderPn || '').replace(/\\D/g, '');\nconst phone  = digits ? (digits.startsWith('225') ? digits : '225' + digits) : '';\nconst jid    = String(key.senderPn || (digits ? digits + '@s.whatsapp.net' : ''));\nconst prenom = String(body.data?.pushName || 'Client');\n\nreturn [{ json: {\n  canal: 'whatsapp', phone, jid, texte, prenom, note_detectee,\n  timestamp: new Date().toISOString(),\n\n  // La fiche marchand greffee : tout l'aval devient generique.\n  // `slug` est la cle de tenant : il sert aux routes /api/boutiques/<slug>/...\n  slug:              fiche.slug || String(wh.params?.slug || ''),\n  boutique_id:       fiche.id || '',\n  nom_boutique:      fiche.nom || '',\n  // Le metier de la boutique : l'assistante y accorde son vocabulaire, pour\n  // ne pas souhaiter bon appetit au client d'une boutique de vetements.\n  secteur:           fiche.categorie || '',\n  sheet_commandes:   fiche.sheet_commandes || '',\n  sheet_menu:        fiche.sheet_menu || '',\n  sheet_notes:       fiche.sheet_notes || '',\n  groupe_livreurs:   fiche.groupe_livreurs || '',\n  telegram_marchand: fiche.telegram_marchand || '',\n  whatsapp_marchand: fiche.telephone || '',\n  sheet_document_id: fiche.sheet_document_id || '',\n}}];"
+      },
+      "position": [
+        -80,
+        -16
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "id": "33cb3629-35b0-496d-9013-841542282041",
+      "name": "Call 'Cerveau Zahara'",
+      "parameters": {
+        "options": {},
+        "workflowId": {
+          "__rl": true,
+          "cachedResultName": "Cerveau Zahara",
+          "mode": "list",
+          "value": "gdL4r8lHftnRYgYl"
+        },
+        "workflowInputs": {
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true,
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "schema": [
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "canal",
+              "id": "canal",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "destinataire",
+              "id": "destinataire",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "texte",
+              "id": "texte",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "prenom",
+              "id": "prenom",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "boutique_id",
+              "id": "boutique_id",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "nom_boutique",
+              "id": "nom_boutique",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "sheet_commandes",
+              "id": "sheet_commandes",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "sheet_menu",
+              "id": "sheet_menu",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "sheet_notes",
+              "id": "sheet_notes",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "groupe_livreurs",
+              "id": "groupe_livreurs",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "telegram_marchand",
+              "id": "telegram_marchand",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "whatsapp_marchand",
+              "id": "whatsapp_marchand",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "sheet_document_id",
+              "id": "sheet_document_id",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "slug",
+              "id": "slug",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "secteur",
+              "id": "secteur",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            }
+          ],
+          "value": {
+            "boutique_id": "={{ $('Normalisateur WA').first().json.boutique_id }}",
+            "canal": "={{ $('Normalisateur WA').first().json.canal }}",
+            "destinataire": "={{ $('Normalisateur WA').first().json.phone }}",
+            "groupe_livreurs": "={{ $('Normalisateur WA').first().json.groupe_livreurs }}",
+            "nom_boutique": "={{ $('Normalisateur WA').first().json.nom_boutique }}",
+            "prenom": "={{ $('Normalisateur WA').first().json.prenom }}",
+            "secteur": "={{ $('Normalisateur WA').first().json.secteur }}",
+            "sheet_commandes": "={{ $('Normalisateur WA').first().json.sheet_commandes }}",
+            "sheet_document_id": "={{ $('Normalisateur WA').first().json.sheet_document_id }}",
+            "sheet_menu": "={{ $('Normalisateur WA').first().json.sheet_menu }}",
+            "sheet_notes": "={{ $('Normalisateur WA').first().json.sheet_notes }}",
+            "slug": "={{ $('Normalisateur WA').first().json.slug }}",
+            "telegram_marchand": "={{ $('Normalisateur WA').first().json.telegram_marchand }}",
+            "texte": "={{ $('Normalisateur WA').first().json.texte }}",
+            "whatsapp_marchand": "={{ $('Normalisateur WA').first().json.whatsapp_marchand }}"
+          }
+        }
+      },
+      "position": [
+        928,
+        208
+      ],
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3
+    },
+    {
+      "alwaysOutputData": true,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "QoKeVRwGrk1YqN9Q",
+          "name": "Header Auth account 2"
+        }
+      },
+      "id": "d68f7c7e-0bc9-41b5-8874-698f863db9a3",
+      "maxTries": 3,
+      "name": "Lire commandes client",
+      "notes": "Cherche dans SUPABASE les commandes que ce client pourrait etre en train de noter. C etait l onglet du marchand : depuis que la prise de commande n y ecrit plus, le contexte etait vide et un « 3 » partait chez l assistante au lieu d etre compris comme une note.",
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "jsonBody": "={\n  \"chat_id\": {{ JSON.stringify($('Normalisateur WA').first().json.phone) }},\n  \"boutique\": {{ JSON.stringify($('Normalisateur WA').first().json.slug || $('Normalisateur WA').first().json.boutique_id) }}\n}",
+        "method": "POST",
+        "options": {},
+        "sendBody": true,
+        "specifyBody": "json",
+        "url": "https://www.djiguiflow.com/api/internal/commandes/a-noter"
+      },
+      "position": [
+        336,
+        -32
+      ],
+      "retryOnFail": true,
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "waitBetweenTries": 2000
+    },
+    {
+      "id": "b23d2266-e736-48a3-8c3e-4a1058d3ef2d",
+      "name": "Aiguilleur note",
+      "parameters": {
+        "jsCode": "const wa = $('Normalisateur WA').first().json;\nconst rows = $input.all().map(i => i.json);\n\n// Au-dela de ce delai, un chiffre seul n'est plus une note : c'est un client\n// qui repond « 2 » pour dire deux articles.\nconst FENETRE_H = 48;\n\n// `heure_livraison` n'a pas de format garanti selon le noeud qui a ecrit la\n// ligne. On reconnait l'ISO et le format ivoirien, dans cet ordre : laisser\n// Date.parse voir « 07/08/2026 » lui ferait lire le 8 juillet.\nfunction instant(v) {\n  const s = String(v ?? '').trim();\n  if (!s) return NaN;\n  if (/^\\d{4}-\\d{2}-\\d{2}/.test(s)) return Date.parse(s);\n  const m = s.match(/^(\\d{1,2})\\/(\\d{1,2})\\/(\\d{4})(?:[ T](\\d{1,2}):(\\d{2}))?/);\n  if (!m) return NaN;\n  const p = (n) => String(n ?? 0).padStart(2, '0');\n  return Date.parse(`${m[3]}-${p(m[2])}-${p(m[1])}T${p(m[4])}:${m[5] ?? '00'}:00`);\n}\n\nlet vers = 'cerveau';\nlet note = null;\nlet order_id = '';\n\n// Le chiffre a deja ete reconnu, une seule fois, par « Normalisateur WA ».\n// Ne pas refaire le test ici : c'est en le dupliquant qu'un « '2 » avait pu\n// etre une note pour un noeud et une phrase pour le suivant.\nconst chiffre = wa.note_detectee;\n\nif (chiffre !== null && chiffre !== undefined) {\n  const maintenant = Date.now();\n\n  const livrees = rows\n    .filter((r) => {\n      const st = String(r.statut_livraison || '').toLowerCase();\n      return st.includes('livr') && !st.startsWith('en_');\n    })\n    .map((r) => ({ r, t: instant(r.heure_livraison) }))\n    // Un horodatage illisible n'est pas une preuve d'anciennete : on le garde,\n    // sinon un format inattendu ferait disparaitre toutes les notes d'un coup.\n    .filter((x) => !Number.isFinite(x.t) || maintenant - x.t <= FENETRE_H * 3600 * 1000);\n\n  if (livrees.length) {\n    // Tri chronologique reel. L'ancien comparait des chaines : juste en ISO,\n    // faux des que la date s'ecrit 13/08/2026 — le travers qui avait fait\n    // ressortir une vieille commande pendant les tests.\n    const cle = (x) => (Number.isFinite(x.t) ? x.t : 0);\n    livrees.sort((a, b) => cle(b) - cle(a));\n    vers = 'note';\n    note = chiffre;\n    order_id = String(livrees[0].r.order_id || '');\n  }\n}\n\nreturn [{ json: {\n  canal: wa.canal,\n  phone: wa.phone,\n  texte: wa.texte,\n  prenom: wa.prenom,\n  vers: vers,\n  note: note,\n  order_id: order_id\n}}];"
+      },
+      "position": [
+        496,
+        -16
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "id": "1c290579-8599-4b2e-89eb-a6267faca5cc",
+      "name": "If",
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "54a85bcb-6e5d-41df-9fc6-a4cf160c56fd",
+              "leftValue": "={{ $json.vers }}",
+              "operator": {
+                "name": "filter.operator.equals",
+                "operation": "equals",
+                "type": "string"
+              },
+              "rightValue": "note"
+            }
+          ],
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          }
+        },
+        "options": {}
+      },
+      "position": [
+        704,
+        -16
+      ],
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3
+    },
+    {
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "9Q14ADLSkwfm2Y5H",
+          "name": "Google Sheets account"
+        }
+      },
+      "disabled": true,
+      "id": "216c1a01-1e62-4e36-b3f9-2f18519efa4f",
+      "maxTries": 3,
+      "name": "Enregistrer note",
+      "notes": "HORS CHEMIN CRITIQUE. Ce miroir ajoutait la note dans l onglet du marchand, et gouvernait pourtant TROIS choses : l alerte au gerant sur mauvaise note, le remerciement au client, et la copie dans Supabase. Un marchand sans classeur les perdait toutes les trois.",
+      "parameters": {
+        "columns": {
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false,
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "schema": [
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "order_id",
+              "id": "order_id",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "client_chat_id",
+              "id": "client_chat_id",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "client_name",
+              "id": "client_name",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "note",
+              "id": "note",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "timestamp",
+              "id": "timestamp",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            }
+          ],
+          "value": {
+            "client_chat_id": "={{ $json.phone }}",
+            "client_name": "={{ $json.prenom }}",
+            "note": "={{ $json.note }}",
+            "order_id": "={{ $json.order_id }}",
+            "timestamp": "={{ $now.toISO() }}"
+          }
+        },
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Normalisateur WA').first().json.sheet_document_id }}"
+        },
+        "operation": "append",
+        "options": {},
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "={{ $('Normalisateur WA').first().json.sheet_notes || 'Notes' }}"
+        }
+      },
+      "position": [
+        896,
+        -144
+      ],
+      "retryOnFail": true,
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "waitBetweenTries": 2000
+    },
+    {
+      "id": "0fc0a73e-abe7-43d5-8b8a-271bc758673c",
+      "maxTries": 3,
+      "name": "Call 'Envoyer réponse client'",
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "options": {},
+        "workflowId": {
+          "__rl": true,
+          "cachedResultName": "Envoyer réponse client",
+          "mode": "list",
+          "value": "JkNvcqsZaY22dfk5"
+        },
+        "workflowInputs": {
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true,
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "schema": [
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "canal",
+              "id": "canal",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "destinataire",
+              "id": "destinataire",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "message",
+              "id": "message",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "boutique",
+              "id": "boutique",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            }
+          ],
+          "value": {
+            "boutique": "={{ $('Normalisateur WA').first().json.slug }}",
+            "canal": "whatsapp",
+            "destinataire": "={{ $('Aiguilleur note').first().json.phone }}",
+            "message": "=⭐ Merci {{ $('Aiguilleur note').first().json.prenom }} ! Ta note de {{ $('Aiguilleur note').first().json.note }}/5 est bien enregistrée. À très vite ! 🙏",
+            "sheet_document_id": "={{ $('Normalisateur WA').first().json.sheet_document_id }}"
+          }
+        }
+      },
+      "position": [
+        1200,
+        288
+      ],
+      "retryOnFail": false,
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "id": "20768781-61e9-46fe-8fb0-d25fa4d5bd37",
+      "name": "Call 'Cerveau Zahara'1",
+      "parameters": {
+        "options": {},
+        "workflowId": {
+          "__rl": true,
+          "cachedResultName": "Cerveau Zahara",
+          "mode": "list",
+          "value": "gdL4r8lHftnRYgYl"
+        },
+        "workflowInputs": {
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true,
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "schema": [
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "canal",
+              "id": "canal",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "destinataire",
+              "id": "destinataire",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "texte",
+              "id": "texte",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "prenom",
+              "id": "prenom",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "boutique_id",
+              "id": "boutique_id",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "nom_boutique",
+              "id": "nom_boutique",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "sheet_commandes",
+              "id": "sheet_commandes",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "sheet_menu",
+              "id": "sheet_menu",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "sheet_notes",
+              "id": "sheet_notes",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "groupe_livreurs",
+              "id": "groupe_livreurs",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "telegram_marchand",
+              "id": "telegram_marchand",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "whatsapp_marchand",
+              "id": "whatsapp_marchand",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "sheet_document_id",
+              "id": "sheet_document_id",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "slug",
+              "id": "slug",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "secteur",
+              "id": "secteur",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            }
+          ],
+          "value": {
+            "boutique_id": "={{ $json.boutique_id }}",
+            "canal": "={{ $json.canal }}",
+            "destinataire": "={{ $json.phone }}",
+            "groupe_livreurs": "={{ $json.groupe_livreurs }}",
+            "nom_boutique": "={{ $json.nom_boutique }}",
+            "prenom": "={{ $json.prenom }}",
+            "secteur": "={{ $json.secteur }}",
+            "sheet_commandes": "={{ $json.sheet_commandes }}",
+            "sheet_document_id": "={{ $json.sheet_document_id }}",
+            "sheet_menu": "={{ $json.sheet_menu }}",
+            "sheet_notes": "={{ $json.sheet_notes }}",
+            "slug": "={{ $json.slug }}",
+            "telegram_marchand": "={{ $json.telegram_marchand }}",
+            "texte": "={{ $json.texte }}",
+            "whatsapp_marchand": "={{ $json.whatsapp_marchand }}"
+          }
+        }
+      },
+      "position": [
+        400,
+        224
+      ],
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3
+    },
+    {
+      "id": "18b944ec-41e1-4ff4-8e0a-25d836af160e",
+      "name": "Note 1-5 ?",
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "1a6ae076-b724-436b-b5a0-84992abe11fa",
+              "leftValue": "={{ $json.note_detectee !== null && $json.note_detectee !== undefined }}",
+              "operator": {
+                "operation": "true",
+                "singleValue": true,
+                "type": "boolean"
+              },
+              "rightValue": ""
+            }
+          ],
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          }
+        },
+        "options": {}
+      },
+      "position": [
+        112,
+        -16
+      ],
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3
+    },
+    {
+      "id": "dde9da1c-c844-40d7-95a5-fe78a4758fba",
+      "name": "Signature présente ?",
+      "notes": "Remplace l authentification par credential, impossible a configurer ici. Le secret est celui envoye par wasenderapi (x-webhook-secret et x-webhook-signature portent la meme valeur). A migrer vers une credential Header Auth des que possible.",
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "wa-signature-presente",
+              "leftValue": "={{ !!($json.headers['x-webhook-secret'] || $json.headers['x-webhook-signature']) }}",
+              "operator": {
+                "operation": "true",
+                "singleValue": true,
+                "type": "boolean"
+              },
+              "rightValue": ""
+            }
+          ],
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          }
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "position": [
+        -448,
+        -16
+      ],
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2
+    },
+    {
+      "id": "5576d3d6-3990-482c-9ebc-b7808f4fef88",
+      "name": "Alerte si mauvaise note",
+      "parameters": {
+        "jsCode": "// Le gerant doit pouvoir RAPPELER le client, donc lire son nom et son numero.\n//\n// Ce noeud lisait `client_name` et `client_chat_id` : les colonnes de la\n// FEUILLE, puisqu'il recevait jusqu'ici la ligne que « Enregistrer note »\n// venait d'y ecrire. Ce miroir ayant quitte le chemin critique, l'entree est\n// desormais la sortie de l'aiguilleur, qui nomme les memes choses `prenom` et\n// `phone`. On accepte les deux : l'alerte doit survivre au cablage.\nconst j = $input.first().json;\nconst note = Number(j.note || 0);\n\n// Pas d'alerte pour les bonnes notes.\nif (note >= 4) return [];\n\nconst nom = j.prenom || j.client_name || 'Client';\nconst joindre = j.phone || j.client_chat_id || 'numero inconnu';\n\nreturn [{ json: {\n  message: `🚨 ALERTE MAUVAISE NOTE — ${nom} a noté ${note}/5 (commande ${j.order_id || ''}). Client à rappeler : ${joindre}`\n}}];"
+      },
+      "position": [
+        1184,
+        -144
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "QoKeVRwGrk1YqN9Q",
+          "name": "Header Auth account 2"
+        }
+      },
+      "id": "91b2dedb-569a-4f60-8180-605d0752874d",
+      "maxTries": 3,
+      "name": "Charger fiche",
+      "parameters": {
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-webhook-secret",
+              "value": "={{ $('Webhook').first().json.headers['x-webhook-secret'] || $('Webhook').first().json.headers['x-webhook-signature'] || '' }}"
+            }
+          ]
+        },
+        "options": {},
+        "sendHeaders": true,
+        "url": "=https://www.djiguiflow.com/api/internal/fiche?slug={{ encodeURIComponent($('Webhook').first().json.params.slug) }}"
+      },
+      "position": [
+        -256,
+        -16
+      ],
+      "retryOnFail": true,
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "waitBetweenTries": 2000
+    },
+    {
+      "id": "5a8788a8-db70-47b3-b26a-7d0bbd292cd8",
+      "maxTries": 2,
+      "name": "Alerter le gérant",
+      "notes": "Part du bot du marchand. Un noeud Telegram de n8n aurait alerte le gerant depuis le bot de la plateforme.",
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "mode": "once",
+        "options": {},
+        "workflowId": {
+          "__rl": true,
+          "cachedResultName": "Envoyer réponse client",
+          "mode": "list",
+          "value": "JkNvcqsZaY22dfk5"
+        },
+        "workflowInputs": {
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true,
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "schema": [],
+          "value": {
+            "boutique": "={{ $('Normalisateur WA').first().json.slug }}",
+            "canal": "telegram",
+            "destinataire": "={{ $('Normalisateur WA').first().json.telegram_marchand }}",
+            "message": "={{ $json.message }}",
+            "reply_markup": "",
+            "sheet_document_id": "={{ $('Normalisateur WA').first().json.sheet_document_id }}"
+          }
+        }
+      },
+      "position": [
+        1360,
+        -144
+      ],
+      "retryOnFail": false,
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "waitBetweenTries": 1000
+    },
+    {
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "QoKeVRwGrk1YqN9Q",
+          "name": "Header Auth account 2"
+        }
+      },
+      "id": "9673d4a5-4ed7-4932-ae93-b72c70123c9a",
+      "maxTries": 3,
+      "name": "Copier note dans Supabase",
+      "notes": "Double ecriture volontaire : la feuille garde l historique, Supabase alimente les rapports. Remplace un noeud Postgres qui visait l hote direct Supabase, injoignable depuis n8n Cloud faute d IPv6 sortant.",
+      "onError": "stopWorkflow",
+      "parameters": {
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "jsonBody": "={\n  \"reference\": {{ JSON.stringify($('Aiguilleur note').first().json.order_id) }},\n  \"note\": {{ Number($('Aiguilleur note').first().json.note) }}\n}",
+        "method": "POST",
+        "options": {},
+        "sendBody": true,
+        "specifyBody": "json",
+        "url": "https://www.djiguiflow.com/api/internal/commandes/note"
+      },
+      "position": [
+        1216,
+        128
+      ],
+      "retryOnFail": true,
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "waitBetweenTries": 2000
+    },
+    {
+      "id": "c1a70005-0000-4000-8000-000000000001",
+      "name": "Position ?",
+      "notes": "Un lien Maps colle dans la conversation. C est le seul chemin qui marche sur WhatsApp : une epingle native partagee le 17 aout n a jamais atteint le webhook, aucune execution n en garde trace.",
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "wa-position",
+              "leftValue": "={{ /(?:google\\.[a-z.]+\\/maps|maps\\.google\\.|maps\\.app\\.goo\\.gl|goo\\.gl\\/maps)/i.test(String($json.texte || '')) }}",
+              "operator": {
+                "operation": "true",
+                "singleValue": true,
+                "type": "boolean"
+              },
+              "rightValue": ""
+            }
+          ],
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          }
+        },
+        "options": {}
+      },
+      "position": [
+        16,
+        -16
+      ],
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3
+    },
+    {
+      "alwaysOutputData": true,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "QoKeVRwGrk1YqN9Q",
+          "name": "Header Auth account 2"
+        }
+      },
+      "id": "c1a70005-0000-4000-8000-000000000002",
+      "maxTries": 2,
+      "name": "Enregistrer la position",
+      "notes": "Le corps est fabrique par un seul JSON.stringify : une valeur absente y devient null, la ou une interpolation aurait ecrit NaN et rendu le JSON invalide.",
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "jsonBody": "={{ JSON.stringify({ boutique: String($('Normalisateur WA').first().json.slug || ''), chat_id: String($('Normalisateur WA').first().json.phone || ''), telephone: String($('Normalisateur WA').first().json.phone || ''), texte: String($('Normalisateur WA').first().json.texte || '') }) }}",
+        "method": "POST",
+        "options": {},
+        "sendBody": true,
+        "specifyBody": "json",
+        "url": "https://www.djiguiflow.com/api/internal/commandes/position"
+      },
+      "position": [
+        16,
+        560
+      ],
+      "retryOnFail": true,
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "waitBetweenTries": 2000
+    },
+    {
+      "id": "c1a70005-0000-4000-8000-000000000003",
+      "name": "Repondre position au client",
+      "notes": "Au-dessus de la branche groupe : le client est servi en premier. La reference est nommee pour qu il voie si sa position s est attachee a la mauvaise commande.",
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "mode": "once",
+        "options": {},
+        "workflowId": {
+          "__rl": true,
+          "cachedResultName": "Envoyer réponse client",
+          "mode": "list",
+          "value": "JkNvcqsZaY22dfk5"
+        },
+        "workflowInputs": {
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true,
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "schema": [],
+          "value": {
+            "boutique": "={{ $('Normalisateur WA').first().json.slug }}",
+            "canal": "whatsapp",
+            "destinataire": "={{ $('Normalisateur WA').first().json.phone }}",
+            "message": "={{ $json.ok !== true ? '⏳ Position non enregistrée pour le moment. Réessayez dans un instant.' : $json.etat === 'enregistree' ? '✅ Merci ' + String($json.client_nom || '') + ' ! Votre position est enregistrée pour la commande ' + String($json.reference || '') + '. Le livreur ira droit au but. 🛵' : $json.etat === 'illisible' ? '⚠️ Je n’ai pas pu lire cette position. Dans Google Maps, appuyez sur Partager puis Copier le lien, et collez-le ici.' : 'ℹ️ Merci ! Nous n’avons trouvé aucune commande en cours à rattacher à cette position. Renvoyez-la après avoir commandé.' }}",
+            "sheet_document_id": "={{ $('Normalisateur WA').first().json.sheet_document_id }}"
+          }
+        }
+      },
+      "position": [
+        240,
+        496
+      ],
+      "retryOnFail": false,
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3
+    },
+    {
+      "id": "c1a70005-0000-4000-8000-000000000004",
+      "name": "Position trouvee ?",
+      "notes": "Sans commande appariee, il n y a rien a annoncer : une position orpheline ne sert a aucun livreur.",
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "wa-position-trouvee",
+              "leftValue": "={{ $json.trouve === true && !!String($('Normalisateur WA').first().json.groupe_livreurs || '').trim() }}",
+              "operator": {
+                "operation": "true",
+                "singleValue": true,
+                "type": "boolean"
+              },
+              "rightValue": ""
+            }
+          ],
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          }
+        },
+        "options": {}
+      },
+      "position": [
+        240,
+        624
+      ],
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3
+    },
+    {
+      "id": "c1a70005-0000-4000-8000-000000000005",
+      "name": "Prevenir le groupe de la position",
+      "notes": "La position arrive APRES le dispatch : c est donc ici, et non dans le message initial, qu il faut la donner au livreur.",
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "mode": "once",
+        "options": {},
+        "workflowId": {
+          "__rl": true,
+          "cachedResultName": "Envoyer réponse client",
+          "mode": "list",
+          "value": "JkNvcqsZaY22dfk5"
+        },
+        "workflowInputs": {
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true,
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "schema": [],
+          "value": {
+            "boutique": "={{ $('Normalisateur WA').first().json.slug }}",
+            "canal": "telegram",
+            "destinataire": "={{ $('Normalisateur WA').first().json.groupe_livreurs }}",
+            "message": "=📍 Position exacte reçue — commande {{ $json.reference }}\n🗺️ https://www.google.com/maps/search/{{ $json.latitude }},{{ $json.longitude }}\n\nOuvrez ce lien plutôt que l’adresse écrite : il mène à la porte.",
+            "reply_markup": "",
+            "sheet_document_id": "={{ $('Normalisateur WA').first().json.sheet_document_id }}"
+          }
+        }
+      },
+      "position": [
+        464,
+        624
+      ],
+      "retryOnFail": false,
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3
+    },
+    {
+      "id": "c1a70006-0000-4000-8000-000000000001",
+      "name": "Boutique ouverte ?",
+      "notes": "L etat vient de la fiche, calcule par horaires.ts. Le routeur ne lit ni JSON d horaires ni creneau qui enjambe minuit — la regle vit a un seul endroit. Et c est ICI qu on ferme, pas dans le prompt du modele.",
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "wa-ouvert",
+              "leftValue": "={{ $('Charger fiche').first().json.ouvert !== false }}",
+              "operator": {
+                "operation": "true",
+                "singleValue": true,
+                "type": "boolean"
+              },
+              "rightValue": ""
+            }
+          ],
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          }
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "position": [
+        240,
+        224
+      ],
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3
+    },
+    {
+      "id": "c1a70006-0000-4000-8000-000000000002",
+      "name": "Boutique ouverte ? (bis)",
+      "notes": "Meme barriere sur l autre entree du Cerveau — celle d un chiffre qui ne correspond a aucune livraison recente. Deux IF plutot qu un seul parce que les deux appels au Cerveau ne recoivent pas les memes champs.",
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "wa-ouvert-bis",
+              "leftValue": "={{ $('Charger fiche').first().json.ouvert !== false }}",
+              "operator": {
+                "operation": "true",
+                "singleValue": true,
+                "type": "boolean"
+              },
+              "rightValue": ""
+            }
+          ],
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          }
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "position": [
+        880,
+        352
+      ],
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3
+    },
+    {
+      "id": "c1a70006-0000-4000-8000-000000000003",
+      "name": "Repondre ferme",
+      "notes": "Dire QUAND on rouvre, pas seulement qu on est ferme. Un client a qui l on repond « ferme » sans plus n a rien a faire de l information et va voir ailleurs.",
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "mode": "once",
+        "options": {},
+        "workflowId": {
+          "__rl": true,
+          "cachedResultName": "Envoyer réponse client",
+          "mode": "list",
+          "value": "JkNvcqsZaY22dfk5"
+        },
+        "workflowInputs": {
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true,
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "schema": [],
+          "value": {
+            "boutique": "={{ $('Normalisateur WA').first().json.slug }}",
+            "canal": "whatsapp",
+            "destinataire": "={{ $('Normalisateur WA').first().json.phone }}",
+            "message": "=🕐 {{ $('Charger fiche').first().json.nom }} n’accepte pas de commande pour le moment.\n\n{{ $('Charger fiche').first().json.message_horaires }}\n\nÉcrivez-nous dès la réouverture, nous prendrons votre commande avec plaisir.",
+            "sheet_document_id": "={{ $('Normalisateur WA').first().json.sheet_document_id }}"
+          }
+        }
+      },
+      "position": [
+        700,
+        592
+      ],
+      "retryOnFail": false,
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3
+    },
+    {
+      "id": "dfb168fc-97d6-4312-b71c-1976522d4930",
+      "name": "Demande stop ?",
+      "notes": "Tri GROSSIER. C'est la route /api/internal/relances/stop qui tranche : la regle vit dans relances.ts avec son banc d'essai, et une regle recopiee ici finirait par diverger.",
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "wa-stop",
+              "leftValue": "={{ /(stop|desabonn|desinscri|unsubscribe|arret|ne plus|laissez)/i.test(String($json.texte || '').normalize('NFD').replace(/[̀-ͯ]/g, '')) }}",
+              "operator": {
+                "operation": "true",
+                "singleValue": true,
+                "type": "boolean"
+              },
+              "rightValue": ""
+            }
+          ],
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          }
+        }
+      },
+      "position": [
+        -80,
+        200
+      ],
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2
+    },
+    {
+      "alwaysOutputData": true,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "QoKeVRwGrk1YqN9Q",
+          "name": "Header Auth account 2"
+        }
+      },
+      "id": "36b299d8-1f08-41e6-bb66-0af8bbdd0b0d",
+      "name": "Enregistrer le stop",
+      "notes": "La route decide, enregistre et accuse reception au client. Elle repond reconnu:false quand ce n'etait pas une demande d'arret — « arretez le piment svp ».",
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "jsonBody": "={{ JSON.stringify({ boutique: $json.slug, telephone: $json.phone, destinataire: $json.phone, canal: 'whatsapp', texte: $json.texte }) }}",
+        "method": "POST",
+        "options": {},
+        "sendBody": true,
+        "specifyBody": "json",
+        "url": "https://djiguiflow.vercel.app/api/internal/relances/stop"
+      },
+      "position": [
+        120,
+        200
+      ],
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2
+    },
+    {
+      "id": "046fb00b-8be7-4e17-86cc-616d3a6585cf",
+      "name": "Stop reconnu ?",
+      "notes": "Faux positif ou route en panne : on rend la main a l'assistante. Sans cela, « arretez le piment » resterait sans reponse et la commande serait perdue en silence.",
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "wa-stop-reconnu",
+              "leftValue": "={{ $json.reconnu === true }}",
+              "operator": {
+                "operation": "true",
+                "singleValue": true,
+                "type": "boolean"
+              },
+              "rightValue": ""
+            }
+          ],
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          }
+        }
+      },
+      "position": [
+        320,
+        200
+      ],
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2
+    }
+  ],
+  "settings": {
+    "availableInMCP": true,
+    "errorWorkflow": "NfWU666FLz9jR1Zv",
+    "executionOrder": "v1"
+  },
+  "sourceWorkflowId": null,
+  "tags": [],
+  "versionCounter": 13
+}

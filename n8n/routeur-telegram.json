@@ -1,0 +1,3548 @@
+{
+  "active": true,
+  "activeVersion": {
+    "authors": "JEAN PAUL OULAI (via MCP)",
+    "autosaved": false,
+    "connections": {
+      "Aiguilleur Telegram": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Call Notes Clients",
+              "type": "main"
+            }
+          ],
+          [
+            {
+              "index": 0,
+              "node": "Call 'Acceptation Livraison'",
+              "type": "main"
+            }
+          ],
+          [
+            {
+              "index": 0,
+              "node": "Rattacher le livreur",
+              "type": "main"
+            }
+          ],
+          [
+            {
+              "index": 0,
+              "node": "Enregistrer la position",
+              "type": "main"
+            }
+          ],
+          [
+            {
+              "index": 0,
+              "node": "Call 'Dashboard Gérant'",
+              "type": "main"
+            }
+          ],
+          [
+            {
+              "index": 0,
+              "node": "Répondre l'ID",
+              "type": "main"
+            }
+          ],
+          [
+            {
+              "index": 0,
+              "node": "Répondre l'ID",
+              "type": "main"
+            }
+          ],
+          [
+            {
+              "index": 0,
+              "node": "Lire le montant tape",
+              "type": "main"
+            }
+          ],
+          [
+            {
+              "index": 0,
+              "node": "Boutique ouverte ?",
+              "type": "main"
+            }
+          ],
+          [
+            {
+              "index": 0,
+              "node": "Lire les frais",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Boutique ouverte ?": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Normalisateur TG",
+              "type": "main"
+            }
+          ],
+          [
+            {
+              "index": 0,
+              "node": "Repondre ferme",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Charger fiche": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Aiguilleur Telegram",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Enregistrer la position": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Repondre position au client",
+              "type": "main"
+            },
+            {
+              "index": 0,
+              "node": "Position trouvee ?",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Enregistrer les frais": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Frais enregistres ?",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Frais enregistres ?": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Prevenir le client des frais",
+              "type": "main"
+            },
+            {
+              "index": 0,
+              "node": "Confirmer au groupe",
+              "type": "main"
+            }
+          ],
+          [
+            {
+              "index": 0,
+              "node": "Confirmer au groupe",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Lire le montant tape": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Enregistrer les frais",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Lire les frais": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Montant libre ?",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Montant libre ?": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Demander le montant libre",
+              "type": "main"
+            }
+          ],
+          [
+            {
+              "index": 0,
+              "node": "Enregistrer les frais",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Normalisateur TG": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Call 'Cerveau Zahara'",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Position trouvee ?": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Prevenir le groupe de la position",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Rattacher le livreur": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Repondre au livreur",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Signature présente ?": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Charger fiche",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Webhook": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Signature présente ?",
+              "type": "main"
+            }
+          ]
+        ]
+      }
+    },
+    "description": null,
+    "name": null,
+    "nodeGroups": [],
+    "nodes": [
+      {
+        "disabled": false,
+        "id": "8937af1c-50da-4ca2-9589-983237c3ab59",
+        "name": "Call Notes Clients",
+        "parameters": {
+          "mode": "once",
+          "options": {},
+          "workflowId": {
+            "__rl": true,
+            "cachedResultName": "Reception Notes Clients",
+            "mode": "list",
+            "value": "y9h71eo0sZzgLSCE"
+          },
+          "workflowInputs": {
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": false,
+            "mappingMode": "defineBelow",
+            "matchingColumns": [],
+            "schema": [
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "callback_query",
+                "id": "callback_query",
+                "removed": false,
+                "required": false,
+                "type": "object"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "slug",
+                "id": "slug",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "nom_boutique",
+                "id": "nom_boutique",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "sheet_document_id",
+                "id": "sheet_document_id",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "sheet_notes",
+                "id": "sheet_notes",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "telegram_marchand",
+                "id": "telegram_marchand",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              }
+            ],
+            "value": {
+              "callback_query": "={{ $('Webhook').first().json.body.callback_query }}",
+              "nom_boutique": "={{ $json.nom }}",
+              "sheet_document_id": "={{ $json.sheet_document_id }}",
+              "sheet_notes": "={{ $json.sheet_notes }}",
+              "slug": "={{ $json.slug }}",
+              "telegram_marchand": "={{ $json.telegram_marchand }}"
+            }
+          }
+        },
+        "position": [
+          432,
+          -80
+        ],
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.3
+      },
+      {
+        "id": "1eb6657e-5fb9-4156-b4e3-006b5192f42d",
+        "name": "Normalisateur TG",
+        "parameters": {
+          "jsCode": "const data  = $('Webhook').first().json.body || {};      // la MISE A JOUR\nconst fiche = $('Charger fiche').first().json || {};     // la FICHE\n\nconst chatId = data.message?.chat?.id ||\n               data.edited_message?.chat?.id || '';\nconst texte = data.message?.text ||\n              data.message?.caption ||\n              data.edited_message?.text ||\n              'Message non textuel';\nconst prenom = data.message?.from?.first_name ||\n               'Client';\n\nreturn [{ json: {\n  canal: 'telegram',\n  destinataire: String(chatId),\n  texte: texte,\n  prenom: prenom,\n\n  // Meme greffe que le routeur WhatsApp : le Cerveau ne connait le marchand\n  // que par ce qu'on lui passe.\n  slug:              fiche.slug || String($('Webhook').first().json.params?.slug || ''),\n  boutique_id:       fiche.id || '',\n  nom_boutique:      fiche.nom || '',\n  // Le metier de la boutique : l'assistante y accorde son vocabulaire, pour\n  // ne pas souhaiter bon appetit au client d'une boutique de vetements.\n  secteur:           fiche.categorie || '',\n  sheet_commandes:   fiche.sheet_commandes || '',\n  sheet_menu:        fiche.sheet_menu || '',\n  sheet_notes:       fiche.sheet_notes || '',\n  groupe_livreurs:   fiche.groupe_livreurs || '',\n  telegram_marchand: fiche.telegram_marchand || '',\n  whatsapp_marchand: fiche.telephone || '',\n  sheet_document_id: fiche.sheet_document_id || '',\n}}];"
+        },
+        "position": [
+          880,
+          320
+        ],
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2
+      },
+      {
+        "disabled": false,
+        "id": "f77feca5-744a-4e25-98bf-9e37cdfadc9f",
+        "name": "Call 'Cerveau Zahara'",
+        "parameters": {
+          "mode": "once",
+          "options": {},
+          "workflowId": {
+            "__rl": true,
+            "cachedResultName": "Cerveau Zahara",
+            "mode": "list",
+            "value": "gdL4r8lHftnRYgYl"
+          },
+          "workflowInputs": {
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": true,
+            "mappingMode": "defineBelow",
+            "matchingColumns": [],
+            "schema": [
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "canal",
+                "id": "canal",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "destinataire",
+                "id": "destinataire",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "texte",
+                "id": "texte",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "prenom",
+                "id": "prenom",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "boutique_id",
+                "id": "boutique_id",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "nom_boutique",
+                "id": "nom_boutique",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "sheet_commandes",
+                "id": "sheet_commandes",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "sheet_menu",
+                "id": "sheet_menu",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "sheet_notes",
+                "id": "sheet_notes",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "groupe_livreurs",
+                "id": "groupe_livreurs",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "telegram_marchand",
+                "id": "telegram_marchand",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "whatsapp_marchand",
+                "id": "whatsapp_marchand",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "sheet_document_id",
+                "id": "sheet_document_id",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "slug",
+                "id": "slug",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "secteur",
+                "id": "secteur",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              }
+            ],
+            "value": {
+              "boutique_id": "={{ $json.boutique_id }}",
+              "canal": "={{ $json.canal }}",
+              "destinataire": "={{ $json.destinataire }}",
+              "groupe_livreurs": "={{ $json.groupe_livreurs }}",
+              "nom_boutique": "={{ $json.nom_boutique }}",
+              "prenom": "={{ $json.prenom }}",
+              "secteur": "={{ $json.secteur }}",
+              "sheet_commandes": "={{ $json.sheet_commandes }}",
+              "sheet_document_id": "={{ $json.sheet_document_id }}",
+              "sheet_menu": "={{ $json.sheet_menu }}",
+              "sheet_notes": "={{ $json.sheet_notes }}",
+              "slug": "={{ $json.slug }}",
+              "telegram_marchand": "={{ $json.telegram_marchand }}",
+              "texte": "={{ $json.texte }}",
+              "whatsapp_marchand": "={{ $json.whatsapp_marchand }}"
+            }
+          }
+        },
+        "position": [
+          1072,
+          320
+        ],
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.3
+      },
+      {
+        "id": "26481243-d403-48e4-942d-d6591a35edca",
+        "name": "Aiguilleur Telegram",
+        "parameters": {
+          "looseTypeValidation": true,
+          "options": {},
+          "rules": {
+            "values": [
+              {
+                "conditions": {
+                  "combinator": "and",
+                  "conditions": [
+                    {
+                      "id": "tg-note",
+                      "leftValue": "={{ String($('Webhook').first().json.body?.callback_query?.data || '').startsWith('note_') }}",
+                      "operator": {
+                        "operation": "true",
+                        "singleValue": true,
+                        "type": "boolean"
+                      },
+                      "rightValue": ""
+                    }
+                  ],
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "loose",
+                    "version": 3
+                  }
+                },
+                "outputKey": "Note client",
+                "renameOutput": true
+              },
+              {
+                "conditions": {
+                  "combinator": "and",
+                  "conditions": [
+                    {
+                      "id": "tg-livreur",
+                      "leftValue": "={{ /^(accept|refuse|parti|en_route|livre)_/.test(String($('Webhook').first().json.body?.callback_query?.data || '')) }}",
+                      "operator": {
+                        "operation": "true",
+                        "singleValue": true,
+                        "type": "boolean"
+                      },
+                      "rightValue": ""
+                    }
+                  ],
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "loose",
+                    "version": 3
+                  }
+                },
+                "outputKey": "Callback livreur",
+                "renameOutput": true
+              },
+              {
+                "conditions": {
+                  "combinator": "and",
+                  "conditions": [
+                    {
+                      "id": "tg-rattachement",
+                      "leftValue": "={{ !$('Webhook').first().json.body?.callback_query && /^\\/start\\s+\\S+/.test(String($('Webhook').first().json.body?.message?.text || '').trim()) }}",
+                      "operator": {
+                        "operation": "true",
+                        "singleValue": true,
+                        "type": "boolean"
+                      },
+                      "rightValue": ""
+                    }
+                  ],
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "loose",
+                    "version": 3
+                  }
+                },
+                "outputKey": "Rattachement livreur",
+                "renameOutput": true
+              },
+              {
+                "conditions": {
+                  "combinator": "and",
+                  "conditions": [
+                    {
+                      "id": "tg-position",
+                      "leftValue": "={{ !$('Webhook').first().json.body?.callback_query && (!!$('Webhook').first().json.body?.message?.location || /(?:google\\.[a-z.]+\\/maps|maps\\.google\\.|maps\\.app\\.goo\\.gl|goo\\.gl\\/maps)/i.test(String($('Webhook').first().json.body?.message?.text || ''))) }}",
+                      "operator": {
+                        "operation": "true",
+                        "singleValue": true,
+                        "type": "boolean"
+                      },
+                      "rightValue": ""
+                    }
+                  ],
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "loose",
+                    "version": 3
+                  }
+                },
+                "outputKey": "Position client",
+                "renameOutput": true
+              },
+              {
+                "conditions": {
+                  "combinator": "and",
+                  "conditions": [
+                    {
+                      "id": "tg-dash",
+                      "leftValue": "={{ !$('Webhook').first().json.body?.callback_query && String($('Webhook').first().json.body?.message?.text || '').startsWith('/') && String($('Charger fiche').first().json.telegram_marchand || '').trim() !== '' && String($('Webhook').first().json.body?.message?.chat?.id || '') === String($('Charger fiche').first().json.telegram_marchand || '').trim() }}",
+                      "operator": {
+                        "operation": "true",
+                        "singleValue": true,
+                        "type": "boolean"
+                      },
+                      "rightValue": ""
+                    }
+                  ],
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "loose",
+                    "version": 3
+                  }
+                },
+                "outputKey": "Commande dashboard",
+                "renameOutput": true
+              },
+              {
+                "conditions": {
+                  "combinator": "and",
+                  "conditions": [
+                    {
+                      "id": "tg-id",
+                      "leftValue": "={{ !$('Webhook').first().json.body?.callback_query && /^id$/i.test(String($('Webhook').first().json.body?.message?.text || '').trim()) }}",
+                      "operator": {
+                        "operation": "true",
+                        "singleValue": true,
+                        "type": "boolean"
+                      },
+                      "rightValue": ""
+                    }
+                  ],
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "loose",
+                    "version": 3
+                  }
+                },
+                "outputKey": "Demande d'ID",
+                "renameOutput": true
+              },
+              {
+                "conditions": {
+                  "combinator": "and",
+                  "conditions": [
+                    {
+                      "id": "tg-dash-non-configure",
+                      "leftValue": "={{ !$('Webhook').first().json.body?.callback_query && String($('Webhook').first().json.body?.message?.text || '').startsWith('/') && String($('Charger fiche').first().json.telegram_marchand || '').trim() === '' }}",
+                      "operator": {
+                        "operation": "true",
+                        "singleValue": true,
+                        "type": "boolean"
+                      },
+                      "rightValue": ""
+                    }
+                  ],
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "loose",
+                    "version": 3
+                  }
+                },
+                "outputKey": "Dashboard non configure",
+                "renameOutput": true
+              },
+              {
+                "conditions": {
+                  "combinator": "and",
+                  "conditions": [
+                    {
+                      "id": "tg-frais-tapes",
+                      "leftValue": "={{ !$('Webhook').first().json.body?.callback_query && !!$('Webhook').first().json.body?.message?.reply_to_message && /^\\s*\\d{2,6}\\s*$/.test(String($('Webhook').first().json.body?.message?.text || '')) && /Commande\\s+\\S+/.test(String($('Webhook').first().json.body?.message?.reply_to_message?.text || '')) }}",
+                      "operator": {
+                        "operation": "true",
+                        "singleValue": true,
+                        "type": "boolean"
+                      },
+                      "rightValue": ""
+                    }
+                  ],
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "loose",
+                    "version": 3
+                  }
+                },
+                "outputKey": "Frais tapes",
+                "renameOutput": true
+              },
+              {
+                "conditions": {
+                  "combinator": "and",
+                  "conditions": [
+                    {
+                      "id": "tg-msg",
+                      "leftValue": "={{ !$('Webhook').first().json.body?.callback_query && !!($('Webhook').first().json.body?.message || $('Webhook').first().json.body?.edited_message) }}",
+                      "operator": {
+                        "operation": "true",
+                        "singleValue": true,
+                        "type": "boolean"
+                      },
+                      "rightValue": ""
+                    }
+                  ],
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "loose",
+                    "version": 3
+                  }
+                },
+                "outputKey": "Message texte",
+                "renameOutput": true
+              },
+              {
+                "conditions": {
+                  "combinator": "and",
+                  "conditions": [
+                    {
+                      "id": "tg-frais",
+                      "leftValue": "={{ /^frais_/.test(String($('Webhook').first().json.body?.callback_query?.data || '')) }}",
+                      "operator": {
+                        "operation": "true",
+                        "singleValue": true,
+                        "type": "boolean"
+                      },
+                      "rightValue": ""
+                    }
+                  ],
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "loose",
+                    "version": 3
+                  }
+                },
+                "outputKey": "Frais livraison",
+                "renameOutput": true
+              },
+              {
+                "conditions": {
+                  "combinator": "and",
+                  "conditions": [
+                    {
+                      "id": "tg-ignore",
+                      "leftValue": "true",
+                      "operator": {
+                        "name": "filter.operator.equals",
+                        "operation": "equals",
+                        "type": "string"
+                      },
+                      "rightValue": "true"
+                    }
+                  ],
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "loose",
+                    "version": 3
+                  }
+                },
+                "outputKey": "Ignore",
+                "renameOutput": true
+              }
+            ]
+          }
+        },
+        "position": [
+          304,
+          144
+        ],
+        "type": "n8n-nodes-base.switch",
+        "typeVersion": 3.4
+      },
+      {
+        "disabled": false,
+        "id": "17d45f9f-b05b-4c1e-8cd5-144761961f50",
+        "name": "Call 'Acceptation Livraison'",
+        "parameters": {
+          "mode": "once",
+          "options": {},
+          "workflowId": {
+            "__rl": true,
+            "cachedResultName": "Acceptation Livraison Zahara",
+            "mode": "list",
+            "value": "LqBgRvLeeKUwZhB5"
+          },
+          "workflowInputs": {
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": false,
+            "mappingMode": "defineBelow",
+            "matchingColumns": [],
+            "schema": [
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "callback_query",
+                "id": "callback_query",
+                "removed": false,
+                "required": false,
+                "type": "object"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "slug",
+                "id": "slug",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "nom_boutique",
+                "id": "nom_boutique",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "sheet_document_id",
+                "id": "sheet_document_id",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "sheet_commandes",
+                "id": "sheet_commandes",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "groupe_livreurs",
+                "id": "groupe_livreurs",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "telegram_marchand",
+                "id": "telegram_marchand",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              }
+            ],
+            "value": {
+              "callback_query": "={{ $('Webhook').first().json.body.callback_query }}",
+              "groupe_livreurs": "={{ $json.groupe_livreurs }}",
+              "nom_boutique": "={{ $json.nom }}",
+              "sheet_commandes": "={{ $json.sheet_commandes }}",
+              "sheet_document_id": "={{ $json.sheet_document_id }}",
+              "slug": "={{ $json.slug }}",
+              "telegram_marchand": "={{ $json.telegram_marchand }}"
+            }
+          }
+        },
+        "position": [
+          736,
+          -64
+        ],
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.3
+      },
+      {
+        "disabled": false,
+        "id": "bba007de-8617-4ad1-8240-279d134390fc",
+        "name": "Call 'Dashboard Gérant'",
+        "parameters": {
+          "mode": "once",
+          "options": {},
+          "workflowId": {
+            "__rl": true,
+            "cachedResultName": "Dashboard Gérant Zahara",
+            "mode": "list",
+            "value": "Ebtap4TXarL5eZvg"
+          },
+          "workflowInputs": {
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": false,
+            "mappingMode": "defineBelow",
+            "matchingColumns": [],
+            "schema": [
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "message",
+                "id": "message",
+                "removed": false,
+                "required": false,
+                "type": "object"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "slug",
+                "id": "slug",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "nom_boutique",
+                "id": "nom_boutique",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "sheet_document_id",
+                "id": "sheet_document_id",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "sheet_commandes",
+                "id": "sheet_commandes",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "telegram_marchand",
+                "id": "telegram_marchand",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              }
+            ],
+            "value": {
+              "message": "={{ $('Webhook').first().json.body.message }}",
+              "nom_boutique": "={{ $json.nom }}",
+              "sheet_commandes": "={{ $json.sheet_commandes }}",
+              "sheet_document_id": "={{ $json.sheet_document_id }}",
+              "slug": "={{ $json.slug }}",
+              "telegram_marchand": "={{ $json.telegram_marchand }}",
+              "whatsapp_marchand": "={{ $json.telephone }}"
+            }
+          }
+        },
+        "position": [
+          848,
+          64
+        ],
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.3
+      },
+      {
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "QoKeVRwGrk1YqN9Q",
+            "name": "Header Auth account 2"
+          }
+        },
+        "id": "dc4310de-889b-4e01-99ea-61fd0466d188",
+        "maxTries": 2,
+        "name": "Charger fiche",
+        "notes": "Un bot Telegram = un jeton = un marchand : le slug ne peut pas venir du message. Il se declare ici, et nulle part ailleurs. Pour brancher le bot d un autre marchand, dupliquer ce workflow et changer ce seul slug.",
+        "parameters": {
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "x-telegram-bot-api-secret-token",
+                "value": "={{ $('Webhook').first().json.headers['x-telegram-bot-api-secret-token'] || '' }}"
+              }
+            ]
+          },
+          "options": {},
+          "sendHeaders": true,
+          "url": "=https://www.djiguiflow.com/api/internal/fiche?slug={{ encodeURIComponent($('Webhook').first().json.params.slug) }}"
+        },
+        "position": [
+          96,
+          144
+        ],
+        "retryOnFail": true,
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "waitBetweenTries": 1000
+      },
+      {
+        "id": "701f2ded-9d02-4301-a3a3-a49fb3f6671b",
+        "name": "Webhook",
+        "notes": "Une seule URL pour tous les bots : c est le slug du chemin qui dit de quel marchand vient la mise a jour.",
+        "parameters": {
+          "httpMethod": "POST",
+          "options": {},
+          "path": "telegram/:slug"
+        },
+        "position": [
+          -320,
+          144
+        ],
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2.1,
+        "webhookId": "c66464e0-8c2a-4c86-8d4f-36e126bfc108"
+      },
+      {
+        "id": "a8b4b554-2ea4-4a85-9be2-6635efc2bfa7",
+        "name": "Signature présente ?",
+        "notes": "Ecarte les scanners anonymes sans declencher d alerte. La valeur du secret, elle, est confrontee a l empreinte du marchand par la route fiche.",
+        "parameters": {
+          "conditions": {
+            "combinator": "and",
+            "conditions": [
+              {
+                "id": "tg-signature-presente",
+                "leftValue": "={{ !!$json.headers['x-telegram-bot-api-secret-token'] }}",
+                "operator": {
+                  "operation": "true",
+                  "singleValue": true,
+                  "type": "boolean"
+                },
+                "rightValue": ""
+              }
+            ],
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            }
+          },
+          "looseTypeValidation": true,
+          "options": {}
+        },
+        "position": [
+          -112,
+          144
+        ],
+        "type": "n8n-nodes-base.filter",
+        "typeVersion": 2.2
+      },
+      {
+        "disabled": false,
+        "id": "3c033890-7a04-4e1c-8c4e-fcd86a38d683",
+        "maxTries": 3,
+        "name": "Répondre l'ID",
+        "notes": "Sert a constituer le groupe livreurs : le gerant ajoute son bot au groupe, tape ID, et recoit l identifiant a coller dans DjiguiFlow.",
+        "onError": "continueRegularOutput",
+        "parameters": {
+          "mode": "once",
+          "options": {},
+          "workflowId": {
+            "__rl": true,
+            "cachedResultName": "Envoyer réponse client",
+            "mode": "list",
+            "value": "JkNvcqsZaY22dfk5"
+          },
+          "workflowInputs": {
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": true,
+            "mappingMode": "defineBelow",
+            "matchingColumns": [],
+            "schema": [
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "canal",
+                "id": "canal",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "destinataire",
+                "id": "destinataire",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "message",
+                "id": "message",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              },
+              {
+                "canBeUsedToMatch": true,
+                "defaultMatch": false,
+                "display": true,
+                "displayName": "boutique",
+                "id": "boutique",
+                "removed": false,
+                "required": false,
+                "type": "string"
+              }
+            ],
+            "value": {
+              "boutique": "={{ $('Charger fiche').first().json.slug }}",
+              "canal": "telegram",
+              "destinataire": "={{ String($('Webhook').first().json.body.message.chat.id) }}",
+              "message": "=🆔 Identifiant de cette conversation : {{ $('Webhook').first().json.body.message.chat.id }}\n\nCollez-le dans DjiguiFlow pour y envoyer vos alertes. Dans un groupe de livreurs, c'est cet identifiant qu'il faut renseigner.",
+              "sheet_document_id": "={{ $('Charger fiche').first().json.sheet_document_id }}"
+            }
+          }
+        },
+        "position": [
+          880,
+          128
+        ],
+        "retryOnFail": false,
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.3,
+        "waitBetweenTries": 2000
+      },
+      {
+        "alwaysOutputData": true,
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "QoKeVRwGrk1YqN9Q",
+            "name": "Header Auth account 2"
+          }
+        },
+        "id": "c1a70003-0000-4000-8000-000000000001",
+        "maxTries": 2,
+        "name": "Rattacher le livreur",
+        "notes": "Le livreur vient d ouvrir son lien d invitation. Le slug vient du bot qui a recu le message, jamais du texte : un code emis par un marchand ne peut pas rattacher chez un autre.",
+        "onError": "continueRegularOutput",
+        "parameters": {
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "jsonBody": "={\n  \"boutique\": {{ JSON.stringify(String($('Charger fiche').first().json.slug || $('Webhook').first().json.params?.slug || '')) }},\n  \"code\": {{ JSON.stringify(String($('Webhook').first().json.body?.message?.text || '').trim().replace(/^\\/start\\s+/, '')) }},\n  \"telegram_id\": {{ JSON.stringify(String($('Webhook').first().json.body?.message?.from?.id ?? '')) }},\n  \"prenom\": {{ JSON.stringify(String($('Webhook').first().json.body?.message?.from?.first_name || '')) }}\n}",
+          "method": "POST",
+          "options": {},
+          "sendBody": true,
+          "specifyBody": "json",
+          "url": "https://www.djiguiflow.com/api/internal/livreurs/rattacher"
+        },
+        "position": [
+          640,
+          208
+        ],
+        "retryOnFail": true,
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "waitBetweenTries": 2000
+      },
+      {
+        "id": "c1a70003-0000-4000-8000-000000000002",
+        "name": "Repondre au livreur",
+        "notes": "Sans retour, le livreur ne sait pas si son lien a fonctionne et va deranger son gerant. Aucun reessai ici : rien ne doit pouvoir rejouer un envoi deja parti.",
+        "onError": "continueRegularOutput",
+        "parameters": {
+          "mode": "once",
+          "options": {},
+          "workflowId": {
+            "__rl": true,
+            "cachedResultName": "Envoyer réponse client",
+            "mode": "list",
+            "value": "JkNvcqsZaY22dfk5"
+          },
+          "workflowInputs": {
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": true,
+            "mappingMode": "defineBelow",
+            "matchingColumns": [],
+            "schema": [],
+            "value": {
+              "boutique": "={{ $('Charger fiche').first().json.slug }}",
+              "canal": "telegram",
+              "destinataire": "={{ String($('Webhook').first().json.body.message.chat.id) }}",
+              "message": "={{ $json.ok !== true ? '⏳ Vérification impossible pour le moment. Réessayez dans un instant.' : $json.etat === 'rattache' ? '✅ Bienvenue ' + String($json.nom || '') + ' ! Votre compte est rattaché à ' + String($json.nom_boutique || 'la boutique') + '. Vous recevrez les courses dans le groupe des livreurs.' : $json.etat === 'deja' ? '✅ Votre compte est déjà rattaché' + ($json.nom ? ' à la fiche de ' + String($json.nom) : '') + '. Rien de plus à faire.' : '⚠️ Ce lien n’est plus valable. Demandez-en un nouveau à votre gérant.' }}",
+              "reply_markup": "",
+              "sheet_document_id": "={{ $('Charger fiche').first().json.sheet_document_id }}"
+            }
+          }
+        },
+        "position": [
+          880,
+          208
+        ],
+        "retryOnFail": false,
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.3
+      },
+      {
+        "alwaysOutputData": true,
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "QoKeVRwGrk1YqN9Q",
+            "name": "Header Auth account 2"
+          }
+        },
+        "id": "c1a70004-0000-4000-8000-000000000001",
+        "maxTries": 2,
+        "name": "Enregistrer la position",
+        "notes": "Le client a envoye sa position. Elle n a pas de reference de commande : c est la plateforme qui l apparie, par le client, la boutique et le temps.",
+        "onError": "continueRegularOutput",
+        "parameters": {
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "jsonBody": "={{ JSON.stringify({ boutique: String($('Charger fiche').first().json.slug || $('Webhook').first().json.params?.slug || ''), chat_id: String($('Webhook').first().json.body?.message?.chat?.id ?? ''), latitude: $('Webhook').first().json.body?.message?.location?.latitude ?? null, longitude: $('Webhook').first().json.body?.message?.location?.longitude ?? null, texte: String($('Webhook').first().json.body?.message?.text || '') }) }}",
+          "method": "POST",
+          "options": {},
+          "sendBody": true,
+          "specifyBody": "json",
+          "url": "https://www.djiguiflow.com/api/internal/commandes/position"
+        },
+        "position": [
+          640,
+          400
+        ],
+        "retryOnFail": true,
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "waitBetweenTries": 2000
+      },
+      {
+        "id": "c1a70004-0000-4000-8000-000000000002",
+        "name": "Repondre position au client",
+        "notes": "Place au-dessus de la branche groupe : le client est remercie d abord. La reference est nommee pour qu il voie tout de suite si sa position s est attachee a la mauvaise commande.",
+        "onError": "continueRegularOutput",
+        "parameters": {
+          "mode": "once",
+          "options": {},
+          "workflowId": {
+            "__rl": true,
+            "cachedResultName": "Envoyer réponse client",
+            "mode": "list",
+            "value": "JkNvcqsZaY22dfk5"
+          },
+          "workflowInputs": {
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": true,
+            "mappingMode": "defineBelow",
+            "matchingColumns": [],
+            "schema": [],
+            "value": {
+              "boutique": "={{ $('Charger fiche').first().json.slug }}",
+              "canal": "telegram",
+              "destinataire": "={{ String($('Webhook').first().json.body.message.chat.id) }}",
+              "message": "={{ $json.ok !== true ? '⏳ Position non enregistrée pour le moment. Réessayez dans un instant.' : $json.etat === 'enregistree' ? '✅ Merci ' + String($json.client_nom || '') + ' ! Votre position est enregistrée pour la commande ' + String($json.reference || '') + '. Le livreur ira droit au but. 🛵' : $json.etat === 'illisible' ? '⚠️ Je n’ai pas pu lire cette position. Dans Google Maps, appuyez sur Partager puis Copier le lien, et collez-le ici.' : 'ℹ️ Merci ! Nous n’avons trouvé aucune commande en cours à rattacher à cette position. Renvoyez-la après avoir commandé.' }}",
+              "reply_markup": "",
+              "sheet_document_id": "={{ $('Charger fiche').first().json.sheet_document_id }}"
+            }
+          }
+        },
+        "position": [
+          880,
+          336
+        ],
+        "retryOnFail": false,
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.3
+      },
+      {
+        "id": "c1a70004-0000-4000-8000-000000000003",
+        "name": "Position trouvee ?",
+        "notes": "Sans commande appariee, il n y a rien a annoncer au groupe : une position orpheline ne sert a aucun livreur.",
+        "parameters": {
+          "conditions": {
+            "combinator": "and",
+            "conditions": [
+              {
+                "id": "c1a70004-1111-4000-8000-000000000001",
+                "leftValue": "={{ $json.trouve === true && !!String($('Charger fiche').first().json.groupe_livreurs || '').trim() }}",
+                "operator": {
+                  "operation": "true",
+                  "singleValue": true,
+                  "type": "boolean"
+                },
+                "rightValue": ""
+              }
+            ],
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 3
+            }
+          },
+          "options": {}
+        },
+        "position": [
+          880,
+          464
+        ],
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3
+      },
+      {
+        "id": "c1a70004-0000-4000-8000-000000000004",
+        "name": "Prevenir le groupe de la position",
+        "notes": "La position arrive APRES le dispatch : le livreur a deja la course en main. C est donc ici, et non dans le message initial, qu il faut la lui donner.",
+        "onError": "continueRegularOutput",
+        "parameters": {
+          "mode": "once",
+          "options": {},
+          "workflowId": {
+            "__rl": true,
+            "cachedResultName": "Envoyer réponse client",
+            "mode": "list",
+            "value": "JkNvcqsZaY22dfk5"
+          },
+          "workflowInputs": {
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": true,
+            "mappingMode": "defineBelow",
+            "matchingColumns": [],
+            "schema": [],
+            "value": {
+              "boutique": "={{ $('Charger fiche').first().json.slug }}",
+              "canal": "telegram",
+              "destinataire": "={{ $('Charger fiche').first().json.groupe_livreurs }}",
+              "message": "=📍 Position exacte reçue — commande {{ $json.reference }}\n🗺️ https://www.google.com/maps/search/{{ $json.latitude }},{{ $json.longitude }}\n\nOuvrez ce lien plutôt que l’adresse écrite : il mène à la porte.",
+              "reply_markup": "",
+              "sheet_document_id": "={{ $('Charger fiche').first().json.sheet_document_id }}"
+            }
+          }
+        },
+        "position": [
+          1072,
+          464
+        ],
+        "retryOnFail": false,
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.3
+      },
+      {
+        "id": "c1a70007-0000-4000-8000-000000000001",
+        "name": "Boutique ouverte ?",
+        "notes": "Barriere devant l assistante seulement. Les notes, les positions, le rattachement livreur et les commandes du gerant passent quoi qu il arrive — un client qui note sa livraison a 23h ne doit pas s entendre dire que c est ferme.",
+        "parameters": {
+          "conditions": {
+            "combinator": "and",
+            "conditions": [
+              {
+                "id": "tg-ouvert",
+                "leftValue": "={{ $('Charger fiche').first().json.ouvert !== false }}",
+                "operator": {
+                  "operation": "true",
+                  "singleValue": true,
+                  "type": "boolean"
+                },
+                "rightValue": ""
+              }
+            ],
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 3
+            }
+          },
+          "looseTypeValidation": true,
+          "options": {}
+        },
+        "position": [
+          1072,
+          448
+        ],
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3
+      },
+      {
+        "id": "c1a70007-0000-4000-8000-000000000002",
+        "name": "Repondre ferme",
+        "notes": "Dire QUAND on rouvre, pas seulement qu on est ferme.",
+        "onError": "continueRegularOutput",
+        "parameters": {
+          "mode": "once",
+          "options": {},
+          "workflowId": {
+            "__rl": true,
+            "cachedResultName": "Envoyer réponse client",
+            "mode": "list",
+            "value": "JkNvcqsZaY22dfk5"
+          },
+          "workflowInputs": {
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": true,
+            "mappingMode": "defineBelow",
+            "matchingColumns": [],
+            "schema": [],
+            "value": {
+              "boutique": "={{ $('Charger fiche').first().json.slug }}",
+              "canal": "telegram",
+              "destinataire": "={{ String($('Webhook').first().json.body.message.chat.id) }}",
+              "message": "=🕐 {{ $('Charger fiche').first().json.nom }} n’accepte pas de commande pour le moment.\n\n{{ $('Charger fiche').first().json.message_horaires }}\n\nÉcrivez-nous dès la réouverture, nous prendrons votre commande avec plaisir.",
+              "reply_markup": "",
+              "sheet_document_id": "={{ $('Charger fiche').first().json.sheet_document_id }}"
+            }
+          }
+        },
+        "position": [
+          1296,
+          528
+        ],
+        "retryOnFail": false,
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.3
+      },
+      {
+        "id": "c1a70008-0000-4000-8000-000000000001",
+        "name": "Lire les frais",
+        "notes": "Le bouton porte la reference : rien a deviner. Un rapprochement approximatif sur de l argent finit toujours par designer la mauvaise ligne.",
+        "parameters": {
+          "jsCode": "// Le bouton porte « frais_<montant>_<reference> », ou « frais_autre_<reference> »\n// quand le livreur veut saisir un montant qui n'est pas propose.\n// La reference peut contenir des tirets bas, comme les callbacks livreur : on\n// rejoint donc tout ce qui suit plutot que de prendre parts[2] seul.\nconst cq = $('Webhook').first().json.body?.callback_query || {};\nconst data = String(cq.data || '');\nconst parts = data.split('_');\n\nconst brut = String(parts[1] ?? '');\nconst reference = parts.slice(2).join('_');\nconst autre = brut === 'autre';\nconst montant = autre ? null : Number(brut);\n\n// MESSAGE SANS DEUX-POINTS NI RETOUR A LA LIGNE. n8n scinde le texte d'une\n// Error sur ces caracteres, et l'alerte n'en recevrait qu'un fragment.\nif (!reference || (!autre && !Number.isFinite(montant))) {\n  throw new Error(`Frais illisibles dans le bouton livreur — ${data}`);\n}\n\nreturn [{ json: {\n  autre,\n  montant,\n  reference,\n  livreur: String(cq.from?.first_name || cq.from?.username || 'Un livreur'),\n  groupe: String(cq.message?.chat?.id ?? ''),\n} }];"
+        },
+        "position": [
+          640,
+          720
+        ],
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2
+      },
+      {
+        "alwaysOutputData": true,
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "QoKeVRwGrk1YqN9Q",
+            "name": "Header Auth account 2"
+          }
+        },
+        "id": "c1a70008-0000-4000-8000-000000000002",
+        "maxTries": 2,
+        "name": "Enregistrer les frais",
+        "notes": "La plateforme refuse d ecraser un montant deja annonce : le client l a lu.",
+        "onError": "continueRegularOutput",
+        "parameters": {
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "jsonBody": "={{ JSON.stringify({ boutique: String($('Charger fiche').first().json.slug || ''), reference: $json.reference, montant: $json.montant }) }}",
+          "method": "POST",
+          "options": {},
+          "sendBody": true,
+          "specifyBody": "json",
+          "url": "https://www.djiguiflow.com/api/internal/commandes/frais"
+        },
+        "position": [
+          860,
+          720
+        ],
+        "retryOnFail": true,
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "waitBetweenTries": 2000
+      },
+      {
+        "id": "c1a70008-0000-4000-8000-000000000003",
+        "name": "Frais enregistres ?",
+        "notes": "Seul un enregistrement NEUF previent le client. Un second appui ne doit pas lui renvoyer le meme message.",
+        "parameters": {
+          "conditions": {
+            "combinator": "and",
+            "conditions": [
+              {
+                "id": "tg-frais-ok",
+                "leftValue": "={{ $json.etat === 'enregistre' }}",
+                "operator": {
+                  "operation": "true",
+                  "singleValue": true,
+                  "type": "boolean"
+                },
+                "rightValue": ""
+              }
+            ],
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 3
+            }
+          },
+          "looseTypeValidation": true,
+          "options": {}
+        },
+        "position": [
+          1080,
+          720
+        ],
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3
+      },
+      {
+        "id": "c1a70008-0000-4000-8000-000000000004",
+        "name": "Prevenir le client des frais",
+        "notes": "Message court et separe. La confirmation de commande est deja partie et ne doit rien attendre : si le livreur n annonce jamais rien, le client a quand meme ete prevenu.",
+        "onError": "continueRegularOutput",
+        "parameters": {
+          "mode": "once",
+          "options": {},
+          "workflowId": {
+            "__rl": true,
+            "cachedResultName": "Envoyer réponse client",
+            "mode": "list",
+            "value": "JkNvcqsZaY22dfk5"
+          },
+          "workflowInputs": {
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": true,
+            "mappingMode": "defineBelow",
+            "matchingColumns": [],
+            "schema": [],
+            "value": {
+              "boutique": "={{ $('Charger fiche').first().json.slug }}",
+              "canal": "={{ $json.canal }}",
+              "destinataire": "={{ $json.destinataire }}",
+              "message": "=🛵 Les frais de livraison pour la commande {{ $json.reference }} s’élèvent à {{ Number($json.montant).toLocaleString('fr-FR') }} F, à régler au livreur.",
+              "reply_markup": "",
+              "sheet_document_id": "={{ $('Charger fiche').first().json.sheet_document_id }}"
+            }
+          }
+        },
+        "position": [
+          1300,
+          656
+        ],
+        "retryOnFail": false,
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.3
+      },
+      {
+        "id": "c1a70008-0000-4000-8000-000000000005",
+        "name": "Confirmer au groupe",
+        "notes": "Sans retour, le livreur ne sait pas si son appui a compte et recommence.",
+        "onError": "continueRegularOutput",
+        "parameters": {
+          "mode": "once",
+          "options": {},
+          "workflowId": {
+            "__rl": true,
+            "cachedResultName": "Envoyer réponse client",
+            "mode": "list",
+            "value": "JkNvcqsZaY22dfk5"
+          },
+          "workflowInputs": {
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": true,
+            "mappingMode": "defineBelow",
+            "matchingColumns": [],
+            "schema": [],
+            "value": {
+              "boutique": "={{ $('Charger fiche').first().json.slug }}",
+              "canal": "telegram",
+              "destinataire": "={{ String($('Webhook').first().json.body?.callback_query?.message?.chat?.id ?? $('Webhook').first().json.body?.message?.chat?.id ?? '') }}",
+              "message": "={{ $json.etat === 'enregistre' ? '✅ Frais enregistrés — ' + Number($json.montant).toLocaleString('fr-FR') + ' F. Le client a été prévenu.' : $json.etat === 'deja_annonce' ? 'ℹ️ Les frais étaient déjà annoncés pour cette course — ' + Number($json.montant).toLocaleString('fr-FR') + ' F. Rien n’a changé.' : '⚠️ Frais non enregistrés, la commande est introuvable. Prévenez le gérant.' }}",
+              "reply_markup": "",
+              "sheet_document_id": "={{ $('Charger fiche').first().json.sheet_document_id }}"
+            }
+          }
+        },
+        "position": [
+          1300,
+          784
+        ],
+        "retryOnFail": false,
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.3
+      },
+      {
+        "id": "c1a70010-0000-4000-8000-000000000001",
+        "name": "Montant libre ?",
+        "parameters": {
+          "conditions": {
+            "combinator": "and",
+            "conditions": [
+              {
+                "id": "tg-frais-autre",
+                "leftValue": "={{ $json.autre === true }}",
+                "operator": {
+                  "operation": "true",
+                  "singleValue": true,
+                  "type": "boolean"
+                },
+                "rightValue": ""
+              }
+            ],
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 3
+            }
+          },
+          "looseTypeValidation": true,
+          "options": {}
+        },
+        "position": [
+          1080,
+          880
+        ],
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3
+      },
+      {
+        "id": "c1a70010-0000-4000-8000-000000000002",
+        "name": "Demander le montant libre",
+        "notes": "La reference est ECRITE dans le message, et le livreur y REPOND. Telegram nous rend alors le message cite : on y relit la commande, sans avoir a retenir un etat entre deux executions — une memoire statique n8n serait perdue au premier echec.",
+        "onError": "continueRegularOutput",
+        "parameters": {
+          "mode": "once",
+          "options": {},
+          "workflowId": {
+            "__rl": true,
+            "cachedResultName": "Envoyer réponse client",
+            "mode": "list",
+            "value": "JkNvcqsZaY22dfk5"
+          },
+          "workflowInputs": {
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": true,
+            "mappingMode": "defineBelow",
+            "matchingColumns": [],
+            "schema": [],
+            "value": {
+              "boutique": "={{ $('Charger fiche').first().json.slug }}",
+              "canal": "telegram",
+              "destinataire": "={{ $json.groupe }}",
+              "message": "=✏️ {{ $json.livreur }}, répondez à CE message en tapant le montant en chiffres, sans autre texte.\n\nCommande {{ $json.reference }}",
+              "reply_markup": "={{ JSON.stringify({ force_reply: true }) }}",
+              "sheet_document_id": "={{ $('Charger fiche').first().json.sheet_document_id }}"
+            }
+          }
+        },
+        "position": [
+          1300,
+          944
+        ],
+        "retryOnFail": false,
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.3
+      },
+      {
+        "id": "c1a70010-0000-4000-8000-000000000003",
+        "name": "Lire le montant tape",
+        "notes": "La commande se relit dans le message CITE, jamais devinee. Aucun etat a conserver entre deux messages.",
+        "parameters": {
+          "jsCode": "const msg = $('Webhook').first().json.body?.message || {};\nconst montant = Number(String(msg.text ?? '').trim());\nconst cite = String(msg.reply_to_message?.text ?? '');\n\n// La reference a ete ecrite par « Demander le montant libre ». L'aiguilleur a\n// deja verifie sa presence, donc ce garde-fou ne devrait jamais lever — il est\n// la pour que le jour ou le gabarit du message change, la panne se NOMME au\n// lieu d'enregistrer un montant sur une commande au hasard.\nconst m = cite.match(/Commande\\s+(\\S+)/);\nif (!m || !Number.isFinite(montant)) {\n  throw new Error(`Montant libre inexploitable — reponse ignoree pour eviter d ecrire sur la mauvaise commande`);\n}\n\nreturn [{ json: {\n  autre: false,\n  montant,\n  reference: m[1],\n  livreur: String(msg.from?.first_name || msg.from?.username || 'Un livreur'),\n  groupe: String(msg.chat?.id ?? ''),\n} }];"
+        },
+        "position": [
+          640,
+          880
+        ],
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2
+      }
+    ],
+    "workflowId": "VT0rUAeViDNHrr2Y",
+    "workflowPublishHistory": [
+      {
+        "event": "activated",
+        "id": 103,
+        "userId": "81519f6f-0887-498a-ad83-5ffd6d591e9a",
+        "workflowId": "VT0rUAeViDNHrr2Y"
+      }
+    ]
+  },
+  "connections": {
+    "Aiguilleur Telegram": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Call Notes Clients",
+            "type": "main"
+          }
+        ],
+        [
+          {
+            "index": 0,
+            "node": "Call 'Acceptation Livraison'",
+            "type": "main"
+          }
+        ],
+        [
+          {
+            "index": 0,
+            "node": "Rattacher le livreur",
+            "type": "main"
+          }
+        ],
+        [
+          {
+            "index": 0,
+            "node": "Enregistrer la position",
+            "type": "main"
+          }
+        ],
+        [
+          {
+            "index": 0,
+            "node": "Call 'Dashboard Gérant'",
+            "type": "main"
+          }
+        ],
+        [
+          {
+            "index": 0,
+            "node": "Répondre l'ID",
+            "type": "main"
+          }
+        ],
+        [
+          {
+            "index": 0,
+            "node": "Répondre l'ID",
+            "type": "main"
+          }
+        ],
+        [
+          {
+            "index": 0,
+            "node": "Lire le montant tape",
+            "type": "main"
+          }
+        ],
+        [
+          {
+            "index": 0,
+            "node": "Boutique ouverte ?",
+            "type": "main"
+          }
+        ],
+        [
+          {
+            "index": 0,
+            "node": "Lire les frais",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Boutique ouverte ?": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Normalisateur TG",
+            "type": "main"
+          }
+        ],
+        [
+          {
+            "index": 0,
+            "node": "Repondre ferme",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Charger fiche": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Aiguilleur Telegram",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Enregistrer la position": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Repondre position au client",
+            "type": "main"
+          },
+          {
+            "index": 0,
+            "node": "Position trouvee ?",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Enregistrer les frais": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Frais enregistres ?",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Frais enregistres ?": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Prevenir le client des frais",
+            "type": "main"
+          },
+          {
+            "index": 0,
+            "node": "Confirmer au groupe",
+            "type": "main"
+          }
+        ],
+        [
+          {
+            "index": 0,
+            "node": "Confirmer au groupe",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Lire le montant tape": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Enregistrer les frais",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Lire les frais": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Montant libre ?",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Montant libre ?": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Demander le montant libre",
+            "type": "main"
+          }
+        ],
+        [
+          {
+            "index": 0,
+            "node": "Enregistrer les frais",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Normalisateur TG": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Call 'Cerveau Zahara'",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Position trouvee ?": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Prevenir le groupe de la position",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Rattacher le livreur": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Repondre au livreur",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Signature présente ?": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Charger fiche",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Signature présente ?",
+            "type": "main"
+          }
+        ]
+      ]
+    }
+  },
+  "description": null,
+  "id": "VT0rUAeViDNHrr2Y",
+  "isArchived": false,
+  "name": "Routeur Telegram",
+  "nodeGroups": [],
+  "nodes": [
+    {
+      "disabled": false,
+      "id": "8937af1c-50da-4ca2-9589-983237c3ab59",
+      "name": "Call Notes Clients",
+      "parameters": {
+        "mode": "once",
+        "options": {},
+        "workflowId": {
+          "__rl": true,
+          "cachedResultName": "Reception Notes Clients",
+          "mode": "list",
+          "value": "y9h71eo0sZzgLSCE"
+        },
+        "workflowInputs": {
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false,
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "schema": [
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "callback_query",
+              "id": "callback_query",
+              "removed": false,
+              "required": false,
+              "type": "object"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "slug",
+              "id": "slug",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "nom_boutique",
+              "id": "nom_boutique",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "sheet_document_id",
+              "id": "sheet_document_id",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "sheet_notes",
+              "id": "sheet_notes",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "telegram_marchand",
+              "id": "telegram_marchand",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            }
+          ],
+          "value": {
+            "callback_query": "={{ $('Webhook').first().json.body.callback_query }}",
+            "nom_boutique": "={{ $json.nom }}",
+            "sheet_document_id": "={{ $json.sheet_document_id }}",
+            "sheet_notes": "={{ $json.sheet_notes }}",
+            "slug": "={{ $json.slug }}",
+            "telegram_marchand": "={{ $json.telegram_marchand }}"
+          }
+        }
+      },
+      "position": [
+        432,
+        -80
+      ],
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3
+    },
+    {
+      "id": "1eb6657e-5fb9-4156-b4e3-006b5192f42d",
+      "name": "Normalisateur TG",
+      "parameters": {
+        "jsCode": "const data  = $('Webhook').first().json.body || {};      // la MISE A JOUR\nconst fiche = $('Charger fiche').first().json || {};     // la FICHE\n\nconst chatId = data.message?.chat?.id ||\n               data.edited_message?.chat?.id || '';\nconst texte = data.message?.text ||\n              data.message?.caption ||\n              data.edited_message?.text ||\n              'Message non textuel';\nconst prenom = data.message?.from?.first_name ||\n               'Client';\n\nreturn [{ json: {\n  canal: 'telegram',\n  destinataire: String(chatId),\n  texte: texte,\n  prenom: prenom,\n\n  // Meme greffe que le routeur WhatsApp : le Cerveau ne connait le marchand\n  // que par ce qu'on lui passe.\n  slug:              fiche.slug || String($('Webhook').first().json.params?.slug || ''),\n  boutique_id:       fiche.id || '',\n  nom_boutique:      fiche.nom || '',\n  // Le metier de la boutique : l'assistante y accorde son vocabulaire, pour\n  // ne pas souhaiter bon appetit au client d'une boutique de vetements.\n  secteur:           fiche.categorie || '',\n  sheet_commandes:   fiche.sheet_commandes || '',\n  sheet_menu:        fiche.sheet_menu || '',\n  sheet_notes:       fiche.sheet_notes || '',\n  groupe_livreurs:   fiche.groupe_livreurs || '',\n  telegram_marchand: fiche.telegram_marchand || '',\n  whatsapp_marchand: fiche.telephone || '',\n  sheet_document_id: fiche.sheet_document_id || '',\n}}];"
+      },
+      "position": [
+        880,
+        320
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "disabled": false,
+      "id": "f77feca5-744a-4e25-98bf-9e37cdfadc9f",
+      "name": "Call 'Cerveau Zahara'",
+      "parameters": {
+        "mode": "once",
+        "options": {},
+        "workflowId": {
+          "__rl": true,
+          "cachedResultName": "Cerveau Zahara",
+          "mode": "list",
+          "value": "gdL4r8lHftnRYgYl"
+        },
+        "workflowInputs": {
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true,
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "schema": [
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "canal",
+              "id": "canal",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "destinataire",
+              "id": "destinataire",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "texte",
+              "id": "texte",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "prenom",
+              "id": "prenom",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "boutique_id",
+              "id": "boutique_id",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "nom_boutique",
+              "id": "nom_boutique",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "sheet_commandes",
+              "id": "sheet_commandes",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "sheet_menu",
+              "id": "sheet_menu",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "sheet_notes",
+              "id": "sheet_notes",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "groupe_livreurs",
+              "id": "groupe_livreurs",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "telegram_marchand",
+              "id": "telegram_marchand",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "whatsapp_marchand",
+              "id": "whatsapp_marchand",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "sheet_document_id",
+              "id": "sheet_document_id",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "slug",
+              "id": "slug",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "secteur",
+              "id": "secteur",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            }
+          ],
+          "value": {
+            "boutique_id": "={{ $json.boutique_id }}",
+            "canal": "={{ $json.canal }}",
+            "destinataire": "={{ $json.destinataire }}",
+            "groupe_livreurs": "={{ $json.groupe_livreurs }}",
+            "nom_boutique": "={{ $json.nom_boutique }}",
+            "prenom": "={{ $json.prenom }}",
+            "secteur": "={{ $json.secteur }}",
+            "sheet_commandes": "={{ $json.sheet_commandes }}",
+            "sheet_document_id": "={{ $json.sheet_document_id }}",
+            "sheet_menu": "={{ $json.sheet_menu }}",
+            "sheet_notes": "={{ $json.sheet_notes }}",
+            "slug": "={{ $json.slug }}",
+            "telegram_marchand": "={{ $json.telegram_marchand }}",
+            "texte": "={{ $json.texte }}",
+            "whatsapp_marchand": "={{ $json.whatsapp_marchand }}"
+          }
+        }
+      },
+      "position": [
+        1072,
+        320
+      ],
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3
+    },
+    {
+      "id": "26481243-d403-48e4-942d-d6591a35edca",
+      "name": "Aiguilleur Telegram",
+      "parameters": {
+        "looseTypeValidation": true,
+        "options": {},
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "tg-note",
+                    "leftValue": "={{ String($('Webhook').first().json.body?.callback_query?.data || '').startsWith('note_') }}",
+                    "operator": {
+                      "operation": "true",
+                      "singleValue": true,
+                      "type": "boolean"
+                    },
+                    "rightValue": ""
+                  }
+                ],
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 3
+                }
+              },
+              "outputKey": "Note client",
+              "renameOutput": true
+            },
+            {
+              "conditions": {
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "tg-livreur",
+                    "leftValue": "={{ /^(accept|refuse|parti|en_route|livre)_/.test(String($('Webhook').first().json.body?.callback_query?.data || '')) }}",
+                    "operator": {
+                      "operation": "true",
+                      "singleValue": true,
+                      "type": "boolean"
+                    },
+                    "rightValue": ""
+                  }
+                ],
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 3
+                }
+              },
+              "outputKey": "Callback livreur",
+              "renameOutput": true
+            },
+            {
+              "conditions": {
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "tg-rattachement",
+                    "leftValue": "={{ !$('Webhook').first().json.body?.callback_query && /^\\/start\\s+\\S+/.test(String($('Webhook').first().json.body?.message?.text || '').trim()) }}",
+                    "operator": {
+                      "operation": "true",
+                      "singleValue": true,
+                      "type": "boolean"
+                    },
+                    "rightValue": ""
+                  }
+                ],
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 3
+                }
+              },
+              "outputKey": "Rattachement livreur",
+              "renameOutput": true
+            },
+            {
+              "conditions": {
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "tg-position",
+                    "leftValue": "={{ !$('Webhook').first().json.body?.callback_query && (!!$('Webhook').first().json.body?.message?.location || /(?:google\\.[a-z.]+\\/maps|maps\\.google\\.|maps\\.app\\.goo\\.gl|goo\\.gl\\/maps)/i.test(String($('Webhook').first().json.body?.message?.text || ''))) }}",
+                    "operator": {
+                      "operation": "true",
+                      "singleValue": true,
+                      "type": "boolean"
+                    },
+                    "rightValue": ""
+                  }
+                ],
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 3
+                }
+              },
+              "outputKey": "Position client",
+              "renameOutput": true
+            },
+            {
+              "conditions": {
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "tg-dash",
+                    "leftValue": "={{ !$('Webhook').first().json.body?.callback_query && String($('Webhook').first().json.body?.message?.text || '').startsWith('/') && String($('Charger fiche').first().json.telegram_marchand || '').trim() !== '' && String($('Webhook').first().json.body?.message?.chat?.id || '') === String($('Charger fiche').first().json.telegram_marchand || '').trim() }}",
+                    "operator": {
+                      "operation": "true",
+                      "singleValue": true,
+                      "type": "boolean"
+                    },
+                    "rightValue": ""
+                  }
+                ],
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 3
+                }
+              },
+              "outputKey": "Commande dashboard",
+              "renameOutput": true
+            },
+            {
+              "conditions": {
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "tg-id",
+                    "leftValue": "={{ !$('Webhook').first().json.body?.callback_query && /^id$/i.test(String($('Webhook').first().json.body?.message?.text || '').trim()) }}",
+                    "operator": {
+                      "operation": "true",
+                      "singleValue": true,
+                      "type": "boolean"
+                    },
+                    "rightValue": ""
+                  }
+                ],
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 3
+                }
+              },
+              "outputKey": "Demande d'ID",
+              "renameOutput": true
+            },
+            {
+              "conditions": {
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "tg-dash-non-configure",
+                    "leftValue": "={{ !$('Webhook').first().json.body?.callback_query && String($('Webhook').first().json.body?.message?.text || '').startsWith('/') && String($('Charger fiche').first().json.telegram_marchand || '').trim() === '' }}",
+                    "operator": {
+                      "operation": "true",
+                      "singleValue": true,
+                      "type": "boolean"
+                    },
+                    "rightValue": ""
+                  }
+                ],
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 3
+                }
+              },
+              "outputKey": "Dashboard non configure",
+              "renameOutput": true
+            },
+            {
+              "conditions": {
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "tg-frais-tapes",
+                    "leftValue": "={{ !$('Webhook').first().json.body?.callback_query && !!$('Webhook').first().json.body?.message?.reply_to_message && /^\\s*\\d{2,6}\\s*$/.test(String($('Webhook').first().json.body?.message?.text || '')) && /Commande\\s+\\S+/.test(String($('Webhook').first().json.body?.message?.reply_to_message?.text || '')) }}",
+                    "operator": {
+                      "operation": "true",
+                      "singleValue": true,
+                      "type": "boolean"
+                    },
+                    "rightValue": ""
+                  }
+                ],
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 3
+                }
+              },
+              "outputKey": "Frais tapes",
+              "renameOutput": true
+            },
+            {
+              "conditions": {
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "tg-msg",
+                    "leftValue": "={{ !$('Webhook').first().json.body?.callback_query && !!($('Webhook').first().json.body?.message || $('Webhook').first().json.body?.edited_message) }}",
+                    "operator": {
+                      "operation": "true",
+                      "singleValue": true,
+                      "type": "boolean"
+                    },
+                    "rightValue": ""
+                  }
+                ],
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 3
+                }
+              },
+              "outputKey": "Message texte",
+              "renameOutput": true
+            },
+            {
+              "conditions": {
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "tg-frais",
+                    "leftValue": "={{ /^frais_/.test(String($('Webhook').first().json.body?.callback_query?.data || '')) }}",
+                    "operator": {
+                      "operation": "true",
+                      "singleValue": true,
+                      "type": "boolean"
+                    },
+                    "rightValue": ""
+                  }
+                ],
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 3
+                }
+              },
+              "outputKey": "Frais livraison",
+              "renameOutput": true
+            },
+            {
+              "conditions": {
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "tg-ignore",
+                    "leftValue": "true",
+                    "operator": {
+                      "name": "filter.operator.equals",
+                      "operation": "equals",
+                      "type": "string"
+                    },
+                    "rightValue": "true"
+                  }
+                ],
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 3
+                }
+              },
+              "outputKey": "Ignore",
+              "renameOutput": true
+            }
+          ]
+        }
+      },
+      "position": [
+        304,
+        144
+      ],
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4
+    },
+    {
+      "disabled": false,
+      "id": "17d45f9f-b05b-4c1e-8cd5-144761961f50",
+      "name": "Call 'Acceptation Livraison'",
+      "parameters": {
+        "mode": "once",
+        "options": {},
+        "workflowId": {
+          "__rl": true,
+          "cachedResultName": "Acceptation Livraison Zahara",
+          "mode": "list",
+          "value": "LqBgRvLeeKUwZhB5"
+        },
+        "workflowInputs": {
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false,
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "schema": [
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "callback_query",
+              "id": "callback_query",
+              "removed": false,
+              "required": false,
+              "type": "object"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "slug",
+              "id": "slug",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "nom_boutique",
+              "id": "nom_boutique",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "sheet_document_id",
+              "id": "sheet_document_id",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "sheet_commandes",
+              "id": "sheet_commandes",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "groupe_livreurs",
+              "id": "groupe_livreurs",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "telegram_marchand",
+              "id": "telegram_marchand",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            }
+          ],
+          "value": {
+            "callback_query": "={{ $('Webhook').first().json.body.callback_query }}",
+            "groupe_livreurs": "={{ $json.groupe_livreurs }}",
+            "nom_boutique": "={{ $json.nom }}",
+            "sheet_commandes": "={{ $json.sheet_commandes }}",
+            "sheet_document_id": "={{ $json.sheet_document_id }}",
+            "slug": "={{ $json.slug }}",
+            "telegram_marchand": "={{ $json.telegram_marchand }}"
+          }
+        }
+      },
+      "position": [
+        736,
+        -64
+      ],
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3
+    },
+    {
+      "disabled": false,
+      "id": "bba007de-8617-4ad1-8240-279d134390fc",
+      "name": "Call 'Dashboard Gérant'",
+      "parameters": {
+        "mode": "once",
+        "options": {},
+        "workflowId": {
+          "__rl": true,
+          "cachedResultName": "Dashboard Gérant Zahara",
+          "mode": "list",
+          "value": "Ebtap4TXarL5eZvg"
+        },
+        "workflowInputs": {
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false,
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "schema": [
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "message",
+              "id": "message",
+              "removed": false,
+              "required": false,
+              "type": "object"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "slug",
+              "id": "slug",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "nom_boutique",
+              "id": "nom_boutique",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "sheet_document_id",
+              "id": "sheet_document_id",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "sheet_commandes",
+              "id": "sheet_commandes",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "telegram_marchand",
+              "id": "telegram_marchand",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            }
+          ],
+          "value": {
+            "message": "={{ $('Webhook').first().json.body.message }}",
+            "nom_boutique": "={{ $json.nom }}",
+            "sheet_commandes": "={{ $json.sheet_commandes }}",
+            "sheet_document_id": "={{ $json.sheet_document_id }}",
+            "slug": "={{ $json.slug }}",
+            "telegram_marchand": "={{ $json.telegram_marchand }}",
+            "whatsapp_marchand": "={{ $json.telephone }}"
+          }
+        }
+      },
+      "position": [
+        848,
+        64
+      ],
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3
+    },
+    {
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "QoKeVRwGrk1YqN9Q",
+          "name": "Header Auth account 2"
+        }
+      },
+      "id": "dc4310de-889b-4e01-99ea-61fd0466d188",
+      "maxTries": 2,
+      "name": "Charger fiche",
+      "notes": "Un bot Telegram = un jeton = un marchand : le slug ne peut pas venir du message. Il se declare ici, et nulle part ailleurs. Pour brancher le bot d un autre marchand, dupliquer ce workflow et changer ce seul slug.",
+      "parameters": {
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-telegram-bot-api-secret-token",
+              "value": "={{ $('Webhook').first().json.headers['x-telegram-bot-api-secret-token'] || '' }}"
+            }
+          ]
+        },
+        "options": {},
+        "sendHeaders": true,
+        "url": "=https://www.djiguiflow.com/api/internal/fiche?slug={{ encodeURIComponent($('Webhook').first().json.params.slug) }}"
+      },
+      "position": [
+        96,
+        144
+      ],
+      "retryOnFail": true,
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "waitBetweenTries": 1000
+    },
+    {
+      "id": "701f2ded-9d02-4301-a3a3-a49fb3f6671b",
+      "name": "Webhook",
+      "notes": "Une seule URL pour tous les bots : c est le slug du chemin qui dit de quel marchand vient la mise a jour.",
+      "parameters": {
+        "httpMethod": "POST",
+        "options": {},
+        "path": "telegram/:slug"
+      },
+      "position": [
+        -320,
+        144
+      ],
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "webhookId": "c66464e0-8c2a-4c86-8d4f-36e126bfc108"
+    },
+    {
+      "id": "a8b4b554-2ea4-4a85-9be2-6635efc2bfa7",
+      "name": "Signature présente ?",
+      "notes": "Ecarte les scanners anonymes sans declencher d alerte. La valeur du secret, elle, est confrontee a l empreinte du marchand par la route fiche.",
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "tg-signature-presente",
+              "leftValue": "={{ !!$json.headers['x-telegram-bot-api-secret-token'] }}",
+              "operator": {
+                "operation": "true",
+                "singleValue": true,
+                "type": "boolean"
+              },
+              "rightValue": ""
+            }
+          ],
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          }
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "position": [
+        -112,
+        144
+      ],
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2
+    },
+    {
+      "disabled": false,
+      "id": "3c033890-7a04-4e1c-8c4e-fcd86a38d683",
+      "maxTries": 3,
+      "name": "Répondre l'ID",
+      "notes": "Sert a constituer le groupe livreurs : le gerant ajoute son bot au groupe, tape ID, et recoit l identifiant a coller dans DjiguiFlow.",
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "mode": "once",
+        "options": {},
+        "workflowId": {
+          "__rl": true,
+          "cachedResultName": "Envoyer réponse client",
+          "mode": "list",
+          "value": "JkNvcqsZaY22dfk5"
+        },
+        "workflowInputs": {
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true,
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "schema": [
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "canal",
+              "id": "canal",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "destinataire",
+              "id": "destinataire",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "message",
+              "id": "message",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "boutique",
+              "id": "boutique",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            }
+          ],
+          "value": {
+            "boutique": "={{ $('Charger fiche').first().json.slug }}",
+            "canal": "telegram",
+            "destinataire": "={{ String($('Webhook').first().json.body.message.chat.id) }}",
+            "message": "=🆔 Identifiant de cette conversation : {{ $('Webhook').first().json.body.message.chat.id }}\n\nCollez-le dans DjiguiFlow pour y envoyer vos alertes. Dans un groupe de livreurs, c'est cet identifiant qu'il faut renseigner.",
+            "sheet_document_id": "={{ $('Charger fiche').first().json.sheet_document_id }}"
+          }
+        }
+      },
+      "position": [
+        880,
+        128
+      ],
+      "retryOnFail": false,
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "alwaysOutputData": true,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "QoKeVRwGrk1YqN9Q",
+          "name": "Header Auth account 2"
+        }
+      },
+      "id": "c1a70003-0000-4000-8000-000000000001",
+      "maxTries": 2,
+      "name": "Rattacher le livreur",
+      "notes": "Le livreur vient d ouvrir son lien d invitation. Le slug vient du bot qui a recu le message, jamais du texte : un code emis par un marchand ne peut pas rattacher chez un autre.",
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "jsonBody": "={\n  \"boutique\": {{ JSON.stringify(String($('Charger fiche').first().json.slug || $('Webhook').first().json.params?.slug || '')) }},\n  \"code\": {{ JSON.stringify(String($('Webhook').first().json.body?.message?.text || '').trim().replace(/^\\/start\\s+/, '')) }},\n  \"telegram_id\": {{ JSON.stringify(String($('Webhook').first().json.body?.message?.from?.id ?? '')) }},\n  \"prenom\": {{ JSON.stringify(String($('Webhook').first().json.body?.message?.from?.first_name || '')) }}\n}",
+        "method": "POST",
+        "options": {},
+        "sendBody": true,
+        "specifyBody": "json",
+        "url": "https://www.djiguiflow.com/api/internal/livreurs/rattacher"
+      },
+      "position": [
+        640,
+        208
+      ],
+      "retryOnFail": true,
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "waitBetweenTries": 2000
+    },
+    {
+      "id": "c1a70003-0000-4000-8000-000000000002",
+      "name": "Repondre au livreur",
+      "notes": "Sans retour, le livreur ne sait pas si son lien a fonctionne et va deranger son gerant. Aucun reessai ici : rien ne doit pouvoir rejouer un envoi deja parti.",
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "mode": "once",
+        "options": {},
+        "workflowId": {
+          "__rl": true,
+          "cachedResultName": "Envoyer réponse client",
+          "mode": "list",
+          "value": "JkNvcqsZaY22dfk5"
+        },
+        "workflowInputs": {
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true,
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "schema": [],
+          "value": {
+            "boutique": "={{ $('Charger fiche').first().json.slug }}",
+            "canal": "telegram",
+            "destinataire": "={{ String($('Webhook').first().json.body.message.chat.id) }}",
+            "message": "={{ $json.ok !== true ? '⏳ Vérification impossible pour le moment. Réessayez dans un instant.' : $json.etat === 'rattache' ? '✅ Bienvenue ' + String($json.nom || '') + ' ! Votre compte est rattaché à ' + String($json.nom_boutique || 'la boutique') + '. Vous recevrez les courses dans le groupe des livreurs.' : $json.etat === 'deja' ? '✅ Votre compte est déjà rattaché' + ($json.nom ? ' à la fiche de ' + String($json.nom) : '') + '. Rien de plus à faire.' : '⚠️ Ce lien n’est plus valable. Demandez-en un nouveau à votre gérant.' }}",
+            "reply_markup": "",
+            "sheet_document_id": "={{ $('Charger fiche').first().json.sheet_document_id }}"
+          }
+        }
+      },
+      "position": [
+        880,
+        208
+      ],
+      "retryOnFail": false,
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3
+    },
+    {
+      "alwaysOutputData": true,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "QoKeVRwGrk1YqN9Q",
+          "name": "Header Auth account 2"
+        }
+      },
+      "id": "c1a70004-0000-4000-8000-000000000001",
+      "maxTries": 2,
+      "name": "Enregistrer la position",
+      "notes": "Le client a envoye sa position. Elle n a pas de reference de commande : c est la plateforme qui l apparie, par le client, la boutique et le temps.",
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "jsonBody": "={{ JSON.stringify({ boutique: String($('Charger fiche').first().json.slug || $('Webhook').first().json.params?.slug || ''), chat_id: String($('Webhook').first().json.body?.message?.chat?.id ?? ''), latitude: $('Webhook').first().json.body?.message?.location?.latitude ?? null, longitude: $('Webhook').first().json.body?.message?.location?.longitude ?? null, texte: String($('Webhook').first().json.body?.message?.text || '') }) }}",
+        "method": "POST",
+        "options": {},
+        "sendBody": true,
+        "specifyBody": "json",
+        "url": "https://www.djiguiflow.com/api/internal/commandes/position"
+      },
+      "position": [
+        640,
+        400
+      ],
+      "retryOnFail": true,
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "waitBetweenTries": 2000
+    },
+    {
+      "id": "c1a70004-0000-4000-8000-000000000002",
+      "name": "Repondre position au client",
+      "notes": "Place au-dessus de la branche groupe : le client est remercie d abord. La reference est nommee pour qu il voie tout de suite si sa position s est attachee a la mauvaise commande.",
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "mode": "once",
+        "options": {},
+        "workflowId": {
+          "__rl": true,
+          "cachedResultName": "Envoyer réponse client",
+          "mode": "list",
+          "value": "JkNvcqsZaY22dfk5"
+        },
+        "workflowInputs": {
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true,
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "schema": [],
+          "value": {
+            "boutique": "={{ $('Charger fiche').first().json.slug }}",
+            "canal": "telegram",
+            "destinataire": "={{ String($('Webhook').first().json.body.message.chat.id) }}",
+            "message": "={{ $json.ok !== true ? '⏳ Position non enregistrée pour le moment. Réessayez dans un instant.' : $json.etat === 'enregistree' ? '✅ Merci ' + String($json.client_nom || '') + ' ! Votre position est enregistrée pour la commande ' + String($json.reference || '') + '. Le livreur ira droit au but. 🛵' : $json.etat === 'illisible' ? '⚠️ Je n’ai pas pu lire cette position. Dans Google Maps, appuyez sur Partager puis Copier le lien, et collez-le ici.' : 'ℹ️ Merci ! Nous n’avons trouvé aucune commande en cours à rattacher à cette position. Renvoyez-la après avoir commandé.' }}",
+            "reply_markup": "",
+            "sheet_document_id": "={{ $('Charger fiche').first().json.sheet_document_id }}"
+          }
+        }
+      },
+      "position": [
+        880,
+        336
+      ],
+      "retryOnFail": false,
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3
+    },
+    {
+      "id": "c1a70004-0000-4000-8000-000000000003",
+      "name": "Position trouvee ?",
+      "notes": "Sans commande appariee, il n y a rien a annoncer au groupe : une position orpheline ne sert a aucun livreur.",
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "c1a70004-1111-4000-8000-000000000001",
+              "leftValue": "={{ $json.trouve === true && !!String($('Charger fiche').first().json.groupe_livreurs || '').trim() }}",
+              "operator": {
+                "operation": "true",
+                "singleValue": true,
+                "type": "boolean"
+              },
+              "rightValue": ""
+            }
+          ],
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          }
+        },
+        "options": {}
+      },
+      "position": [
+        880,
+        464
+      ],
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3
+    },
+    {
+      "id": "c1a70004-0000-4000-8000-000000000004",
+      "name": "Prevenir le groupe de la position",
+      "notes": "La position arrive APRES le dispatch : le livreur a deja la course en main. C est donc ici, et non dans le message initial, qu il faut la lui donner.",
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "mode": "once",
+        "options": {},
+        "workflowId": {
+          "__rl": true,
+          "cachedResultName": "Envoyer réponse client",
+          "mode": "list",
+          "value": "JkNvcqsZaY22dfk5"
+        },
+        "workflowInputs": {
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true,
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "schema": [],
+          "value": {
+            "boutique": "={{ $('Charger fiche').first().json.slug }}",
+            "canal": "telegram",
+            "destinataire": "={{ $('Charger fiche').first().json.groupe_livreurs }}",
+            "message": "=📍 Position exacte reçue — commande {{ $json.reference }}\n🗺️ https://www.google.com/maps/search/{{ $json.latitude }},{{ $json.longitude }}\n\nOuvrez ce lien plutôt que l’adresse écrite : il mène à la porte.",
+            "reply_markup": "",
+            "sheet_document_id": "={{ $('Charger fiche').first().json.sheet_document_id }}"
+          }
+        }
+      },
+      "position": [
+        1072,
+        464
+      ],
+      "retryOnFail": false,
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3
+    },
+    {
+      "id": "c1a70007-0000-4000-8000-000000000001",
+      "name": "Boutique ouverte ?",
+      "notes": "Barriere devant l assistante seulement. Les notes, les positions, le rattachement livreur et les commandes du gerant passent quoi qu il arrive — un client qui note sa livraison a 23h ne doit pas s entendre dire que c est ferme.",
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "tg-ouvert",
+              "leftValue": "={{ $('Charger fiche').first().json.ouvert !== false }}",
+              "operator": {
+                "operation": "true",
+                "singleValue": true,
+                "type": "boolean"
+              },
+              "rightValue": ""
+            }
+          ],
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          }
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "position": [
+        1072,
+        448
+      ],
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3
+    },
+    {
+      "id": "c1a70007-0000-4000-8000-000000000002",
+      "name": "Repondre ferme",
+      "notes": "Dire QUAND on rouvre, pas seulement qu on est ferme.",
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "mode": "once",
+        "options": {},
+        "workflowId": {
+          "__rl": true,
+          "cachedResultName": "Envoyer réponse client",
+          "mode": "list",
+          "value": "JkNvcqsZaY22dfk5"
+        },
+        "workflowInputs": {
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true,
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "schema": [],
+          "value": {
+            "boutique": "={{ $('Charger fiche').first().json.slug }}",
+            "canal": "telegram",
+            "destinataire": "={{ String($('Webhook').first().json.body.message.chat.id) }}",
+            "message": "=🕐 {{ $('Charger fiche').first().json.nom }} n’accepte pas de commande pour le moment.\n\n{{ $('Charger fiche').first().json.message_horaires }}\n\nÉcrivez-nous dès la réouverture, nous prendrons votre commande avec plaisir.",
+            "reply_markup": "",
+            "sheet_document_id": "={{ $('Charger fiche').first().json.sheet_document_id }}"
+          }
+        }
+      },
+      "position": [
+        1296,
+        528
+      ],
+      "retryOnFail": false,
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3
+    },
+    {
+      "id": "c1a70008-0000-4000-8000-000000000001",
+      "name": "Lire les frais",
+      "notes": "Le bouton porte la reference : rien a deviner. Un rapprochement approximatif sur de l argent finit toujours par designer la mauvaise ligne.",
+      "parameters": {
+        "jsCode": "// Le bouton porte « frais_<montant>_<reference> », ou « frais_autre_<reference> »\n// quand le livreur veut saisir un montant qui n'est pas propose.\n// La reference peut contenir des tirets bas, comme les callbacks livreur : on\n// rejoint donc tout ce qui suit plutot que de prendre parts[2] seul.\nconst cq = $('Webhook').first().json.body?.callback_query || {};\nconst data = String(cq.data || '');\nconst parts = data.split('_');\n\nconst brut = String(parts[1] ?? '');\nconst reference = parts.slice(2).join('_');\nconst autre = brut === 'autre';\nconst montant = autre ? null : Number(brut);\n\n// MESSAGE SANS DEUX-POINTS NI RETOUR A LA LIGNE. n8n scinde le texte d'une\n// Error sur ces caracteres, et l'alerte n'en recevrait qu'un fragment.\nif (!reference || (!autre && !Number.isFinite(montant))) {\n  throw new Error(`Frais illisibles dans le bouton livreur — ${data}`);\n}\n\nreturn [{ json: {\n  autre,\n  montant,\n  reference,\n  livreur: String(cq.from?.first_name || cq.from?.username || 'Un livreur'),\n  groupe: String(cq.message?.chat?.id ?? ''),\n} }];"
+      },
+      "position": [
+        640,
+        720
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "alwaysOutputData": true,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "QoKeVRwGrk1YqN9Q",
+          "name": "Header Auth account 2"
+        }
+      },
+      "id": "c1a70008-0000-4000-8000-000000000002",
+      "maxTries": 2,
+      "name": "Enregistrer les frais",
+      "notes": "La plateforme refuse d ecraser un montant deja annonce : le client l a lu.",
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "jsonBody": "={{ JSON.stringify({ boutique: String($('Charger fiche').first().json.slug || ''), reference: $json.reference, montant: $json.montant }) }}",
+        "method": "POST",
+        "options": {},
+        "sendBody": true,
+        "specifyBody": "json",
+        "url": "https://www.djiguiflow.com/api/internal/commandes/frais"
+      },
+      "position": [
+        860,
+        720
+      ],
+      "retryOnFail": true,
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "waitBetweenTries": 2000
+    },
+    {
+      "id": "c1a70008-0000-4000-8000-000000000003",
+      "name": "Frais enregistres ?",
+      "notes": "Seul un enregistrement NEUF previent le client. Un second appui ne doit pas lui renvoyer le meme message.",
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "tg-frais-ok",
+              "leftValue": "={{ $json.etat === 'enregistre' }}",
+              "operator": {
+                "operation": "true",
+                "singleValue": true,
+                "type": "boolean"
+              },
+              "rightValue": ""
+            }
+          ],
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          }
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "position": [
+        1080,
+        720
+      ],
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3
+    },
+    {
+      "id": "c1a70008-0000-4000-8000-000000000004",
+      "name": "Prevenir le client des frais",
+      "notes": "Message court et separe. La confirmation de commande est deja partie et ne doit rien attendre : si le livreur n annonce jamais rien, le client a quand meme ete prevenu.",
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "mode": "once",
+        "options": {},
+        "workflowId": {
+          "__rl": true,
+          "cachedResultName": "Envoyer réponse client",
+          "mode": "list",
+          "value": "JkNvcqsZaY22dfk5"
+        },
+        "workflowInputs": {
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true,
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "schema": [],
+          "value": {
+            "boutique": "={{ $('Charger fiche').first().json.slug }}",
+            "canal": "={{ $json.canal }}",
+            "destinataire": "={{ $json.destinataire }}",
+            "message": "=🛵 Les frais de livraison pour la commande {{ $json.reference }} s’élèvent à {{ Number($json.montant).toLocaleString('fr-FR') }} F, à régler au livreur.",
+            "reply_markup": "",
+            "sheet_document_id": "={{ $('Charger fiche').first().json.sheet_document_id }}"
+          }
+        }
+      },
+      "position": [
+        1300,
+        656
+      ],
+      "retryOnFail": false,
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3
+    },
+    {
+      "id": "c1a70008-0000-4000-8000-000000000005",
+      "name": "Confirmer au groupe",
+      "notes": "Sans retour, le livreur ne sait pas si son appui a compte et recommence.",
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "mode": "once",
+        "options": {},
+        "workflowId": {
+          "__rl": true,
+          "cachedResultName": "Envoyer réponse client",
+          "mode": "list",
+          "value": "JkNvcqsZaY22dfk5"
+        },
+        "workflowInputs": {
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true,
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "schema": [],
+          "value": {
+            "boutique": "={{ $('Charger fiche').first().json.slug }}",
+            "canal": "telegram",
+            "destinataire": "={{ String($('Webhook').first().json.body?.callback_query?.message?.chat?.id ?? $('Webhook').first().json.body?.message?.chat?.id ?? '') }}",
+            "message": "={{ $json.etat === 'enregistre' ? '✅ Frais enregistrés — ' + Number($json.montant).toLocaleString('fr-FR') + ' F. Le client a été prévenu.' : $json.etat === 'deja_annonce' ? 'ℹ️ Les frais étaient déjà annoncés pour cette course — ' + Number($json.montant).toLocaleString('fr-FR') + ' F. Rien n’a changé.' : '⚠️ Frais non enregistrés, la commande est introuvable. Prévenez le gérant.' }}",
+            "reply_markup": "",
+            "sheet_document_id": "={{ $('Charger fiche').first().json.sheet_document_id }}"
+          }
+        }
+      },
+      "position": [
+        1300,
+        784
+      ],
+      "retryOnFail": false,
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3
+    },
+    {
+      "id": "c1a70010-0000-4000-8000-000000000001",
+      "name": "Montant libre ?",
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "tg-frais-autre",
+              "leftValue": "={{ $json.autre === true }}",
+              "operator": {
+                "operation": "true",
+                "singleValue": true,
+                "type": "boolean"
+              },
+              "rightValue": ""
+            }
+          ],
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          }
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "position": [
+        1080,
+        880
+      ],
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3
+    },
+    {
+      "id": "c1a70010-0000-4000-8000-000000000002",
+      "name": "Demander le montant libre",
+      "notes": "La reference est ECRITE dans le message, et le livreur y REPOND. Telegram nous rend alors le message cite : on y relit la commande, sans avoir a retenir un etat entre deux executions — une memoire statique n8n serait perdue au premier echec.",
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "mode": "once",
+        "options": {},
+        "workflowId": {
+          "__rl": true,
+          "cachedResultName": "Envoyer réponse client",
+          "mode": "list",
+          "value": "JkNvcqsZaY22dfk5"
+        },
+        "workflowInputs": {
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true,
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "schema": [],
+          "value": {
+            "boutique": "={{ $('Charger fiche').first().json.slug }}",
+            "canal": "telegram",
+            "destinataire": "={{ $json.groupe }}",
+            "message": "=✏️ {{ $json.livreur }}, répondez à CE message en tapant le montant en chiffres, sans autre texte.\n\nCommande {{ $json.reference }}",
+            "reply_markup": "={{ JSON.stringify({ force_reply: true }) }}",
+            "sheet_document_id": "={{ $('Charger fiche').first().json.sheet_document_id }}"
+          }
+        }
+      },
+      "position": [
+        1300,
+        944
+      ],
+      "retryOnFail": false,
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3
+    },
+    {
+      "id": "c1a70010-0000-4000-8000-000000000003",
+      "name": "Lire le montant tape",
+      "notes": "La commande se relit dans le message CITE, jamais devinee. Aucun etat a conserver entre deux messages.",
+      "parameters": {
+        "jsCode": "const msg = $('Webhook').first().json.body?.message || {};\nconst montant = Number(String(msg.text ?? '').trim());\nconst cite = String(msg.reply_to_message?.text ?? '');\n\n// La reference a ete ecrite par « Demander le montant libre ». L'aiguilleur a\n// deja verifie sa presence, donc ce garde-fou ne devrait jamais lever — il est\n// la pour que le jour ou le gabarit du message change, la panne se NOMME au\n// lieu d'enregistrer un montant sur une commande au hasard.\nconst m = cite.match(/Commande\\s+(\\S+)/);\nif (!m || !Number.isFinite(montant)) {\n  throw new Error(`Montant libre inexploitable — reponse ignoree pour eviter d ecrire sur la mauvaise commande`);\n}\n\nreturn [{ json: {\n  autre: false,\n  montant,\n  reference: m[1],\n  livreur: String(msg.from?.first_name || msg.from?.username || 'Un livreur'),\n  groupe: String(msg.chat?.id ?? ''),\n} }];"
+      },
+      "position": [
+        640,
+        880
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    }
+  ],
+  "settings": {
+    "availableInMCP": true,
+    "errorWorkflow": "NfWU666FLz9jR1Zv",
+    "executionOrder": "v1"
+  },
+  "sourceWorkflowId": null,
+  "tags": [],
+  "versionCounter": 14
+}
