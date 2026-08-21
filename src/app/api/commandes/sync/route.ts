@@ -7,6 +7,43 @@ export const dynamic = 'force-dynamic';
 
 type MajCommande = Database['public']['Tables']['commandes']['Update'];
 
+/**
+ * Ces coordonnees permettent-elles VRAIMENT de livrer ?
+ *
+ * POURQUOI CE CONTROLE. Le 21 aout 2026, l'assistante a saute l'etape de
+ * collecte et INVENTE les coordonnees : « Inconnu », « 0000000000 »,
+ * « Non communiquee ». La commande est partie chez les livreurs telle quelle.
+ * Personne ne pouvait la livrer, et le client avait recu « votre commande est
+ * bien enregistree ».
+ *
+ * Le prompt demandait deja de collecter avant de valider. Il n'a pas suffi —
+ * comme d'habitude. Le refus vit donc ici.
+ */
+function coordonneesLivrables(nom: unknown, telephone: unknown, adresse: unknown): string[] {
+  const manquant: string[] = [];
+
+  // Un modele qui n'a pas l'information ecrit rarement du vide : il ecrit un
+  // mot qui SIGNIFIE le vide. Il faut donc reconnaitre les deux.
+  const inventé = (v: unknown) => {
+    const t = String(v ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').trim().toLowerCase();
+    if (!t) return true;
+    return /^(inconnu|non communiquee?|non renseignee?|n\/?a|neant|aucun|client|a definir|-+)$/.test(t);
+  };
+
+  if (inventé(nom)) manquant.push('nom');
+  if (inventé(adresse)) manquant.push('adresse');
+
+  // Le telephone passe par la meme regle que la vitrine : un numero qui ne
+  // s'ecrit pas ne se compose pas. « 0000000000 » a la bonne longueur mais ne
+  // joint personne — d'ou le refus des chiffres tous identiques.
+  const tel = String(telephone ?? '').replace(/\D/g, '');
+  if (inventé(telephone) || !normaliserTelephone(telephone).ok || /^(\d)\1+$/.test(tel)) {
+    manquant.push('telephone');
+  }
+
+  return manquant;
+}
+
 export async function POST(req: Request) {
   const secret = req.headers.get('x-sync-secret');
   if (!process.env.SYNC_SECRET || secret !== process.env.SYNC_SECRET) {
@@ -226,6 +263,39 @@ export async function POST(req: Request) {
     // `.eq('statut', 'panier')` la rend impossible a detourner. Une commande
     // livree, annulee ou deja en attente n'est pas concernee.
     if (statutVoulu === 'en_attente') {
+      // ---- ON NE VALIDE PAS UNE COMMANDE QU'ON NE PEUT PAS LIVRER.
+      //
+      // La ligne peut deja porter des coordonnees d'un tour precedent : on
+      // controle donc l'ETAT FINAL, pas seulement ce que cet appel transmet.
+      const { data: apres } = await sb
+        .from('commandes')
+        .select('client_nom, client_telephone, client_adresse')
+        .eq('reference', reference)
+        .maybeSingle();
+
+      const manquant = coordonneesLivrables(
+        payload.client_nom ?? apres?.client_nom,
+        payload.client_telephone ?? apres?.client_telephone,
+        payload.client_adresse ?? apres?.client_adresse,
+      );
+
+      if (manquant.length) {
+        // La commande RESTE un panier : invisible au marchand, aucun livreur
+        // lance, et la relance des paniers abandonnes la rattrapera. On rend
+        // la raison a l'appelant pour que l'assistante sache quoi demander.
+        console.error(
+          `Sync ${reference} — validation refusee, coordonnees inexploitables : ${manquant.join(', ')}`,
+        );
+        return Response.json({
+          ok: false,
+          reference,
+          promu: false,
+          manquant,
+          error: `Impossible de valider : ${manquant.join(', ')} manquant(s) ou invalide(s).`
+            + ` Demandez-les au client avant de valider.`,
+        }, { status: 422 });
+      }
+
       const { error: errPromotion } = await sb
         .from('commandes')
         .update({ statut: 'en_attente' })
