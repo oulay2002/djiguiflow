@@ -2,3 +2,10 @@
 # sinon "bad interpreter: no such file or directory" sur Linux/macOS.
 .githooks/* text eol=lf
 *.sh text eol=lf
+
+# L'export des workflows n8n est ecrit par un coureur Linux, en LF. Sans cette
+# ligne, un export relance depuis Windows y mettrait du CRLF : le coureur
+# rendrait alors un diff sur les vingt-trois fichiers CHAQUE MATIN, sans qu'une
+# seule ligne ait change dans n8n. Un diff qui ment tous les jours n'est plus
+# lu, et l'export perd sa seule raison d'etre.
+n8n/** text eol=lf
