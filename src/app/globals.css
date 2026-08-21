@@ -257,6 +257,36 @@ body {
   animation: pulse-dot 2.4s ease-in-out infinite;
 }
 
+/* --- Le guide de branchement ---------------------------------------------- */
+
+/* La souche du bon : la preuve qu'une étape a pris. Elle se détache du corps
+   du feuillet par une perforation, comme le talon qu'on garde quand on arrache
+   le reste. C'est une SILHOUETTE de ticket, pas un encart : une barre de
+   couleur en marge aurait dit « encadré », et non « ce qui reste ». */
+.souche {
+  border-top: 1px dashed rgba(19, 28, 61, 0.28);
+}
+
+/* On n'arrive pas toujours sur ce guide par le haut. Le bandeau du tableau de
+   bord et la commande d'essai désignent une étape précise ; l'anneau dit
+   « c'est celle-ci », puis s'efface. Il désigne, il ne décore pas — d'où une
+   seule occurrence, déclenchée par :target, et rien au chargement.
+
+   Le bissap est ici dans son rôle documenté d'anneau de focus, et il reste
+   transitoire : il ne compte pas dans les marques permanentes de la page. */
+@keyframes etape-visee {
+  from {
+    box-shadow: 0 0 0 2px var(--color-bissap-500);
+  }
+  to {
+    box-shadow: 0 0 0 2px rgba(196, 18, 63, 0);
+  }
+}
+
+.etape:target {
+  animation: etape-visee 2.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
@@ -270,6 +300,13 @@ body {
   /* Le talon garde son changement de couleur, il perd son déplacement. */
   .stub:hover {
     transform: none;
+  }
+
+  /* L'étape visée garde son anneau : il porte l'information « c'est ici ».
+     Il cesse seulement de s'effacer — la désignation reste, l'effet part. */
+  .etape:target {
+    animation: none;
+    box-shadow: 0 0 0 2px var(--color-bissap-500);
   }
 
   *,
