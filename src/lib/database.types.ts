@@ -38,6 +38,7 @@ export type Database = {
       boutiques: {
         Row: {
           actif: boolean
+          banc_telegram_id: string | null
           categorie: string | null
           description: string | null
           emoji: string | null
@@ -66,6 +67,7 @@ export type Database = {
         }
         Insert: {
           actif?: boolean
+          banc_telegram_id?: string | null
           categorie?: string | null
           description?: string | null
           emoji?: string | null
@@ -94,6 +96,7 @@ export type Database = {
         }
         Update: {
           actif?: boolean
+          banc_telegram_id?: string | null
           categorie?: string | null
           description?: string | null
           emoji?: string | null
