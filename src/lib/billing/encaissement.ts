@@ -32,6 +32,17 @@ export type IssueEncaissement =
   | { etat: 'acces_non_ouvert'; erreur: string }
   | { etat: 'honore'; montant: number | null; operateur: string | null };
 
+/**
+ * Le bac a sable peut-il ouvrir un acces ? Sortie de la chaine pour etre
+ * eprouvee : un test qui RECOPIE la regle prouverait le contraire du code sans
+ * rien dire.
+ */
+export function bacASableAccepte(): boolean {
+  return (
+    process.env.VERCEL_ENV !== 'production' && process.env.GENIUSPAY_ACCEPTE_SANDBOX === '1'
+  );
+}
+
 export async function honorerPaiement(params: {
   /** NOTRE reference, celle de la table `paiements`. */
   reference: string;
@@ -109,7 +120,27 @@ export async function honorerPaiement(params: {
   // Une transaction simulee est reussie par construction : l'honorer donnerait
   // un acces que personne n'a paye. Le paiement reste EN ATTENTE, jamais
   // « echoue » — il n'a rien fait de mal.
-  if (verdict.environnement === 'sandbox' && process.env.GENIUSPAY_ACCEPTE_SANDBOX !== '1') {
+  //
+  // LE DRAPEAU NE VAUT PAS EN PRODUCTION, et c'est le coeur de ce garde.
+  //
+  // Constate le 22 aout 2026 : `GENIUSPAY_ACCEPTE_SANDBOX` valait « 1 » sur le
+  // deploiement de production, ou la cle GeniusPay est justement une cle de bac
+  // a sable. La chaine etait donc complete : s'inscrire — l'inscription est
+  // libre — demander un paiement, le « regler » dans le bac a sable, et
+  // repartir avec un abonnement Pro REEL. Le controle du montant ne protege
+  // rien : l'argent du bac a sable n'existe pas.
+  //
+  // Une variable d'environnement posee pour eprouver la chaine se retire mal :
+  // elle survit au test qui l'a justifiee. On ne compte donc plus dessus en
+  // production — un contournement de paywall ne doit pas tenir a ce que
+  // quelqu'un se souvienne d'une case.
+  //
+  // CE QU'ON PERD, ET POURQUOI CE N'EST PAS GRAVE : atteindre cette ligne prouve
+  // deja que tout l'amont a fonctionne — notification recue, verdict obtenu du
+  // prestataire, montant conforme. `etat: 'sandbox'` est donc un SUCCES de test,
+  // pas un echec. Seule la derniere marche, celle qui donne les droits, n'est
+  // pas franchie.
+  if (verdict.environnement === 'sandbox' && !bacASableAccepte()) {
     return { etat: 'sandbox' };
   }
 
