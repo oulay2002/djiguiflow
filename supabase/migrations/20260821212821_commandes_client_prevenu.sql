@@ -24,11 +24,19 @@
 -- duplique — un client a deja recu trois fois le meme message. On n'ajoute rien
 -- a `envoyerMessage` : le marquage est un appel separe, apres coup, qui ne peut
 -- pas provoquer un second envoi s'il echoue.
+--
+-- ---------------------------------------------------------------------------
+-- PROVENANCE. L'instruction ci-dessous est le texte EXACT applique en base
+-- (version 20260821212821). Le commentaire d'intention ci-dessus vient d'un
+-- fichier `20260821213000_…` qui portait le meme DDL mais n'a JAMAIS ete
+-- applique : un quasi-doublon qu'un `supabase db push` aurait tente de rejouer.
+-- Il a ete supprime le 22 aout 2026, apres verification que son DDL etait
+-- fonctionnellement identique — seule son intention meritait d'etre gardee, et
+-- elle est ici.
+-- ---------------------------------------------------------------------------
 
 alter table public.commandes
   add column if not exists client_prevenu_le timestamptz;
 
 comment on column public.commandes.client_prevenu_le is
-  'Heure ou la chaine a confirme avoir prevenu le client de l''acceptation. '
-  'NULL = on ne sait pas, jamais « pas prevenu » : les commandes anterieures a '
-  'la mise en service de ce marquage sont NULL sans que cela les accuse.';
+  'Heure ou la chaine a confirme avoir prevenu le client de l''acceptation. NULL = on ne sait pas, jamais « pas prevenu » : les commandes anterieures a la mise en service de ce marquage sont NULL sans que cela les accuse.';

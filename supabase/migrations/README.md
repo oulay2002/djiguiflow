@@ -1,5 +1,32 @@
 # Migrations — provenance et limites
 
+## La dérive est revenue en cinq jours — recalé le 22 août 2026
+
+Le 17 août, ce dossier a été reconstitué et vérifié : 38 fichiers, 38 migrations,
+aucun écart. **Le 22 août, le dépôt en avait 40 et la base 56.**
+
+Seize migrations appliquées entre le 18 et le 22 août n'avaient aucun fichier :
+horaires d'ouverture, frais de livraison, décrément de stock, pause boutique,
+liste STOP des relances, paniers abandonnés, unicité Telegram des livreurs,
+mémoire de la veille, drapeau `essai`, déclencheur n8n. Autrement dit **le DDL
+le plus sensible de la semaine** — politiques RLS et `REVOKE` sur des fonctions
+`SECURITY DEFINER` compris.
+
+S'y ajoutait un **orphelin** : `20260821213000_commandes_client_prevenu.sql`,
+jamais appliqué, quasi-doublon de `20260821212821` qui l'est. Un
+`supabase db push` aurait tenté de le rejouer. Son DDL était fonctionnellement
+identique ; seul son commentaire d'intention valait d'être gardé, et il a été
+repris dans le fichier correctement nommé avant suppression.
+
+Vérifié après recalage : **56 fichiers, 56 migrations, aucun écart, aucun
+orphelin, aucun écart de nom.**
+
+**Ce que la répétition enseigne.** Une reconstitution manuelle ne tient pas :
+elle a dérivé en cinq jours. Tant qu'aucun contrôle automatique ne compare ce
+dossier à `supabase_migrations.schema_migrations`, il redérivera. Une recette
+reconstruite depuis un dépôt en retard est **plus ouverte que la production**,
+et des tests y passent qui devraient échouer.
+
 ## Ce dossier a été reconstitué le 17 août 2026
 
 Jusqu'à cette date, **30 des 38 migrations appliquées n'avaient aucun fichier ici**. Le
