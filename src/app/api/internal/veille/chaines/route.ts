@@ -157,7 +157,29 @@ export async function POST(req: Request) {
         .limit(50),
     );
 
-    // ---- 4. PANIER RESTE EN COLLECTE PLUS DE 24 HEURES.
+    // ---- 4. LIVREE, MAIS ON NE SAIT PAS QUI L'A FAITE.
+    //
+    // Le marchand ne peut ni remercier, ni demander des comptes, ni compter les
+    // courses de qui que ce soit. `livreurs.total_livraisons` et `gain_total`
+    // resteraient vides pour toujours.
+    //
+    // Ce detecteur existe surtout pour EPROUVER UN CORRECTIF. Le 22 aout 2026,
+    // la voie Telegram n'enregistrait jamais le livreur — le noeud lisait un
+    // champ qu'aucun autre ne produisait. Corrige cote n8n le soir meme ; sans
+    // ce detecteur, « ca se remplira desormais » serait reste une affirmation
+    // que personne ne verifie.
+    await lire(
+      'livree_sans_livreur',
+      () => 'livrée sans qu’on sache qui l’a livrée',
+      (r) => r
+        .select('reference, boutique_id, created_at')
+        .eq('statut_livraison', 'livre')
+        .is('nom_livreur', null)
+        .gt('created_at', fenetre)
+        .limit(50),
+    );
+
+    // ---- 5. PANIER RESTE EN COLLECTE PLUS DE 24 HEURES.
     //
     // L'assistante a commence une commande et ne l'a jamais finie. Rien ne les
     // ferme : la relance des paniers abandonnes ne traite que ceux dont la
