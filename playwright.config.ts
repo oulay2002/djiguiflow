@@ -32,8 +32,12 @@ export default defineConfig({
     { name: 'setup', testMatch: /auth.setup.ts/ },
     { name: 'public', testMatch: /navigation.spec.ts/ },
     {
+      // Une expression par fichier laissait tout nouveau spec authentifie hors
+      // de la suite, sans le moindre message : Playwright annonce « No tests
+      // found », ce qui se lit comme une erreur d'appel et non comme un oubli
+      // de configuration. La liste est donc explicite, et s'allonge avec elle.
       name: 'marchand',
-      testMatch: /authenticated-dashboard.spec.ts/,
+      testMatch: /(authenticated-dashboard|onboarding-diagnostic)\.spec\.ts/,
       dependencies: ['setup'],
       use: { storageState: FICHIER_SESSION },
     },
