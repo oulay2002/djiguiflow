@@ -487,11 +487,13 @@ export default function Page() {
                   c'est le commerce qu'il juge, pas l'heure. */}
               {messageHoraire && (
                 <p
-                  className={`mt-3 inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold ${
+                  className={`mt-3 inline-flex items-center gap-2 px-3 py-1.5 text-xs font-semibold ${
                     ouvert ? 'bg-accent-500/20 text-accent-200' : 'bg-bissap-500/20 text-bissap-200'
                   }`}
                 >
-                  <span className={`h-2 w-2 rounded-full ${ouvert ? 'bg-accent-400' : 'bg-bissap-400'}`} />
+                  {/* Carre, comme le voyant de l'onboarding. Un point rond au milieu
+                      d'une langue sans arrondi est un corps etranger, meme minuscule. */}
+                  <span className={`h-2 w-2 ${ouvert ? 'bg-accent-400' : 'bg-bissap-400'}`} />
                   {messageHoraire}
                 </p>
               )}

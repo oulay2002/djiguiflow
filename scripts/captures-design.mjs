@@ -18,7 +18,7 @@
  * constats dates, pas des livrables.
  */
 import { chromium } from '@playwright/test';
-import { mkdirSync, readFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync } from 'node:fs';
 
 const BASE = (process.env.BASE || 'http://localhost:3000').replace(/\/+$/, '');
 const DOSSIER = 'captures';
@@ -66,6 +66,25 @@ const motDePasse = env('E2E_PASSWORD');
 
 mkdirSync(DOSSIER, { recursive: true });
 
+/**
+ * ON REPREND LA SESSION DEJA OUVERTE, ON N'EN OUVRE PAS UNE SECONDE.
+ *
+ * Ce script se connectait lui-meme, et n'y arrivait pas : le formulaire se
+ * remplissait, le bouton se cliquait, et rien ne partait. `auth.setup.ts`, lui,
+ * y arrive en 25 s. Reecrire un second chemin de connexion aurait ete refaire
+ * le travail ET le refaire moins bien.
+ *
+ *   npx playwright test --project=setup     (ouvre et enregistre la session)
+ *   node scripts/captures-design.mjs
+ */
+// Le chemin est recopie plutot qu'importe : `tests/e2e/session.ts` utilise
+// `__dirname`, que Node refuse de melanger a un `await` de premier niveau dans
+// un module ES. La source de verite reste ce fichier-la.
+const FICHIER_SESSION = 'tests/e2e/.auth/marchand.json';
+
+const sessionExiste = existsSync(FICHIER_SESSION)
+  && JSON.parse(readFileSync(FICHIER_SESSION, 'utf8')).cookies?.length > 0;
+
 const navigateur = await chromium.launch();
 // 390 px : le marchand pilote depuis son telephone. C'est la largeur qui
 // compte, pas le confort d'un ecran de bureau qu'il n'utilise pas.
@@ -73,11 +92,12 @@ const contexte = await navigateur.newContext({
   viewport: { width: 390, height: 900 },
   deviceScaleFactor: 2,
   locale: 'fr-FR',
+  ...(sessionExiste ? { storageState: FICHIER_SESSION } : {}),
 });
 const page = await contexte.newPage();
 
-let connecte = false;
-if (email && motDePasse) {
+let connecte = sessionExiste;
+if (!connecte && email && motDePasse) {
   // Les memes gestes que `tests/e2e/auth.setup.ts`, qui fonctionne : on ne
   // reinvente pas des selecteurs quand le depot en a deja d'eprouves.
   try {
@@ -92,7 +112,7 @@ if (email && motDePasse) {
   }
 }
 
-console.log(connecte ? 'session marchand ouverte' : 'AUCUNE SESSION — les ecrans du marchand seront sautes');
+console.log(connecte ? (sessionExiste ? 'session reprise de auth.setup.ts' : 'session marchand ouverte') : 'AUCUNE SESSION — les ecrans du marchand seront sautes');
 
 for (const { nom, chemin, session } of ECRANS) {
   if (session && !connecte) {
