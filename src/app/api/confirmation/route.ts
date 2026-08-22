@@ -1,3 +1,9 @@
+import {
+  ageEnHeures,
+  jetonRefuse,
+  journaliserAccesSansJeton,
+  verdictJeton,
+} from '@/lib/jetonSuivi';
 import { adresseAppelante, rafaleDepassee } from '@/lib/limiteur';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import { secretWebhookN8n } from '@/lib/secretN8n';
@@ -56,6 +62,8 @@ type LigneItem = { nom_produit: string | null; quantite: number | null };
 
 type Ligne = {
   reference: string;
+  jeton_suivi: string | null;
+  created_at: string | null;
   confirmation_statut: string | null;
   boutique_id: string;
   client_nom: string | null;
@@ -259,6 +267,42 @@ function reponseHtml(
   });
 }
 
+/**
+ * Le jeton designe-t-il bien cette commande ?
+ *
+ * Commun au GET et au POST : les deux doivent appliquer la meme regle, et le
+ * POST est le plus grave des deux — c'est lui qui ANNULE une commande.
+ *
+ * Rend `null` quand l'appel peut continuer, sinon la page de refus. Le refus
+ * se presente comme une commande introuvable : distinguer les deux
+ * confirmerait a un enumerateur que la reference existe.
+ */
+function refusDuJeton(
+  jetonFourni: string,
+  ligne: Ligne,
+  appelant: string,
+  route: string,
+): Response | null {
+  const verdict = verdictJeton(jetonFourni, ligne.jeton_suivi);
+
+  if (jetonRefuse(verdict)) {
+    console.error(`Confirmation — jeton refuse (${verdict}) sur ${route} depuis ${appelant}.`);
+    return reponseHtml(
+      'INTROUVABLE',
+      'refus',
+      'Commande introuvable',
+      'Vérifiez le lien reçu.',
+      404,
+    );
+  }
+
+  if (verdict === 'absent') {
+    journaliserAccesSansJeton({ route, appelant, ageHeures: ageEnHeures(ligne.created_at) });
+  }
+
+  return null;
+}
+
 /** Lecture de la commande, commune au GET et au POST. */
 async function chargerCommande(ref: string) {
   const sb = getSupabaseAdmin();
@@ -267,8 +311,9 @@ async function chargerCommande(ref: string) {
   const { data } = await sb
     .from('commandes')
     .select(
-      'reference, confirmation_statut, boutique_id, client_nom, client_telephone, chat_id,' +
-        ' client_adresse, total, canal, commande_items(nom_produit, quantite)',
+      'reference, jeton_suivi, created_at, confirmation_statut, boutique_id, client_nom,' +
+        ' client_telephone, chat_id, client_adresse, total, canal,' +
+        ' commande_items(nom_produit, quantite)',
     )
     .ilike('reference', motifExact(ref))
     .maybeSingle();
@@ -303,6 +348,10 @@ export async function GET(req: Request) {
   if (!sb) return reponseHtml('INDISPONIBLE', 'attente', 'Service indisponible', 'Réessayez dans quelques secondes.', 503);
   if (!ligne) return reponseHtml('INTROUVABLE', 'refus', 'Commande introuvable', 'Vérifiez le lien reçu.', 404);
 
+  const jetonFourni = (searchParams.get('t') || '').trim();
+  const refusJeton = refusDuJeton(jetonFourni, ligne, adresseAppelante(req), 'confirmation:lecture');
+  if (refusJeton) return refusJeton;
+
   const repondu = dejaRepondu(ligne);
   if (repondu) return repondu;
 
@@ -310,6 +359,9 @@ export async function GET(req: Request) {
     `<form method="post" style="display:inline-block;margin:6px">` +
     `<input type="hidden" name="ref" value="${echapper(ligne.reference)}"/>` +
     `<input type="hidden" name="r" value="${valeur}"/>` +
+    // Le jeton RECU, jamais celui de la base : un GET tolere sans jeton ne
+    // doit pas distribuer le vrai a qui vient de le deviner.
+    `<input type="hidden" name="t" value="${echapper(jetonFourni)}"/>` +
     `<button type="submit" style="border:0;border-radius:0;padding:14px 22px;font-size:16px;font-weight:600;cursor:pointer;color:#fff;background:${fond}">${libelle}</button>` +
     `</form>`;
 
@@ -330,18 +382,21 @@ export async function POST(req: Request) {
 
   let ref = '';
   let r = '';
+  let jetonFourni = '';
 
   const type = req.headers.get('content-type') || '';
   if (type.includes('application/json')) {
     const corps = (await req.json().catch(() => ({}))) as Record<string, unknown>;
     ref = String(corps.ref ?? '').trim();
     r = String(corps.r ?? '').toLowerCase();
+    jetonFourni = String(corps.t ?? '').trim();
   } else {
     // Un corps tronque ou un content-type inattendu ne doit pas rendre un 500
     // brut a un client qui vient simplement de cliquer sur un bouton.
     const form = await req.formData().catch(() => null);
     ref = String(form?.get('ref') ?? '').trim();
     r = String(form?.get('r') ?? '').toLowerCase();
+    jetonFourni = String(form?.get('t') ?? '').trim();
   }
 
   if (!ref || (r !== 'oui' && r !== 'non')) {
@@ -351,6 +406,12 @@ export async function POST(req: Request) {
   const { sb, ligne } = await chargerCommande(ref);
   if (!sb) return reponseHtml('INDISPONIBLE', 'attente', 'Service indisponible', 'Réessayez dans quelques secondes.', 503);
   if (!ligne) return reponseHtml('INTROUVABLE', 'refus', 'Commande introuvable', 'Vérifiez le lien reçu.', 404);
+
+  // C'EST ICI QUE LE JETON COMPTE LE PLUS. Ce verbe ECRIT : il confirme ou il
+  // ANNULE. Deviner une reference permettait donc de detruire la commande d'un
+  // inconnu. Le controle passe avant toute ecriture.
+  const refusJeton = refusDuJeton(jetonFourni, ligne, adresseAppelante(req), 'confirmation:reponse');
+  if (refusJeton) return refusJeton;
 
   const repondu = dejaRepondu(ligne);
   if (repondu) return repondu;
