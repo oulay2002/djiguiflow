@@ -41,6 +41,7 @@ export type Database = {
           categorie: string | null
           description: string | null
           emoji: string | null
+          essai: boolean
           groupe_livreurs: string | null
           horaires: Json | null
           pause_jusqua: string | null
@@ -68,6 +69,7 @@ export type Database = {
           categorie?: string | null
           description?: string | null
           emoji?: string | null
+          essai?: boolean
           groupe_livreurs?: string | null
           horaires?: Json | null
           pause_jusqua?: string | null
@@ -95,6 +97,7 @@ export type Database = {
           categorie?: string | null
           description?: string | null
           emoji?: string | null
+          essai?: boolean
           groupe_livreurs?: string | null
           horaires?: Json | null
           pause_jusqua?: string | null

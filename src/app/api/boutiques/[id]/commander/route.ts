@@ -156,12 +156,18 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
   // Une boutique sans horaires reste ouverte : c'est le cas de toutes celles
   // deja en service, et les fermer d'office ferait plus de degats que le
   // probleme qu'on corrige.
+  // `essai` est lu ICI, avec les horaires : une seule lecture de la fiche, et il
+  // servira plus bas a taire le dispatch.
+  let boutiqueEssai = false;
+
   if (sb && boutiqueUuid) {
     const { data: fiche } = await sb
       .from('boutiques')
-      .select('horaires, pause_jusqua')
+      .select('horaires, pause_jusqua, essai')
       .eq('id', boutiqueUuid)
       .maybeSingle();
+
+    boutiqueEssai = fiche?.essai === true;
 
     const etat = etatBoutique(fiche?.horaires, new Date(), fiche?.pause_jusqua);
     if (!etat.ouvert) {
@@ -413,7 +419,16 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
   }
 
   // ---- 3. Webhook generique (avec boutique_id pour n8n)
-  const n8nUrl = process.env.N8N_COMMANDE_APP_URL;
+  // UNE BOUTIQUE D'ESSAI NE REVEILLE PERSONNE.
+  //
+  // La commande est creee exactement comme les autres — memes controles, memes
+  // ecritures, meme decompte de stock — mais le dispatch n'est pas appele. Sans
+  // cela, chaque passage du banc multi-marchand enverrait une course a de vrais
+  // livreurs, ou a defaut produirait une alerte technique : une veille qu'on
+  // bruite est une veille qu'on cesse de lire.
+  //
+  // Le test reste FIDELE la ou il compte, et muet la ou il derangerait.
+  const n8nUrl = boutiqueEssai ? null : process.env.N8N_COMMANDE_APP_URL;
   if (n8nUrl) {
     try {
       await fetch(n8nUrl, {
