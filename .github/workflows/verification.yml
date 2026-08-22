@@ -33,9 +33,9 @@ jobs:
     timeout-minutes: 15
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           # La version que la machine de developpement utilise. Verrouillee :
           # une montee de version silencieuse de l'executeur ferait diverger la
@@ -77,8 +77,8 @@ jobs:
     continue-on-error: true
 
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: '24'
           cache: npm
