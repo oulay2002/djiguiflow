@@ -58,3 +58,4 @@ next-env.d.ts
 
 # session Playwright : contient un jeton d’acces valide
 tests/e2e/.auth/
+captures/
