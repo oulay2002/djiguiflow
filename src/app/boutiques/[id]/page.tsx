@@ -123,7 +123,7 @@ function Visuel({ p }: { p: Produit }) {
   // cadre vide ne fait que reduire le nombre de plats visibles a l'ecran —
   // sur telephone, il n'en laissait plus qu'un seul.
   return (
-    <div className="relative flex h-24 items-end overflow-hidden bg-gradient-to-br from-chaux-100 to-mangue-100 px-4 pb-2.5">
+    <div className="relative flex h-24 items-end overflow-hidden bg-chaux-100 px-4 pb-2.5">
       <span
         aria-hidden
         className="pointer-events-none absolute -top-4 left-2 select-none font-display text-[5.5rem] font-black leading-none text-nuit-900/[0.07]"
@@ -725,7 +725,7 @@ export default function Page() {
 
       {/* Barre mobile : le ticket est hors écran, le total doit rester visible. */}
       {articles > 0 && (
-        <div className="fixed inset-x-0 bottom-0 z-50 border-t border-[var(--hairline)] bg-chaux-50/95 p-3 backdrop-blur lg:hidden">
+        <div className="fixed inset-x-0 bottom-0 z-50 border-t border-[var(--hairline)] bg-chaux-50 p-3 lg:hidden">
           <button
             onClick={() => commandeRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
             className={`${classesBouton('action', 'md', 'carree')} w-full justify-between`}

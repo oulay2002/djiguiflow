@@ -257,10 +257,10 @@ export default function ReglagePush({ variante = 'complet' }: { variante?: Varia
     if (remisAPlusTard) return null;
 
     return (
-      <div className="mb-6 rounded-[1.5rem] border border-mangue-200 bg-mangue-50 p-5">
+      <div className="mb-6 border border-mangue-200 bg-mangue-50 p-5">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex min-w-0 items-start gap-3">
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-mangue-100 text-mangue-700">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center bg-mangue-100 text-mangue-700">
               <BellOff className="h-5 w-5" />
             </span>
             <div className="min-w-0">
@@ -279,7 +279,7 @@ export default function ReglagePush({ variante = 'complet' }: { variante?: Varia
                 type="button"
                 onClick={activer}
                 disabled={occupe}
-                className="inline-flex min-h-[2.75rem] items-center justify-center gap-2 rounded-full bg-bissap-500 px-5 py-2.5 text-sm font-bold text-white transition active:bg-bissap-600 disabled:opacity-60"
+                className="inline-flex min-h-[2.75rem] items-center justify-center gap-2 bg-bissap-500 px-5 py-2.5 text-sm font-bold text-white transition active:bg-bissap-600 disabled:opacity-60"
               >
                 {occupe && <Loader2 className="h-4 w-4 animate-spin" />}
                 Activer les alertes
@@ -288,7 +288,7 @@ export default function ReglagePush({ variante = 'complet' }: { variante?: Varia
             <button
               type="button"
               onClick={plusTard}
-              className="rounded-full px-3 py-2 text-sm font-semibold text-chaux-600 hover:text-nuit-900"
+              className=" px-3 py-2 text-sm font-semibold text-chaux-600 hover:text-nuit-900"
             >
               Plus tard
             </button>
@@ -296,7 +296,7 @@ export default function ReglagePush({ variante = 'complet' }: { variante?: Varia
         </div>
 
         {erreur && (
-          <p className="mt-3 flex items-start gap-2 rounded-2xl bg-bissap-50 px-3 py-2.5 text-sm font-semibold text-bissap-700">
+          <p className="mt-3 flex items-start gap-2 bg-bissap-50 px-3 py-2.5 text-sm font-semibold text-bissap-700">
             <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" />
             {erreur}
           </p>
@@ -308,11 +308,11 @@ export default function ReglagePush({ variante = 'complet' }: { variante?: Varia
   if (etat === 'chargement') return null;
 
   return (
-    <div className="rounded-[1.5rem] border border-[var(--hairline)] bg-white/80 p-5">
+    <div className=" border border-[var(--hairline)] bg-white p-5">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex min-w-0 items-start gap-3">
           <span
-            className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${
+            className={`flex h-11 w-11 shrink-0 items-center justify-center ${
               etat === 'actif' ? 'bg-accent-100 text-accent-700' : 'bg-chaux-100 text-chaux-600'
             }`}
           >
@@ -339,7 +339,7 @@ export default function ReglagePush({ variante = 'complet' }: { variante?: Varia
             type="button"
             onClick={etat === 'actif' ? desactiver : activer}
             disabled={occupe}
-            className={`inline-flex min-h-[2.75rem] shrink-0 items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold transition disabled:opacity-60 ${
+            className={`inline-flex min-h-[2.75rem] shrink-0 items-center justify-center gap-2 px-5 py-2.5 text-sm font-bold transition disabled:opacity-60 ${
               etat === 'actif'
                 ? 'border border-[var(--hairline)] bg-chaux-50 text-chaux-600'
                 : 'bg-bissap-500 text-white active:bg-bissap-600'
@@ -352,7 +352,7 @@ export default function ReglagePush({ variante = 'complet' }: { variante?: Varia
       </div>
 
       {erreur && (
-        <p className="mt-3 flex items-start gap-2 rounded-2xl bg-bissap-50 px-3 py-2.5 text-sm font-semibold text-bissap-700">
+        <p className="mt-3 flex items-start gap-2 bg-bissap-50 px-3 py-2.5 text-sm font-semibold text-bissap-700">
           <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" />
           {erreur}
         </p>

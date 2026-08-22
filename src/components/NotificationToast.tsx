@@ -51,9 +51,9 @@ export default function NotificationToast() {
             initial={{ opacity: 0, x: 100, scale: 0.9 }}
             animate={{ opacity: 1, x: 0, scale: 1 }}
             exit={{ opacity: 0, x: 100, scale: 0.9 }}
-            className={`rounded-xl shadow-2xl border backdrop-blur-xl overflow-hidden ${
+            className={` soft-shadow border overflow-hidden ${
               notif.type === 'new-order' 
-                ? 'bg-gradient-to-r from-mangue-500 to-mangue-500 border-mangue-400 text-white' 
+                ? 'bg-mangue-500 border-mangue-400 text-white' 
                 : notif.type === 'success'
                 ? 'bg-white border-accent-200'
                 : notif.type === 'warning'
@@ -62,7 +62,7 @@ export default function NotificationToast() {
             }`}
           >
             <div className="p-4 flex items-start gap-3">
-              <div className={`p-2 rounded-lg shrink-0 ${
+              <div className={`p-2 shrink-0 ${
                 notif.type === 'new-order' ? 'bg-white/20' :
                 notif.type === 'success' ? 'bg-accent-100' :
                 notif.type === 'warning' ? 'bg-mangue-100' : 'bg-nuit-100'
@@ -91,7 +91,7 @@ export default function NotificationToast() {
               </div>
               <button
                 onClick={() => setNotifications(prev => prev.filter(n => n.id !== notif.id))}
-                className={`p-1 rounded-lg transition ${
+                className={`p-1 transition ${
                   notif.type === 'new-order' ? 'hover:bg-white/20 text-white' : 'hover:bg-chaux-100 text-chaux-600'
                 }`}
               >
@@ -104,7 +104,7 @@ export default function NotificationToast() {
                   onClick={() => {
                     window.location.href = '/dashboard/commandes';
                   }}
-                  className="w-full py-2 bg-white text-mangue-600 rounded-lg text-xs font-bold hover:bg-mangue-50 transition"
+                  className="w-full py-2 bg-white text-mangue-600 text-xs font-bold hover:bg-mangue-50 transition"
                 >
                   Voir la commande →
                 </button>

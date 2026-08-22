@@ -59,13 +59,13 @@ export default function BoutiquesEnLigne() {
             <Link
               key={b.id}
               href={`/boutiques/${b.id}`}
-              className="group flex items-center gap-4 rounded-sm border border-[var(--hairline)] bg-white p-4 transition duration-200 soft-shadow hover:-translate-y-0.5"
+              className="group flex items-center gap-4 border border-[var(--hairline)] bg-white p-4 transition duration-200 soft-shadow hover:-translate-y-0.5"
             >
               <Enseigne
                 nom={b.nom}
                 emoji={b.emoji}
                 logo={b.logo}
-                className="h-14 w-14 rounded-sm text-2xl"
+                className="h-14 w-14 text-2xl"
               />
 
               <span className="min-w-0 flex-1">
@@ -86,9 +86,9 @@ export default function BoutiquesEnLigne() {
               la place est ouverte au lieu de masquer qu'elle l'est. */}
           <Link
             href="/register"
-            className="group flex items-center gap-4 rounded-sm border border-dashed border-chaux-300 p-4 transition hover:border-bissap-400 hover:bg-white/50"
+            className="group flex items-center gap-4 border border-dashed border-chaux-300 p-4 transition hover:border-bissap-400 hover:bg-white"
           >
-            <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-sm border border-dashed border-chaux-300 text-chaux-600 transition group-hover:border-bissap-300 group-hover:text-bissap-500">
+            <span className="flex h-14 w-14 shrink-0 items-center justify-center border border-dashed border-chaux-300 text-chaux-600 transition group-hover:border-bissap-300 group-hover:text-bissap-500">
               <Plus className="h-6 w-6" />
             </span>
             <span className="min-w-0 flex-1">

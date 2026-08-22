@@ -93,7 +93,7 @@ export function TuileStat({
   ton?: Ton;
 }) {
   return (
-    <div className=" border border-[var(--hairline)] bg-white/75 p-4 soft-shadow">
+    <div className=" border border-[var(--hairline)] bg-white p-4 soft-shadow">
       {/* Le chiffre est en haut, l'intitule en dessous : c'est le chiffre
           qu'on compare d'une tuile a l'autre, il doit rester sur la meme
           ligne quelle que soit la longueur de l'intitule. */}

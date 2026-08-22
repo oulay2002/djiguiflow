@@ -30,7 +30,7 @@ type Quota = {
  * ventes, il merite la couleur de l'urgence.
  */
 const TONS = {
-  ok: { barre: 'bg-accent-500', cadre: 'border-[var(--hairline)] bg-white/80', texte: 'text-chaux-600' },
+  ok: { barre: 'bg-accent-500', cadre: 'border-[var(--hairline)] bg-white', texte: 'text-chaux-600' },
   proche: { barre: 'bg-mangue-500', cadre: 'border-mangue-200 bg-mangue-50', texte: 'text-mangue-700' },
   critique: { barre: 'bg-mangue-600', cadre: 'border-mangue-300 bg-mangue-50', texte: 'text-mangue-700' },
   depasse: { barre: 'bg-bissap-500', cadre: 'border-bissap-200 bg-bissap-50', texte: 'text-bissap-700' },
@@ -99,7 +99,7 @@ export default function CompteurQuota() {
             {jours !== null && ` · remise à zéro dans ${jours} jour${jours > 1 ? 's' : ''}`}
           </p>
 
-          <div className="mt-3 h-2 w-full max-w-md overflow-hidden bg-white/70">
+          <div className="mt-3 h-2 w-full max-w-md overflow-hidden bg-white">
             <div className={`h-full ${ton.barre}`} style={{ width: `${part}%` }} />
           </div>
         </div>

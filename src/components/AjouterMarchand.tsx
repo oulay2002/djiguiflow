@@ -118,19 +118,19 @@ export default function AjouterMarchand() {
 
       {ouvert && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-chaux-600/50 p-4">
-          <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-3xl bg-white p-6 shadow-2xl">
+          <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto bg-white p-6 soft-shadow">
             <div className="mb-5 flex items-center justify-between">
               <h2 className="flex items-center gap-2 text-lg font-black text-nuit-800">
                 <Store className="h-5 w-5 text-mangue-600" /> Nouveau marchand
               </h2>
-              <button onClick={fermer} className="rounded-full p-1 hover:bg-chaux-100">
+              <button onClick={fermer} className=" p-1 hover:bg-chaux-100">
                 <X className="h-5 w-5" />
               </button>
             </div>
 
             {succes ? (
               <div className="space-y-4">
-                <div className="rounded-2xl border border-accent-200 bg-accent-50 p-4 text-sm text-accent-800">
+                <div className=" border border-accent-200 bg-accent-50 p-4 text-sm text-accent-800">
                   <p className="font-bold">✅ Marchand « {succes.slug} » provisionné.</p>
                   <ul className="mt-2 space-y-1 text-xs">
                     <li>
@@ -155,7 +155,7 @@ export default function AjouterMarchand() {
                 <input
                   value={nom} onChange={e => setNom(e.target.value)}
                   placeholder="Nom de la boutique (ex : Rose MonDE)"
-                  className="w-full rounded-2xl border border-[var(--hairline)] px-4 py-3 text-sm focus:border-mangue-400 focus:outline-none"
+                  className="w-full border border-[var(--hairline)] px-4 py-3 text-sm focus:border-mangue-400 focus:outline-none"
                 />
                 {slug && (
                   <p className="px-1 text-xs text-chaux-600">
@@ -166,36 +166,36 @@ export default function AjouterMarchand() {
                 <input
                   value={email} onChange={e => setEmail(e.target.value)}
                   type="email" placeholder="Email du marchand (reçoit l'invitation)"
-                  className="w-full rounded-2xl border border-[var(--hairline)] px-4 py-3 text-sm focus:border-mangue-400 focus:outline-none"
+                  className="w-full border border-[var(--hairline)] px-4 py-3 text-sm focus:border-mangue-400 focus:outline-none"
                 />
                 <div className="flex gap-3">
                   <input
                     value={categorie} onChange={e => setCategorie(e.target.value)}
                     placeholder="Catégorie"
-                    className="flex-1 rounded-2xl border border-[var(--hairline)] px-4 py-3 text-sm focus:border-mangue-400 focus:outline-none"
+                    className="flex-1 border border-[var(--hairline)] px-4 py-3 text-sm focus:border-mangue-400 focus:outline-none"
                   />
                   <input
                     value={emoji} onChange={e => setEmoji(e.target.value)}
                     placeholder="Emoji" maxLength={4}
-                    className="w-20 rounded-2xl border border-[var(--hairline)] px-4 py-3 text-center text-sm focus:border-mangue-400 focus:outline-none"
+                    className="w-20 border border-[var(--hairline)] px-4 py-3 text-center text-sm focus:border-mangue-400 focus:outline-none"
                   />
                 </div>
                 <div className="flex gap-3">
                   <input
                     value={zone} onChange={e => setZone(e.target.value)}
                     placeholder="Zone (ex : Cocody)"
-                    className="flex-1 rounded-2xl border border-[var(--hairline)] px-4 py-3 text-sm focus:border-mangue-400 focus:outline-none"
+                    className="flex-1 border border-[var(--hairline)] px-4 py-3 text-sm focus:border-mangue-400 focus:outline-none"
                   />
                   <input
                     value={telephone} onChange={e => setTelephone(e.target.value)}
                     placeholder="WhatsApp (225…)"
-                    className="flex-1 rounded-2xl border border-[var(--hairline)] px-4 py-3 text-sm focus:border-mangue-400 focus:outline-none"
+                    className="flex-1 border border-[var(--hairline)] px-4 py-3 text-sm focus:border-mangue-400 focus:outline-none"
                   />
                 </div>
                 <input
                   value={groupeLivreurs} onChange={e => setGroupeLivreurs(e.target.value)}
                   placeholder="Groupe livreurs (JID WhatsApp / chat Telegram)"
-                  className="w-full rounded-2xl border border-[var(--hairline)] px-4 py-3 text-sm focus:border-mangue-400 focus:outline-none"
+                  className="w-full border border-[var(--hairline)] px-4 py-3 text-sm focus:border-mangue-400 focus:outline-none"
                 />
 
                 <label className="flex items-center gap-2 px-1 text-sm text-nuit-700">
@@ -208,7 +208,7 @@ export default function AjouterMarchand() {
                 </label>
 
                 {erreur && (
-                  <p className="rounded-2xl border border-bissap-200 bg-bissap-50 p-3 text-sm text-bissap-700">
+                  <p className=" border border-bissap-200 bg-bissap-50 p-3 text-sm text-bissap-700">
                     ❌ {erreur}
                   </p>
                 )}
