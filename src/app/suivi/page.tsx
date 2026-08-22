@@ -56,17 +56,35 @@ function Suivre() {
   const refUrl = (params.get('ref') || '').trim();
   const boutique = (params.get('boutique') || '').trim();
 
+  /**
+   * Le jeton du lien, quand il y en a un.
+   *
+   * Une reference de commande se devine : la base porte des compteurs
+   * sequentiels et des formes bâties sur le telephone du client. Le lien recu
+   * par le client porte donc desormais un jeton, et c'est lui qui prouve qu'il
+   * s'agit bien de sa commande.
+   *
+   * ATTENTION AU FORMULAIRE PLUS BAS. Le client peut aussi TAPER sa reference
+   * a la main, sans jeton. Cette page transmet donc le jeton quand elle en a
+   * un, et rien sinon. Le jour ou la route l'exigera (phase 4), cette saisie
+   * manuelle cessera de fonctionner : il faudra alors soit la retirer, soit lui
+   * demander une seconde preuve — les quatre derniers chiffres du telephone,
+   * par exemple.
+   */
+  const jetonUrl = (params.get('t') || '').trim();
+
   const [ref, setRef] = useState(refUrl);
   const [suivi, setSuivi] = useState<Suivi | null>(null);
   const [erreur, setErreur] = useState('');
   const [chargement, setChargement] = useState(false);
 
-  const charger = useCallback(async (r: string, b: string) => {
+  const charger = useCallback(async (r: string, b: string, jeton = '') => {
     setChargement(true);
     setErreur('');
     try {
       const qs = new URLSearchParams({ ref: r.trim() });
       if (b) qs.set('boutique_id', b);
+      if (jeton) qs.set('t', jeton);
       const res = await fetch(`/api/suivi?${qs.toString()}`);
       if (res.ok) {
         setSuivi(await res.json());
@@ -86,8 +104,8 @@ function Suivre() {
   // Une reference dans l'URL se charge d'elle-meme : le client a clique sur le
   // lien de son message, il n'a rien a retaper.
   useEffect(() => {
-    if (refUrl) void charger(refUrl, boutique);
-  }, [refUrl, boutique, charger]);
+    if (refUrl) void charger(refUrl, boutique, jetonUrl);
+  }, [refUrl, boutique, jetonUrl, charger]);
 
   // Le statut change pendant qu'on regarde : Supabase pousse la mise a jour.
   useEffect(() => {
@@ -131,9 +149,9 @@ function Suivre() {
   // Filet de secours : si le temps reel ne passe pas, on redemande.
   useEffect(() => {
     if (!suivi || /livr/i.test(suivi.statut_livraison)) return;
-    const t = setInterval(() => void charger(suivi.order_id, boutique), 15000);
+    const t = setInterval(() => void charger(suivi.order_id, boutique, jetonUrl), 15000);
     return () => clearInterval(t);
-  }, [suivi, boutique, charger]);
+  }, [suivi, boutique, jetonUrl, charger]);
 
   const confirmee = !!suivi && /confirm|valid|accept/i.test(suivi.statut_livraison);
   const preparation = !!suivi && /prep|cuisine|cours|fabric/i.test(suivi.statut_livraison);

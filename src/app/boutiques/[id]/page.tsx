@@ -166,6 +166,10 @@ export default function Page() {
   const [instructions, setInstructions] = useState('');
   const [envoi, setEnvoi] = useState(false);
   const [confirmation, setConfirmation] = useState('');
+  // Le jeton du lien de suivi. Il vient de la reponse de la route et n'est
+  // jamais fabrique ici : la reference seule ne suffit plus a ouvrir un suivi,
+  // parce qu'elle se devine.
+  const [jetonSuivi, setJetonSuivi] = useState('');
   const [echec, setEchec] = useState('');
   const [telBoutique, setTelBoutique] = useState('');
 
@@ -349,6 +353,7 @@ export default function Page() {
         const d = await res.json();
         if (d.ok) {
           setConfirmation(d.order_id);
+          setJetonSuivi(String(d.jeton_suivi ?? ''));
           setPanier({}); setNom(''); setTel(''); setAdresse(''); setInstructions('');
         } else {
           // Il n'y avait pas de `else` : quand l'API refusait, la page ne
@@ -512,7 +517,11 @@ export default function Page() {
             <p className="text-sm text-accent-800">
               Commande <b className="font-mono">{confirmation}</b> transmise au commerçant.{' '}
               <Link
-                href={`/suivi?ref=${encodeURIComponent(confirmation)}&boutique=${encodeURIComponent(slug)}`}
+                href={
+                  `/suivi?ref=${encodeURIComponent(confirmation)}`
+                  + `&boutique=${encodeURIComponent(slug)}`
+                  + (jetonSuivi ? `&t=${encodeURIComponent(jetonSuivi)}` : '')
+                }
                 className="font-bold underline underline-offset-2"
               >
                 Suivre ma commande

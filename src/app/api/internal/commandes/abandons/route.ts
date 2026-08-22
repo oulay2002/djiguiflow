@@ -42,6 +42,7 @@ const JOURS_ENTRE_RELANCES = 1;
 
 type Ligne = {
   reference: string | null;
+  jeton_suivi: string | null;
   client_nom: string | null;
   chat_id: string | null;
   client_telephone: string | null;
@@ -53,24 +54,47 @@ type Ligne = {
 
 const fcfa = (n: number) => n.toLocaleString('fr-FR');
 
-function messageRelance(l: Ligne): string {
+/**
+ * Exportee POUR ETRE TESTEE, et c'est le seul motif.
+ *
+ * Elle est pure — une ligne entre, un texte sort — et c'est elle qui porte la
+ * propriete qu'on ne veut pas perdre : le lien envoye au client contient le
+ * jeton. La tester a travers la route entiere demanderait de simuler une chaine
+ * Supabase de six maillons pour verifier une chaine de caracteres.
+ */
+export function messageRelance(l: Ligne): string {
   const prenom = String(l.client_nom ?? '').trim().split(/\s+/)[0] || 'Bonjour';
   const boutique = String(l.boutiques?.nom ?? 'notre boutique');
   const ref = String(l.reference ?? '');
-  const lien = (r: 'oui' | 'non') =>
-    `https://www.djiguiflow.com/api/confirmation?ref=${encodeURIComponent(ref)}&r=${r}`;
+  const jeton = String(l.jeton_suivi ?? '');
 
-  // Le meme format que la demande initiale, a dessein : le client reconnait le
-  // message et retrouve les memes liens. Un rappel qui ne ressemble pas a ce
-  // qu'il rappelle se lit comme une publicite.
+  // LE PARAMETRE `r` A DISPARU, ET C'EST VOLONTAIRE. Il pretendait porter la
+  // reponse dans le lien, mais le GET ne l'a jamais lu depuis le correctif de
+  // l'apercu WhatsApp — un GET qui ecrit se declenche tout seul quand WhatsApp
+  // visite l'URL pour fabriquer son apercu. Le laisser faisait croire qu'un
+  // lien pouvait confirmer d'un clic.
+  //
+  // LE JETON, LUI, COMPTE. Une reference se devine ; sans lui, deviner suffisait
+  // a annuler la commande d'un inconnu.
+  const lien = () =>
+    `https://www.djiguiflow.com/api/confirmation?ref=${encodeURIComponent(ref)}`
+    + (jeton ? `&t=${encodeURIComponent(jeton)}` : '');
+
+  // UN SEUL LIEN, ET C'EST UNE CORRECTION.
+  //
+  // Le message en annoncait deux — « Je confirme » et « J'annule » — qui
+  // menaient a la MEME page. Le parametre `r` qui pretendait les distinguer
+  // n'etait plus lu depuis que le GET a cesse d'ecrire (l'apercu WhatsApp
+  // declenchait la confirmation tout seul, sans clic). Le client lisait donc
+  // une promesse fausse : aucun des deux liens ne repondait a sa place.
+  //
+  // La page qui s'ouvre porte les deux boutons. Le message le dit maintenant
+  // tel quel.
   return [
     `🛍️ ${prenom}, votre commande ${ref} (${fcfa(Number(l.total ?? 0))} F) chez ${boutique} attend encore votre réponse.`,
     '',
-    '✅ Je confirme :',
-    lien('oui'),
-    '',
-    '❌ J’annule :',
-    lien('non'),
+    '👉 Confirmer ou annuler :',
+    lien(),
     '',
     // Dire ce qui va se passer, plutot que de presser. Le client sait quoi
     // faire et pourquoi maintenant ; personne n'est mis sous pression.
@@ -99,7 +123,7 @@ export async function POST(req: Request) {
   const { data: aRelancer, error: errLecture } = await sb
     .from('commandes')
     .select(
-      'reference, client_nom, chat_id, client_telephone, total, canal, created_at,' +
+      'reference, jeton_suivi, client_nom, chat_id, client_telephone, total, canal, created_at,' +
         ' boutiques(slug, nom)',
     )
     .eq('confirmation_statut', 'demandee')

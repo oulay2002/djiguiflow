@@ -60,7 +60,7 @@ export async function POST(req: Request) {
   // la conversation d'ou vient le message.
   const { data, error } = await sb
     .from('commandes')
-    .select('id, reference, client_nom, client_telephone, client_adresse, instructions, total, canal, chat_id, statut, created_at')
+    .select('id, reference, jeton_suivi, client_nom, client_telephone, client_adresse, instructions, total, canal, chat_id, statut, created_at')
     .eq('boutique_id', marchand.boutiqueId)
     .eq('chat_id', chatId)
     .eq('statut', 'en_attente')
