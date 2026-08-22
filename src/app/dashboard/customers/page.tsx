@@ -150,7 +150,7 @@ export default function CustomersPage() {
             jamais retrecir — la page entiere partait en defilement
             horizontal, jusqu'a 1 103 px de large sur un telephone. */}
         <main className="min-w-0">
-          <header className="mb-8 flex flex-col gap-4 rounded-[2rem] border border-white/70 bg-white/75 p-5 shadow-[0_20px_60px_rgba(49,35,20,0.08)] backdrop-blur-xl md:flex-row md:items-center md:justify-between">
+          <header className="mb-8 flex flex-col gap-4 border border-[var(--hairline)] bg-white p-5 soft-shadow md:flex-row md:items-center md:justify-between">
             <div>
               <p className="text-sm font-medium uppercase tracking-[0.2em] text-chaux-600">Clients</p>
               <h1 className="mt-2 font-display text-3xl font-black tracking-tight text-nuit-900">Clients</h1>
@@ -167,10 +167,10 @@ export default function CustomersPage() {
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Rechercher..."
-                  className="w-full rounded-full border border-chaux-200 bg-chaux-50 py-2.5 pl-9 pr-4 text-sm text-nuit-700 outline-none transition focus:border-primary-400 focus:ring-2 focus:ring-primary-100 sm:w-56"
+                  className="w-full border border-chaux-200 bg-chaux-50 py-2.5 pl-9 pr-4 text-sm text-nuit-700 outline-none transition focus:border-primary-400 focus:ring-2 focus:ring-primary-100 sm:w-56"
                 />
               </div>
-              <button className="flex h-11 w-11 items-center justify-center rounded-full border border-chaux-200 bg-chaux-50 text-chaux-600 transition hover:border-primary-300 hover:text-primary-700">
+              <button className="flex h-11 w-11 items-center justify-center border border-chaux-200 bg-chaux-50 text-chaux-600 transition hover:border-primary-300 hover:text-primary-700">
                 <Bell className="h-5 w-5" />
               </button>
               {/* Navigation, pas action : le bissap reste réservé au geste
@@ -208,7 +208,7 @@ export default function CustomersPage() {
             ))}
           </section>
 
-          <div className="overflow-hidden rounded-[1.75rem] border border-chaux-200 bg-white/75 shadow-[0_18px_45px_rgba(48,35,20,0.08)] backdrop-blur-sm">
+          <div className="overflow-hidden border border-chaux-200 bg-white soft-shadow">
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-chaux-50">
@@ -227,7 +227,7 @@ export default function CustomersPage() {
                     <motion.tr key={customer.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: index * 0.05 }} className="transition hover:bg-chaux-50/80">
                       <td className="px-4 py-4">
                         <div className="flex items-center gap-3">
-                          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-nuit-500 to-primary-700 text-sm font-black text-white">
+                          <div className="flex h-11 w-11 items-center justify-center bg-nuit-700 text-sm font-black text-white">
                             {initiales(customer.nom)}
                           </div>
                           <div>

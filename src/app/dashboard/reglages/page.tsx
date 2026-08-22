@@ -56,11 +56,11 @@ export default function ReglagesPage() {
           <Link
             key={item.href}
             href={item.href}
-            className="block bg-white rounded-xl p-6 border border-chaux-200 hover:shadow-lg transition"
+            className="block bg-white p-6 border border-chaux-200 hover:border-nuit-300 transition"
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <div className={`p-3 rounded-xl ${item.color}`}>
+                <div className={`p-3 ${item.color}`}>
                   <item.icon className="w-6 h-6" />
                 </div>
                 <div>

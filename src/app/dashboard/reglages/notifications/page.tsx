@@ -144,11 +144,11 @@ export default function NotificationsPage() {
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-white rounded-xl p-6 border border-chaux-200"
+          className="bg-white p-6 border border-chaux-200"
         >
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
-              <div className="p-3 bg-accent-50 rounded-lg">
+              <div className="p-3 bg-accent-50">
                 <MessageCircle className="w-6 h-6 text-accent-600" />
               </div>
               <div>
@@ -163,7 +163,7 @@ export default function NotificationsPage() {
                 onChange={() => toggleNotification('whatsapp_actif')}
                 className="sr-only peer"
               />
-              <div className="w-11 h-6 bg-chaux-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-chaux-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-accent-500"></div>
+              <div className="w-11 h-6 bg-chaux-200 peer-focus:outline-none peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-chaux-300 after:border after: after:h-5 after:w-5 after:transition-all peer-checked:bg-accent-500"></div>
             </label>
           </div>
 
@@ -178,7 +178,7 @@ export default function NotificationsPage() {
                   value={settings.whatsapp_numero}
                   onChange={(e) => setSettings({ ...settings, whatsapp_numero: e.target.value })}
                   placeholder="Ex: 0759486701"
-                  className="w-full px-4 py-3 border border-chaux-200 rounded-lg focus:ring-2 focus:ring-nuit-200"
+                  className="w-full px-4 py-3 border border-chaux-200 focus:ring-2 focus:ring-nuit-200"
                 />
                 <p className="text-xs text-chaux-600 mt-1">
                   Format : numéro local (ex: 0759486701)
@@ -192,11 +192,11 @@ export default function NotificationsPage() {
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-white rounded-xl p-6 border border-chaux-200"
+          className="bg-white p-6 border border-chaux-200"
         >
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
-              <div className="p-3 bg-nuit-50 rounded-lg">
+              <div className="p-3 bg-nuit-50">
                 <Phone className="w-6 h-6 text-nuit-600" />
               </div>
               <div>
@@ -211,7 +211,7 @@ export default function NotificationsPage() {
                 onChange={() => toggleNotification('telegram_actif')}
                 className="sr-only peer"
               />
-              <div className="w-11 h-6 bg-chaux-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-chaux-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-accent-500"></div>
+              <div className="w-11 h-6 bg-chaux-200 peer-focus:outline-none peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-chaux-300 after:border after: after:h-5 after:w-5 after:transition-all peer-checked:bg-accent-500"></div>
             </label>
           </div>
 
@@ -226,7 +226,7 @@ export default function NotificationsPage() {
                   value={settings.telegram_chat_id}
                   onChange={(e) => setSettings({ ...settings, telegram_chat_id: e.target.value })}
                   placeholder="Ex: 123456789"
-                  className="w-full px-4 py-3 border border-chaux-200 rounded-lg focus:ring-2 focus:ring-nuit-200"
+                  className="w-full px-4 py-3 border border-chaux-200 focus:ring-2 focus:ring-nuit-200"
                 />
                 <p className="text-xs text-chaux-600 mt-1">
                   Obtenez votre Chat ID via @userinfobot sur Telegram
@@ -240,7 +240,7 @@ export default function NotificationsPage() {
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-white rounded-xl p-6 border border-chaux-200"
+          className="bg-white p-6 border border-chaux-200"
         >
           <h2 className="text-xl font-bold text-nuit-900 mb-6 flex items-center gap-2">
             <Bell className="w-6 h-6 text-mangue-500" />
@@ -327,7 +327,7 @@ type NotificationToggleProps = {
 
 function NotificationToggle({ icon: Icon, label, description, checked, onChange }: NotificationToggleProps) {
   return (
-    <div className="flex items-center justify-between p-4 bg-chaux-50 rounded-lg hover:bg-chaux-100 transition">
+    <div className="flex items-center justify-between p-4 bg-chaux-50 hover:bg-chaux-100 transition">
       <div className="flex items-center gap-3">
         <Icon className="w-5 h-5 text-chaux-600" />
         <div>
@@ -342,7 +342,7 @@ function NotificationToggle({ icon: Icon, label, description, checked, onChange 
           onChange={onChange}
           className="sr-only peer"
         />
-        <div className="w-11 h-6 bg-chaux-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-chaux-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-accent-500"></div>
+        <div className="w-11 h-6 bg-chaux-200 peer-focus:outline-none peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-chaux-300 after:border after: after:h-5 after:w-5 after:transition-all peer-checked:bg-accent-500"></div>
       </label>
     </div>
   );

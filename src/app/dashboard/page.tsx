@@ -120,7 +120,7 @@ export default function Page() {
     <div className="min-h-screen bg-[var(--background)] p-4 lg:p-6">
       <div className="mx-auto max-w-[1600px]">
         <main className="min-w-0 space-y-6">
-          <header className="flex flex-col gap-4 border border-white/70 bg-white/75 p-5 soft-shadow backdrop-blur-xl md:flex-row md:items-center md:justify-between">
+          <header className="flex flex-col gap-4 border border-[var(--hairline)] bg-white p-5 soft-shadow md:flex-row md:items-center md:justify-between">
             <div>
               <p className="text-sm uppercase tracking-[0.2em] text-chaux-600">Votre boutique aujourd’hui</p>
               <h1 className="mt-2 font-display text-3xl font-black">Bonjour, {nomBoutique}</h1>
@@ -155,7 +155,7 @@ export default function Page() {
             {kpis.map(k => {
               const Icon = k.icon;
               return (
-                <div key={k.label} className=" border border-white/70 bg-white/80 p-5 soft-shadow backdrop-blur-sm">
+                <div key={k.label} className=" border border-[var(--hairline)] bg-white p-5 soft-shadow">
                   <div className={`flex h-12 w-12 items-center justify-center ${k.accent}`}>
                     <Icon className="h-6 w-6" />
                   </div>
@@ -258,7 +258,7 @@ export default function Page() {
           )}
 
           <section className="grid gap-6 xl:grid-cols-[1.6fr_1fr]">
-            <div className=" border border-[var(--hairline)] bg-white/80 p-6 soft-shadow backdrop-blur-sm">
+            <div className=" border border-[var(--hairline)] bg-white p-6 soft-shadow">
               <div className="mb-4 flex items-center justify-between">
                 <div>
                   <p className="text-sm text-chaux-600">Performance</p>
@@ -293,7 +293,7 @@ export default function Page() {
             </div>
 
             <div className="space-y-6">
-              <div className=" border border-[var(--hairline)] bg-white/80 p-6 soft-shadow backdrop-blur-sm">
+              <div className=" border border-[var(--hairline)] bg-white p-6 soft-shadow">
                 <h3 className="text-xl font-black">Canaux de vente</h3>
                 <div className="mt-4 space-y-4">
                   {s && Object.entries(s.parCanal).map(([canal, nb]) => {
@@ -315,7 +315,7 @@ export default function Page() {
                 </div>
               </div>
 
-              <div className=" border border-[var(--hairline)] bg-white/80 p-6 soft-shadow backdrop-blur-sm">
+              <div className=" border border-[var(--hairline)] bg-white p-6 soft-shadow">
                 <div className="flex items-center gap-2">
                   <Trophy className="h-5 w-5 text-mangue-600" />
                   <h3 className="text-xl font-black">Top produits</h3>

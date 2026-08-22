@@ -298,7 +298,7 @@ export default function LivreursPage() {
       </div>
 
       {/* Filtres et recherche */}
-      <div className="bg-white rounded-xl border border-chaux-200 p-4 mb-6">
+      <div className="bg-white border border-chaux-200 p-4 mb-6">
         <div className="flex flex-col md:flex-row gap-4">
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-chaux-400" />
@@ -307,7 +307,7 @@ export default function LivreursPage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Rechercher par nom ou téléphone..."
-              className="w-full pl-10 pr-4 py-2.5 border border-chaux-200 rounded-lg focus:ring-2 focus:ring-nuit-200"
+              className="w-full pl-10 pr-4 py-2.5 border border-chaux-200 focus:ring-2 focus:ring-nuit-200"
             />
           </div>
           <div className="flex flex-wrap gap-2">
@@ -315,7 +315,7 @@ export default function LivreursPage() {
               <button
                 key={type}
                 onClick={() => setFilter(type)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
+                className={`px-4 py-2 text-sm font-medium transition ${
                   filter === type ? 'bg-nuit-700 text-white' : 'bg-chaux-50 text-nuit-700 hover:bg-chaux-100'
                 }`}
               >
@@ -328,7 +328,7 @@ export default function LivreursPage() {
 
       {/* Liste des livreurs */}
       {filteredLivreurs.length === 0 ? (
-        <div className="text-center py-16 bg-white rounded-xl border border-chaux-200 border-dashed">
+        <div className="text-center py-16 bg-white border border-chaux-200 border-dashed">
           <Truck className="w-16 h-16 text-chaux-300 mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-nuit-900">Aucun livreur</h3>
           <p className="text-chaux-600 mt-1">Commencez par ajouter votre premier livreur.</p>
@@ -345,28 +345,28 @@ export default function LivreursPage() {
                 key={livreur.id}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="bg-white rounded-xl shadow-sm border border-chaux-200 overflow-hidden hover:shadow-md transition"
+                className="bg-white soft-shadow border border-chaux-200 overflow-hidden hover:soft-shadow transition"
               >
                 <div className="p-5">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-nuit-500 to-nuit-700 flex items-center justify-center text-white font-bold text-lg">
+                      <div className="w-12 h-12 bg-nuit-700 flex items-center justify-center text-white font-bold text-lg">
                         {livreur.nom.charAt(0).toUpperCase()}
                       </div>
                       <div>
                         <h3 className="font-bold text-nuit-900">{livreur.nom}</h3>
                         <div className="flex items-center gap-2 mt-1">
-                          <span className={`px-2 py-0.5 rounded-full text-xs font-semibold border ${typeConfig.color}`}>
+                          <span className={`px-2 py-0.5 text-xs font-semibold border ${typeConfig.color}`}>
                             {typeConfig.label}
                           </span>
-                          <span className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${statutConfig.color}`}>
+                          <span className={`flex items-center gap-1 px-2 py-0.5 text-xs font-semibold ${statutConfig.color}`}>
                             <statutConfig.icon className="w-3 h-3" />
                             {statutConfig.label}
                           </span>
                         </div>
                       </div>
                     </div>
-                    <button className="p-1 hover:bg-chaux-100 rounded">
+                    <button className="p-1 hover:bg-chaux-100">
                       <MoreVertical className="w-5 h-5 text-chaux-400" />
                     </button>
                   </div>
@@ -436,12 +436,12 @@ export default function LivreursPage() {
                             readOnly
                             value={invitations[livreur.id].lien}
                             onFocus={(e) => e.currentTarget.select()}
-                            className="flex-1 min-w-0 px-2 py-1.5 text-xs bg-chaux-50 border border-chaux-200 rounded-lg text-nuit-700"
+                            className="flex-1 min-w-0 px-2 py-1.5 text-xs bg-chaux-50 border border-chaux-200 text-nuit-700"
                           />
                           <button
                             onClick={() => copier(`${livreur.id}:lien`, invitations[livreur.id].lien!)}
                             title="Copier le lien"
-                            className="p-2 text-nuit-600 hover:bg-nuit-50 rounded-lg transition shrink-0"
+                            className="p-2 text-nuit-600 hover:bg-nuit-50 transition shrink-0"
                           >
                             {copie === `${livreur.id}:lien`
                               ? <Check className="w-4 h-4 text-accent-600" />
@@ -468,12 +468,12 @@ export default function LivreursPage() {
                                 readOnly
                                 value={`/start ${invitations[livreur.id].code}`}
                                 onFocus={(e) => e.currentTarget.select()}
-                                className="flex-1 min-w-0 px-2 py-1.5 font-mono bg-chaux-50 border border-chaux-200 rounded-lg text-nuit-700"
+                                className="flex-1 min-w-0 px-2 py-1.5 font-mono bg-chaux-50 border border-chaux-200 text-nuit-700"
                               />
                               <button
                                 onClick={() => copier(`${livreur.id}:cmd`, `/start ${invitations[livreur.id].code}`)}
                                 title="Copier la commande"
-                                className="p-2 text-nuit-600 hover:bg-nuit-50 rounded-lg transition shrink-0"
+                                className="p-2 text-nuit-600 hover:bg-nuit-50 transition shrink-0"
                               >
                                 {copie === `${livreur.id}:cmd`
                                   ? <Check className="w-4 h-4 text-accent-600" />
@@ -488,7 +488,7 @@ export default function LivreursPage() {
                         <button
                           onClick={() => obtenirLien(livreur)}
                           disabled={invitations[livreur.id]?.chargement}
-                          className="w-full flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-semibold bg-nuit-50 text-nuit-700 hover:bg-nuit-100 transition disabled:opacity-60"
+                          className="w-full flex items-center justify-center gap-2 py-2 text-xs font-semibold bg-nuit-50 text-nuit-700 hover:bg-nuit-100 transition disabled:opacity-60"
                         >
                           {invitations[livreur.id]?.chargement
                             ? <Loader2 className="w-4 h-4 animate-spin" />
@@ -507,7 +507,7 @@ export default function LivreursPage() {
                   <div className="flex items-center justify-between gap-2">
                     <button
                       onClick={() => toggleStatut(livreur)}
-                      className={`flex-1 py-2 rounded-lg text-xs font-semibold transition ${
+                      className={`flex-1 py-2 text-xs font-semibold transition ${
                         livreur.statut === 'disponible'
                           ? 'bg-mangue-50 text-mangue-700 hover:bg-mangue-100'
                           : 'bg-accent-50 text-accent-700 hover:bg-accent-100'
@@ -518,13 +518,13 @@ export default function LivreursPage() {
                     <button
                       onClick={() => {}}
                       title="Édition bientôt disponible"
-                      className="p-2 text-nuit-600 hover:bg-nuit-50 rounded-lg transition"
+                      className="p-2 text-nuit-600 hover:bg-nuit-50 transition"
                     >
                       <Edit3 className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => deleteLivreur(livreur.id)}
-                      className="p-2 text-bissap-600 hover:bg-bissap-50 rounded-lg transition"
+                      className="p-2 text-bissap-600 hover:bg-bissap-50 transition"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -539,16 +539,16 @@ export default function LivreursPage() {
       {/* Modal Ajout Livreur */}
       <AnimatePresence>
         {showModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl"
+              className="bg-white w-full max-w-lg max-h-[90vh] overflow-y-auto soft-shadow"
             >
               <div className="p-6 border-b border-chaux-200 flex justify-between items-center">
                 <h2 className="text-xl font-bold text-nuit-900">Ajouter un livreur</h2>
-                <button onClick={() => setShowModal(false)} className="p-2 hover:bg-chaux-100 rounded-lg">
+                <button onClick={() => setShowModal(false)} className="p-2 hover:bg-chaux-100">
                   <X className="w-5 h-5 text-chaux-600" />
                 </button>
               </div>
@@ -560,7 +560,7 @@ export default function LivreursPage() {
                     <button
                       type="button"
                       onClick={() => setFormData({ ...formData, type: 'interne' })}
-                      className={`py-3 rounded-lg border-2 font-semibold transition ${
+                      className={`py-3 border-2 font-semibold transition ${
                         formData.type === 'interne'
                           ? 'border-nuit-500 bg-nuit-50 text-nuit-700'
                           : 'border-chaux-200 text-nuit-700 hover:border-chaux-300'
@@ -571,7 +571,7 @@ export default function LivreursPage() {
                     <button
                       type="button"
                       onClick={() => setFormData({ ...formData, type: 'independant' })}
-                      className={`py-3 rounded-lg border-2 font-semibold transition ${
+                      className={`py-3 border-2 font-semibold transition ${
                         formData.type === 'independant'
                           ? 'border-nuit-500 bg-nuit-50 text-nuit-700'
                           : 'border-chaux-200 text-nuit-700 hover:border-chaux-300'
@@ -589,7 +589,7 @@ export default function LivreursPage() {
                     required
                     value={formData.nom}
                     onChange={(e) => setFormData({ ...formData, nom: e.target.value })}
-                    className="w-full px-4 py-2.5 border border-chaux-200 rounded-lg focus:ring-2 focus:ring-nuit-200"
+                    className="w-full px-4 py-2.5 border border-chaux-200 focus:ring-2 focus:ring-nuit-200"
                     placeholder="Ex: Kouamé Jean"
                   />
                 </div>
@@ -601,7 +601,7 @@ export default function LivreursPage() {
                     required
                     value={formData.telephone}
                     onChange={(e) => setFormData({ ...formData, telephone: e.target.value })}
-                    className="w-full px-4 py-2.5 border border-chaux-200 rounded-lg focus:ring-2 focus:ring-nuit-200"
+                    className="w-full px-4 py-2.5 border border-chaux-200 focus:ring-2 focus:ring-nuit-200"
                     placeholder="Ex: 0709123456"
                   />
                 </div>
@@ -612,7 +612,7 @@ export default function LivreursPage() {
                     type="email"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full px-4 py-2.5 border border-chaux-200 rounded-lg focus:ring-2 focus:ring-nuit-200"
+                    className="w-full px-4 py-2.5 border border-chaux-200 focus:ring-2 focus:ring-nuit-200"
                     placeholder="Ex: jean@example.com"
                   />
                 </div>
@@ -622,7 +622,7 @@ export default function LivreursPage() {
                   <select
                     value={formData.vehicule_type}
                     onChange={(e) => setFormData({ ...formData, vehicule_type: e.target.value })}
-                    className="w-full px-4 py-2.5 border border-chaux-200 rounded-lg focus:ring-2 focus:ring-nuit-200"
+                    className="w-full px-4 py-2.5 border border-chaux-200 focus:ring-2 focus:ring-nuit-200"
                   >
                     <option value="moto">Moto</option>
                     <option value="voiture">Voiture</option>
@@ -636,7 +636,7 @@ export default function LivreursPage() {
                     type="text"
                     value={formData.vehicule_immatriculation}
                     onChange={(e) => setFormData({ ...formData, vehicule_immatriculation: e.target.value })}
-                    className="w-full px-4 py-2.5 border border-chaux-200 rounded-lg focus:ring-2 focus:ring-nuit-200"
+                    className="w-full px-4 py-2.5 border border-chaux-200 focus:ring-2 focus:ring-nuit-200"
                     placeholder="Ex: AB-123-CD"
                   />
                 </div>
@@ -645,7 +645,7 @@ export default function LivreursPage() {
                   <button
                     type="button"
                     onClick={() => setShowModal(false)}
-                    className="flex-1 px-4 py-3 border border-chaux-200 text-nuit-700 rounded-lg font-medium hover:bg-chaux-50"
+                    className="flex-1 px-4 py-3 border border-chaux-200 text-nuit-700 font-medium hover:bg-chaux-50"
                   >
                     Annuler
                   </button>

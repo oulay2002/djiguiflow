@@ -222,7 +222,7 @@ export default function Page() {
     <div className="min-h-screen bg-[var(--background)] p-4 lg:p-6">
       <div className="mx-auto max-w-[1600px]">
         <main className="min-w-0 space-y-6">
-          <header className="indigo-weave relative overflow-hidden rounded-[2rem] bg-nuit-900 p-6 text-chaux-50 shadow-xl">
+          <header className="indigo-weave relative overflow-hidden bg-nuit-900 p-6 text-chaux-50 soft-shadow">
             <div className="relative z-10 flex flex-wrap items-center justify-between gap-4">
               <div>
                 <p className="text-sm uppercase tracking-[0.2em] text-mangue-100">Menu réel · feuille Google</p>
@@ -243,7 +243,7 @@ export default function Page() {
           </header>
 
           {alertes.length > 0 && (
-            <div className="flex items-start gap-3 rounded-2xl border border-mangue-300 bg-mangue-50 p-4">
+            <div className="flex items-start gap-3 border border-mangue-300 bg-mangue-50 p-4">
               <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-mangue-700" />
               <div className="flex-1">
                 <p className="font-bold text-mangue-700">
@@ -261,7 +261,7 @@ export default function Page() {
           <div className="flex flex-wrap gap-2">
             {cats.map(c => (
               <button key={c} onClick={() => setCat(c)}
-                className={`rounded-full px-4 py-2 text-sm font-semibold capitalize transition ${
+                className={` px-4 py-2 text-sm font-semibold capitalize transition ${
                   cat === c ? 'bg-nuit-900 text-chaux-50' : 'bg-chaux-100 text-nuit-700 hover:bg-chaux-200'
                 }`}>
                 {c}
@@ -273,7 +273,7 @@ export default function Page() {
             {filtrés.map(p => {
               const st = statutStock(p);
               return (
-                <div key={p.id || p.nom} className={`overflow-hidden rounded-[1.5rem] border bg-white/90 shadow-sm backdrop-blur-sm ${p.disponible ? 'border-[var(--hairline)]' : 'border-bissap-200 opacity-70'}`}>
+                <div key={p.id || p.nom} className={`overflow-hidden border bg-white soft-shadow ${p.disponible ? 'border-[var(--hairline)]' : 'border-bissap-200 opacity-70'}`}>
                   {p.image ? (
                     <img src={p.image} alt={p.nom} className="h-40 w-full object-cover" />
                   ) : (
@@ -284,17 +284,17 @@ export default function Page() {
                   <div className="space-y-2 p-5">
                     <div className="flex items-start justify-between gap-2">
                       <h2 className="font-bold text-nuit-900">{p.nom}</h2>
-                      <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${p.disponible ? 'bg-accent-100 text-accent-700' : 'bg-bissap-100 text-bissap-700'}`}>
+                      <span className={`shrink-0 px-2.5 py-1 text-xs font-semibold ${p.disponible ? 'bg-accent-100 text-accent-700' : 'bg-bissap-100 text-bissap-700'}`}>
                         {p.disponible ? 'Disponible' : 'Épuisé'}
                       </span>
                     </div>
                     <p className="text-xs text-chaux-600">{p.description}</p>
                     <div className="flex items-center justify-between pt-1">
-                      <span className="rounded-full bg-mangue-100 px-2.5 py-1 text-xs font-semibold text-mangue-700">{p.categorie}</span>
+                      <span className=" bg-mangue-100 px-2.5 py-1 text-xs font-semibold text-mangue-700">{p.categorie}</span>
                       <p className="font-black text-mangue-700">{p.prix.toLocaleString('fr-FR')} F</p>
                     </div>
                     <div className="flex items-center justify-between gap-2 border-t pt-2">
-                      <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${st.color}`}>
+                      <span className={` px-2.5 py-1 text-xs font-semibold ${st.color}`}>
                         {st.label}
                       </span>
                       <div className="flex items-center gap-2">
@@ -305,14 +305,14 @@ export default function Page() {
                             rattachent prix et photo au produit PAR SON NOM. */}
                         <button
                           onClick={() => ouvrirFiche(p)}
-                          className="rounded-full bg-nuit-50 px-3 py-1 text-xs font-semibold text-nuit-700 transition hover:bg-nuit-100"
+                          className=" bg-nuit-50 px-3 py-1 text-xs font-semibold text-nuit-700 transition hover:bg-nuit-100"
                         >
                           <Pencil className="mr-1 inline h-3 w-3" />
                           Modifier
                         </button>
                         <button
                           onClick={() => ouvrirStock(p)}
-                          className="rounded-full bg-chaux-100 px-3 py-1 text-xs font-semibold text-nuit-700 transition hover:bg-chaux-200"
+                          className=" bg-chaux-100 px-3 py-1 text-xs font-semibold text-nuit-700 transition hover:bg-chaux-200"
                         >
                           Stock
                         </button>
@@ -325,7 +325,7 @@ export default function Page() {
           </div>
 
           {filtrés.length === 0 && (
-            <div className="rounded-[1.5rem] border border-dashed bg-white/60 p-10 text-center text-chaux-600">
+            <div className=" border border-dashed bg-white p-10 text-center text-chaux-600">
               Aucun produit dans cette catégorie.
             </div>
           )}
@@ -335,38 +335,38 @@ export default function Page() {
       {/* Modal d'ajout */}
       {ouvert && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="max-h-[90vh] w-full max-w-lg space-y-4 overflow-y-auto rounded-[1.5rem] bg-white p-6 shadow-2xl">
+          <div className="max-h-[90vh] w-full max-w-lg space-y-4 overflow-y-auto bg-white p-6 soft-shadow">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-black text-nuit-900">Nouveau produit</h2>
-              <button onClick={() => setOuvert(false)} className="rounded-full p-2 hover:bg-chaux-100"><X className="h-5 w-5" /></button>
+              <button onClick={() => setOuvert(false)} className=" p-2 hover:bg-chaux-100"><X className="h-5 w-5" /></button>
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2">
-              <input className="rounded-lg border p-2" placeholder="Nom de l’article *" value={fNom} onChange={e => setFNom(e.target.value)} />
-              <input className="rounded-lg border p-2" placeholder="Catégorie (ex : Burger)" value={fCat} onChange={e => setFCat(e.target.value)} />
-              <input className="rounded-lg border p-2" placeholder="Prix (FCFA) *" type="number" value={fPrix} onChange={e => setFPrix(e.target.value)} />
-              <input className="rounded-lg border p-2" placeholder="Description" value={fDesc} onChange={e => setFDesc(e.target.value)} />
+              <input className=" border p-2" placeholder="Nom de l’article *" value={fNom} onChange={e => setFNom(e.target.value)} />
+              <input className=" border p-2" placeholder="Catégorie (ex : Burger)" value={fCat} onChange={e => setFCat(e.target.value)} />
+              <input className=" border p-2" placeholder="Prix (FCFA) *" type="number" value={fPrix} onChange={e => setFPrix(e.target.value)} />
+              <input className=" border p-2" placeholder="Description" value={fDesc} onChange={e => setFDesc(e.target.value)} />
             </div>
 
-            <div className="grid gap-3 rounded-2xl border border-mangue-200 bg-mangue-50 p-3 sm:grid-cols-2">
+            <div className="grid gap-3 border border-mangue-200 bg-mangue-50 p-3 sm:grid-cols-2">
               <div>
                 <label className="mb-1 block text-xs font-semibold text-mangue-700">Stock actuel</label>
-                <input type="number" min="0" placeholder="ex : 12 (laisser vide = sans suivi)" value={fStock} onChange={e => setFStock(e.target.value)} className="w-full rounded-lg border border-mangue-300 bg-white p-2 text-sm" />
+                <input type="number" min="0" placeholder="ex : 12 (laisser vide = sans suivi)" value={fStock} onChange={e => setFStock(e.target.value)} className="w-full border border-mangue-300 bg-white p-2 text-sm" />
               </div>
               <div>
                 <label className="mb-1 block text-xs font-semibold text-mangue-700">Alerte à</label>
-                <input type="number" min="0" placeholder="ex : 5" value={fSeuil} onChange={e => setFSeuil(e.target.value)} className="w-full rounded-lg border border-mangue-300 bg-white p-2 text-sm" />
+                <input type="number" min="0" placeholder="ex : 5" value={fSeuil} onChange={e => setFSeuil(e.target.value)} className="w-full border border-mangue-300 bg-white p-2 text-sm" />
               </div>
             </div>
 
             <div>
               <label className="mb-1 block text-sm font-semibold text-chaux-600">Photo de l’article</label>
               <input type="file" accept="image/*" onChange={e => setFFile(e.target.files?.[0] || null)}
-                className="block w-full text-sm text-chaux-600 file:mr-3 file:rounded-full file:border-0 file:bg-mangue-100 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-mangue-700 hover:file:bg-mangue-200" />
+                className="block w-full text-sm text-chaux-600 file:mr-3 file: file:border-0 file:bg-mangue-100 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-mangue-700 hover:file:bg-mangue-200" />
               <p className="mt-2 text-xs text-chaux-600">…ou colle un lien image :</p>
-              <input className="mt-1 w-full rounded-lg border p-2" placeholder="https://…/photo.jpg" value={fUrl} onChange={e => setFUrl(e.target.value)} />
+              <input className="mt-1 w-full border p-2" placeholder="https://…/photo.jpg" value={fUrl} onChange={e => setFUrl(e.target.value)} />
               {(fFile || fUrl) && (
-                <img src={fFile ? URL.createObjectURL(fFile) : fUrl} alt="aperçu" className="mt-2 h-28 w-full rounded-lg object-cover" />
+                <img src={fFile ? URL.createObjectURL(fFile) : fUrl} alt="aperçu" className="mt-2 h-28 w-full object-cover" />
               )}
             </div>
 
@@ -375,7 +375,7 @@ export default function Page() {
               Disponible à la vente
             </label>
 
-            {msg && <p className="rounded-lg bg-bissap-50 p-3 text-sm text-bissap-700">{msg}</p>}
+            {msg && <p className=" bg-bissap-50 p-3 text-sm text-bissap-700">{msg}</p>}
 
             <Bouton onClick={ajouter} chargement={envoi} className="w-full">
               {!envoi && <Plus className="h-5 w-5" />}
@@ -388,18 +388,18 @@ export default function Page() {
       {/* Modal de gestion de stock */}
       {fiche && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="max-h-[90vh] w-full max-w-md space-y-4 overflow-y-auto rounded-[1.5rem] bg-white p-6 shadow-2xl">
+          <div className="max-h-[90vh] w-full max-w-md space-y-4 overflow-y-auto bg-white p-6 soft-shadow">
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-xl font-black text-nuit-900">Modifier la fiche</h2>
                 <p className="text-sm text-chaux-600">{fiche.nom}</p>
               </div>
-              <button onClick={() => setFiche(null)} className="rounded-full p-2 hover:bg-chaux-100"><X className="h-5 w-5" /></button>
+              <button onClick={() => setFiche(null)} className=" p-2 hover:bg-chaux-100"><X className="h-5 w-5" /></button>
             </div>
 
             <div>
               <label className="mb-1 block text-sm font-semibold text-nuit-700">Nom du produit</label>
-              <input value={gNom} onChange={x => setGNom(x.target.value)} className="w-full rounded-lg border p-2" />
+              <input value={gNom} onChange={x => setGNom(x.target.value)} className="w-full border p-2" />
               {/* Le nom est la cle qui relie les ventes au catalogue : il vaut
                   la peine d'avertir avant qu'un renommage ne scinde un
                   historique. */}
@@ -413,22 +413,22 @@ export default function Page() {
             <div className="grid gap-3 sm:grid-cols-2">
               <div>
                 <label className="mb-1 block text-sm font-semibold text-nuit-700">Catégorie</label>
-                <input value={gCat} onChange={x => setGCat(x.target.value)} className="w-full rounded-lg border p-2" />
+                <input value={gCat} onChange={x => setGCat(x.target.value)} className="w-full border p-2" />
               </div>
               <div>
                 <label className="mb-1 block text-sm font-semibold text-nuit-700">Prix (FCFA)</label>
-                <input type="number" min="0" value={gPrix} onChange={x => setGPrix(x.target.value)} className="w-full rounded-lg border p-2" />
+                <input type="number" min="0" value={gPrix} onChange={x => setGPrix(x.target.value)} className="w-full border p-2" />
               </div>
             </div>
 
             <div>
               <label className="mb-1 block text-sm font-semibold text-nuit-700">Description</label>
-              <textarea rows={2} value={gDesc} onChange={x => setGDesc(x.target.value)} className="w-full rounded-lg border p-2" />
+              <textarea rows={2} value={gDesc} onChange={x => setGDesc(x.target.value)} className="w-full border p-2" />
             </div>
 
             <div>
               <label className="mb-1 block text-sm font-semibold text-nuit-700">Remplacer la photo</label>
-              <input type="file" accept="image/*" onChange={x => setGFile(x.target.files?.[0] ?? null)} className="w-full rounded-lg border p-2 text-sm" />
+              <input type="file" accept="image/*" onChange={x => setGFile(x.target.files?.[0] ?? null)} className="w-full border p-2 text-sm" />
               <p className="mt-1 text-xs text-chaux-600">Laissez vide pour garder la photo actuelle.</p>
             </div>
 
@@ -444,24 +444,24 @@ export default function Page() {
 
       {editProd && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-md space-y-4 rounded-[1.5rem] bg-white p-6 shadow-2xl">
+          <div className="w-full max-w-md space-y-4 bg-white p-6 soft-shadow">
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-xl font-black text-nuit-900">Gérer le stock</h2>
                 <p className="text-sm text-chaux-600">{editProd.nom}</p>
               </div>
-              <button onClick={() => setEditProd(null)} className="rounded-full p-2 hover:bg-chaux-100"><X className="h-5 w-5" /></button>
+              <button onClick={() => setEditProd(null)} className=" p-2 hover:bg-chaux-100"><X className="h-5 w-5" /></button>
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2">
               <div>
                 <label className="mb-1 block text-sm font-semibold text-nuit-700">Stock actuel</label>
-                <input type="number" min="0" placeholder="ex : 12" value={eStock} onChange={x => setEStock(x.target.value)} className="w-full rounded-lg border p-2" />
+                <input type="number" min="0" placeholder="ex : 12" value={eStock} onChange={x => setEStock(x.target.value)} className="w-full border p-2" />
                 <p className="mt-1 text-xs text-chaux-600">Vide = pas de suivi</p>
               </div>
               <div>
                 <label className="mb-1 block text-sm font-semibold text-nuit-700">Seuil d’alerte</label>
-                <input type="number" min="0" placeholder="ex : 5" value={eSeuil} onChange={x => setESeuil(x.target.value)} className="w-full rounded-lg border p-2" />
+                <input type="number" min="0" placeholder="ex : 5" value={eSeuil} onChange={x => setESeuil(x.target.value)} className="w-full border p-2" />
                 <p className="mt-1 text-xs text-chaux-600">Alerte quand stock ≤ ce nombre</p>
               </div>
             </div>
@@ -471,7 +471,7 @@ export default function Page() {
               Disponible à la vente
             </label>
 
-            {eMsg && <p className="rounded-lg bg-bissap-50 p-3 text-sm text-bissap-700">{eMsg}</p>}
+            {eMsg && <p className=" bg-bissap-50 p-3 text-sm text-bissap-700">{eMsg}</p>}
 
             <div className="flex gap-2">
               <Bouton variante="calme" onClick={() => setEditProd(null)} className="flex-1">Annuler</Bouton>

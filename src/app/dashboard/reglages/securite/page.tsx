@@ -130,7 +130,7 @@ export default function SecuritePage() {
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className={`p-4 rounded-lg flex items-start gap-3 ${
+            className={`p-4 flex items-start gap-3 ${
               message.type === 'success'
                 ? 'bg-accent-50 text-accent-700 border border-accent-200'
                 : 'bg-bissap-50 text-bissap-700 border border-bissap-200'
@@ -149,10 +149,10 @@ export default function SecuritePage() {
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-white rounded-xl p-6 border border-chaux-200"
+          className="bg-white p-6 border border-chaux-200"
         >
           <div className="flex items-center gap-3 mb-6">
-            <div className="p-3 bg-nuit-50 rounded-lg">
+            <div className="p-3 bg-nuit-50">
               <KeyRound className="w-6 h-6 text-nuit-600" />
             </div>
             <div>
@@ -173,7 +173,7 @@ export default function SecuritePage() {
                   autoComplete="current-password"
                   value={form.actuel}
                   onChange={(e) => setForm({ ...form, actuel: e.target.value })}
-                  className="w-full px-4 py-2.5 pr-12 border border-chaux-200 rounded-lg focus:ring-2 focus:ring-nuit-200 focus:border-nuit-300"
+                  className="w-full px-4 py-2.5 pr-12 border border-chaux-200 focus:ring-2 focus:ring-nuit-200 focus:border-nuit-300"
                 />
                 <button
                   type="button"
@@ -196,7 +196,7 @@ export default function SecuritePage() {
                 autoComplete="new-password"
                 value={form.nouveau}
                 onChange={(e) => setForm({ ...form, nouveau: e.target.value })}
-                className="w-full px-4 py-2.5 border border-chaux-200 rounded-lg focus:ring-2 focus:ring-nuit-200 focus:border-nuit-300"
+                className="w-full px-4 py-2.5 border border-chaux-200 focus:ring-2 focus:ring-nuit-200 focus:border-nuit-300"
               />
               <p className="text-xs text-chaux-600 mt-1">
                 {LONGUEUR_MINIMALE} caractères minimum.
@@ -213,7 +213,7 @@ export default function SecuritePage() {
                 autoComplete="new-password"
                 value={form.confirmation}
                 onChange={(e) => setForm({ ...form, confirmation: e.target.value })}
-                className="w-full px-4 py-2.5 border border-chaux-200 rounded-lg focus:ring-2 focus:ring-nuit-200 focus:border-nuit-300"
+                className="w-full px-4 py-2.5 border border-chaux-200 focus:ring-2 focus:ring-nuit-200 focus:border-nuit-300"
               />
             </div>
 
@@ -237,10 +237,10 @@ export default function SecuritePage() {
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-white rounded-xl p-6 border border-chaux-200"
+          className="bg-white p-6 border border-chaux-200"
         >
           <div className="flex items-center gap-3 mb-4">
-            <div className="p-3 bg-bissap-50 rounded-lg">
+            <div className="p-3 bg-bissap-50">
               <Shield className="w-6 h-6 text-bissap-600" />
             </div>
             <div>

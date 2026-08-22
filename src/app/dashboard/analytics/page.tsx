@@ -282,7 +282,7 @@ export default function AnalyticsPage() {
             <select
               value={period}
               onChange={(e) => setPeriod(e.target.value as Period)}
-              className="px-4 py-2 border border-[var(--hairline)] rounded-lg focus:ring-2 focus:ring-mangue-500"
+              className="px-4 py-2 border border-[var(--hairline)] focus:ring-2 focus:ring-mangue-500"
             >
               <option value="week">Cette semaine</option>
               <option value="month">Ce mois</option>
@@ -326,7 +326,7 @@ export default function AnalyticsPage() {
       {/* Graphiques */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         {/* Évolution du CA */}
-        <div className="bg-white rounded-xl p-6 border border-[var(--hairline)]">
+        <div className="bg-white p-6 border border-[var(--hairline)]">
           <h3 className="text-lg font-bold text-nuit-900 mb-4 flex items-center gap-2">
             <TrendingUp className="w-5 h-5 text-mangue-600" />
             Évolution du chiffre d&apos;affaires
@@ -351,7 +351,7 @@ export default function AnalyticsPage() {
         </div>
 
         {/* Top Produits */}
-        <div className="bg-white rounded-xl p-6 border border-[var(--hairline)]">
+        <div className="bg-white p-6 border border-[var(--hairline)]">
           <h3 className="text-lg font-bold text-nuit-900 mb-4 flex items-center gap-2">
             <Star className="w-5 h-5 text-mangue-600" />
             Top 5 des produits les plus vendus
@@ -379,7 +379,7 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Heures de pointe */}
-      <div className="bg-white rounded-xl p-6 border border-[var(--hairline)] mb-8">
+      <div className="bg-white p-6 border border-[var(--hairline)] mb-8">
         <h3 className="text-lg font-bold text-nuit-900 mb-4 flex items-center gap-2">
           <Clock className="w-5 h-5 text-mangue-600" />
           Heures de pointe (commandes par heure)
@@ -399,7 +399,7 @@ export default function AnalyticsPage() {
 
       {/* Répartition par statut */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-xl p-6 border border-[var(--hairline)]">
+        <div className="bg-white p-6 border border-[var(--hairline)]">
           <h3 className="text-lg font-bold text-nuit-900 mb-4">Répartition des commandes</h3>
           <div className="space-y-4">
             {statusData.map((etat, index) => {
@@ -411,7 +411,7 @@ export default function AnalyticsPage() {
                     <span className="flex items-center gap-2 font-semibold text-nuit-800">
                       <span
                         aria-hidden
-                        className="h-3 w-3 shrink-0 rounded-full"
+                        className="h-3 w-3 shrink-0"
                         style={{ backgroundColor: COULEURS_STATUT[index] }}
                       />
                       {etat.name}
@@ -420,9 +420,9 @@ export default function AnalyticsPage() {
                       {etat.value} · {pct}%
                     </span>
                   </div>
-                  <div className="mt-2 h-3 overflow-hidden rounded-full bg-chaux-100">
+                  <div className="mt-2 h-3 overflow-hidden bg-chaux-100">
                     <div
-                      className="h-full rounded-full"
+                      className="h-full"
                       style={{ width: `${pct}%`, backgroundColor: COULEURS_STATUT[index] }}
                     />
                   </div>
@@ -432,7 +432,7 @@ export default function AnalyticsPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl p-6 border border-[var(--hairline)]">
+        <div className="bg-white p-6 border border-[var(--hairline)]">
           <h3 className="text-lg font-bold text-nuit-900 mb-4">Livraisons par livreur</h3>
           {driverPerformance.length === 0 && (
             <p className="text-sm text-chaux-600">
@@ -441,9 +441,9 @@ export default function AnalyticsPage() {
           )}
           <div className="space-y-4">
             {driverPerformance.map((driver) => (
-              <div key={driver.name} className="flex items-center justify-between p-3 bg-chaux-50 rounded-lg">
+              <div key={driver.name} className="flex items-center justify-between p-3 bg-chaux-50">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-mangue-100 flex items-center justify-center">
+                  <div className="w-10 h-10 bg-mangue-100 flex items-center justify-center">
                     <Truck className="w-5 h-5 text-mangue-600" />
                   </div>
                   <div>
@@ -480,7 +480,7 @@ function KPICard({ icon: Icon, label, value, unite, growth, color }: KPICardProp
   };
 
   return (
-    <div className="bg-white rounded-xl p-6 border border-[var(--hairline)]">
+    <div className="bg-white p-6 border border-[var(--hairline)]">
       <div className="flex items-start justify-between">
         <div>
           <p className="text-sm text-chaux-600 mb-1">{label}</p>
@@ -497,7 +497,7 @@ function KPICard({ icon: Icon, label, value, unite, growth, color }: KPICardProp
             </div>
           )}
         </div>
-        <div className={`p-3 rounded-xl ${colors[color]}`}>
+        <div className={`p-3 ${colors[color]}`}>
           <Icon className="w-6 h-6" />
         </div>
       </div>
