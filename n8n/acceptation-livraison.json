@@ -2,7 +2,7 @@
   "active": true,
   "activeVersion": {
     "authors": "JEAN PAUL OULAI",
-    "autosaved": false,
+    "autosaved": true,
     "connections": {
       "Call 'Envoyer réponse client'": {
         "main": [
@@ -303,8 +303,8 @@
         ]
       }
     },
-    "description": null,
-    "name": null,
+    "description": "",
+    "name": "Version 4242f17f",
     "nodeGroups": [],
     "nodes": [
       {
@@ -685,6 +685,7 @@
           "workflowId": {
             "__rl": true,
             "cachedResultName": "Envoyer réponse client",
+            "cachedResultUrl": "/workflow/JkNvcqsZaY22dfk5",
             "mode": "list",
             "value": "JkNvcqsZaY22dfk5"
           },
@@ -729,7 +730,7 @@
               "boutique": "={{ $('When Executed by Another Workflow').first().json.slug }}",
               "canal": "={{ $('Trouver la commande').first().json.canal }}",
               "destinataire": "={{ String($('Trouver la commande').first().json.chat_id) }}",
-              "message": "=🚚 Excellente nouvelle !\n\nVotre commande {{ $('Trouver la commande').first().json.order_id }} est en route !\n{{ $('Coordonnees livreur').first().json.ligne_client }}⏱️ Temps estimé : 30-45 minutes\n\n🚩 Suivre en direct :\nhttps://www.djiguiflow.com/suivi?ref={{ encodeURIComponent(String($('Trouver la commande').first().json.order_id)) }}\n\nÀ tout de suite ! 🙌"
+              "message": "=🚚 Excellente nouvelle !\n\nVotre commande {{ $('Trouver la commande').first().json.order_id }} est en route !\n{{ $('Coordonnees livreur').first().json.ligne_client }}⏱️ Temps estimé : 30-45 minutes\n\n🚩 Suivre en direct :\nhttps://www.djiguiflow.com/suivi?ref={{ encodeURIComponent(String($('Trouver la commande').first().json.order_id)) }}{{ $('Trouver la commande').first().json.jeton_suivi ? '&t=' + encodeURIComponent(String($('Trouver la commande').first().json.jeton_suivi)) : '' }}\n\nÀ tout de suite ! 🙌"
             }
           }
         },
@@ -1372,7 +1373,6 @@
         "name": "Message erreur livreur",
         "onError": "continueRegularOutput",
         "parameters": {
-          "mode": "once",
           "options": {},
           "workflowId": {
             "__rl": true,
@@ -1410,7 +1410,6 @@
         "name": "Notifier groupe - Course acceptée",
         "onError": "continueRegularOutput",
         "parameters": {
-          "mode": "once",
           "options": {},
           "workflowId": {
             "__rl": true,
@@ -1448,7 +1447,6 @@
         "name": "Notifier groupe - Course refusée",
         "onError": "continueRegularOutput",
         "parameters": {
-          "mode": "once",
           "options": {},
           "workflowId": {
             "__rl": true,
@@ -1486,7 +1484,6 @@
         "name": "Notifier groupe - parti",
         "onError": "continueRegularOutput",
         "parameters": {
-          "mode": "once",
           "options": {},
           "workflowId": {
             "__rl": true,
@@ -1524,7 +1521,6 @@
         "name": "Notifier groupe - en_route",
         "onError": "continueRegularOutput",
         "parameters": {
-          "mode": "once",
           "options": {},
           "workflowId": {
             "__rl": true,
@@ -1562,7 +1558,6 @@
         "name": "Notifier groupe - livre",
         "onError": "continueRegularOutput",
         "parameters": {
-          "mode": "once",
           "options": {},
           "workflowId": {
             "__rl": true,
@@ -1600,7 +1595,6 @@
         "name": "Demander note client",
         "onError": "continueRegularOutput",
         "parameters": {
-          "mode": "once",
           "options": {},
           "workflowId": {
             "__rl": true,
@@ -1643,11 +1637,10 @@
         "maxTries": 3,
         "name": "Refléter dans Supabase",
         "notes": "Alimente par les quatre mises a jour de statut. La feuille reste la vue operationnelle ; Supabase sert les rapports, dont l alerte retard qui sans cela ne se referme jamais.",
-        "onError": "stopWorkflow",
         "parameters": {
           "authentication": "genericCredentialType",
           "genericAuthType": "httpHeaderAuth",
-          "jsonBody": "={\n  \"reference\": {{ JSON.stringify($json.order_id) }},\n  \"statut_livraison\": {{ JSON.stringify($json.statut_livraison || '') }},\n  \"position_livreur\": {{ JSON.stringify($json.position_livreur || '') }},\n  \"nom_livreur\": {{ JSON.stringify($json.nom_livreur || '') }},\n  \"heure_prise_en_charge\": {{ JSON.stringify($json.heure_prise_en_charge || '') }},\n  \"heure_livraison\": {{ JSON.stringify($json.heure_livraison || '') }}\n}",
+          "jsonBody": "={\n  \"reference\": {{ JSON.stringify($json.order_id) }},\n  \"statut_livraison\": {{ JSON.stringify($json.statut_livraison || '') }},\n  \"position_livreur\": {{ JSON.stringify($json.position_livreur || '') }},\n  \"nom_livreur\": {{ JSON.stringify(($json.livreur_name && $json.livreur_name !== 'Inconnu') ? $json.livreur_name : '') }},\n  \"heure_prise_en_charge\": {{ JSON.stringify($json.heure_prise_en_charge || '') }},\n  \"heure_livraison\": {{ JSON.stringify($json.heure_livraison || '') }}\n}",
           "method": "POST",
           "options": {},
           "sendBody": true,
@@ -1714,7 +1707,6 @@
         "notes": "Un message SEPARE, et pose plus bas que la notification du client : celui-ci est prevenu d abord, et n attend jamais que le livreur ait repondu. Si le livreur n appuie jamais, la commande suit son cours.",
         "onError": "continueRegularOutput",
         "parameters": {
-          "mode": "once",
           "options": {},
           "workflowId": {
             "__rl": true,
@@ -1751,7 +1743,6 @@
         "name": "Demander la position",
         "notes": "Envoye APRES la question des frais. Le livreur voyait les boutons d etat en premier : il pouvait marquer parti sans avoir annonce son montant, et le client ne connaissait jamais ses frais.",
         "parameters": {
-          "mode": "once",
           "options": {},
           "workflowId": {
             "__rl": true,
@@ -1775,7 +1766,7 @@
           }
         },
         "position": [
-          2456,
+          2464,
           240
         ],
         "type": "n8n-nodes-base.executeWorkflow",
@@ -1791,7 +1782,7 @@
         },
         "position": [
           -160,
-          -420
+          -416
         ],
         "type": "n8n-nodes-base.stickyNote",
         "typeVersion": 1
@@ -1818,8 +1809,8 @@
           "url": "https://www.djiguiflow.com/api/internal/commandes/prevenu"
         },
         "position": [
-          2860,
-          -8
+          2864,
+          -16
         ],
         "retryOnFail": true,
         "type": "n8n-nodes-base.httpRequest",
@@ -1831,13 +1822,7 @@
     "workflowPublishHistory": [
       {
         "event": "activated",
-        "id": 225,
-        "userId": "81519f6f-0887-498a-ad83-5ffd6d591e9a",
-        "workflowId": "LqBgRvLeeKUwZhB5"
-      },
-      {
-        "event": "deactivated",
-        "id": 224,
+        "id": 236,
         "userId": "81519f6f-0887-498a-ad83-5ffd6d591e9a",
         "workflowId": "LqBgRvLeeKUwZhB5"
       }
@@ -2527,6 +2512,7 @@
         "workflowId": {
           "__rl": true,
           "cachedResultName": "Envoyer réponse client",
+          "cachedResultUrl": "/workflow/JkNvcqsZaY22dfk5",
           "mode": "list",
           "value": "JkNvcqsZaY22dfk5"
         },
@@ -2571,7 +2557,7 @@
             "boutique": "={{ $('When Executed by Another Workflow').first().json.slug }}",
             "canal": "={{ $('Trouver la commande').first().json.canal }}",
             "destinataire": "={{ String($('Trouver la commande').first().json.chat_id) }}",
-            "message": "=🚚 Excellente nouvelle !\n\nVotre commande {{ $('Trouver la commande').first().json.order_id }} est en route !\n{{ $('Coordonnees livreur').first().json.ligne_client }}⏱️ Temps estimé : 30-45 minutes\n\n🚩 Suivre en direct :\nhttps://www.djiguiflow.com/suivi?ref={{ encodeURIComponent(String($('Trouver la commande').first().json.order_id)) }}\n\nÀ tout de suite ! 🙌"
+            "message": "=🚚 Excellente nouvelle !\n\nVotre commande {{ $('Trouver la commande').first().json.order_id }} est en route !\n{{ $('Coordonnees livreur').first().json.ligne_client }}⏱️ Temps estimé : 30-45 minutes\n\n🚩 Suivre en direct :\nhttps://www.djiguiflow.com/suivi?ref={{ encodeURIComponent(String($('Trouver la commande').first().json.order_id)) }}{{ $('Trouver la commande').first().json.jeton_suivi ? '&t=' + encodeURIComponent(String($('Trouver la commande').first().json.jeton_suivi)) : '' }}\n\nÀ tout de suite ! 🙌"
           }
         }
       },
@@ -3214,7 +3200,6 @@
       "name": "Message erreur livreur",
       "onError": "continueRegularOutput",
       "parameters": {
-        "mode": "once",
         "options": {},
         "workflowId": {
           "__rl": true,
@@ -3252,7 +3237,6 @@
       "name": "Notifier groupe - Course acceptée",
       "onError": "continueRegularOutput",
       "parameters": {
-        "mode": "once",
         "options": {},
         "workflowId": {
           "__rl": true,
@@ -3290,7 +3274,6 @@
       "name": "Notifier groupe - Course refusée",
       "onError": "continueRegularOutput",
       "parameters": {
-        "mode": "once",
         "options": {},
         "workflowId": {
           "__rl": true,
@@ -3328,7 +3311,6 @@
       "name": "Notifier groupe - parti",
       "onError": "continueRegularOutput",
       "parameters": {
-        "mode": "once",
         "options": {},
         "workflowId": {
           "__rl": true,
@@ -3366,7 +3348,6 @@
       "name": "Notifier groupe - en_route",
       "onError": "continueRegularOutput",
       "parameters": {
-        "mode": "once",
         "options": {},
         "workflowId": {
           "__rl": true,
@@ -3404,7 +3385,6 @@
       "name": "Notifier groupe - livre",
       "onError": "continueRegularOutput",
       "parameters": {
-        "mode": "once",
         "options": {},
         "workflowId": {
           "__rl": true,
@@ -3442,7 +3422,6 @@
       "name": "Demander note client",
       "onError": "continueRegularOutput",
       "parameters": {
-        "mode": "once",
         "options": {},
         "workflowId": {
           "__rl": true,
@@ -3485,11 +3464,10 @@
       "maxTries": 3,
       "name": "Refléter dans Supabase",
       "notes": "Alimente par les quatre mises a jour de statut. La feuille reste la vue operationnelle ; Supabase sert les rapports, dont l alerte retard qui sans cela ne se referme jamais.",
-      "onError": "stopWorkflow",
       "parameters": {
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
-        "jsonBody": "={\n  \"reference\": {{ JSON.stringify($json.order_id) }},\n  \"statut_livraison\": {{ JSON.stringify($json.statut_livraison || '') }},\n  \"position_livreur\": {{ JSON.stringify($json.position_livreur || '') }},\n  \"nom_livreur\": {{ JSON.stringify($json.nom_livreur || '') }},\n  \"heure_prise_en_charge\": {{ JSON.stringify($json.heure_prise_en_charge || '') }},\n  \"heure_livraison\": {{ JSON.stringify($json.heure_livraison || '') }}\n}",
+        "jsonBody": "={\n  \"reference\": {{ JSON.stringify($json.order_id) }},\n  \"statut_livraison\": {{ JSON.stringify($json.statut_livraison || '') }},\n  \"position_livreur\": {{ JSON.stringify($json.position_livreur || '') }},\n  \"nom_livreur\": {{ JSON.stringify(($json.livreur_name && $json.livreur_name !== 'Inconnu') ? $json.livreur_name : '') }},\n  \"heure_prise_en_charge\": {{ JSON.stringify($json.heure_prise_en_charge || '') }},\n  \"heure_livraison\": {{ JSON.stringify($json.heure_livraison || '') }}\n}",
         "method": "POST",
         "options": {},
         "sendBody": true,
@@ -3556,7 +3534,6 @@
       "notes": "Un message SEPARE, et pose plus bas que la notification du client : celui-ci est prevenu d abord, et n attend jamais que le livreur ait repondu. Si le livreur n appuie jamais, la commande suit son cours.",
       "onError": "continueRegularOutput",
       "parameters": {
-        "mode": "once",
         "options": {},
         "workflowId": {
           "__rl": true,
@@ -3593,7 +3570,6 @@
       "name": "Demander la position",
       "notes": "Envoye APRES la question des frais. Le livreur voyait les boutons d etat en premier : il pouvait marquer parti sans avoir annonce son montant, et le client ne connaissait jamais ses frais.",
       "parameters": {
-        "mode": "once",
         "options": {},
         "workflowId": {
           "__rl": true,
@@ -3617,7 +3593,7 @@
         }
       },
       "position": [
-        2456,
+        2464,
         240
       ],
       "type": "n8n-nodes-base.executeWorkflow",
@@ -3633,7 +3609,7 @@
       },
       "position": [
         -160,
-        -420
+        -416
       ],
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1
@@ -3660,8 +3636,8 @@
         "url": "https://www.djiguiflow.com/api/internal/commandes/prevenu"
       },
       "position": [
-        2860,
-        -8
+        2864,
+        -16
       ],
       "retryOnFail": true,
       "type": "n8n-nodes-base.httpRequest",
@@ -3671,10 +3647,11 @@
   ],
   "settings": {
     "availableInMCP": true,
+    "binaryMode": "separate",
     "errorWorkflow": "NfWU666FLz9jR1Zv",
     "executionOrder": "v1"
   },
   "sourceWorkflowId": null,
   "tags": [],
-  "versionCounter": 23
+  "versionCounter": 26
 }

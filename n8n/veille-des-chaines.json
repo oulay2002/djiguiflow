@@ -1,0 +1,394 @@
+{
+  "active": true,
+  "activeVersion": {
+    "authors": "JEAN PAUL OULAI",
+    "autosaved": false,
+    "connections": {
+      "Chercher les chaines rompues": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Quelque chose de neuf ?",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Quelque chose de neuf ?": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Rediger l alerte",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Rediger l alerte": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Alerter l exploitant",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Toutes les 15 minutes": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Chercher les chaines rompues",
+              "type": "main"
+            }
+          ]
+        ]
+      }
+    },
+    "description": null,
+    "name": null,
+    "nodeGroups": [],
+    "nodes": [
+      {
+        "id": "b6c3e674-7641-44ed-a9db-0400fdd6ed04",
+        "name": "Pourquoi cette veille",
+        "parameters": {
+          "content": "## Surveiller les RESULTATS, pas les erreurs\n\nUne erreur dit qu un appel a echoue. Un resultat dit qu une commande\nconfirmee n a jamais atteint de livreur — ce qui reste vrai quand tous les\nappels ont reussi.\n\nC est exactement ce qui s est produit le 21 aout : les noeuds Google Sheets\nne levaient pas, ils ne rendaient simplement AUCUN ITEM, et n8n sautait la\nsuite. Aucune alerte, et le client attendait une commande que personne ne\npreparait.\n\nQuatre ruptures surveillees, toutes prouvables par la base :\n  1. confirmee par le client, aucun livreur au bout de 10 min\n  2. livree sans que les frais aient ete annonces\n  3. livree sans decompte de stock\n  4. panier reste en collecte plus de 24 h\n\nChaque anomalie n est annoncee QU UNE FOIS.\n\nLa regle vit dans /api/internal/veille/chaines. Ici, une horloge et une voix.",
+          "height": 300,
+          "width": 580
+        },
+        "position": [
+          448,
+          64
+        ],
+        "type": "n8n-nodes-base.stickyNote",
+        "typeVersion": 1
+      },
+      {
+        "id": "8fcdc3c3-8337-4b73-bf05-e593df08d6f6",
+        "name": "Toutes les 15 minutes",
+        "parameters": {
+          "rule": {
+            "interval": [
+              {
+                "expression": "*/15 * * * *",
+                "field": "cronExpression"
+              }
+            ]
+          }
+        },
+        "position": [
+          0,
+          0
+        ],
+        "type": "n8n-nodes-base.scheduleTrigger",
+        "typeVersion": 1.2
+      },
+      {
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "QoKeVRwGrk1YqN9Q",
+            "name": "Header Auth account 2"
+          }
+        },
+        "id": "059efa85-e893-4be2-bf4c-139aface1b67",
+        "name": "Chercher les chaines rompues",
+        "notes": "Toute la regle vit dans l application : ce qui compte comme rupture, le delai de grace, et la memoire de ce qui a deja ete signale. Ce workflow n est qu une horloge et une voix.",
+        "parameters": {
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "method": "POST",
+          "options": {},
+          "url": "https://www.djiguiflow.com/api/internal/veille/chaines"
+        },
+        "position": [
+          224,
+          0
+        ],
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2
+      },
+      {
+        "id": "76f115bc-50ef-47a4-82a6-e21c719698ab",
+        "name": "Quelque chose de neuf ?",
+        "notes": "Le silence est le cas NORMAL. Une veille qui parle a chaque passage cesse d etre lue.",
+        "parameters": {
+          "conditions": {
+            "combinator": "and",
+            "conditions": [
+              {
+                "id": "des-anomalies",
+                "leftValue": "={{ ($json.nouvelles || 0) > 0 }}",
+                "operator": {
+                  "operation": "true",
+                  "singleValue": true,
+                  "type": "boolean"
+                },
+                "rightValue": ""
+              }
+            ],
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            }
+          }
+        },
+        "position": [
+          448,
+          0
+        ],
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2
+      },
+      {
+        "id": "96e2088d-b206-418f-b7a4-66c656cb338e",
+        "name": "Rediger l alerte",
+        "parameters": {
+          "jsCode": "// L alerte doit se lire d un coup d oeil sur un telephone.\n//\n// ELLE GROUPE PAR MARCHAND, pas par type. Quand une chaine casse, elle casse\n// pour UNE boutique : l exploitant a besoin de savoir chez qui aller, pas\n// combien d anomalies existent au total.\nconst r = $input.first().json || {};\nconst anomalies = r.anomalies || [];\n\nconst LIBELLES = {\n  confirmee_sans_livreur: 'Confirmee, aucun livreur lance',\n  livree_sans_frais:      'Livree sans frais annonces',\n  livree_sans_decompte:   'Livree sans decompte de stock',\n  panier_oublie:          'Panier oublie en collecte',\n};\n\nconst parBoutique = {};\nfor (const a of anomalies) {\n  const b = a.boutique || 'boutique inconnue';\n  (parBoutique[b] = parBoutique[b] || []).push(a);\n}\n\nconst lignes = [];\nfor (const [boutique, liste] of Object.entries(parBoutique)) {\n  lignes.push('');\n  lignes.push('*' + boutique + '*');\n  for (const a of liste) {\n    lignes.push('  • ' + (LIBELLES[a.type] || a.type));\n    lignes.push('    ' + a.reference + ' — ' + a.detail);\n  }\n}\n\nconst titre = anomalies.length === 1\n  ? 'CHAINE ROMPUE'\n  : 'CHAINES ROMPUES (' + anomalies.length + ')';\n\nreturn [{ json: { message: '🔗 ' + titre + lignes.join('\\n') } }];"
+        },
+        "position": [
+          672,
+          0
+        ],
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2
+      },
+      {
+        "credentials": {
+          "telegramApi": {
+            "id": "6Kq1Zdz8WA4Xftv2",
+            "name": "Telegram Veille DjiguiFlow"
+          }
+        },
+        "id": "0fb5561b-a35b-44f1-a382-c1508547bf76",
+        "name": "Alerter l exploitant",
+        "notes": "Meme canal technique que « Alerte Erreurs » : une seule adresse a surveiller.",
+        "parameters": {
+          "additionalFields": {
+            "appendAttribution": false
+          },
+          "chatId": "-1003994906478",
+          "operation": "sendMessage",
+          "resource": "message",
+          "text": "={{ $json.message }}"
+        },
+        "position": [
+          896,
+          0
+        ],
+        "type": "n8n-nodes-base.telegram",
+        "typeVersion": 1.2,
+        "webhookId": "1163d155-4431-495b-8293-63682605f061"
+      }
+    ],
+    "workflowId": "v6q3ymV13soFdzja",
+    "workflowPublishHistory": [
+      {
+        "event": "activated",
+        "id": 226,
+        "userId": "81519f6f-0887-498a-ad83-5ffd6d591e9a",
+        "workflowId": "v6q3ymV13soFdzja"
+      }
+    ]
+  },
+  "connections": {
+    "Chercher les chaines rompues": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Quelque chose de neuf ?",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Quelque chose de neuf ?": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Rediger l alerte",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Rediger l alerte": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Alerter l exploitant",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Toutes les 15 minutes": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Chercher les chaines rompues",
+            "type": "main"
+          }
+        ]
+      ]
+    }
+  },
+  "description": "Toutes les 15 min : cherche les chaines rompues (commande confirmee sans livreur, livree sans frais, sans decompte de stock, panier oublie) et alerte l exploitant en nommant le marchand.",
+  "id": "v6q3ymV13soFdzja",
+  "isArchived": false,
+  "name": "Veille des chaines",
+  "nodeGroups": [],
+  "nodes": [
+    {
+      "id": "b6c3e674-7641-44ed-a9db-0400fdd6ed04",
+      "name": "Pourquoi cette veille",
+      "parameters": {
+        "content": "## Surveiller les RESULTATS, pas les erreurs\n\nUne erreur dit qu un appel a echoue. Un resultat dit qu une commande\nconfirmee n a jamais atteint de livreur — ce qui reste vrai quand tous les\nappels ont reussi.\n\nC est exactement ce qui s est produit le 21 aout : les noeuds Google Sheets\nne levaient pas, ils ne rendaient simplement AUCUN ITEM, et n8n sautait la\nsuite. Aucune alerte, et le client attendait une commande que personne ne\npreparait.\n\nQuatre ruptures surveillees, toutes prouvables par la base :\n  1. confirmee par le client, aucun livreur au bout de 10 min\n  2. livree sans que les frais aient ete annonces\n  3. livree sans decompte de stock\n  4. panier reste en collecte plus de 24 h\n\nChaque anomalie n est annoncee QU UNE FOIS.\n\nLa regle vit dans /api/internal/veille/chaines. Ici, une horloge et une voix.",
+        "height": 300,
+        "width": 580
+      },
+      "position": [
+        448,
+        64
+      ],
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1
+    },
+    {
+      "id": "8fcdc3c3-8337-4b73-bf05-e593df08d6f6",
+      "name": "Toutes les 15 minutes",
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "expression": "*/15 * * * *",
+              "field": "cronExpression"
+            }
+          ]
+        }
+      },
+      "position": [
+        0,
+        0
+      ],
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2
+    },
+    {
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "QoKeVRwGrk1YqN9Q",
+          "name": "Header Auth account 2"
+        }
+      },
+      "id": "059efa85-e893-4be2-bf4c-139aface1b67",
+      "name": "Chercher les chaines rompues",
+      "notes": "Toute la regle vit dans l application : ce qui compte comme rupture, le delai de grace, et la memoire de ce qui a deja ete signale. Ce workflow n est qu une horloge et une voix.",
+      "parameters": {
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "method": "POST",
+        "options": {},
+        "url": "https://www.djiguiflow.com/api/internal/veille/chaines"
+      },
+      "position": [
+        224,
+        0
+      ],
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2
+    },
+    {
+      "id": "76f115bc-50ef-47a4-82a6-e21c719698ab",
+      "name": "Quelque chose de neuf ?",
+      "notes": "Le silence est le cas NORMAL. Une veille qui parle a chaque passage cesse d etre lue.",
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "des-anomalies",
+              "leftValue": "={{ ($json.nouvelles || 0) > 0 }}",
+              "operator": {
+                "operation": "true",
+                "singleValue": true,
+                "type": "boolean"
+              },
+              "rightValue": ""
+            }
+          ],
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          }
+        }
+      },
+      "position": [
+        448,
+        0
+      ],
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2
+    },
+    {
+      "id": "96e2088d-b206-418f-b7a4-66c656cb338e",
+      "name": "Rediger l alerte",
+      "parameters": {
+        "jsCode": "// L alerte doit se lire d un coup d oeil sur un telephone.\n//\n// ELLE GROUPE PAR MARCHAND, pas par type. Quand une chaine casse, elle casse\n// pour UNE boutique : l exploitant a besoin de savoir chez qui aller, pas\n// combien d anomalies existent au total.\nconst r = $input.first().json || {};\nconst anomalies = r.anomalies || [];\n\nconst LIBELLES = {\n  confirmee_sans_livreur: 'Confirmee, aucun livreur lance',\n  livree_sans_frais:      'Livree sans frais annonces',\n  livree_sans_decompte:   'Livree sans decompte de stock',\n  panier_oublie:          'Panier oublie en collecte',\n};\n\nconst parBoutique = {};\nfor (const a of anomalies) {\n  const b = a.boutique || 'boutique inconnue';\n  (parBoutique[b] = parBoutique[b] || []).push(a);\n}\n\nconst lignes = [];\nfor (const [boutique, liste] of Object.entries(parBoutique)) {\n  lignes.push('');\n  lignes.push('*' + boutique + '*');\n  for (const a of liste) {\n    lignes.push('  • ' + (LIBELLES[a.type] || a.type));\n    lignes.push('    ' + a.reference + ' — ' + a.detail);\n  }\n}\n\nconst titre = anomalies.length === 1\n  ? 'CHAINE ROMPUE'\n  : 'CHAINES ROMPUES (' + anomalies.length + ')';\n\nreturn [{ json: { message: '🔗 ' + titre + lignes.join('\\n') } }];"
+      },
+      "position": [
+        672,
+        0
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "credentials": {
+        "telegramApi": {
+          "id": "6Kq1Zdz8WA4Xftv2",
+          "name": "Telegram Veille DjiguiFlow"
+        }
+      },
+      "id": "0fb5561b-a35b-44f1-a382-c1508547bf76",
+      "name": "Alerter l exploitant",
+      "notes": "Meme canal technique que « Alerte Erreurs » : une seule adresse a surveiller.",
+      "parameters": {
+        "additionalFields": {
+          "appendAttribution": false
+        },
+        "chatId": "-1003994906478",
+        "operation": "sendMessage",
+        "resource": "message",
+        "text": "={{ $json.message }}"
+      },
+      "position": [
+        896,
+        0
+      ],
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "webhookId": "1163d155-4431-495b-8293-63682605f061"
+    }
+  ],
+  "settings": {
+    "availableInMCP": true,
+    "errorWorkflow": "NfWU666FLz9jR1Zv",
+    "executionOrder": "v1"
+  },
+  "sourceWorkflowId": null,
+  "tags": [],
+  "versionCounter": 2
+}
