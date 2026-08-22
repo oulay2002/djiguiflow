@@ -9,6 +9,7 @@ import { BoutiqueProvider } from '@/lib/boutique';
 import SelecteurBoutique from '@/components/SelecteurBoutique';
 import AjouterMarchand from '@/components/AjouterMarchand';
 import NavigationDashboard from '@/components/dashboard/NavigationDashboard';
+import SansBoutique from '@/components/dashboard/SansBoutique';
 import InvitationInstallation from '@/components/pwa/InvitationInstallation';
 
 type SubscriptionState = {
@@ -163,7 +164,13 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     <BoutiqueProvider>
       <SelecteurBoutique />
       <AjouterMarchand />
-      <NavigationDashboard>{children}</NavigationDashboard>
+      {/* Le garde de l'ecran vide. Un marchand qui vient de creer son compte
+          n'a pas encore de boutique : sans lui, chaque page appelle son API
+          sans `boutique_id`, recoit 404, avale l'erreur dans la console, et
+          affiche un tableau de bord vide qui a l'air casse. */}
+      <NavigationDashboard>
+        <SansBoutique>{children}</SansBoutique>
+      </NavigationDashboard>
       {/* Proposee au marchand connecte seulement : un visiteur de la vitrine
           n'a rien a installer. */}
       <InvitationInstallation />

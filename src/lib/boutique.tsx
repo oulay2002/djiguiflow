@@ -117,8 +117,14 @@ export function BoutiqueProvider({ children }: { children: ReactNode }) {
       } catch (e) {
         console.error('Chargement du registre boutiques :', e);
       } finally {
-        // Même en cas d'échec : on débloque les pages, qui repartent
-        // sur le marchand par défaut.
+        // Meme en cas d'echec : on debloque les pages.
+        //
+        // IL N'Y A PAS DE « MARCHAND PAR DEFAUT », et ce commentaire l'a
+        // affirme a tort. `getMarchand('')` rend `null`, donc 404 — c'est la
+        // bonne conception, un repli mono-marchand est ce qui a fait passer le
+        // client de l'un par le bot de l'autre le 20 aout 2026. Le cas « aucune
+        // boutique » est desormais traite pour ce qu'il est, par
+        // `SansBoutique` : on le DIT au marchand au lieu de le laisser deviner.
         if (!annule) setPret(true);
       }
     })();
