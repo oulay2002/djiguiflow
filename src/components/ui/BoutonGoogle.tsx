@@ -93,7 +93,7 @@ export default function BoutonGoogle({
 				type="button"
 				onClick={connecter}
 				disabled={chargement}
-				className={`flex w-full items-center justify-center gap-3 ${rayon} border border-[var(--hairline)] bg-white py-3.5 font-semibold text-nuit-700 shadow-sm transition hover:bg-chaux-50 disabled:opacity-60`}
+				className={`flex w-full items-center justify-center gap-3 ${rayon} border border-[var(--hairline)] bg-white py-3.5 font-semibold text-nuit-700 soft-shadow transition hover:bg-chaux-50 disabled:opacity-60`}
 			>
 				{chargement ? <Loader2 className="h-5 w-5 animate-spin" /> : <LogoGoogle />}
 				{chargement ? 'Redirection vers Google...' : libelle}

@@ -102,7 +102,7 @@ function Chip({ tone, children }: { tone: 'mangue' | 'nuit' | 'feuille'; childre
 
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-sm px-2 py-1 font-mono text-xs font-medium uppercase tracking-[0.16em] ${tones[tone]}`}
+      className={`inline-flex items-center gap-1.5 px-2 py-1 font-mono text-xs font-medium uppercase tracking-[0.16em] ${tones[tone]}`}
     >
       {children}
     </span>
@@ -118,7 +118,7 @@ function Eyebrow({ children, className = '' }: { children: ReactNode; className?
 export default function Home() {
   return (
     <main className="min-h-screen bg-chaux-100">
-      <nav className="fixed inset-x-0 top-0 z-50 border-b border-white/10 bg-nuit-900/90 backdrop-blur-md">
+      <nav className="fixed inset-x-0 top-0 z-50 border-b border-white/10 bg-nuit-900/90">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-6 px-4 py-3.5 sm:px-6">
           <Link href="/" className="flex items-center gap-2.5">
             <svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true">
@@ -173,7 +173,7 @@ export default function Home() {
             </Link>
             <Link
               href="/register"
-              className="inline-flex whitespace-nowrap rounded-sm bg-bissap-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-bissap-600"
+              className="inline-flex whitespace-nowrap bg-bissap-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-bissap-600"
             >
               Ouvrir ma boutique
             </Link>
@@ -186,7 +186,7 @@ export default function Home() {
         <div className="relative mx-auto grid max-w-6xl gap-14 px-4 sm:px-6 lg:grid-cols-[1.02fr_0.98fr] lg:items-center lg:gap-12">
           <div>
             <div className="flex items-start gap-2.5">
-              <span className="pulse-dot mt-[5px] h-2 w-2 shrink-0 rounded-full bg-accent-400" />
+              <span className="pulse-dot mt-[5px] h-2 w-2 shrink-0 bg-accent-400" />
               <Eyebrow className="text-nuit-200">
                 mardi 23 h 41 · abidjan · votre boutique est fermée
               </Eyebrow>
@@ -206,13 +206,13 @@ export default function Home() {
             <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:items-center">
               <Link
                 href="/register"
-                className="inline-flex items-center justify-center rounded-sm bg-bissap-500 px-7 py-4 text-base font-semibold text-white transition hover:bg-bissap-600"
+                className="inline-flex items-center justify-center bg-bissap-500 px-7 py-4 text-base font-semibold text-white transition hover:bg-bissap-600"
               >
                 Ouvrir ma boutique
               </Link>
               <Link
                 href="#metier"
-                className="inline-flex items-center justify-center rounded-sm border border-white/25 px-7 py-4 text-base font-medium text-white transition hover:border-white/60"
+                className="inline-flex items-center justify-center border border-white/25 px-7 py-4 text-base font-medium text-white transition hover:border-white/60"
               >
                 Voir ce que ça change
               </Link>
@@ -230,7 +230,7 @@ export default function Home() {
             aria-label="Le suivi de la commande DJ-7823"
           >
             <div
-              className="slip-in relative z-10 rounded-t-sm bg-chaux-50 p-5 text-nuit-800 shadow-[0_24px_50px_rgba(6,10,25,0.45)]"
+              className="slip-in relative z-10 bg-chaux-50 p-5 text-nuit-800 soft-shadow"
               style={{ animationDelay: '0.05s' } as CSSProperties}
             >
               <div className="flex items-baseline justify-between font-mono text-xs">
@@ -265,7 +265,7 @@ export default function Home() {
             </div>
 
             <div
-              className="slip-in relative z-20 bg-chaux-50 px-5 pb-5 pt-6 text-nuit-800 shadow-[0_24px_50px_rgba(6,10,25,0.4)]"
+              className="slip-in relative z-20 bg-chaux-50 px-5 pb-5 pt-6 text-nuit-800 soft-shadow"
               style={{ '--tear-bg': NUIT, animationDelay: '0.28s' } as CSSProperties}
             >
               <div className="tear absolute inset-x-0 top-0" />
@@ -281,7 +281,7 @@ export default function Home() {
             </div>
 
             <div
-              className="slip-in relative z-30 rounded-b-sm bg-chaux-50 px-5 pb-5 pt-6 text-nuit-800 shadow-[0_24px_50px_rgba(6,10,25,0.35)]"
+              className="slip-in relative z-30 bg-chaux-50 px-5 pb-5 pt-6 text-nuit-800 soft-shadow"
               style={{ '--tear-bg': NUIT, animationDelay: '0.52s' } as CSSProperties}
             >
               <div className="tear absolute inset-x-0 top-0" />
@@ -357,7 +357,7 @@ export default function Home() {
       <section id="caisse" className="scroll-mt-20 bg-chaux-200/60 py-20 lg:py-28">
         <div className="mx-auto grid max-w-6xl gap-14 px-4 sm:px-6 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
           <div
-            className="rounded-sm bg-chaux-50 p-6 shadow-[0_18px_44px_rgba(19,28,61,0.12)] sm:p-8"
+            className=" bg-chaux-50 p-6 soft-shadow sm:p-8"
             style={{ '--tear-bg': CHAUX } as CSSProperties}
           >
             <div className="flex items-baseline justify-between font-mono text-xs uppercase tracking-[0.16em] text-chaux-600">
@@ -452,10 +452,10 @@ export default function Home() {
               return (
                 <div
                   key={plan.key}
-                  className={`relative flex flex-col rounded-sm p-7 ${
+                  className={`relative flex flex-col p-7 ${
                     vedette
-                      ? 'bg-nuit-800 text-white shadow-[0_24px_50px_rgba(19,28,61,0.28)]'
-                      : 'bg-chaux-50 text-nuit-800 shadow-[0_14px_36px_rgba(19,28,61,0.09)]'
+                      ? 'bg-nuit-800 text-white soft-shadow'
+                      : 'bg-chaux-50 text-nuit-800 soft-shadow'
                   }`}
                   style={{ '--tear-bg': CHAUX } as CSSProperties}
                 >
@@ -522,7 +522,7 @@ export default function Home() {
 
                   <Link
                     href={`/login?next=${encodeURIComponent(`/dashboard/paiements?plan=${plan.key}`)}`}
-                    className={`mt-8 inline-flex w-full items-center justify-center rounded-sm px-5 py-3.5 font-semibold transition ${
+                    className={`mt-8 inline-flex w-full items-center justify-center px-5 py-3.5 font-semibold transition ${
                       vedette
                         ? 'bg-bissap-500 text-white hover:bg-bissap-400'
                         : 'border border-nuit-800 text-nuit-800 hover:bg-nuit-800 hover:text-white'
@@ -578,14 +578,14 @@ export default function Home() {
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link
                 href="/register"
-                className="inline-flex items-center justify-center rounded-sm bg-bissap-500 px-7 py-4 text-base font-semibold text-white transition hover:bg-bissap-600"
+                className="inline-flex items-center justify-center bg-bissap-500 px-7 py-4 text-base font-semibold text-white transition hover:bg-bissap-600"
               >
                 Ouvrir ma boutique
               </Link>
               <button
                 type="button"
                 onClick={openAssistant}
-                className="inline-flex items-center justify-center rounded-sm border border-white/25 px-7 py-4 text-base font-medium text-white transition hover:border-white/60"
+                className="inline-flex items-center justify-center border border-white/25 px-7 py-4 text-base font-medium text-white transition hover:border-white/60"
               >
                 Poser une question
               </button>
@@ -593,7 +593,7 @@ export default function Home() {
           </div>
 
           <div
-            className="rounded-sm border border-dashed border-white/30 p-6 font-mono text-sm text-nuit-200"
+            className=" border border-dashed border-white/30 p-6 font-mono text-sm text-nuit-200"
             aria-hidden="true"
           >
             <div className="flex items-baseline justify-between text-xs uppercase tracking-[0.16em]">

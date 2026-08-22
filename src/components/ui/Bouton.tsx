@@ -39,9 +39,18 @@ export type TailleBouton = 'sm' | 'md';
  * `forme="pilule"` ne compile plus, et le seul endroit ou une seconde
  * geometrie peut naitre est ce fichier.
  *
- * Le cercle, lui, n'est pas un arrondi : c'est une forme. Un avatar reste
- * rond, un point qui pulse reste rond. Une pilule d'etat et une barre de
- * progression, non.
+ * LE CERCLE N'EST PAS UN ARRONDI, C'EST UNE FORME — mais la maison n'en
+ * garde que DEUX, et il faut les nommer :
+ *   - le rouet de chargement, qui tourne ;
+ *   - le talon de `LienRetour`, dont le bord droit arrondi EST la silhouette
+ *     du ticket qu'on arrache.
+ *
+ * Rien d'autre. J'avais d'abord ecrit ici qu'« un avatar reste rond, un point
+ * qui pulse reste rond ». C'etait faux : le seul precedent de la maison est le
+ * `Voyant` de l'onboarding, dont le point est CARRE, et la vitrine affiche le
+ * logo d'une boutique dans une tuile carree la ou le tableau de bord en
+ * faisait un cercle de 8 rem. Une pilule d'etat, une barre de progression, une
+ * pastille de rang et un cadre de logo sont carres.
  */
 export type FormeBouton = 'carree';
 
@@ -65,7 +74,7 @@ const VARIANTES: Record<VarianteBouton, string> = {
    * chaux n'a besoin de rien de plus.
    */
   action: 'bg-bissap-500 text-white soft-shadow hover:bg-bissap-600',
-  calme: 'border border-[var(--hairline)] bg-white/75 text-nuit-700 hover:bg-white',
+  calme: 'border border-[var(--hairline)] bg-white text-nuit-700 hover:bg-white',
   fantome: 'text-nuit-600 hover:bg-nuit-50 hover:text-nuit-900',
   contraste: 'bg-white text-nuit-800 soft-shadow hover:bg-chaux-50',
   voile: 'border border-white/25 bg-white/15 text-white hover:bg-white/25',
@@ -133,7 +142,7 @@ export function LienRetour({ href, children }: { href: string; children: ReactNo
     <Link
       href={href}
       /* LE PAPIER EST OPAQUE, ET C'EST LE CORRECTIF.
-         `bg-white/80` marchait sur fond clair. Les douze pages qui posent ce
+         `bg-white` marchait sur fond clair. Les douze pages qui posent ce
          talon le posent sur le bandeau INDIGO : a 80 % d'opacite il y virait
          au gris sale, et la perforation en pointilles — qui EST le motif —
          devenait invisible. Un talon qu'on ne reconnait pas est une pilule.

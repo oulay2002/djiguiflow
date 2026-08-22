@@ -107,10 +107,10 @@ export default function InvitationInstallation() {
       aria-label="Installer DjiguiFlow"
       // `bottom-24` sous lg : la barre de navigation du bas occupe deja le
       // pied d'ecran.
-      className="fixed inset-x-3 bottom-24 z-40 rounded-[1.5rem] border border-[var(--hairline)] bg-white p-4 shadow-[0_18px_45px_rgba(12,18,41,0.22)] lg:inset-x-auto lg:right-6 lg:bottom-6 lg:w-96"
+      className="fixed inset-x-3 bottom-24 z-40 border border-[var(--hairline)] bg-white p-4 soft-shadow lg:inset-x-auto lg:right-6 lg:bottom-6 lg:w-96"
     >
       <div className="flex items-start gap-3">
-        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-nuit-900 font-display text-lg font-black text-mangue-300">
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center bg-nuit-900 font-display text-lg font-black text-mangue-300">
           D
         </span>
 
@@ -133,7 +133,7 @@ export default function InvitationInstallation() {
           ) : (
             <button
               onClick={installer}
-              className="mt-3 inline-flex min-h-[2.75rem] items-center gap-2 rounded-full bg-bissap-500 px-5 py-2.5 text-sm font-bold text-white active:bg-bissap-600"
+              className="mt-3 inline-flex min-h-[2.75rem] items-center gap-2 bg-bissap-500 px-5 py-2.5 text-sm font-bold text-white active:bg-bissap-600"
             >
               <Download className="h-4 w-4" />
               Installer
@@ -144,7 +144,7 @@ export default function InvitationInstallation() {
         <button
           onClick={fermer}
           aria-label="Ne plus proposer l’installation"
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-chaux-500 hover:bg-chaux-100"
+          className="flex h-9 w-9 shrink-0 items-center justify-center text-chaux-500 hover:bg-chaux-100"
         >
           <X className="h-4 w-4" />
         </button>

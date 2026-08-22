@@ -223,7 +223,7 @@ export default function AssistantChat() {
             initial={{ opacity: 0, y: 18, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 18, scale: 0.96 }}
-            className="w-[min(92vw,24rem)] overflow-hidden rounded-[1.5rem] border border-white/80 bg-white shadow-[0_24px_60px_rgba(49,35,20,0.20)] backdrop-blur-xl"
+            className="w-[min(92vw,24rem)] overflow-hidden border border-white/80 bg-white soft-shadow"
           >
             <div className="flex items-center justify-between border-b border-[var(--hairline)] bg-[linear-gradient(135deg,#fff9ef_0%,#eefaf4_100%)] px-4 py-3">
               <div>
@@ -233,7 +233,7 @@ export default function AssistantChat() {
               <button
                 type="button"
                 onClick={() => setFloatingOpen(false)}
-                className="rounded-full border border-[var(--hairline)] bg-white px-2 py-1 text-xs font-bold text-chaux-600 transition hover:bg-chaux-50"
+                className=" border border-[var(--hairline)] bg-white px-2 py-1 text-xs font-bold text-chaux-600 transition hover:bg-chaux-50"
               >
                 Fermer
               </button>
@@ -248,7 +248,7 @@ export default function AssistantChat() {
                   href={supportHref}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-1 rounded-full border border-mangue-200 bg-white px-2.5 py-1 text-xs font-bold text-mangue-700 transition hover:bg-mangue-100"
+                  className="inline-flex items-center gap-1 border border-mangue-200 bg-white px-2.5 py-1 text-xs font-bold text-mangue-700 transition hover:bg-mangue-100"
                 >
                   <Headset className="h-3 w-3" />
                   {supportMiniCtaLabel}
@@ -257,13 +257,13 @@ export default function AssistantChat() {
                   <div className="inline-flex items-center gap-1">
                     <a
                       href={callHref}
-                      className="inline-flex items-center gap-1 rounded-full border border-[var(--hairline)] bg-white px-2.5 py-1 text-xs font-bold text-nuit-700 transition hover:bg-chaux-100"
+                      className="inline-flex items-center gap-1 border border-[var(--hairline)] bg-white px-2.5 py-1 text-xs font-bold text-nuit-700 transition hover:bg-chaux-100"
                     >
                       <PhoneCall className="h-3 w-3" />
                       Appeler
                     </a>
                     {supportPhoneDisplay && (
-                      <span className="rounded-full border border-[var(--hairline)] bg-white px-2 py-1 text-xs font-semibold text-chaux-600">
+                      <span className=" border border-[var(--hairline)] bg-white px-2 py-1 text-xs font-semibold text-chaux-600">
                         {supportPhoneDisplay}
                       </span>
                     )}
@@ -276,7 +276,7 @@ export default function AssistantChat() {
               {messages.map((message) => (
                 <div
                   key={`floating-${message.id}`}
-                  className={`max-w-[88%] rounded-2xl px-4 py-3 text-sm leading-6 ${
+                  className={`max-w-[88%] px-4 py-3 text-sm leading-6 ${
                     message.role === 'assistant' ? 'bg-chaux-100 text-nuit-700' : 'ml-auto bg-primary-100 text-primary-950'
                   }`}
                 >
@@ -285,7 +285,7 @@ export default function AssistantChat() {
               ))}
 
               {isTyping && (
-                <div className="max-w-[84%] rounded-2xl bg-chaux-100 px-4 py-3 text-sm text-chaux-600">
+                <div className="max-w-[84%] bg-chaux-100 px-4 py-3 text-sm text-chaux-600">
                   L’assistant rédige une réponse...
                 </div>
               )}
@@ -298,14 +298,14 @@ export default function AssistantChat() {
                     key={`floating-${prompt}`}
                     type="button"
                     onClick={() => handleSend(prompt)}
-                    className="rounded-full border border-[var(--hairline)] bg-chaux-50 px-3 py-1.5 text-xs font-semibold text-chaux-600 transition hover:border-primary-300 hover:bg-primary-50 hover:text-primary-700"
+                    className=" border border-[var(--hairline)] bg-chaux-50 px-3 py-1.5 text-xs font-semibold text-chaux-600 transition hover:border-primary-300 hover:bg-primary-50 hover:text-primary-700"
                   >
                     {prompt}
                   </button>
                 ))}
               </div>
 
-              <form onSubmit={handleSubmit} className="flex items-center gap-2 rounded-[1rem] border border-[var(--hairline)] bg-chaux-50 p-2.5">
+              <form onSubmit={handleSubmit} className="flex items-center gap-2 border border-[var(--hairline)] bg-chaux-50 p-2.5">
                 <input
                   type="text"
                   value={input}
@@ -316,7 +316,7 @@ export default function AssistantChat() {
                 <button
                   type="submit"
                   disabled={!canSubmit}
-                  className="inline-flex items-center gap-1 rounded-full bg-chaux-600 px-3 py-2 text-xs font-bold text-white transition hover:bg-chaux-600 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="inline-flex items-center gap-1 bg-chaux-600 px-3 py-2 text-xs font-bold text-white transition hover:bg-chaux-600 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Envoyer
                   <Send className="h-3.5 w-3.5" />
@@ -330,12 +330,12 @@ export default function AssistantChat() {
           type="button"
           aria-label="Ouvrir l'assistant IA"
           onClick={handleToggleFloating}
-          className="group relative inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-primary-600 to-accent-600 px-4 py-3 text-sm font-black text-white shadow-[0_16px_38px_rgba(217,119,6,0.35)] transition hover:-translate-y-0.5"
+          className="group relative inline-flex items-center gap-2 bg-nuit-900 px-4 py-3 text-sm font-black text-white soft-shadow transition hover:-translate-y-0.5"
         >
           <MessageSquare className="h-5 w-5" />
           <span className="hidden sm:inline">Assistant IA</span>
           {showLauncherBadge && !isFloatingOpen && (
-            <span className="absolute -right-1.5 -top-1.5 inline-flex h-6 min-w-6 items-center justify-center rounded-full border-2 border-white bg-bissap-500 px-1 text-xs font-black text-white shadow-lg shadow-bissap-500/35 animate-pulse">
+            <span className="absolute -right-1.5 -top-1.5 inline-flex h-6 min-w-6 items-center justify-center border-2 border-white bg-bissap-500 px-1 text-xs font-black text-white soft-shadow shadow-bissap-500/35 animate-pulse">
               1
             </span>
           )}
