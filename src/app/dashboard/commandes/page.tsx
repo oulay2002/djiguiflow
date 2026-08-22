@@ -232,21 +232,21 @@ export default function Page() {
   const badgeConfirmation = (c: Cmd) => {
     if (c.confirmation_statut === 'confirmee') {
       return (
-        <span className="rounded-full bg-accent-50 border border-accent-200 px-2.5 py-1 text-xs font-semibold text-accent-700">
+        <span className=" bg-accent-50 border border-accent-200 px-2.5 py-1 text-xs font-semibold text-accent-700">
           Confirmée
         </span>
       );
     }
     if (c.confirmation_statut === 'refusee') {
       return (
-        <span className="rounded-full bg-bissap-50 border border-bissap-200 px-2.5 py-1 text-xs font-semibold text-bissap-700">
+        <span className=" bg-bissap-50 border border-bissap-200 px-2.5 py-1 text-xs font-semibold text-bissap-700">
           Refusée
         </span>
       );
     }
     // Pas encore répondu (ou ancienne commande sans suivi)
     return (
-      <span className="rounded-full bg-mangue-50 border border-mangue-200 px-2.5 py-1 text-xs font-semibold text-mangue-700">
+      <span className=" bg-mangue-50 border border-mangue-200 px-2.5 py-1 text-xs font-semibold text-mangue-700">
         À confirmer
       </span>
     );
@@ -260,7 +260,7 @@ export default function Page() {
     <div className="min-h-screen bg-[var(--background)] p-4 lg:p-6">
       <div className="mx-auto max-w-[1600px]">
         <main className="min-w-0 space-y-6">
-          <header className="flex flex-col gap-4 rounded-[2rem] border border-white/70 bg-white/75 p-5 shadow-[0_20px_60px_rgba(49,35,20,0.08)] backdrop-blur-xl md:flex-row md:items-center md:justify-between">
+          <header className="flex flex-col gap-4 border border-[var(--hairline)] bg-white p-5 soft-shadow md:flex-row md:items-center md:justify-between">
             <div>
               <p className="text-sm uppercase tracking-[0.2em] text-chaux-600">Ce qui arrive</p>
               <h1 className="mt-2 font-display text-3xl font-black">Commandes · {nomBoutique}</h1>
@@ -274,7 +274,7 @@ export default function Page() {
                   value={recherche}
                   onChange={(e) => setRecherche(e.target.value)}
                   placeholder="Référence, nom, téléphone…"
-                  className="w-full rounded-full border border-[var(--hairline)] bg-white/80 py-2 pl-9 pr-4 text-sm text-nuit-900 placeholder:text-chaux-600 focus:border-nuit-400 focus:outline-none"
+                  className="w-full border border-[var(--hairline)] bg-white py-2 pl-9 pr-4 text-sm text-nuit-900 placeholder:text-chaux-600 focus:border-nuit-400 focus:outline-none"
                 />
               </label>
               <div className="flex flex-wrap gap-2">
@@ -285,7 +285,7 @@ export default function Page() {
                 ['livree', 'Livrées', cmds.filter(c => /livr/i.test(c.statut_livraison) || c.heure_livraison).length],
               ].map(([k, l, n]) => (
                 <button key={k} onClick={() => setFiltre(String(k))}
-                  className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                  className={` px-4 py-2 text-sm font-semibold transition ${
                     filtre === k ? 'bg-nuit-900 text-chaux-50' : 'bg-chaux-100 text-nuit-700 hover:bg-chaux-200'
                   }`}>
                   {l} · {n}
@@ -297,24 +297,24 @@ export default function Page() {
 
           {/* Bannière confirmation anti-retours */}
           {(nbAConfirmer > 0 || nbRefusees > 0) && (
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-mangue-200 bg-mangue-50 p-4">
+            <div className="flex flex-wrap items-center justify-between gap-3 border border-mangue-200 bg-mangue-50 p-4">
               <div className="flex flex-wrap items-center gap-3 text-sm">
                 <span className="flex items-center gap-1.5 font-semibold text-mangue-700">
                   <ShieldCheck className="h-4 w-4" aria-hidden />
                   Anti-retours
                 </span>
                 {nbAConfirmer > 0 && (
-                  <button onClick={() => setFiltre('aconfirmer')} className="rounded-full bg-mangue-100 px-3 py-1 font-semibold text-mangue-700 hover:bg-mangue-200">
+                  <button onClick={() => setFiltre('aconfirmer')} className=" bg-mangue-100 px-3 py-1 font-semibold text-mangue-700 hover:bg-mangue-200">
                     {nbAConfirmer} à confirmer
                   </button>
                 )}
                 {nbConfirmees > 0 && (
-                  <button onClick={() => setFiltre('confirmees')} className="rounded-full bg-accent-100 px-3 py-1 font-semibold text-accent-800 hover:bg-accent-200">
+                  <button onClick={() => setFiltre('confirmees')} className=" bg-accent-100 px-3 py-1 font-semibold text-accent-800 hover:bg-accent-200">
                     {nbConfirmees} confirmées
                   </button>
                 )}
                 {nbRefusees > 0 && (
-                  <button onClick={() => setFiltre('refusees')} className="rounded-full bg-bissap-100 px-3 py-1 font-semibold text-bissap-800 hover:bg-bissap-200">
+                  <button onClick={() => setFiltre('refusees')} className=" bg-bissap-100 px-3 py-1 font-semibold text-bissap-800 hover:bg-bissap-200">
                     {nbRefusees} refusées
                   </button>
                 )}
@@ -329,12 +329,12 @@ export default function Page() {
 
           <div className="space-y-3">
             {filtrées.length === 0 && (
-              <div className="rounded-[1.5rem] border border-dashed bg-white/60 p-10 text-center text-chaux-600">
+              <div className=" border border-dashed bg-white p-10 text-center text-chaux-600">
                 Aucune commande dans cette catégorie.
               </div>
             )}
             {filtrées.map((c, i) => (
-              <div key={i + '-' + c.order_id} className={`rounded-[1.5rem] border bg-white/90 p-5 shadow-sm backdrop-blur-sm ${
+              <div key={i + '-' + c.order_id} className={` border bg-white p-5 soft-shadow ${
                 c.confirmation_statut === 'refusee' ? 'border-bissap-200 opacity-60' :
                 c.confirmation_statut === 'confirmee' ? 'border-accent-200' :
                 'border-[var(--hairline)]'
@@ -343,7 +343,7 @@ export default function Page() {
                   <div className="flex-1 space-y-2">
                     <div className="flex flex-wrap items-center gap-3">
                       <span className="font-mono text-sm font-bold text-mangue-700">{c.order_id}</span>
-                      <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${badgeColor(c)}`}>{statutLabel(c)}</span>
+                      <span className={` px-2.5 py-1 text-xs font-semibold ${badgeColor(c)}`}>{statutLabel(c)}</span>
                       {badgeConfirmation(c)}
                       <span className="text-xs text-chaux-600"><IconeCanal canal={c.canal} /> {c.canal}</span>
                       <span className="text-xs text-chaux-600"><Clock className="inline h-3 w-3" /> {c.timestamp ? new Date(c.timestamp).toLocaleString('fr-FR') : '—'}</span>
@@ -356,8 +356,8 @@ export default function Page() {
                         <p className="text-sm text-chaux-600">Aucun article</p>
                       ) : (
                         parseItems(c.items).map((it, i) => (
-                          <span key={i} className="inline-flex items-center gap-1.5 rounded-full border border-mangue-200 bg-mangue-50 px-3 py-1 text-sm font-semibold text-mangue-700">
-                            <span className="rounded-full bg-mangue-700 px-2 py-0.5 text-xs font-bold text-white">{it.q}×</span>
+                          <span key={i} className="inline-flex items-center gap-1.5 border border-mangue-200 bg-mangue-50 px-3 py-1 text-sm font-semibold text-mangue-700">
+                            <span className=" bg-mangue-700 px-2 py-0.5 text-xs font-bold text-white">{it.q}×</span>
                             {it.plat}
                             {it.prix > 0 && <span className="text-mangue-600">· {(it.q * it.prix).toLocaleString('fr-FR')} F</span>}
                           </span>
@@ -388,7 +388,7 @@ export default function Page() {
                     <button
                       onClick={() => relancer(c.order_id)}
                       disabled={busy === c.order_id + 'relance'}
-                      className="flex items-center gap-2 rounded-full bg-mangue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-mangue-700 disabled:opacity-50"
+                      className="flex items-center gap-2 bg-mangue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-mangue-700 disabled:opacity-50"
                     >
                       {busy === c.order_id + 'relance' ? (
                         <RefreshCw className="h-4 w-4 animate-spin" />
@@ -401,7 +401,7 @@ export default function Page() {
 
                   {/* Refusée : verrouiller les actions de livraison */}
                   {c.confirmation_statut === 'refusee' && (
-                    <span className="flex items-center gap-2 rounded-full bg-bissap-100 px-4 py-2 text-sm font-semibold text-bissap-700">
+                    <span className="flex items-center gap-2 bg-bissap-100 px-4 py-2 text-sm font-semibold text-bissap-700">
                       <Ban className="h-4 w-4" aria-hidden />
                       Ne pas préparer
                     </span>
@@ -410,24 +410,24 @@ export default function Page() {
                   {/* Actions classiques (uniquement si confirmée ou sans suivi) */}
                   {c.confirmation_statut !== 'refusee' && !c.nom_livreur && !/livr/i.test(c.statut_livraison) && (
                     <button onClick={() => agir(c.order_id, 'acceptee')} disabled={busy === c.order_id + 'acceptee'}
-                      className="flex items-center gap-2 rounded-full bg-nuit-600 px-4 py-2 text-sm font-semibold text-white hover:bg-nuit-700 disabled:opacity-50">
+                      className="flex items-center gap-2 bg-nuit-600 px-4 py-2 text-sm font-semibold text-white hover:bg-nuit-700 disabled:opacity-50">
                       <Handshake className="h-4 w-4" />Accepter
                     </button>
                   )}
                   {c.confirmation_statut !== 'refusee' && c.nom_livreur && !/route|part|cours|livr/i.test(c.statut_livraison) && (
                     <button onClick={() => agir(c.order_id, 'route')} disabled={busy === c.order_id + 'route'}
-                      className="flex items-center gap-2 rounded-full bg-nuit-600 px-4 py-2 text-sm font-semibold text-white hover:bg-nuit-700 disabled:opacity-50">
+                      className="flex items-center gap-2 bg-nuit-600 px-4 py-2 text-sm font-semibold text-white hover:bg-nuit-700 disabled:opacity-50">
                       <Bike className="h-4 w-4" />En route
                     </button>
                   )}
                   {c.confirmation_statut !== 'refusee' && !/livr/i.test(c.statut_livraison) && (
                     <button onClick={() => agir(c.order_id, 'livree')} disabled={busy === c.order_id + 'livree'}
-                      className="flex items-center gap-2 rounded-full bg-accent-600 px-4 py-2 text-sm font-semibold text-white hover:bg-accent-700 disabled:opacity-50">
+                      className="flex items-center gap-2 bg-accent-600 px-4 py-2 text-sm font-semibold text-white hover:bg-accent-700 disabled:opacity-50">
                       <Check className="h-4 w-4" />Livrée
                     </button>
                   )}
                   {/livr/i.test(c.statut_livraison) && (
-                    <span className="flex items-center gap-2 rounded-full bg-accent-100 px-4 py-2 text-sm font-semibold text-accent-700">
+                    <span className="flex items-center gap-2 bg-accent-100 px-4 py-2 text-sm font-semibold text-accent-700">
                       <CheckCircle2 className="h-4 w-4" />Cycle terminé
                     </span>
                   )}
