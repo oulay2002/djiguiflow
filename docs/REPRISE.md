@@ -14,41 +14,60 @@
 | L'histoire du schéma | `supabase/migrations/` — 58 fichiers = 58 migrations | oui, par la CI à chaque push |
 | Les workflows n8n | `n8n/` — 24 fichiers, export quotidien à 5 h | oui, PR à chaque écart |
 | La liste des variables d'environnement | `.env.example` | oui, tirée du code |
-| Les données (commandes, produits, marchands) | **rien** | **il n'existe aucune sauvegarde** |
+| Les données (commandes, produits, marchands) | dépôt privé `djiguiflow-sauvegardes`, chaque nuit à 4 h 30 | oui, exécuté et relu le 22 août |
+| Les comptes de connexion (`auth`) | le même dump | oui, présence vérifiée à chaque exécution |
+| Les photos et logos | `images/` du même dépôt | oui, 13 fichiers, 1 Mo |
 
 ---
 
-## ⚠ IL N'EXISTE AUCUNE SAUVEGARDE DES DONNÉES
+## Restaurer les données — et le piège à connaître AVANT
 
-Vérifié le 22 août 2026 dans le tableau de bord Supabase, onglet
-« Scheduled backups » : **aucune sauvegarde listée**. Le projet est sur l'offre
-gratuite, qui n'en fait aucune — la page propose de passer au plan Pro pour les
-activer.
+Jusqu'au 22 août 2026, **il n'existait aucune sauvegarde des données.** Le
+tableau de bord Supabase, onglet « Scheduled backups » : rien. Ce document
+affirmait pourtant qu'elles se restauraient « depuis les sauvegardes Supabase ».
+C'était faux — et dans le sens le plus dangereux, puisqu'on ne cherche pas
+d'alternative tant qu'on croit en avoir une.
 
-Ce document affirmait auparavant que les données étaient récupérables « depuis
-les sauvegardes Supabase », en signalant seulement que le chemin n'avait jamais
-été éprouvé. **C'était faux, et dans le sens le plus dangereux : il n'y a rien
-à éprouver.** Un document de reprise qui désigne un secours inexistant est pire
-que pas de document — on ne cherche pas d'alternative tant qu'on croit en avoir
-une.
+Depuis, `sauvegarde-donnees.yml` exporte chaque nuit à 4 h 30 vers le dépôt
+**privé** `djiguiflow-sauvegardes` : les données métier, les comptes `auth`, le
+registre `storage` et **les fichiers eux-mêmes**. L'historique de ce dépôt *est*
+la profondeur de rétention.
 
-Concrètement, aujourd'hui :
+> **Ce dépôt ne doit jamais devenir public.** Il contient les noms, téléphones et
+> adresses de vrais clients.
 
-- une migration qui efface une colonne est **définitive** ;
-- un `delete` sans `where` est **définitif** ;
-- une suppression de projet est **définitive** ;
-- le dépôt ne rattrape rien : `supabase/reference/schema.sql` reconstruit les
-  **tables vides**, pas ce qu'elles contiennent.
+### ⚠ Désactiver le déclencheur avant de restaurer
 
-Le schéma, les workflows n8n et la liste des variables sont sauvegardés. **Les
-données ne le sont pas.** C'est le seul élément de cette liste qui ne se
-retrouve nulle part ailleurs : le code se réécrit, une commande perdue est
-perdue.
+`commandes` porte le déclencheur `on_new_commande`, qui appelle
+`notify_n8n_new_commande` → `net.http_post` vers le webhook **de production**.
 
-**Ce qui ne doit jamais être fait :** déposer un export de données dans ce
-dépôt. Il est **public**, et un dump contient les noms, téléphones et adresses
-de vrais clients. Même chiffré, même en pièce jointe d'un job : les artefacts
-d'un dépôt public sont téléchargeables par n'importe qui.
+Le dump ne contient **aucun** `DISABLE TRIGGER` — vérifié le 22 août. Rejouer
+les données réveillerait donc ce déclencheur **pour chacune des commandes
+restaurées** : n8n dispatcherait de vrais livreurs et écrirait à de vrais
+clients à propos de commandes vieilles de plusieurs semaines. Une restauration
+faite pour réparer un incident en créerait un plus grave.
+
+Le déclencheur épargne deux cas seulement : `statut = 'panier'`, et les
+boutiques marquées `essai`. Aucun ne couvre une vraie boutique.
+
+```sql
+-- AVANT de rejouer quoi que ce soit
+alter table public.commandes disable trigger on_new_commande;
+```
+
+### Les cinq gestes
+
+1. `alter table public.commandes disable trigger on_new_commande;`
+2. Sur une base neuve : rejouer `supabase/reference/schema.sql`.
+   **Jamais** l'historique de `supabase/migrations/` — il n'est pas rejouable,
+   voir plus bas.
+3. Rejouer `donnees/donnees.sql` du dépôt privé.
+4. Reverser `images/` dans le bucket `images` (il est public, arborescence
+   identique).
+5. `alter table public.commandes enable trigger on_new_commande;`
+
+`set_boutique_user_id`, l'autre déclencheur, **ne gêne pas** : il ne s'active que
+si `user_id` est nul, et le dump le porte. Vérifié plutôt que supposé.
 
 ---
 
@@ -124,9 +143,9 @@ Le job `schema` refusera tout écart entre le dépôt et la base, ce qui rend la
 dérive visible au push suivant.
 
 ### 4. Des données sont perdues ou corrompues
-**Il n'y a pas de geste.** Voir l'encart en haut de ce document : aucune
-sauvegarde n'existe. C'est le seul incident de cette liste auquel on ne sait pas
-répondre, et le seul dont les conséquences sont irréversibles.
+**Le geste :** les cinq gestes de « Restaurer les données », plus haut. Le
+premier — désactiver `on_new_commande` — n'est pas optionnel : l'oublier
+transforme la réparation en incident.
 
 ### 5. La session WhatsApp d'un marchand est bannie
 Ses clients ne peuvent plus lui écrire. Le tableau de bord et Telegram
@@ -137,22 +156,36 @@ sollicité**, pas au volume.
 
 ---
 
-## L'exercice qui manque
+## L'exercice de restauration — où il en est
 
-Rien de ce document n'a été éprouvé sur une vraie restauration. Tant que ce
-n'est pas fait, la ligne « les données sont récupérables » est une **espérance**,
-pas un fait.
+Commencé le 22 août 2026. **Il a payé dès son premier geste**, ce qui est
+exactement pourquoi on le fait avant d'ouvrir à de nouveaux marchands.
 
-L'exercice tient en quatre gestes, et il devrait être fait **avant** l'ouverture
-à de nouveaux marchands :
+| Geste | État | Ce qu'il a appris |
+|---|---|---|
+| 1. Voir ce qui est sauvegardé | **fait** | **Rien ne l'était.** Ce document décrivait un secours inexistant |
+| 2. Rejouer le schéma sur une base neuve | à faire | — |
+| 3. Y pointer l'application, lancer les 26 contrôles | à faire | — |
+| 4. Écrire ce qui a manqué | **en cours** | trois manques trouvés sans même restaurer |
 
-1. Vérifier dans le tableau de bord Supabase quelle sauvegarde existe, à quelle
-   fréquence, et sur quelle profondeur. Le noter ici.
-2. Créer une branche Supabase (ou un projet jetable) à partir de
-   `supabase/reference/schema.sql`.
-3. Y pointer une copie de l'application et lancer
-   `BASE=<url> node scripts/essai-multi-marchand.mjs`.
-4. Écrire ici ce qui a manqué. **Il manquera quelque chose** — c'est le but.
+### Ce que le geste 1 a trouvé, en plus de l'absence de sauvegarde
 
-Le troisième geste est le seul qui dit la vérité : les 26 contrôles du banc
-passent, ou ils ne passent pas.
+- **Le déclencheur `on_new_commande` se réveille pendant une restauration.**
+  Le dump ne porte aucun `DISABLE TRIGGER`. Documenté plus haut, en tête de la
+  procédure.
+- **Le registre n'est pas le fichier.** `storage.objects` décrit treize images ;
+  les images elles-mêmes n'étaient nulle part. Corrigé — elles sont sauvegardées.
+- **Le second export du schéma `auth` était inutile** : le dump principal le
+  contenait déjà. La sauvegarde vérifie désormais sa propre portée à chaque
+  exécution, au lieu de faire confiance au comportement par défaut de la CLI.
+
+### Ce qui n'est toujours PAS éprouvé
+
+**Aucune restauration n'a jamais été exécutée.** Tant que les gestes 2 et 3 ne
+sont pas faits, « les données sont récupérables » reste une **déduction** — bien
+appuyée, mais une déduction. Ce qu'on sait avec certitude, c'est qu'un fichier
+de 116 Ko existe, qu'il contient `auth.users`, `public.boutiques` et
+`public.commandes`, et que treize images l'accompagnent.
+
+Le geste 3 est le seul qui dit la vérité : les 26 contrôles du banc passent, ou
+ils ne passent pas.
