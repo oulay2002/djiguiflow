@@ -18,8 +18,19 @@ export type AccesMarchand =
  *  1. le porteur presente un access token Supabase valide ;
  *  2. il possede la boutique visee — ou il est admin de la plateforme.
  *
- * @param slug Valeur brute du parametre `boutique_id` (slug, ou vide pour
- *             le marchand par defaut).
+ * IL N'Y A PAS DE « MARCHAND PAR DEFAUT », et ce commentaire l'a affirme a
+ * tort. `getMarchand(null)` rend `null` : sans `boutique_id`, la reponse est
+ * 404, jamais la premiere boutique venue. C'est la bonne conception — un repli
+ * mono-marchand est precisement ce qui a fait passer le client de l'un par le
+ * bot de l'autre le 20 aout 2026 — mais une consigne fausse se relit et se
+ * restaure. Ne pas reintroduire ce repli.
+ *
+ * EPROUVE PAR `scripts/essai-isolement-dashboard.mjs`, avec deux vrais comptes
+ * et deux boutiques : retirer le controle de propriete ci-dessous fait fuiter
+ * les produits, commandes, statistiques et clients du voisin, et le banc
+ * l'attrape. Verifie le 22 aout 2026.
+ *
+ * @param slug Valeur brute du parametre `boutique_id`. Vide ou inconnu : 404.
  */
 export async function exigerAccesMarchand(
   req: Request,
