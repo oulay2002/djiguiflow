@@ -1,0 +1,132 @@
+# La migration de reference, celle qui rend la base RECONSTRUCTIBLE.
+#
+# POURQUOI ELLE EXISTE. `supabase/migrations/` est l'HISTOIRE du schema : 58
+# fichiers fideles au texte exact applique, commentaires d'intention compris.
+# Fidele ne veut pas dire rejouable. Verifie le 22 aout 2026 :
+# `20260805224907_harden_security_definer_functions.sql` declare
+# `public.http_response`, un type apporte par l'extension `http` — qu'AUCUNE
+# migration ne cree, et que `20260817125218` supprime. Rejouer l'historique sur
+# une base neuve echoue donc a la troisieme migration.
+#
+# `AUDIT_SECURITE.md` le disait deja, en R6 : « une restauration reconstruirait
+# une base sans ses verrous. C'est le scenario qui transforme un incident en
+# fuite. » Et il prescrivait le remede : « une migration de reference, pas une
+# retouche de l'historique ».
+#
+# CE FICHIER EST CE REMEDE. Le dump est APLATI — il perd le decoupage et les
+# commentaires — et c'est exactement ce qu'on veut ici : l'historique porte le
+# raisonnement, la reference porte l'etat. On ne restaure pas depuis un recit.
+#
+# ELLE TOURNE PARCE QU'UNE REFERENCE ECRITE A LA MAIN POURRIT. Elle mentirait
+# des la migration suivante, et une reference qui ment sur la production est
+# pire que pas de reference : on la decouvre fausse le jour ou l'on restaure.
+name: Sauvegarde du schema
+
+on:
+  schedule:
+    # Abidjan ne change jamais d'heure : UTC = heure locale. 5 h 30, juste
+    # apres l'export n8n, pour que les deux PR arrivent ensemble.
+    - cron: '30 5 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: sauvegarde-schema
+  cancel-in-progress: false
+
+jobs:
+  sauvegarder:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      # Le secret manquant doit se dire en clair, comme pour le garde de schema.
+      - name: Verifier que le jeton est pose
+        env:
+          JETON: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          if [ -z "$JETON" ]; then
+            echo "::error::SUPABASE_ACCESS_TOKEN est absent : la reference ne peut pas etre produite."
+            echo "  gh secret set SUPABASE_ACCESS_TOKEN"
+            exit 1
+          fi
+
+      # `db dump` a besoin de Docker pour executer pg_dump : l'executeur GitHub
+      # en a un, la machine de developpement pas forcement. C'est la raison pour
+      # laquelle cette sauvegarde vit ici et non dans un script local.
+      - name: Ecrire la reference
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          set -euo pipefail
+          mkdir -p supabase/reference
+          supabase db dump --linked --project-ref xshksvlnrgxijsznmkkj \
+            -f supabase/reference/schema.sql
+          # Un dump vide serait pire qu'une absence de dump : on croirait avoir
+          # une reference. On refuse plutot que d'ecrire un fichier creux.
+          if [ ! -s supabase/reference/schema.sql ]; then
+            echo "::error::Le dump est vide. La reference n'est pas ecrite."
+            exit 1
+          fi
+          echo "reference : $(wc -l < supabase/reference/schema.sql) lignes"
+
+      - name: Y a-t-il un vrai changement ?
+        id: diff
+        run: |
+          if [ -z "$(git status --porcelain supabase/reference/)" ]; then
+            echo "change=non" >> "$GITHUB_OUTPUT"
+            echo "Le schema n'a pas bouge depuis la derniere reference."
+          else
+            echo "change=oui" >> "$GITHUB_OUTPUT"
+            git status --short supabase/reference/
+          fi
+
+      # UNE PR, PAS UNE POUSSEE DIRECTE, pour la meme raison que l'export n8n :
+      # le diff EST la revue. Un changement de schema qui atterrit sans que
+      # personne ne le regarde ne vaut pas mieux que pas de trace.
+      - name: Ouvrir ou mettre a jour la PR
+        if: steps.diff.outputs.change == 'oui'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          BRANCHE="reference-schema"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git checkout -B "$BRANCHE"
+          git add supabase/reference/
+          git commit -m "schema : reference au $(date -u '+%Y-%m-%d')" \
+                     -m "Sauvegarde automatique. Le diff est la revue : il ne contient que ce qui a change dans le schema de production."
+          git push --force-with-lease origin "$BRANCHE"
+
+          if gh pr view "$BRANCHE" --json state --jq .state 2>/dev/null | grep -q OPEN; then
+            echo "PR deja ouverte, mise a jour."
+          else
+            cat > /tmp/corps-pr.md <<'CORPS'
+          La sauvegarde quotidienne a trouve une difference entre la reference du
+          depot et le schema de production.
+
+          Le diff ci-dessous est **la revue**. Il ne devrait contenir que ce qu'une
+          migration relue a deja introduit : si quelque chose y apparait sans
+          migration correspondante, c'est que le schema a ete modifie a la main en
+          production — et c'est cela qu'il faut corriger, pas cette PR.
+
+          Cette reference est ce depuis quoi on RESTAURE. `supabase/migrations/`
+          reste l'histoire ; elle n'est pas rejouable depuis zero, voir l'en-tete
+          de ce workflow.
+          CORPS
+            sed -i 's/^          //' /tmp/corps-pr.md
+            gh pr create --base main --head "$BRANCHE" \
+              --title "Schema : la reference a change" \
+              --body-file /tmp/corps-pr.md
+          fi

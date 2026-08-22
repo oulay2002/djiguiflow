@@ -34,6 +34,12 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+# SAUF le modele, qui ne porte que des NOMS de variables et aucune valeur.
+# C'est cette regle-ci qui expliquait son absence : le depot referencait 53
+# variables et n'en listait aucune, parce que le filet qui protege .env.local
+# attrapait aussi le manifeste. Reconstruire apres un incident revenait alors a
+# lire tout le code pour deviner ce qui manque.
+!.env.example
 
 # vercel
 .vercel
