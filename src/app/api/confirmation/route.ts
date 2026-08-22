@@ -1,7 +1,56 @@
+import { adresseAppelante, rafaleDepassee } from '@/lib/limiteur';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import { secretWebhookN8n } from '@/lib/secretN8n';
 
 export const dynamic = 'force-dynamic';
+
+/**
+ * LE FREIN CONTRE L'ENUMERATION.
+ *
+ * Cette route n'exige aucune preuve autre que la reference de commande, et
+ * elle fait DEUX choses graves si cette reference est devinee : elle affiche
+ * l'adresse du client, et surtout son POST confirme ou ANNULE la commande.
+ * Deviner une reference permet donc de detruire la commande d'un inconnu.
+ *
+ * Or les references de production ne sont pas toutes imprevisibles : il existe
+ * des compteurs sequentiels (`ATT-1000000006`) et des formes derivables comme
+ * `APP-<telephone>-<horodatage unix en secondes>`, ou connaitre le numero d'un
+ * client ramene une journee a 86 400 essais.
+ *
+ * CE FREIN NE CORRIGE PAS LA CAUSE. La correction de fond est un jeton
+ * imprevisible par commande, exige par ce lien. Tant qu'il n'existe pas, ceci
+ * est le seul obstacle.
+ *
+ * L'ecriture est plus severement bornee que la lecture : un client ouvre son
+ * lien, hesite, rafraichit — mais il ne repond qu'une fois.
+ */
+const LECTURES_PAR_APPELANT = 30;
+const REPONSES_PAR_APPELANT = 10;
+const FENETRE_CONFIRMATION_MS = 10 * 60_000;
+
+/** Rend une reponse de refus quand l'appelant depasse son quota, sinon `null`. */
+function freinDepasse(req: Request, limite: number, quoi: string): Response | null {
+  const appelant = adresseAppelante(req);
+  const rafale = rafaleDepassee(
+    `confirmation:${quoi}:${appelant}`,
+    limite,
+    FENETRE_CONFIRMATION_MS,
+  );
+  if (!rafale.depassee) return null;
+
+  console.error(
+    `Confirmation — rafale ${quoi} refusee depuis ${appelant} : enumeration probable.`,
+  );
+  return reponseHtml(
+    'TROP DE DEMANDES',
+    'attente',
+    'Trop de demandes',
+    'Patientez quelques minutes avant de réessayer.',
+    429,
+    '',
+    { 'Retry-After': String(rafale.attendreSecondes) },
+  );
+}
 
 type LigneItem = { nom_produit: string | null; quantite: number | null };
 
@@ -195,10 +244,18 @@ function motifExact(valeur: string): string {
   return valeur.replace(/[\\%_]/g, (c) => `\\${c}`);
 }
 
-function reponseHtml(tampon: string, ton: Ton, titre: string, detail: string, code = 200, corps = ''): Response {
+function reponseHtml(
+  tampon: string,
+  ton: Ton,
+  titre: string,
+  detail: string,
+  code = 200,
+  corps = '',
+  entetes: Record<string, string> = {},
+): Response {
   return new Response(pageHtml(tampon, ton, titre, detail, corps), {
     status: code,
-    headers: { 'Content-Type': 'text/html; charset=utf-8' },
+    headers: { 'Content-Type': 'text/html; charset=utf-8', ...entetes },
   });
 }
 
@@ -235,6 +292,9 @@ function articlesDe(ligne: Ligne): string[] {
 
 /** Ce que le client voit en ouvrant le lien : sa commande, et deux boutons. */
 export async function GET(req: Request) {
+  const refus = freinDepasse(req, LECTURES_PAR_APPELANT, 'lecture');
+  if (refus) return refus;
+
   const { searchParams } = new URL(req.url);
   const ref = (searchParams.get('ref') || '').trim();
   if (!ref) return reponseHtml('LIEN INVALIDE', 'refus', 'Lien invalide', 'Ce lien de confirmation est incomplet.', 400);
@@ -265,6 +325,9 @@ export async function GET(req: Request) {
 
 /** L'ecriture, declenchee par le bouton et par lui seul. */
 export async function POST(req: Request) {
+  const refus = freinDepasse(req, REPONSES_PAR_APPELANT, 'reponse');
+  if (refus) return refus;
+
   let ref = '';
   let r = '';
 

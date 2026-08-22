@@ -1,3 +1,4 @@
+import { adresseAppelante, rafaleDepassee } from '@/lib/limiteur';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import { resoudreMarchand } from '@/lib/marchands';
 
@@ -38,7 +39,38 @@ function motifExact(valeur: string): string {
   return valeur.replace(/[\\%_]/g, (c) => `\\${c}`);
 }
 
+/**
+ * LE FREIN CONTRE L'ENUMERATION.
+ *
+ * Cette route est publique, elle n'exige aucune preuve autre que la reference,
+ * et elle rend le NOM et l'ADRESSE du client. Or les references de production
+ * ne sont pas toutes imprevisibles : on y trouve des compteurs sequentiels
+ * (`ATT-1000000006`, `ATT-1000000007`) et surtout des formes derivables comme
+ * `APP-<telephone>-<horodatage unix en secondes>`. Avec le numero d'un client,
+ * balayer une journee ne demande que 86 400 essais.
+ *
+ * CE FREIN NE CORRIGE PAS LA CAUSE, il en augmente le prix. La correction de
+ * fond est un jeton imprevisible par commande, porte par le lien de suivi.
+ * Tant qu'il n'existe pas, ceci reste le seul obstacle.
+ *
+ * Trente par dix minutes : un client qui rafraichit son suivi pendant sa
+ * livraison n'y arrive jamais ; un script qui enumere le franchit en deux
+ * secondes, et se fait arreter.
+ */
+const SUIVIS_PAR_APPELANT = 30;
+const FENETRE_SUIVI_MS = 10 * 60_000;
+
 export async function GET(req: Request) {
+  const appelant = adresseAppelante(req);
+  const rafale = rafaleDepassee(`suivi:${appelant}`, SUIVIS_PAR_APPELANT, FENETRE_SUIVI_MS);
+  if (rafale.depassee) {
+    console.error(`Suivi — rafale refusee depuis ${appelant} : enumeration probable.`);
+    return Response.json(
+      { error: 'Trop de consultations. Patientez quelques minutes.' },
+      { status: 429, headers: { 'Retry-After': String(rafale.attendreSecondes) } },
+    );
+  }
+
   const { searchParams } = new URL(req.url);
   const ref = (searchParams.get('ref') || '').trim();
   if (!ref) return Response.json({ error: 'Référence requise' }, { status: 400 });
