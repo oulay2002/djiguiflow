@@ -25,8 +25,7 @@
 # ON PASSE PAR LA CLI SUPABASE, jamais par une connexion Postgres directe :
 # l'hote direct de Supabase est joignable en IPv6 seulement, et les executeurs
 # GitHub n'ont que de l'IPv4. C'est la panne deja rencontree cote n8n. La CLI
-# passe par le pooler et fonctionne — `sauvegarde-schema.yml` le prouve depuis
-# le 22 aout.
+# passe par le pooler et fonctionne — `sauvegarde-schema.yml` le prouve.
 name: Sauvegarde des donnees
 
 on:
@@ -44,12 +43,26 @@ concurrency:
   group: sauvegarde-donnees
   cancel-in-progress: false
 
+env:
+  PROJET: xshksvlnrgxijsznmkkj
+  # Le canal technique de la plateforme, le meme repli que `veille-n8n.mjs`.
+  # Une alerte qui ne part pas faute de variable est pire qu'une alerte absente :
+  # le premier brouillon de ce fichier lisait `vars.TELEGRAM_ALERTE_CHAT_ID`,
+  # qui n'existe pas — l'alerte d'echec ne serait JAMAIS partie.
+  CHAT_DEFAUT: '-1003994906478'
+
 jobs:
   sauvegarder:
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
     steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+
       - uses: supabase/setup-cli@v1
         with:
           version: latest
@@ -60,48 +73,58 @@ jobs:
         env:
           JETON: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           CLE: ${{ secrets.SAUVEGARDE_DEPLOY_KEY }}
+          ANON: ${{ vars.SUPABASE_ANON_KEY }}
         run: |
           manque=0
           [ -z "$JETON" ] && { echo "::error::SUPABASE_ACCESS_TOKEN est absent."; manque=1; }
           [ -z "$CLE" ]   && { echo "::error::SAUVEGARDE_DEPLOY_KEY est absent."; manque=1; }
+          [ -z "$ANON" ]  && { echo "::error::La variable SUPABASE_ANON_KEY est absente."; manque=1; }
           exit $manque
 
       - name: Ecrire les donnees
-        id: dump
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         run: |
-          set -uo pipefail
+          set -euo pipefail
           mkdir -p "$RUNNER_TEMP/donnees"
 
-          # Les donnees metier : commandes, produits, boutiques, livreurs.
-          # Celles qui ne se retrouvent nulle part ailleurs.
-          supabase db dump --linked --project-ref xshksvlnrgxijsznmkkj \
-            --data-only -f "$RUNNER_TEMP/donnees/public.sql"
+          # UN SEUL DUMP SUFFIT. La premiere execution, le 22 aout 2026, a montre
+          # que `--data-only` couvre deja `public`, `auth` ET `storage` : un
+          # second export du seul schema `auth` dupliquait 58 Ko chaque nuit
+          # pour rien.
+          supabase db dump --linked --project-ref "$PROJET" \
+            --data-only -f "$RUNNER_TEMP/donnees/donnees.sql"
+
+          F="$RUNNER_TEMP/donnees/donnees.sql"
 
           # UN DUMP VIDE SERAIT PIRE QU'UNE ABSENCE DE DUMP : on croirait avoir
           # une sauvegarde. On refuse plutot que d'ecrire un fichier creux.
-          if [ ! -s "$RUNNER_TEMP/donnees/public.sql" ]; then
-            echo "::error::Le dump des donnees est vide. Rien n'est pousse."
-            exit 1
-          fi
-          echo "public : $(wc -l < "$RUNNER_TEMP/donnees/public.sql") lignes"
+          [ -s "$F" ] || { echo "::error::Le dump est vide. Rien n'est pousse."; exit 1; }
+          echo "donnees : $(wc -l < "$F") lignes"
 
-          # LES COMPTES. Sans `auth.users`, les marchands ne peuvent plus se
-          # connecter et `boutiques.user_id` pointe dans le vide : la base
-          # serait restauree, la plateforme inutilisable. On tente, et on note
-          # honnetement si ca ne marche pas — sans faire perdre le dump metier,
-          # qui est deja acquis a ce stade.
-          if supabase db dump --linked --project-ref xshksvlnrgxijsznmkkj \
-               --data-only --schema auth -f "$RUNNER_TEMP/donnees/auth.sql" \
-             && [ -s "$RUNNER_TEMP/donnees/auth.sql" ]; then
-            echo "auth=oui" >> "$GITHUB_OUTPUT"
-            echo "auth : $(wc -l < "$RUNNER_TEMP/donnees/auth.sql") lignes"
-          else
-            echo "auth=non" >> "$GITHUB_OUTPUT"
-            rm -f "$RUNNER_TEMP/donnees/auth.sql"
-            echo "::warning::Le schema auth n'a pas pu etre exporte. Les comptes ne sont PAS sauvegardes."
-          fi
+          # ON VERIFIE CE QU'IL CONTIENT, plutot que de faire confiance au
+          # comportement par defaut de la CLI. Si une mise a jour restreignait
+          # un jour la portee du dump, la sauvegarde continuerait a passer au
+          # vert en ayant cesse de couvrir les comptes — exactement le genre de
+          # panne qu'on ne decouvre que le jour d'une restauration.
+          for attendu in '"auth"."users"' '"public"."boutiques"' '"public"."commandes"'; do
+            grep -qF "INSERT INTO $attendu" "$F" || {
+              echo "::error::Le dump ne contient pas $attendu. La portee a change."
+              exit 1
+            }
+          done
+          echo "portee verifiee : auth.users, public.boutiques, public.commandes"
+
+      # LE REGISTRE N'EST PAS LE FICHIER. Le dump exporte `storage.objects`,
+      # c'est-a-dire treize LIGNES decrivant treize images — pas les images. Une
+      # base restauree depuis le seul dump afficherait une vignette cassee par
+      # produit, et le marchand devrait tout reteleverser. Sur une place de
+      # marche, la photo EST la boutique.
+      - name: Sauvegarder les images
+        env:
+          SUPABASE_PROJECT_ID: ${{ env.PROJET }}
+          SUPABASE_ANON_KEY: ${{ vars.SUPABASE_ANON_KEY }}
+        run: node scripts/sauvegarder-images.mjs "$RUNNER_TEMP/donnees/images"
 
       # On ne « cat » jamais ces fichiers : les journaux d'un depot public sont
       # lisibles par tout le monde. On ne montre que des nombres de lignes.
@@ -120,19 +143,24 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
+          # `rm -rf` avant la copie : sans lui, un fichier supprime en
+          # production resterait dans la sauvegarde pour toujours, et le
+          # decompte finirait par mentir.
+          rm -rf donnees images
           mkdir -p donnees
-          cp "$RUNNER_TEMP"/donnees/*.sql donnees/
+          cp "$RUNNER_TEMP/donnees/donnees.sql" donnees/
+          cp -r "$RUNNER_TEMP/donnees/images" images
 
-          if [ -z "$(git status --porcelain donnees/)" ]; then
-            echo "Les donnees n'ont pas bouge depuis hier."
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "Rien n'a bouge depuis la derniere sauvegarde."
             exit 0
           fi
 
-          git add donnees/
-          git commit -m "donnees au $(date -u '+%Y-%m-%d')" \
-                     -m "Comptes auth inclus : ${{ steps.dump.outputs.auth }}"
+          git add -A
+          git commit -m "sauvegarde au $(date -u '+%Y-%m-%d')" \
+                     -m "Donnees, comptes et images. L'historique de ce depot EST la profondeur de retention."
           git push
-          echo "Pousse. L'historique du depot prive EST la profondeur de retention."
+          echo "Pousse."
 
       # UNE SAUVEGARDE QUI ECHOUE EN SILENCE N'EST PAS UNE SAUVEGARDE. C'est
       # meme le pire des cas : on croit etre couvert. L'alerte part sur le bot
@@ -142,12 +170,15 @@ jobs:
         if: failure()
         env:
           TOKEN: ${{ secrets.TELEGRAM_ALERTE_TOKEN }}
-          CHAT: ${{ vars.TELEGRAM_ALERTE_CHAT_ID }}
+          CHAT: ${{ vars.TELEGRAM_ALERTE_CHAT_ID || env.CHAT_DEFAUT }}
         run: |
-          [ -z "$TOKEN" ] || [ -z "$CHAT" ] && exit 0
+          if [ -z "$TOKEN" ]; then
+            echo "::error::TELEGRAM_ALERTE_TOKEN est absent : la panne de sauvegarde n'a PAS pu etre signalee."
+            exit 1
+          fi
           curl -s -X POST "https://api.telegram.org/bot$TOKEN/sendMessage" \
             --data-urlencode "chat_id=$CHAT" \
-            --data-urlencode "text=SAUVEGARDE DES DONNEES EN ECHEC. C'est la seule copie des commandes, produits et marchands : tant que ceci n'est pas repare, une perte de donnees est definitive. Voir ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+            --data-urlencode "text=SAUVEGARDE DES DONNEES EN ECHEC. C'est la seule copie des commandes, produits, comptes et images : tant que ceci n'est pas repare, une perte de donnees est definitive. Voir ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
             > /dev/null
 
       # Le succes se dit aussi, mais une seule fois par semaine : une alerte
@@ -156,18 +187,18 @@ jobs:
       #
       # ELLE NE PARLE QUE DE CETTE NUIT-LA. Une premiere redaction annoncait
       # « les sept dernieres nuits sont passees » : une execution ne sait rien
-      # des six precedentes. C'est le defaut deja rencontre avec la sonde reseau,
-      # qui affirmait l'inverifiable — et une alerte qui exagere se fait ignorer
-      # exactement comme une alerte qui ment.
+      # des six precedentes. C'est le defaut deja rencontre avec la sonde
+      # reseau, qui affirmait l'inverifiable — et une alerte qui exagere se fait
+      # ignorer exactement comme une alerte qui ment.
       - name: Confirmer le lundi
         if: success() && github.event_name == 'schedule'
         env:
           TOKEN: ${{ secrets.TELEGRAM_ALERTE_TOKEN }}
-          CHAT: ${{ vars.TELEGRAM_ALERTE_CHAT_ID }}
+          CHAT: ${{ vars.TELEGRAM_ALERTE_CHAT_ID || env.CHAT_DEFAUT }}
         run: |
           [ "$(date -u '+%u')" = "1" ] || exit 0
-          [ -z "$TOKEN" ] || [ -z "$CHAT" ] && exit 0
+          [ -n "$TOKEN" ] || exit 0
           curl -s -X POST "https://api.telegram.org/bot$TOKEN/sendMessage" \
             --data-urlencode "chat_id=$CHAT" \
-            --data-urlencode "text=Sauvegarde des donnees : la nuit de ce lundi est passee. Comptes auth inclus : ${{ steps.dump.outputs.auth }}. L'historique complet se lit dans le depot prive." \
+            --data-urlencode "text=Sauvegarde des donnees : la nuit de ce lundi est passee. L'historique complet se lit dans le depot prive." \
             > /dev/null
