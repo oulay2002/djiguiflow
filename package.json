@@ -15,7 +15,8 @@
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:auth": "playwright test tests/e2e/authenticated-dashboard.spec.ts",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "verifier:migrations": "node scripts/verifier-migrations.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.4",

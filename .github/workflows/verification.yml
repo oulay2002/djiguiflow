@@ -68,6 +68,54 @@ jobs:
       - name: Build
         run: npm run build
 
+  # LE GARDE ANTI-DERIVE.
+  #
+  # Le dossier supabase/migrations a ete reconstitue a la main le 17 aout 2026 —
+  # « 38 fichiers, 38 migrations, aucun ecart, verifie ». Le 22 aout, le depot
+  # en avait 40 et la base 56 : SEIZE migrations appliquees sans aucun fichier,
+  # dont des politiques RLS et des REVOKE sur des fonctions SECURITY DEFINER.
+  # La derive est revenue en CINQ JOURS.
+  #
+  # Une recette reconstruite depuis un depot en retard est PLUS OUVERTE que la
+  # production, et des tests y passent qui devaient echouer. Un controle manuel
+  # a echoue deux fois ; celui-ci tourne a chaque push.
+  #
+  # IL N'EST PAS EN continue-on-error, DELIBEREMENT. Un garde qu'on peut ignorer
+  # ne garde rien — c'est exactement ce qui a laisse la derive revenir.
+  schema:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      # Le secret manquant doit se dire en clair. Sans ce garde-la, le job
+      # echouerait sur une erreur d'authentification obscure et l'on chercherait
+      # la panne du mauvais cote.
+      - name: Verifier que le jeton est pose
+        env:
+          JETON: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          if [ -z "$JETON" ]; then
+            echo "::error::SUPABASE_ACCESS_TOKEN est absent : ce garde ne garde rien."
+            echo "Creez un jeton dans Supabase (Account -> Access Tokens), puis :"
+            echo "  gh secret set SUPABASE_ACCESS_TOKEN"
+            exit 1
+          fi
+
+      - name: Le depot et la base disent-ils la meme chose ?
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: npm run verifier:migrations
+
   # L'audit de dependances vit dans son propre job : une CVE publiee un matin
   # ne doit pas bloquer une correction urgente l'apres-midi. Elle doit se voir,
   # pas barrer la route.
