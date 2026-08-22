@@ -131,7 +131,7 @@ export default function ProfilPage() {
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className={`mb-6 p-4 rounded-lg flex items-start gap-3 ${
+            className={`mb-6 p-4 flex items-start gap-3 ${
               message.type === 'success'
                 ? 'bg-accent-50 text-accent-700 border border-accent-200'
                 : message.type === 'info'
@@ -149,7 +149,7 @@ export default function ProfilPage() {
         )}
 
         <form onSubmit={handleSubmit}>
-          <div className="bg-white rounded-xl p-6 border border-chaux-200 space-y-4">
+          <div className="bg-white p-6 border border-chaux-200 space-y-4">
             <div>
               <label className="block text-sm font-medium text-nuit-700 mb-1 flex items-center gap-2">
                 <User className="w-4 h-4 text-chaux-400" /> Nom complet
@@ -158,7 +158,7 @@ export default function ProfilPage() {
                 type="text"
                 value={formData.full_name}
                 onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-                className="w-full px-4 py-2.5 border border-chaux-200 rounded-lg focus:ring-2 focus:ring-nuit-200 focus:border-nuit-300"
+                className="w-full px-4 py-2.5 border border-chaux-200 focus:ring-2 focus:ring-nuit-200 focus:border-nuit-300"
                 placeholder="Ex: Aminata Koné"
               />
             </div>
@@ -171,7 +171,7 @@ export default function ProfilPage() {
                 type="tel"
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                className="w-full px-4 py-2.5 border border-chaux-200 rounded-lg focus:ring-2 focus:ring-nuit-200 focus:border-nuit-300"
+                className="w-full px-4 py-2.5 border border-chaux-200 focus:ring-2 focus:ring-nuit-200 focus:border-nuit-300"
                 placeholder="Ex: 0709123456"
               />
             </div>
@@ -184,7 +184,7 @@ export default function ProfilPage() {
                 type="text"
                 value={formData.business_name}
                 onChange={(e) => setFormData({ ...formData, business_name: e.target.value })}
-                className="w-full px-4 py-2.5 border border-chaux-200 rounded-lg focus:ring-2 focus:ring-nuit-200 focus:border-nuit-300"
+                className="w-full px-4 py-2.5 border border-chaux-200 focus:ring-2 focus:ring-nuit-200 focus:border-nuit-300"
                 placeholder="Ex: Chez Aminata"
               />
               <p className="text-xs text-chaux-600 mt-1">
@@ -201,7 +201,7 @@ export default function ProfilPage() {
                 type="email"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="w-full px-4 py-2.5 border border-chaux-200 rounded-lg focus:ring-2 focus:ring-nuit-200 focus:border-nuit-300"
+                className="w-full px-4 py-2.5 border border-chaux-200 focus:ring-2 focus:ring-nuit-200 focus:border-nuit-300"
                 placeholder="vous@exemple.com"
               />
               <p className="text-xs text-chaux-600 mt-1">

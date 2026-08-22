@@ -268,7 +268,7 @@ export default function AssignationsPage() {
       {message && (
         <div
           role="status"
-          className="mb-6 rounded-xl border border-chaux-200 bg-white px-4 py-3 text-sm text-nuit-800"
+          className="mb-6 border border-chaux-200 bg-white px-4 py-3 text-sm text-nuit-800"
         >
           {message}
         </div>
@@ -313,7 +313,7 @@ export default function AssignationsPage() {
           <button
             key={key}
             onClick={() => setFilter(key)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
+            className={`px-4 py-2 text-sm font-medium transition ${
               filter === key ? 'bg-nuit-700 text-white' : 'bg-white text-nuit-700 hover:bg-chaux-50'
             }`}
           >
@@ -330,7 +330,7 @@ export default function AssignationsPage() {
               key={commande.id}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-white rounded-xl p-5 border border-chaux-200 shadow-sm hover:shadow-md transition"
+              className="bg-white p-5 border border-chaux-200 soft-shadow hover:soft-shadow transition"
             >
               <div className="flex items-start justify-between mb-4">
                 <div>
@@ -341,7 +341,7 @@ export default function AssignationsPage() {
                     {new Date(commande.created_at).toLocaleString('fr-FR')}
                   </p>
                 </div>
-                <span className="px-3 py-1 bg-bissap-50 text-bissap-700 rounded-full text-xs font-semibold">
+                <span className="px-3 py-1 bg-bissap-50 text-bissap-700 text-xs font-semibold">
                   {commande.total.toLocaleString()} FCFA
                 </span>
               </div>
@@ -365,7 +365,7 @@ export default function AssignationsPage() {
                 <p className="text-xs font-semibold text-nuit-700 mb-2">Articles :</p>
                 <div className="flex flex-wrap gap-2">
                   {commande.commande_items?.map((item, idx) => (
-                    <span key={idx} className="px-2 py-1 bg-chaux-50 text-nuit-700 rounded text-xs">
+                    <span key={idx} className="px-2 py-1 bg-chaux-50 text-nuit-700 text-xs">
                       {item.quantite}x {item.nom_produit}
                     </span>
                   ))}
@@ -386,7 +386,7 @@ export default function AssignationsPage() {
           ))}
 
           {commandesNonAssignees.length === 0 && (
-            <div className="col-span-2 text-center py-16 bg-white rounded-xl border border-chaux-200 border-dashed">
+            <div className="col-span-2 text-center py-16 bg-white border border-chaux-200 border-dashed">
               <CheckCircle className="w-16 h-16 text-accent-500 mx-auto mb-4" />
               <h3 className="text-lg font-semibold text-nuit-900">Toutes les commandes sont assignées !</h3>
               <p className="text-chaux-600 mt-1">Aucune commande en attente de livraison.</p>
@@ -400,7 +400,7 @@ export default function AssignationsPage() {
               key={livraison.id}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-white rounded-xl p-5 border border-chaux-200 shadow-sm"
+              className="bg-white p-5 border border-chaux-200 soft-shadow"
             >
               <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                 <div className="flex-1">
@@ -408,7 +408,7 @@ export default function AssignationsPage() {
                     <h3 className="font-bold text-nuit-900">
                       Commande #{livraison.commande?.id.slice(0, 6).toUpperCase()}
                     </h3>
-                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                    <span className={`px-3 py-1 text-xs font-semibold ${
                       livraison.statut === 'assignee' ? 'bg-nuit-50 text-nuit-700' :
                       livraison.statut === 'en_cours' ? 'bg-mangue-50 text-mangue-700' :
                       'bg-accent-50 text-accent-700'
@@ -423,7 +423,7 @@ export default function AssignationsPage() {
                       <div className="flex items-center gap-2">
                         <Truck className="w-4 h-4 text-mangue-500" />
                         <span className="font-medium">{livraison.livreur.nom}</span>
-                        <span className="text-xs px-2 py-0.5 bg-chaux-100 rounded">
+                        <span className="text-xs px-2 py-0.5 bg-chaux-100">
                           {livraison.livreur.type === 'interne' ? 'Interne' : 'Indépendant'}
                         </span>
                       </div>
@@ -444,7 +444,7 @@ export default function AssignationsPage() {
                   {livraison.statut === 'assignee' && (
                     <button
                       onClick={() => updateLivraisonStatut(livraison.id, 'en_cours')}
-                      className="px-4 py-2 bg-bissap-500 text-white rounded-lg text-sm font-semibold hover:bg-bissap-600 transition"
+                      className="px-4 py-2 bg-bissap-500 text-white text-sm font-semibold hover:bg-bissap-600 transition"
                     >
                       Démarrer
                     </button>
@@ -452,7 +452,7 @@ export default function AssignationsPage() {
                   {livraison.statut === 'en_cours' && (
                     <button
                       onClick={() => updateLivraisonStatut(livraison.id, 'livree')}
-                      className="px-4 py-2 bg-accent-500 text-white rounded-lg text-sm font-semibold hover:bg-accent-600 transition"
+                      className="px-4 py-2 bg-accent-500 text-white text-sm font-semibold hover:bg-accent-600 transition"
                     >
                       Terminer
                     </button>
@@ -467,23 +467,23 @@ export default function AssignationsPage() {
       {/* Modal d&apos;assignation */}
       <AnimatePresence>
         {showModal && selectedCommande && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl"
+              className="bg-white w-full max-w-2xl max-h-[90vh] overflow-y-auto soft-shadow"
             >
               <div className="p-6 border-b border-chaux-200 flex justify-between items-center">
                 <h2 className="text-xl font-bold text-nuit-900">Assigner un livreur</h2>
-                <button onClick={() => setShowModal(false)} className="p-2 hover:bg-chaux-100 rounded-lg">
+                <button onClick={() => setShowModal(false)} className="p-2 hover:bg-chaux-100">
                   <X className="w-5 h-5 text-chaux-600" />
                 </button>
               </div>
 
               <div className="p-6">
                 {/* Résumé de la commande */}
-                <div className="bg-mangue-50 border border-mangue-200 rounded-xl p-4 mb-6">
+                <div className="bg-mangue-50 border border-mangue-200 p-4 mb-6">
                   <h3 className="font-bold text-mangue-700 mb-2">
                     Commande #{selectedCommande.id.slice(0, 6).toUpperCase()}
                   </h3>
@@ -500,7 +500,7 @@ export default function AssignationsPage() {
                   {livreurs.filter(l => l.statut === 'disponible').map((livreur) => (
                     <label
                       key={livreur.id}
-                      className={`flex items-center justify-between p-4 border-2 rounded-xl cursor-pointer transition ${
+                      className={`flex items-center justify-between p-4 border-2 cursor-pointer transition ${
                         selectedLivreur === livreur.id
                           ? 'border-nuit-500 bg-nuit-50'
                           : 'border-chaux-200 hover:border-chaux-300'

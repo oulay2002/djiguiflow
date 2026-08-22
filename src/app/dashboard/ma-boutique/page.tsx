@@ -268,7 +268,7 @@ export default function MaBoutiquePage() {
         <p className="text-chaux-600 mt-1">Ce que vos clients voient : nom, quartier, numéro et horaires.</p>
 
         {nbBoutiques > 1 && (
-          <p className="mt-3 inline-flex items-center gap-2 rounded-xl border border-mangue-200 bg-mangue-50 px-3 py-2 text-sm text-mangue-700">
+          <p className="mt-3 inline-flex items-center gap-2 border border-mangue-200 bg-mangue-50 px-3 py-2 text-sm text-mangue-700">
             <Store className="h-4 w-4 shrink-0" />
             Vous gérez {nbBoutiques} boutiques. Vous modifiez{' '}
             <span className="font-bold">{formData.nom || 'sans nom'}</span> — changez de boutique
@@ -281,7 +281,7 @@ export default function MaBoutiquePage() {
         <motion.div 
           initial={{ opacity: 0, y: -10 }} 
           animate={{ opacity: 1, y: 0 }}
-          className={`mb-6 p-4 rounded-lg flex items-center gap-3 ${
+          className={`mb-6 p-4 flex items-center gap-3 ${
             message.type === 'success'
               ? 'bg-accent-50 text-accent-700 border border-accent-200'
               : 'bg-bissap-50 text-bissap-700 border border-bissap-200'
@@ -295,14 +295,14 @@ export default function MaBoutiquePage() {
       <form onSubmit={handleSubmit} className="max-w-4xl">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-xl p-6 shadow-sm border border-chaux-200 sticky top-6">
+            <div className="bg-white p-6 soft-shadow border border-chaux-200 sticky top-6">
               <h2 className="font-bold text-nuit-900 mb-4 flex items-center gap-2">
                 <Upload className="w-5 h-5 text-nuit-500" />
                 Logo de la boutique
               </h2>
               
               <div className="flex flex-col items-center">
-                <div className="w-32 h-32 rounded-full bg-chaux-100 flex items-center justify-center overflow-hidden border-4 border-white shadow-md mb-4">
+                <div className="w-32 h-32 bg-chaux-100 flex items-center justify-center overflow-hidden border-4 border-white soft-shadow mb-4">
                   {logoPreview ? (
                     // eslint-disable-next-line @next/next/no-img-element -- aperçu data-URL / URL Supabase, next/image non configuré pour ces domaines
                     <img src={logoPreview} alt="Logo" className="w-full h-full object-cover" />
@@ -327,7 +327,7 @@ export default function MaBoutiquePage() {
           </div>
 
           <div className="lg:col-span-2 space-y-6">
-            <div className="bg-white rounded-xl p-6 shadow-sm border border-chaux-200">
+            <div className="bg-white p-6 soft-shadow border border-chaux-200">
               <h2 className="font-bold text-nuit-900 mb-6 flex items-center gap-2">
                 <FileText className="w-5 h-5 text-nuit-500" />
                 Informations générales
@@ -341,7 +341,7 @@ export default function MaBoutiquePage() {
                     required
                     value={formData.nom}
                     onChange={(e) => setFormData({...formData, nom: e.target.value})}
-                    className="w-full px-4 py-2.5 border border-chaux-200 rounded-lg focus:ring-2 focus:ring-nuit-200 focus:border-nuit-300"
+                    className="w-full px-4 py-2.5 border border-chaux-200 focus:ring-2 focus:ring-nuit-200 focus:border-nuit-300"
                     placeholder="Ex: Chez Aminata"
                   />
                 </div>
@@ -352,7 +352,7 @@ export default function MaBoutiquePage() {
                     rows={3}
                     value={formData.description}
                     onChange={(e) => setFormData({...formData, description: e.target.value})}
-                    className="w-full px-4 py-2.5 border border-chaux-200 rounded-lg focus:ring-2 focus:ring-nuit-200 focus:border-nuit-300"
+                    className="w-full px-4 py-2.5 border border-chaux-200 focus:ring-2 focus:ring-nuit-200 focus:border-nuit-300"
                     placeholder="Décrivez votre boutique..."
                   />
                 </div>
@@ -367,7 +367,7 @@ export default function MaBoutiquePage() {
                       required
                       value={formData.zone}
                       onChange={(e) => setFormData({...formData, zone: e.target.value})}
-                      className="w-full px-4 py-2.5 border border-chaux-200 rounded-lg focus:ring-2 focus:ring-nuit-200 focus:border-nuit-300"
+                      className="w-full px-4 py-2.5 border border-chaux-200 focus:ring-2 focus:ring-nuit-200 focus:border-nuit-300"
                       placeholder="Ex: Cocody - Angré"
                     />
                   </div>
@@ -379,7 +379,7 @@ export default function MaBoutiquePage() {
                     <select
                       value={formData.categorie}
                       onChange={(e) => setFormData({...formData, categorie: e.target.value})}
-                      className="w-full px-4 py-2.5 border border-chaux-200 rounded-lg focus:ring-2 focus:ring-nuit-200 focus:border-nuit-300 bg-white"
+                      className="w-full px-4 py-2.5 border border-chaux-200 focus:ring-2 focus:ring-nuit-200 focus:border-nuit-300 bg-white"
                     >
                       {/* LA CATEGORIE DU MARCHAND SURVIT MEME SI ELLE N'EST PAS
                           DANS LA LISTE.
@@ -408,7 +408,7 @@ export default function MaBoutiquePage() {
                     required
                     value={formData.telephone}
                     onChange={(e) => setFormData({...formData, telephone: e.target.value})}
-                    className="w-full px-4 py-2.5 border border-chaux-200 rounded-lg focus:ring-2 focus:ring-nuit-200 focus:border-nuit-300"
+                    className="w-full px-4 py-2.5 border border-chaux-200 focus:ring-2 focus:ring-nuit-200 focus:border-nuit-300"
                     placeholder="Ex: 0709123456"
                   />
                 </div>
@@ -420,7 +420,7 @@ export default function MaBoutiquePage() {
                 c'est l'etat de toutes celles deja en service, et les fermer
                 d'office ferait plus de degats que le probleme qu'on corrige.
                 Le marchand ouvre ses horaires quand il le decide. */}
-            <div className="bg-white rounded-2xl border border-chaux-200 p-6 space-y-4">
+            <div className="bg-white border border-chaux-200 p-6 space-y-4">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <h2 className="font-bold text-nuit-900">Horaires d’ouverture</h2>
@@ -440,7 +440,7 @@ export default function MaBoutiquePage() {
               </div>
 
               {horaires === null ? (
-                <p className="rounded-lg bg-chaux-50 px-4 py-3 text-sm text-chaux-600">
+                <p className=" bg-chaux-50 px-4 py-3 text-sm text-chaux-600">
                   Aucun horaire défini : votre boutique accepte les commandes <strong>à toute heure</strong>.
                 </p>
               ) : (
@@ -448,7 +448,7 @@ export default function MaBoutiquePage() {
                   {SEMAINE.map((jour) => {
                     const c = horaires[jour] ?? null;
                     return (
-                      <div key={jour} className="flex flex-wrap items-center gap-3 rounded-lg bg-chaux-50 px-3 py-2">
+                      <div key={jour} className="flex flex-wrap items-center gap-3 bg-chaux-50 px-3 py-2">
                         <label className="flex w-40 items-center gap-2 text-sm font-semibold text-nuit-800">
                           <input
                             type="checkbox"
@@ -467,14 +467,14 @@ export default function MaBoutiquePage() {
                               type="time"
                               value={c.ouvre}
                               onChange={(e) => majJour(jour, { ...c, ouvre: e.target.value })}
-                              className="rounded-lg border border-chaux-200 px-2 py-1"
+                              className=" border border-chaux-200 px-2 py-1"
                             />
                             <span className="text-chaux-600">à</span>
                             <input
                               type="time"
                               value={c.ferme}
                               onChange={(e) => majJour(jour, { ...c, ferme: e.target.value })}
-                              className="rounded-lg border border-chaux-200 px-2 py-1"
+                              className=" border border-chaux-200 px-2 py-1"
                             />
                             {/* Un maquis ouvert jusqu'a 2 h du matin est le cas
                                 courant, pas l'exception : on le dit plutot que

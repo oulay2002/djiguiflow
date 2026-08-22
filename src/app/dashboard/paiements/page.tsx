@@ -303,7 +303,7 @@ export default function PaiementsPage() {
             <h1 className="font-display text-3xl font-black tracking-tight text-nuit-900">Abonnements et facturation</h1>
             <p className="mt-2 text-chaux-600">Votre formule, et jusqu’à quand elle court.</p>
           </div>
-          <div className="hidden rounded-2xl border border-primary-200 bg-white/70 px-4 py-3 shadow-sm md:flex md:items-center md:gap-2">
+          <div className="hidden border border-primary-200 bg-white px-4 py-3 soft-shadow md:flex md:items-center md:gap-2">
             <ShieldCheck className="h-5 w-5 text-primary-700" />
             {/* Stripe n'a jamais encaisse un franc ici : il n'accepte pas les
                 entreprises etablies en Cote d'Ivoire, et les marchands d'ici
@@ -317,24 +317,24 @@ export default function PaiementsPage() {
         </div>
 
         {loading ? (
-          <div className="flex min-h-[16rem] items-center justify-center rounded-[2rem] border border-white/70 bg-white/75 shadow-[0_18px_45px_rgba(49,35,20,0.1)]">
+          <div className="flex min-h-[16rem] items-center justify-center border border-[var(--hairline)] bg-white soft-shadow">
             <Loader2 className="h-10 w-10 animate-spin text-primary-600" />
           </div>
         ) : (
           <>
             {error && (
-              <div className="mb-6 rounded-2xl border border-bissap-200 bg-bissap-50 px-5 py-4 text-sm font-medium text-bissap-700">
+              <div className="mb-6 border border-bissap-200 bg-bissap-50 px-5 py-4 text-sm font-medium text-bissap-700">
                 {error}
               </div>
             )}
 
             {notice && (
-              <div className="mb-6 rounded-2xl border border-mangue-200 bg-mangue-50 px-5 py-4 text-sm font-medium text-mangue-700">
+              <div className="mb-6 border border-mangue-200 bg-mangue-50 px-5 py-4 text-sm font-medium text-mangue-700">
                 {notice}
               </div>
             )}
 
-            <section className="mb-8 rounded-[2rem] border border-white/70 bg-white/75 p-6 shadow-[0_18px_45px_rgba(49,35,20,0.1)] backdrop-blur-xl">
+            <section className="mb-8 border border-[var(--hairline)] bg-white p-6 soft-shadow">
               <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <p className="text-sm font-semibold uppercase tracking-[0.14em] text-chaux-600">Votre abonnement</p>
@@ -343,7 +343,7 @@ export default function PaiementsPage() {
                   </h2>
                 </div>
                 {subscription && isSubscriptionActive && (
-                  <span className="inline-flex items-center gap-2 rounded-full bg-accent-100 px-3 py-1.5 text-sm font-semibold text-accent-700">
+                  <span className="inline-flex items-center gap-2 bg-accent-100 px-3 py-1.5 text-sm font-semibold text-accent-700">
                     <CheckCircle className="h-4 w-4" />
                     Actif
                   </span>
@@ -351,15 +351,15 @@ export default function PaiementsPage() {
               </div>
 
               <div className="grid gap-4 md:grid-cols-3">
-                <div className="rounded-2xl border border-[var(--hairline)] bg-chaux-50 p-4">
+                <div className=" border border-[var(--hairline)] bg-chaux-50 p-4">
                   <p className="text-xs uppercase tracking-[0.15em] text-chaux-600">Statut</p>
                   <p className="mt-2 text-lg font-bold capitalize text-nuit-900">{subscription?.status ?? '-'}</p>
                 </div>
-                <div className="rounded-2xl border border-[var(--hairline)] bg-chaux-50 p-4">
+                <div className=" border border-[var(--hairline)] bg-chaux-50 p-4">
                   <p className="text-xs uppercase tracking-[0.15em] text-chaux-600">Début de période</p>
                   <p className="mt-2 text-lg font-bold text-nuit-900">{formatDate(subscription?.current_period_start ?? null)}</p>
                 </div>
-                <div className="rounded-2xl border border-[var(--hairline)] bg-chaux-50 p-4">
+                <div className=" border border-[var(--hairline)] bg-chaux-50 p-4">
                   <p className="text-xs uppercase tracking-[0.15em] text-chaux-600">Fin de période</p>
                   <p className="mt-2 text-lg font-bold text-nuit-900">{formatDate(subscription?.current_period_end ?? null)}</p>
                 </div>
@@ -370,7 +370,7 @@ export default function PaiementsPage() {
                   type="button"
                   onClick={openBillingPortal}
                   disabled={loadingPortal}
-                  className="mt-5 inline-flex items-center gap-2 rounded-full border border-[var(--hairline)] bg-white px-5 py-2.5 text-sm font-semibold text-nuit-700 transition hover:border-primary-300 hover:text-primary-700 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="mt-5 inline-flex items-center gap-2 border border-[var(--hairline)] bg-white px-5 py-2.5 text-sm font-semibold text-nuit-700 transition hover:border-primary-300 hover:text-primary-700 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {loadingPortal ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
                   Gerer ma facturation
@@ -388,7 +388,7 @@ export default function PaiementsPage() {
                   periode s'achete d'avance. Plutot que de subir cette
                   contrainte, on la recompense — et le choix doit donc etre
                   visible avant les prix, puisqu'il les change. */}
-              <div className="mb-6 rounded-[1.5rem] border border-[var(--hairline)] bg-white/70 p-4">
+              <div className="mb-6 border border-[var(--hairline)] bg-white p-4">
                 <p className="text-sm font-semibold text-nuit-900">Durée à régler d’avance</p>
                 <p className="mt-1 text-sm text-chaux-600">
                   Plus la période est longue, moins le mois revient cher.
@@ -401,9 +401,9 @@ export default function PaiementsPage() {
                       type="button"
                       onClick={() => setMoisChoisi(duree.mois)}
                       aria-pressed={moisChoisi === duree.mois}
-                      className={`min-h-[2.75rem] rounded-full px-4 py-2 text-sm font-semibold transition ${
+                      className={`min-h-[2.75rem] px-4 py-2 text-sm font-semibold transition ${
                         moisChoisi === duree.mois
-                          ? 'bg-primary-600 text-white shadow-lg'
+                          ? 'bg-primary-600 text-white soft-shadow'
                           : 'border border-[var(--hairline)] bg-chaux-50 text-chaux-600 hover:bg-chaux-100'
                       }`}
                     >
@@ -427,14 +427,14 @@ export default function PaiementsPage() {
                   return (
                     <div
                       key={plan.key}
-                      className={`rounded-[2rem] border p-6 ${
+                      className={` border p-6 ${
                         plan.popular
-                          ? 'border-primary-500 bg-gradient-to-br from-primary-600 to-primary-800 text-white shadow-2xl shadow-primary-500/20'
-                          : 'border-[var(--hairline)] bg-white/85 shadow-lg shadow-nuit-100'
+                          ? 'border-primary-500 bg-nuit-900 text-white soft-shadow shadow-primary-500/20'
+                          : 'border-[var(--hairline)] bg-white soft-shadow'
                       } ${isHighlighted ? 'ring-2 ring-mangue-300' : ''}`}
                     >
                       {plan.popular && (
-                        <p className="mb-4 inline-flex rounded-full bg-white/15 px-3 py-1 text-xs font-bold uppercase tracking-[0.2em] text-white/90">
+                        <p className="mb-4 inline-flex bg-white/15 px-3 py-1 text-xs font-bold uppercase tracking-[0.2em] text-white/90">
                           Plus populaire
                         </p>
                       )}
@@ -484,7 +484,7 @@ export default function PaiementsPage() {
                         type="button"
                         onClick={() => startCheckout(plan.key)}
                         disabled={!plan.achetable || processingPlan !== null || isCurrentPlan}
-                        className={`mt-7 w-full rounded-full px-5 py-3 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${
+                        className={`mt-7 w-full px-5 py-3 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${
                           plan.popular
                             ? 'bg-white text-primary-700 hover:bg-primary-50'
                             : 'bg-primary-600 text-white hover:bg-primary-700'
