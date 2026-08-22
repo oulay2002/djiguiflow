@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { ArrowRight, MapPin, Search } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { ligneConfiance } from '@/lib/paliers';
 
 /**
  * La vitrine des marchands, en bons de commande.
@@ -57,28 +58,6 @@ const TRIS = [
 ] as const;
 
 type Tri = (typeof TRIS)[number]['cle'];
-
-/**
- * Un nombre sans son unite ne veut rien dire ; avec, il se passe d'etoile.
- *
- * LE COMPTE EXACT N'ARRIVE PLUS JUSQU'ICI, et c'est voulu. `vitrine_boutiques()`
- * rend un PALIER : ce qu'un client cherche est « cette boutique livre
- * vraiment », pas « sept plutot que douze ». La precision, elle, ne servait
- * qu'a un concurrent qui releve le chiffre chaque jour et en tire un taux de
- * croissance. Arrondir ici aurait laisse le nombre exact voyager jusqu'au
- * navigateur, lisible dans l'onglet reseau.
- *
- * LE PREMIER PALIER NE PORTE AUCUN CHIFFRE. « 3 commandes livrees » se lit plus
- * mal que « Nouvelle boutique » : le nombre qui rassure le leader dessert le
- * nouveau, et une plateforme qui vit de l'arrivee de marchands ne peut pas
- * publier une mesure qui punit les arrivants.
- */
-function ligneConfiance(b: Boutique): string {
-  if (b.avis > 0) return `${b.avis} avis`;
-  if (b.palier >= 10) return `Plus de ${b.palier} commandes livrées`;
-  if (b.palier > 0) return 'Premières commandes livrées';
-  return 'Nouvelle boutique';
-}
 
 export default function VitrinePage() {
   const [recherche, setRecherche] = useState('');
