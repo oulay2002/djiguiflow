@@ -467,7 +467,12 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
   }
 
   // ---- 4. Demande de confirmation au client (anti-retours)
-  const confUrl = process.env.N8N_CONFIRMATION_URL;
+  // Meme raison qu'au-dessus, et il a fallu le constater : la premiere version
+  // du drapeau ne taisait QUE le dispatch. Le banc multi-marchand declenchait
+  // donc encore trois executions n8n — demande de confirmation au client et
+  // alerte au marchand. Un drapeau qui ne couvre qu'une sortie sur deux ne
+  // protege de rien.
+  const confUrl = boutiqueEssai ? null : process.env.N8N_CONFIRMATION_URL;
   if (confUrl) {
     try {
       await fetch(confUrl, {
