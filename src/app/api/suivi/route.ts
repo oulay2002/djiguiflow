@@ -1,10 +1,12 @@
 import {
+  PLAFOND_PREUVES_PAR_COMMANDE,
   ageEnHeures,
   jetonRefuse,
   journaliserAccesSansJeton,
   verdictJeton,
+  verdictTelephone,
 } from '@/lib/jetonSuivi';
-import { adresseAppelante, rafaleDepassee } from '@/lib/limiteur';
+import { adresseAppelante, plafondJournalierDepasse, rafaleDepassee } from '@/lib/limiteur';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import { resoudreMarchand } from '@/lib/marchands';
 
@@ -95,7 +97,8 @@ export async function GET(req: Request) {
   let requete = sb
     .from('commandes')
     .select(
-      'reference, jeton_suivi, client_nom, client_adresse, total, created_at, nom_livreur, statut_livraison,' +
+      'reference, jeton_suivi, client_telephone, client_nom, client_adresse, total, created_at,' +
+        ' nom_livreur, statut_livraison,' +
         ' frais_livraison,' +
         ' heure_prise_en_charge, heure_livraison, boutique_id,' +
         ' commande_items(nom_produit, quantite, prix_unitaire)',
@@ -113,7 +116,7 @@ export async function GET(req: Request) {
   if (!data) return Response.json({ error: 'Commande introuvable' }, { status: 404 });
 
   const c = data as unknown as {
-    reference: string; jeton_suivi: string | null;
+    reference: string; jeton_suivi: string | null; client_telephone: string | null;
     client_nom: string | null; client_adresse: string | null;
     total: number | null; created_at: string | null; nom_livreur: string | null;
     frais_livraison: number | null;
@@ -132,11 +135,52 @@ export async function GET(req: Request) {
   // Un refus rend 404, comme une commande introuvable : distinguer les deux
   // confirmerait a un enumerateur que la reference existe.
   const verdict = verdictJeton(searchParams.get('t'), c.jeton_suivi);
-  if (jetonRefuse(verdict)) {
-    console.error(`Suivi — jeton refuse (${verdict}) depuis ${appelant}.`);
+
+  // ---- LA SECONDE PREUVE, pour qui a perdu son lien.
+  //
+  // Le client peut taper sa reference a la main : ce chemin n'a pas de jeton,
+  // et la phase 4 le refuserait. Or c'est justement celui qui a perdu son
+  // message WhatsApp, donc celui qui a le plus besoin de suivre sa commande.
+  // Les quatre derniers chiffres de SON numero le laissent passer.
+  //
+  // Quatre chiffres ne sont pas un secret : ce sont 10 000 possibilites. Ce
+  // qui les rend tenables, c'est le plafond PAR COMMANDE ci-dessous — dix
+  // essais par jour, soit mille jours pour tout balayer. Le compteur porte la
+  // commande et non l'appelant : une attaque repartie sur cent adresses ne
+  // gagne rien.
+  const quatreChiffres = searchParams.get('tel4');
+  const verdictSecondaire = verdictTelephone(quatreChiffres, c.client_telephone);
+
+  if (verdictSecondaire !== 'absent') {
+    const plafond = await plafondJournalierDepasse(
+      `preuve:${c.reference}`,
+      PLAFOND_PREUVES_PAR_COMMANDE,
+    );
+    if (plafond.depasse) {
+      console.error(
+        `Suivi — plafond de preuves atteint sur une commande, depuis ${appelant}.`,
+      );
+      // 404 comme partout ailleurs : dire « trop d'essais » confirmerait a
+      // celui qui devine qu'il tape sur une vraie commande.
+      return Response.json({ error: 'Commande introuvable' }, { status: 404 });
+    }
+    // Le compteur est consomme meme quand la preuve est JUSTE : sinon un
+    // attaquant essaierait a l'infini tant qu'il se trompe, et le plafond ne
+    // bornerait rien.
+    if (verdictSecondaire === 'invalide') {
+      console.error(`Suivi — seconde preuve refusee depuis ${appelant}.`);
+    }
+  }
+
+  // L'une OU l'autre suffit. Un jeton juste rend la seconde preuve inutile.
+  const passe = verdict === 'ok' || verdictSecondaire === 'ok';
+
+  if (!passe && (jetonRefuse(verdict) || verdictSecondaire === 'invalide')) {
+    console.error(`Suivi — acces refuse (jeton=${verdict}) depuis ${appelant}.`);
     return Response.json({ error: 'Commande introuvable' }, { status: 404 });
   }
-  if (verdict === 'absent') {
+
+  if (!passe) {
     journaliserAccesSansJeton({
       route: 'suivi',
       appelant,

@@ -74,17 +74,24 @@ function Suivre() {
   const jetonUrl = (params.get('t') || '').trim();
 
   const [ref, setRef] = useState(refUrl);
+  /**
+   * Les quatre derniers chiffres du telephone, pour qui tape sa reference a la
+   * main. Le lien recu porte un jeton et n'en a pas besoin ; ce champ ne sert
+   * qu'a celui qui a perdu son message.
+   */
+  const [tel4, setTel4] = useState('');
   const [suivi, setSuivi] = useState<Suivi | null>(null);
   const [erreur, setErreur] = useState('');
   const [chargement, setChargement] = useState(false);
 
-  const charger = useCallback(async (r: string, b: string, jeton = '') => {
+  const charger = useCallback(async (r: string, b: string, jeton = '', chiffres = '') => {
     setChargement(true);
     setErreur('');
     try {
       const qs = new URLSearchParams({ ref: r.trim() });
       if (b) qs.set('boutique_id', b);
       if (jeton) qs.set('t', jeton);
+      if (chiffres) qs.set('tel4', chiffres);
       const res = await fetch(`/api/suivi?${qs.toString()}`);
       if (res.ok) {
         setSuivi(await res.json());
@@ -184,8 +191,8 @@ function Suivre() {
             Où en est ma commande ?
           </h1>
           <p className="mt-3 text-sm text-chaux-200">
-            Entrez la référence reçue dans votre message de confirmation. La page se met à jour
-            toute seule.
+            Entrez la référence reçue dans votre message de confirmation, puis les quatre
+            derniers chiffres de votre numéro. La page se met à jour toute seule.
           </p>
 
           <div className="mt-7 flex gap-2">
@@ -196,11 +203,34 @@ function Suivre() {
                 placeholder="ZH-1234567890-…"
                 value={ref}
                 onChange={(e) => setRef(e.target.value.toUpperCase())}
-                onKeyDown={(e) => e.key === 'Enter' && void charger(ref, boutique)}
+                onKeyDown={(e) => e.key === 'Enter' && void charger(ref, boutique, '', tel4)}
               />
             </label>
+
+            {/* LA SECONDE PREUVE.
+                Une reference se devine — la base porte des compteurs
+                sequentiels et des formes batie sur le telephone du client. Le
+                lien recu par le client porte un jeton ; celui qui tape sa
+                reference a la main n'en a pas, et ces quatre chiffres tiennent
+                sa place. Ce ne sont pas quatre chiffres secrets : c'est un
+                obstacle, et il ne tient que parce que le serveur borne les
+                essais a dix par jour et par commande. */}
+            <label className="w-28">
+              <span className="sr-only">Quatre derniers chiffres de votre numéro</span>
+              <input
+                className="w-full border border-chaux-50/25 bg-nuit-800/70 px-4 py-3 text-center font-mono text-sm tracking-[0.3em] text-chaux-50 placeholder:tracking-[0.3em] placeholder:text-chaux-400 focus:border-mangue-300 focus:outline-none"
+                placeholder="1234"
+                inputMode="numeric"
+                autoComplete="off"
+                maxLength={4}
+                value={tel4}
+                onChange={(e) => setTel4(e.target.value.replace(/\D/g, '').slice(0, 4))}
+                onKeyDown={(e) => e.key === 'Enter' && void charger(ref, boutique, '', tel4)}
+              />
+            </label>
+
             <button
-              onClick={() => void charger(ref, boutique)}
+              onClick={() => void charger(ref, boutique, '', tel4)}
               disabled={chargement || !ref}
               className={classesBouton('action', 'md', 'carree')}
             >
