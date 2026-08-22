@@ -1,3 +1,9 @@
+import {
+  ageEnHeures,
+  jetonRefuse,
+  journaliserAccesSansJeton,
+  verdictJeton,
+} from '@/lib/jetonSuivi';
 import { adresseAppelante, rafaleDepassee } from '@/lib/limiteur';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import { resoudreMarchand } from '@/lib/marchands';
@@ -89,7 +95,7 @@ export async function GET(req: Request) {
   let requete = sb
     .from('commandes')
     .select(
-      'reference, client_nom, client_adresse, total, created_at, nom_livreur, statut_livraison,' +
+      'reference, jeton_suivi, client_nom, client_adresse, total, created_at, nom_livreur, statut_livraison,' +
         ' frais_livraison,' +
         ' heure_prise_en_charge, heure_livraison, boutique_id,' +
         ' commande_items(nom_produit, quantite, prix_unitaire)',
@@ -107,13 +113,36 @@ export async function GET(req: Request) {
   if (!data) return Response.json({ error: 'Commande introuvable' }, { status: 404 });
 
   const c = data as unknown as {
-    reference: string; client_nom: string | null; client_adresse: string | null;
+    reference: string; jeton_suivi: string | null;
+    client_nom: string | null; client_adresse: string | null;
     total: number | null; created_at: string | null; nom_livreur: string | null;
     frais_livraison: number | null;
     statut_livraison: string | null; heure_prise_en_charge: string | null;
     heure_livraison: string | null; boutique_id: string;
     commande_items: LigneItem[] | null;
   };
+
+  // ---- LE JETON. La reference designe, le jeton PROUVE.
+  //
+  // Un jeton faux est toujours refuse — le tolerer rendrait le jeton decoratif.
+  // Un jeton absent est encore tolere (phase 3) mais COMPTE : des clients ont
+  // en ce moment des liens sans jeton pour des commandes en cours, et l'exiger
+  // aujourd'hui casserait leur suivi.
+  //
+  // Un refus rend 404, comme une commande introuvable : distinguer les deux
+  // confirmerait a un enumerateur que la reference existe.
+  const verdict = verdictJeton(searchParams.get('t'), c.jeton_suivi);
+  if (jetonRefuse(verdict)) {
+    console.error(`Suivi — jeton refuse (${verdict}) depuis ${appelant}.`);
+    return Response.json({ error: 'Commande introuvable' }, { status: 404 });
+  }
+  if (verdict === 'absent') {
+    journaliserAccesSansJeton({
+      route: 'suivi',
+      appelant,
+      ageHeures: ageEnHeures(c.created_at),
+    });
+  }
 
   // Le nom de l'enseigne se lit apres coup, sur la boutique que la commande
   // designe — et non l'inverse.
