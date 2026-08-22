@@ -39,7 +39,7 @@ export async function POST(req: Request) {
 
   const { data, error } = await sb
     .from('commandes')
-    .select('id, reference, client_nom, client_telephone, client_adresse, instructions, total, canal, chat_id, statut, statut_livraison, nom_livreur, frais_livraison, created_at')
+    .select('id, reference, jeton_suivi, client_nom, client_telephone, client_adresse, instructions, total, canal, chat_id, statut, statut_livraison, nom_livreur, frais_livraison, created_at')
     .eq('reference', reference)
     .maybeSingle();
 

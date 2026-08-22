@@ -311,6 +311,19 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
   if (!phone.startsWith('225')) phone = '225' + phone;
   const order_id = `${prefixeReference(m.id)}-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
 
+  /**
+   * Le jeton qui rend le lien de suivi indevinable.
+   *
+   * IL N'EST PAS FABRIQUE ICI. Un defaut de colonne le pose en base a chaque
+   * insertion, quel que soit le chemin — vitrine, assistante, n8n. On le RELIT
+   * donc apres l'ecriture plutot que de le calculer, pour qu'il n'existe qu'a
+   * un seul endroit et ne puisse pas diverger d'un chemin a l'autre.
+   *
+   * Il est rendu au navigateur : c'est celui du client qui vient de commander,
+   * et c'est lui qui construit son propre lien de suivi.
+   */
+  let jetonSuivi = '';
+
   // ---- 1. Supabase : c'est ici que la commande existe ou n'existe pas.
   if (sb) {
     if (!boutiqueUuid) {
@@ -343,7 +356,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
         canal: 'whatsapp',
         statut: 'en_attente',
       })
-      .select('id')
+      .select('id, jeton_suivi')
       .single();
 
     if (error || !creee) {
@@ -353,6 +366,8 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
         { status: 503 },
       );
     }
+
+    jetonSuivi = String((creee as { jeton_suivi?: string | null }).jeton_suivi ?? '');
 
     const { error: errArticles } = await sb.from('commande_items').insert(
       lignes.map((l) => ({
@@ -597,5 +612,9 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     }
   }
 
-  return Response.json({ ok: true, order_id });
+  // `jeton_suivi` accompagne la reference : sans lui, la vitrine ne saurait
+  // construire qu'un lien devinable. Vide quand Supabase etait injoignable — le
+  // lien reste alors valide, puisque les routes publiques tolerent encore
+  // l'absence de jeton (phase 3 du chantier).
+  return Response.json({ ok: true, order_id, jeton_suivi: jetonSuivi });
 }
