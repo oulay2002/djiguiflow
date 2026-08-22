@@ -1,0 +1,87 @@
+# Le filet qui manquait.
+#
+# Jusqu'ici, rien ne verifiait quoi que ce soit automatiquement : deux
+# workflows existaient, tous deux dedies a n8n. Le seul garde-fou etait un
+# hook `pre-push` local qui lance `tsc --noEmit` — contournable par
+# `--no-verify`, absent chez tout nouveau contributeur, et qui ne lance ni les
+# tests ni le build.
+#
+# Consequence concrete : les tests unitaires du depot ne tournaient que si
+# quelqu'un y pensait. Un filet qu'on doit se rappeler de tendre n'est pas un
+# filet.
+#
+# CE WORKFLOW NE TOUCHE A RIEN. Il lit, il compile, il teste. Aucun secret
+# n'est requis : les tests unitaires simulent les canaux, et le build de Next
+# n'a pas besoin des variables d'environnement de production pour verifier que
+# le code compile.
+name: Verification
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Une PR poussee trois fois de suite ne doit pas faire tourner trois fois la
+# meme verification : seule la derniere compte.
+concurrency:
+  group: verification-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verifier:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          # La version que la machine de developpement utilise. Verrouillee :
+          # une montee de version silencieuse de l'executeur ferait diverger la
+          # CI du poste, et c'est le genre d'ecart qu'on met une journee a
+          # comprendre.
+          node-version: '24'
+          cache: npm
+
+      # `npm ci` et non `npm install` : il installe exactement ce que le
+      # verrou decrit, et echoue si package.json et package-lock.json ont
+      # diverge. C'est une verification en soi.
+      - name: Installer les dependances
+        run: npm ci
+
+      - name: Types
+        run: npm run typecheck
+
+      # `continue-on-error` est volontaire et TEMPORAIRE. Le depot porte sept
+      # erreurs de lint preexistantes, sans rapport avec les changements en
+      # cours. Bloquer dessus des aujourd'hui rendrait la CI rouge en
+      # permanence, et une CI toujours rouge ne se lit plus. A retirer des que
+      # ces sept-la sont corrigees.
+      - name: Style
+        run: npm run lint
+        continue-on-error: true
+
+      - name: Tests unitaires
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+  # L'audit de dependances vit dans son propre job : une CVE publiee un matin
+  # ne doit pas bloquer une correction urgente l'apres-midi. Elle doit se voir,
+  # pas barrer la route.
+  dependances:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    continue-on-error: true
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - name: Vulnerabilites connues (production)
+        run: npm audit --omit=dev --audit-level=high
