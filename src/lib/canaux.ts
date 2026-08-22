@@ -148,6 +148,37 @@ export function messageDeBanc(canal: Canal, destinataire: string, message: strin
 }
 
 /**
+ * Par quel canal repondre a ce client, et a quelle adresse.
+ *
+ * ON REPOND PAR OU IL EST VENU. `canal: 'whatsapp'` etait ecrit en dur dans la
+ * route de statut. Mesure le 22 aout 2026 : huit commandes sur cinquante-sept
+ * venaient de Telegram, et leurs clients recevaient leur suivi par WhatsApp.
+ * Pour une boutique qui n'a QUE Telegram, on detenait le `chat_id` du client et
+ * le marchand avait son bot — et on tentait un canal qu'il n'a pas.
+ *
+ * SUR TELEGRAM, L'ADRESSE EST LE `chat_id`, PAS LE TELEPHONE. Les confondre
+ * enverrait un identifiant de conversation a un fournisseur WhatsApp. Deux
+ * concepts differents ne doivent pas partager un nom de variable.
+ *
+ * `app` REPOND EN WHATSAPP, et ce n'est pas un repli : le client de la vitrine
+ * n'a jamais parle a un bot, il a laisse un NUMERO. C'est la seule adresse
+ * qu'on ait de lui. Un `canal` vide vaut whatsapp pour la meme raison —
+ * deviner mieux que la commande ne sait serait inventer.
+ */
+export function canalDeReponse(params: {
+  canal: string | null | undefined;
+  chatId: string | number | null | undefined;
+  telephone: string | null | undefined;
+}): { canal: Canal; destinataire: string } {
+  const chat = String(params.chatId ?? '').trim();
+  const telegram = String(params.canal ?? '').trim().toLowerCase() === 'telegram' && chat !== '';
+
+  return telegram
+    ? { canal: 'telegram', destinataire: chat }
+    : { canal: 'whatsapp', destinataire: String(params.telephone ?? '').trim() };
+}
+
+/**
  * Ce destinataire est-il quelqu'un DE LA MAISON — le gerant ou les livreurs ?
  *
  * Sert a decider si le jeton de la PLATEFORME a le droit de porter ce message.

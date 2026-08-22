@@ -2,7 +2,7 @@ import { readSheet, readHeaders, updateCells } from '@/lib/googleSheets';
 import { exigerAccesMarchand } from '@/lib/dashboardAuth';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import type { Marchand } from '@/lib/marchands';
-import { envoyerMessage } from '@/lib/canaux';
+import { canalDeReponse, envoyerMessage } from '@/lib/canaux';
 
 /**
  * Avancement d'une commande par le marchand.
@@ -105,7 +105,7 @@ export async function POST(req: Request) {
   // ---- 1. Supabase : la commande avance ici, ou nulle part.
   const { data: commande, error: errLecture } = await sb
     .from('commandes')
-    .select('id, client_nom, client_telephone, client_adresse, chat_id')
+    .select('id, client_nom, client_telephone, client_adresse, chat_id, canal')
     .eq('boutique_id', m.boutiqueId)
     .eq('reference', reference)
     .maybeSingle();
@@ -145,10 +145,16 @@ export async function POST(req: Request) {
   // On passe desormais par le meme chemin sortant que tout le reste du
   // produit, sans detour par n8n : la boutique resout son propre jeton cote
   // serveur, et l'echec, lui, se voit.
-  let notif = 'none';
-  const phone = String(commande.client_telephone || commande.chat_id || '');
+  // La regle vit dans `canaux.ts`, avec son pourquoi et ses tests.
+  const { canal: canalClient, destinataire } = canalDeReponse({
+    canal: commande.canal,
+    chatId: commande.chat_id,
+    telephone: commande.client_telephone,
+  });
 
-  if (phone) {
+  let notif = 'none';
+
+  if (destinataire) {
     const nom = commande.client_nom || 'cher client';
     const adresse = commande.client_adresse || 'votre adresse';
     const messages: Record<string, string> = {
@@ -159,15 +165,15 @@ export async function POST(req: Request) {
 
     const envoi = await envoyerMessage({
       boutique: m.id,
-      canal: 'whatsapp',
-      destinataire: phone,
+      canal: canalClient,
+      destinataire,
       message: messages[action] || `Votre commande ${reference} avance bien.`,
     });
 
     if (envoi.ok) {
       notif = 'sent';
     } else {
-      notif = `refuse (${envoi.statut ?? '?'})`;
+      notif = `refuse ${canalClient} (${envoi.statut ?? '?'})`;
       console.error(`Notification client ${reference} — envoi refuse :`, envoi.raison);
     }
   }
