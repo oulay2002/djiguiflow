@@ -14,6 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      anomalies_signalees: {
+        Row: {
+          boutique: string | null
+          reference: string
+          signale_le: string
+          type: string
+        }
+        Insert: {
+          boutique?: string | null
+          reference: string
+          signale_le?: string
+          type: string
+        }
+        Update: {
+          boutique?: string | null
+          reference?: string
+          signale_le?: string
+          type?: string
+        }
+        Relationships: []
+      }
       boutiques: {
         Row: {
           actif: boolean
