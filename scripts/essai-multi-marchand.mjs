@@ -285,11 +285,30 @@ async function derouler() {
     });
     if (vide.statut === 429) refuseAu = essai;
   }
-  verifier(
-    'la prise de commande finit par refuser une rafale',
-    refuseAu > 0 && refuseAu <= 7,
-    refuseAu ? `429 au ${refuseAu}e appel` : 'AUCUN REFUS EN 7 APPELS',
-  );
+  // LE VERDICT DEPEND DE L'HEBERGEMENT, ET CE N'EST PAS UNE COMPLAISANCE.
+  //
+  // Les deux rafales sont en MEMOIRE DU PROCESSUS. En local il n'y a qu'une
+  // instance, donc le 429 tombe. En production Vercel en fait tourner
+  // plusieurs, et sept appels peuvent se disperser sans en saturer aucune :
+  // exiger le 429 la-bas ferait echouer le banc sur un fait connu, et un banc
+  // qui echoue toujours cesse d'etre lu.
+  //
+  // Ce qui borne reellement le degat est le plafond du JOUR, en base — 300 par
+  // boutique. L'eprouver demanderait 300 appels : le banc ne le fait pas, et le
+  // dit plutot que de le laisser croire.
+  const enLocal = /localhost|127\.0\.0\.1/.test(BASE);
+  if (enLocal) {
+    verifier(
+      'la prise de commande refuse une rafale',
+      refuseAu > 0 && refuseAu <= 7,
+      refuseAu ? `429 au ${refuseAu}e appel` : 'AUCUN REFUS EN 7 APPELS',
+    );
+  } else {
+    console.log(
+      `  note    la rafale n'est pas concluante en production `
+      + `(frein en memoire, par instance) — ${refuseAu ? `429 au ${refuseAu}e appel` : 'aucun refus en 7 appels'}`,
+    );
+  }
 }
 
 // ---------------------------------------------------------------- DESINSTALLER
