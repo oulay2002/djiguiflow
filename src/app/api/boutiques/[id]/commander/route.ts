@@ -3,6 +3,12 @@ import { getMarchand, prefixeReference, type Marchand } from '@/lib/marchands';
 import { resoudreBoutiqueUuid } from '@/lib/boutiques';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import { etatBoutique } from '@/lib/horaires';
+import {
+  adresseAppelante,
+  plafondJournalierDepasse,
+  rafaleDepassee,
+  secondesAvantMinuitAbidjan,
+} from '@/lib/limiteur';
 import { secretWebhookN8n } from '@/lib/secretN8n';
 
 /**
@@ -128,10 +134,102 @@ async function tariferPanier(
     .filter((l): l is LigneCommande => Boolean(l));
 }
 
+/**
+ * LES FREINS DE LA PRISE DE COMMANDE.
+ *
+ * CE POINT D'ENTREE EST PUBLIC ET IL ECRIT. Il insere dans `commandes`, dans
+ * `commande_items`, et il DECOMPTE LE STOCK. L'identifiant de boutique et les
+ * references produits sont tous deux publics — c'est la vitrine. Sans frein,
+ * une simple boucle vide le stock de n'importe quel marchand ; et comme le
+ * stock bloque la commande, sa vitrine refuse ensuite ses vrais clients.
+ *
+ * TROIS ETAGES, ET CHACUN A SA RAISON :
+ *
+ * 1. PAR APPELANT ET PAR BOUTIQUE. Un vrai client commande une fois, deux
+ *    s'il s'est trompe. Cinq en dix minutes depuis la meme adresse n'est plus
+ *    un client.
+ * 2. PAR BOUTIQUE, TOUTES ADRESSES CONFONDUES. C'est celui qui borne le
+ *    degat : meme reparti sur cent adresses, un vidage de stock ne peut pas
+ *    aller plus vite que vingt commandes par dix minutes, ce qui laisse au
+ *    marchand le temps de voir passer l'anomalie.
+ * 3. LE PLAFOND DU JOUR. Trois cents commandes par boutique et par jour. Le
+ *    forfait le plus large en couvre mille par MOIS : ce plafond ne peut donc
+ *    pas gener un marchand reel, il n'arrete qu'un abus.
+ *
+ * CE N'EST PAS UNE PROTECTION ANTI-BOT COMPLETE, et il ne faut pas le croire.
+ * Un attaquant reparti sur des centaines d'adresses reste capable de nuire
+ * plus lentement. La reponse propre a ce niveau-la est une protection de
+ * peripherie (Vercel BotID / pare-feu) ; ces freins-ci ferment la boucle
+ * triviale, celle qu'un seul poste suffit a lancer.
+ */
+const COMMANDES_PAR_APPELANT = 5;
+const COMMANDES_PAR_BOUTIQUE = 20;
+const FENETRE_COMMANDES_MS = 10 * 60_000;
+const COMMANDES_PAR_JOUR = 300;
+
+const TROP_DE_COMMANDES =
+  'Trop de commandes coup sur coup. Patientez quelques minutes avant de réessayer.';
+
 export async function POST(req: Request, ctx: { params: Promise<{ id: string }> }) {
   const { id } = await ctx.params;
   const m = await getMarchand(id);
   if (!m) return Response.json({ error: 'Marchand introuvable' }, { status: 404 });
+
+  // LES FREINS PASSENT AVANT TOUT LE RESTE : avant de lire le corps, avant
+  // d'interroger le catalogue, avant la moindre ecriture. Un appel refuse ne
+  // doit rien couter.
+  const appelant = adresseAppelante(req);
+
+  const rafaleAppelant = rafaleDepassee(
+    `commande:${m.id}:${appelant}`,
+    COMMANDES_PAR_APPELANT,
+    FENETRE_COMMANDES_MS,
+  );
+  if (rafaleAppelant.depassee) {
+    console.error(`Commande — rafale refusee pour « ${m.id} » depuis ${appelant}.`);
+    return Response.json(
+      { error: TROP_DE_COMMANDES },
+      { status: 429, headers: { 'Retry-After': String(rafaleAppelant.attendreSecondes) } },
+    );
+  }
+
+  const rafaleBoutique = rafaleDepassee(
+    `commande:${m.id}`,
+    COMMANDES_PAR_BOUTIQUE,
+    FENETRE_COMMANDES_MS,
+  );
+  if (rafaleBoutique.depassee) {
+    // Celui-ci est journalise en priorite : une boutique qui atteint ce seuil
+    // est soit en train de tres bien marcher, soit attaquee. Les deux valent
+    // qu'on le sache.
+    console.error(
+      `Commande — seuil de boutique atteint pour « ${m.id} » :`
+        + ` plus de ${COMMANDES_PAR_BOUTIQUE} commandes en ${FENETRE_COMMANDES_MS / 60_000} min.`,
+    );
+    return Response.json(
+      { error: TROP_DE_COMMANDES },
+      { status: 429, headers: { 'Retry-After': String(rafaleBoutique.attendreSecondes) } },
+    );
+  }
+
+  // Le plafond du jour est en base, donc partage entre les instances Vercel :
+  // un abus reparti sur plusieurs instances ne passe que celui-la. Quand le
+  // compteur est injoignable, il refuse — et cela ne coute rien ici, puisque
+  // sans base la commande ne pourrait de toute facon pas etre enregistree.
+  const plafondJour = await plafondJournalierDepasse(`commande:${m.id}`, COMMANDES_PAR_JOUR);
+  if (plafondJour.depasse) {
+    console.error(
+      `Commande — plafond du jour atteint pour « ${m.id} » (${plafondJour.valeur ?? '?'}`
+        + `/${COMMANDES_PAR_JOUR}).`,
+    );
+    return Response.json(
+      { error: TROP_DE_COMMANDES },
+      {
+        status: plafondJour.indisponible ? 503 : 429,
+        headers: { 'Retry-After': String(secondesAvantMinuitAbidjan()) },
+      },
+    );
+  }
 
   // Un corps tronque ou un content-type inattendu ne doit pas rendre un 500 :
   // c'est un client qui a mal envoye, pas le serveur qui a casse.
