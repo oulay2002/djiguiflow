@@ -91,7 +91,7 @@ function LoginPageContent() {
   };
 
   return (
-    <main className="min-h-screen bg-[var(--background)]">
+    <main id="contenu" className="min-h-screen bg-[var(--background)]">
       {/* La meme composition que la vitrine et le carnet de commandes : un
           bandeau indigo, une couture, et le papier en dessous. C'est a ca que
           le marchand doit reconnaitre qu'il est chez lui. */}

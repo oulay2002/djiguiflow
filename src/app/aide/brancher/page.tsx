@@ -293,7 +293,7 @@ const SURPRISES: [string, string][] = [
 
 export default function GuideBrancherPage() {
   return (
-    <main className="min-h-screen bg-chaux-50">
+    <main id="contenu" className="min-h-screen bg-chaux-50">
       <div className="mx-auto flex max-w-3xl flex-col gap-16 px-5 py-16 sm:gap-20 sm:px-6">
 
         <header className="flex flex-col gap-5">

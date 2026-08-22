@@ -119,16 +119,20 @@ export default function Page() {
   return (
     <div className="min-h-screen bg-[var(--background)] p-4 lg:p-6">
       <div className="mx-auto max-w-[1600px]">
-        <main className="min-w-0 space-y-6">
+        <main id="contenu" className="min-w-0 space-y-6">
           <header className="flex flex-col gap-4 border border-[var(--hairline)] bg-white p-5 soft-shadow md:flex-row md:items-center md:justify-between">
             <div>
               <p className="text-sm uppercase tracking-[0.2em] text-chaux-600">Votre boutique aujourd’hui</p>
               <h1 className="mt-2 font-display text-3xl font-black">Bonjour, {nomBoutique}</h1>
             </div>
             <div className="flex items-center gap-3">
-              <button className="flex h-11 w-11 items-center justify-center border border-[var(--hairline)] bg-chaux-50 text-chaux-600 hover:text-primary-700">
-                <Bell className="h-5 w-5" />
-              </button>
+              <Link
+                href="/dashboard/reglages/notifications"
+                aria-label="Reglages des notifications"
+                className="flex h-11 w-11 items-center justify-center border border-[var(--hairline)] bg-chaux-50 text-chaux-600 hover:text-primary-700"
+              >
+                <Bell aria-hidden className="h-5 w-5" />
+              </Link>
               <Link href="/boutiques" className="inline-flex items-center gap-2 bg-nuit-900 px-4 py-2.5 text-sm font-semibold text-white soft-shadow hover:bg-nuit-800">
                 Voir ma boutique <ArrowRight className="h-4 w-4" />
               </Link>

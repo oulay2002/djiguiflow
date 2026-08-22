@@ -117,7 +117,7 @@ function Eyebrow({ children, className = '' }: { children: ReactNode; className?
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-chaux-100">
+    <main id="contenu" className="min-h-screen bg-chaux-100">
       <nav className="fixed inset-x-0 top-0 z-50 border-b border-white/10 bg-nuit-900/90">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-6 px-4 py-3.5 sm:px-6">
           <Link href="/" className="flex items-center gap-2.5">

@@ -366,9 +366,6 @@ export default function LivreursPage() {
                         </div>
                       </div>
                     </div>
-                    <button className="p-1 hover:bg-chaux-100">
-                      <MoreVertical className="w-5 h-5 text-chaux-400" />
-                    </button>
                   </div>
 
                   <div className="space-y-2 mb-4">
