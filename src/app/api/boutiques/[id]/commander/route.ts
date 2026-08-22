@@ -5,6 +5,7 @@ import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import { etatBoutique } from '@/lib/horaires';
 import {
   adresseAppelante,
+  fenetreDepassee,
   plafondJournalierDepasse,
   rafaleDepassee,
   secondesAvantMinuitAbidjan,
@@ -156,19 +157,16 @@ async function tariferPanier(
  *    forfait le plus large en couvre mille par MOIS : ce plafond ne peut donc
  *    pas gener un marchand reel, il n'arrete qu'un abus.
  *
- * DEUX DE CES TROIS ETAGES NE TIENNENT PAS A L'ECHELLE, et il faut le savoir.
- * Les deux rafales sont EN MEMOIRE DU PROCESSUS : Vercel repartit les appels
- * sur plusieurs instances, et sept appels de suite peuvent n'en saturer
- * aucune. Constate le 22 aout 2026 par le banc multi-marchand, qui declenche
- * le 429 en local et ne le declenche pas en production.
+ * LE DEUXIEME ETAGE VIT EN BASE, ET C'EST CE QUI LE REND UTILE. Il l'a
+ * longtemps compte en memoire du processus : le 22 aout 2026, le banc
+ * multi-marchand a envoye sept commandes de suite en production sans obtenir
+ * un seul refus, puis a obtenu le refus au troisieme appel au passage suivant.
+ * Vercel repartit les appels sur plusieurs instances, et aucune n'atteignait
+ * son seuil. Il passe donc par `reserver_fenetre`, partage entre toutes.
  *
- * CE QUI BORNE REELLEMENT LE DEGAT EST DONC LE PLAFOND DU JOUR, lui seul
- * partage puisqu'il vit en base. Les rafales restent utiles — elles arretent
- * la boucle depuis un poste, qui est le cas courant — mais ce sont des
- * planchers, pas des plafonds, exactement comme `limiteur.ts` le dit.
- *
- * La correction de fond serait un compteur en base sur une fenetre courte.
- * Elle n'existe pas encore.
+ * Le premier etage reste en memoire, a dessein : il arrete la boucle depuis un
+ * poste — le cas courant — sans aucun aller-retour vers la base. C'est un
+ * plancher gratuit, pas un plafond, exactement comme `limiteur.ts` le dit.
  *
  * CE N'EST PAS UNE PROTECTION ANTI-BOT COMPLETE, et il ne faut pas le croire.
  * Un attaquant reparti sur des centaines d'adresses reste capable de nuire
@@ -207,10 +205,10 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     );
   }
 
-  const rafaleBoutique = rafaleDepassee(
+  const rafaleBoutique = await fenetreDepassee(
     `commande:${m.id}`,
     COMMANDES_PAR_BOUTIQUE,
-    FENETRE_COMMANDES_MS,
+    FENETRE_COMMANDES_MS / 1000,
   );
   if (rafaleBoutique.depassee) {
     // Celui-ci est journalise en priorite : une boutique qui atteint ce seuil
@@ -222,7 +220,12 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     );
     return Response.json(
       { error: TROP_DE_COMMANDES },
-      { status: 429, headers: { 'Retry-After': String(rafaleBoutique.attendreSecondes) } },
+      {
+        // 503 quand le compteur est injoignable : ce n'est pas un refus de
+        // quota, c'est une panne, et l'appelant doit pouvoir les distinguer.
+        status: rafaleBoutique.indisponible ? 503 : 429,
+        headers: { 'Retry-After': String(FENETRE_COMMANDES_MS / 1000) },
+      },
     );
   }
 

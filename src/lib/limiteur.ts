@@ -141,3 +141,56 @@ export function secondesAvantMinuitAbidjan(maintenant = new Date()): number {
   );
   return Math.max(1, Math.ceil((finDeJournee - maintenant.getTime()) / 1000));
 }
+
+/**
+ * Le meme frein, mais PARTAGE entre les instances.
+ *
+ * POURQUOI IL EXISTE. `rafaleDepassee` ci-dessus compte en memoire du
+ * processus. Le 22 aout 2026, le banc multi-marchand a envoye sept commandes de
+ * suite en production sans obtenir un seul refus, puis a obtenu le refus au
+ * troisieme appel au passage suivant : Vercel repartit les appels sur plusieurs
+ * instances, et aucune n'atteignait son seuil. Le frein en memoire n'est donc
+ * pas casse, il est NON CONCLUANT.
+ *
+ * Il garde sa place : il arrete la boucle depuis un poste — le cas courant —
+ * sans aucun aller-retour vers la base. Mais il ne peut pas etre le seul.
+ *
+ * QUAND LE COMPTEUR EST INJOIGNABLE, ON REFUSE. C'est le meme choix que
+ * `plafondJournalierDepasse`, et il ne coute rien la ou il est appele : sans
+ * base, la commande ne pourrait de toute facon pas etre enregistree. Un frein
+ * qui s'ouvre quand il tombe en panne n'est pas un frein.
+ */
+export async function fenetreDepassee(
+  cle: string,
+  plafond: number,
+  secondes = 600,
+): Promise<{ depassee: boolean; valeur: number | null; indisponible: boolean }> {
+  const sb = getSupabaseAdmin();
+  if (!sb) {
+    console.error(`Limiteur ${cle} — base indisponible : appel refusé faute de pouvoir compter.`);
+    return { depassee: true, valeur: null, indisponible: true };
+  }
+
+  // `supabase.rpc()` n'est pas une promesse au sens habituel : il n'a pas de
+  // `.catch`. On l'attend et on lit `error`, sinon un echec passerait inapercu.
+  const { data, error } = await sb.rpc('reserver_fenetre', {
+    p_cle: cle,
+    p_plafond: plafond,
+    p_secondes: secondes,
+  });
+
+  if (error) {
+    console.error(`Limiteur ${cle} — comptage de fenêtre impossible : ${error.message}`);
+    return { depassee: true, valeur: null, indisponible: true };
+  }
+
+  const ligne = Array.isArray(data) ? data[0] : data;
+  const valeur = typeof ligne?.valeur === 'number' ? ligne.valeur : null;
+  const autorise = ligne?.autorise === true;
+
+  if (!autorise) {
+    console.error(`Limiteur ${cle} — fenêtre saturée (${valeur ?? '?'} / ${plafond}).`);
+  }
+
+  return { depassee: !autorise, valeur, indisponible: false };
+}

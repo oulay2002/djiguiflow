@@ -276,8 +276,13 @@ async function derouler() {
   //
   // On envoie des paniers VIDES : le frein passe avant la lecture du corps, on
   // eprouve donc le plafond sans consommer un seul article.
+  // TRENTE APPELS, ET NON SEPT. Sept n'eprouvaient que le frein par appelant,
+  // celui qui compte EN MEMOIRE : en production il se disperse sur plusieurs
+  // instances et le banc ne pouvait rien affirmer. Trente depassent le frein
+  // PAR BOUTIQUE — vingt par dix minutes — qui vit desormais en base et vaut
+  // donc pour toutes les instances a la fois.
   let refuseAu = 0;
-  for (let essai = 1; essai <= 7 && refuseAu === 0; essai += 1) {
+  for (let essai = 1; essai <= 30 && refuseAu === 0; essai += 1) {
     const vide = await json(`/api/boutiques/${SLUG}/commander`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -285,30 +290,21 @@ async function derouler() {
     });
     if (vide.statut === 429) refuseAu = essai;
   }
-  // LE VERDICT DEPEND DE L'HEBERGEMENT, ET CE N'EST PAS UNE COMPLAISANCE.
+  // LE VERDICT VAUT PARTOUT DESORMAIS, et c'est ce qui a change.
   //
-  // Les deux rafales sont en MEMOIRE DU PROCESSUS. En local il n'y a qu'une
-  // instance, donc le 429 tombe. En production Vercel en fait tourner
-  // plusieurs, et sept appels peuvent se disperser sans en saturer aucune :
-  // exiger le 429 la-bas ferait echouer le banc sur un fait connu, et un banc
-  // qui echoue toujours cesse d'etre lu.
+  // Il ne valait qu'en local tant que le frein comptait en memoire du
+  // processus : Vercel repartit les appels sur plusieurs instances, et le banc
+  // obtenait un refus une fois sur deux. Le frein par boutique vit maintenant
+  // en base — voir `reserver_fenetre` — donc il compte pareil pour toutes les
+  // instances, et le banc peut de nouveau AFFIRMER en production.
   //
-  // Ce qui borne reellement le degat est le plafond du JOUR, en base — 300 par
-  // boutique. L'eprouver demanderait 300 appels : le banc ne le fait pas, et le
-  // dit plutot que de le laisser croire.
-  const enLocal = /localhost|127\.0\.0\.1/.test(BASE);
-  if (enLocal) {
-    verifier(
-      'la prise de commande refuse une rafale',
-      refuseAu > 0 && refuseAu <= 7,
-      refuseAu ? `429 au ${refuseAu}e appel` : 'AUCUN REFUS EN 7 APPELS',
-    );
-  } else {
-    console.log(
-      `  note    la rafale n'est pas concluante en production `
-      + `(frein en memoire, par instance) — ${refuseAu ? `429 au ${refuseAu}e appel` : 'aucun refus en 7 appels'}`,
-    );
-  }
+  // Il n'eprouve toujours pas le plafond du JOUR, qui demanderait 300 appels :
+  // il le dit plutot que de le laisser croire.
+  verifier(
+    'la prise de commande refuse une rafale, meme repartie',
+    refuseAu > 0 && refuseAu <= 30,
+    refuseAu ? `429 au ${refuseAu}e appel` : 'AUCUN REFUS EN 30 APPELS',
+  );
 }
 
 // ---------------------------------------------------------------- DESINSTALLER
