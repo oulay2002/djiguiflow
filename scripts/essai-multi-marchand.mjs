@@ -177,6 +177,63 @@ async function derouler() {
     .maybeSingle();
   verifier('le stock a ete decompte', Number(apres?.stock) === 3, `${apres?.stock} restant`);
 
+  // ---- 6 bis. LE JETON DE SUIVI.
+  //
+  // Une reference de commande se devine : la base porte des compteurs
+  // sequentiels et des formes batie sur le telephone du client. Le jeton est
+  // ce qui prouve qu'un lien appartient bien a celui qui l'ouvre — sans lui,
+  // deviner suffisait a lire l'adresse d'un client et a ANNULER sa commande.
+  //
+  // Ce banc le verifie par les VRAIES routes, la ou les tests unitaires
+  // travaillent sur des doublures : c'est ici qu'on voit si le jeton traverse
+  // reellement toute la chaine.
+  const jeton = String(commande.corps?.jeton_suivi ?? '');
+  verifier(
+    'la commande rend un jeton de suivi',
+    /^[0-9a-f]{32}$/.test(jeton),
+    jeton ? `${jeton.slice(0, 8)}… (${jeton.length} caracteres)` : 'ABSENT',
+  );
+
+  const bonJeton = await json(
+    `/api/suivi?ref=${encodeURIComponent(reference)}&t=${encodeURIComponent(jeton)}`,
+  );
+  verifier('le suivi accepte le bon jeton', bonJeton.statut === 200, `HTTP ${bonJeton.statut}`);
+  verifier(
+    'et rend bien CETTE commande',
+    bonJeton.corps?.order_id === reference,
+    String(bonJeton.corps?.order_id ?? ''),
+  );
+
+  // Le jeton ne doit jamais revenir au navigateur : le rendre reviendrait a le
+  // distribuer a qui vient de le deviner.
+  // `''.includes('')` vaut TOUJOURS vrai : sans la garde sur un jeton vide,
+  // ce controle s'inverse et accuse une fuite là où il n'y a rien a fuir.
+  // Constate au premier passage du banc.
+  verifier(
+    'le suivi ne renvoie JAMAIS le jeton',
+    jeton ? !JSON.stringify(bonJeton.corps ?? {}).includes(jeton) : false,
+    jeton ? '' : 'indecidable : aucun jeton rendu',
+  );
+
+  const fauxJeton = await json(
+    `/api/suivi?ref=${encodeURIComponent(reference)}&t=${'f'.repeat(32)}`,
+  );
+  verifier('le suivi REFUSE un jeton faux', fauxJeton.statut === 404, `HTTP ${fauxJeton.statut}`);
+  verifier(
+    'et ne dit pas que la reference existe',
+    !JSON.stringify(fauxJeton.corps ?? {}).includes('Client du banc'),
+  );
+
+  // PHASE 3 : l'absence est encore toleree, parce que des clients ont des liens
+  // sans jeton dans leur WhatsApp. Ce controle devra passer a 404 le jour ou
+  // `JETON_EXIGE` passera a true — il est ecrit pour qu'on s'en apercoive.
+  const sansJeton = await json(`/api/suivi?ref=${encodeURIComponent(reference)}`);
+  verifier(
+    'l’absence de jeton est encore toleree (phase 3)',
+    sansJeton.statut === 200,
+    `HTTP ${sansJeton.statut} — passera a 404 en phase 4`,
+  );
+
   // ---- 7. LE VOISIN N'A PAS BOUGE.
   //
   // Le controle d'isolement qui compte vraiment : une commande chez l'un ne
@@ -207,6 +264,32 @@ async function derouler() {
   // ---- 9. Le stock n'est pas public.
   const stock = await json(`/api/boutiques/${SLUG}/stock`);
   verifier('le stock exige le secret', stock.statut === 401, `HTTP ${stock.statut}`);
+
+  // IL VIENT EN DERNIER, ET C'EST OBLIGATOIRE. Ce controle epuise volontairement
+  // le quota de l'appelant sur cette boutique. Place plus haut, il ferait
+  // repondre 429 au test de pause, qui attend un 409 — le banc accuserait alors
+  // une regression qui n'existe pas.
+  // ---- 10. LE FREIN DE LA PRISE DE COMMANDE.
+  //
+  // Cette route est publique et elle ECRIT : elle insere et decompte le stock.
+  // Sans frein, une boucle vidait le stock de n'importe quel marchand.
+  //
+  // On envoie des paniers VIDES : le frein passe avant la lecture du corps, on
+  // eprouve donc le plafond sans consommer un seul article.
+  let refuseAu = 0;
+  for (let essai = 1; essai <= 7 && refuseAu === 0; essai += 1) {
+    const vide = await json(`/api/boutiques/${SLUG}/commander`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nom: 'Frein', tel: '0102030405', adresse: 'x', panier: [] }),
+    });
+    if (vide.statut === 429) refuseAu = essai;
+  }
+  verifier(
+    'la prise de commande finit par refuser une rafale',
+    refuseAu > 0 && refuseAu <= 7,
+    refuseAu ? `429 au ${refuseAu}e appel` : 'AUCUN REFUS EN 7 APPELS',
+  );
 }
 
 // ---------------------------------------------------------------- DESINSTALLER
