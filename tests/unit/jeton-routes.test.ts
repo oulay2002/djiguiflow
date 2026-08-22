@@ -18,12 +18,17 @@ const AUTRE = 'ffffffffffffffffffffffffffffffff';
 const etats = vi.hoisted(() => ({
   commande: null as Record<string, unknown> | null,
   ecritures: 0,
+  plafondPreuves: false,
 }));
 
 vi.mock('@/lib/limiteur', () => ({
   adresseAppelante: () => '198.51.100.9',
   rafaleDepassee: () => ({ depassee: false, attendreSecondes: 0 }),
-  plafondJournalierDepasse: async () => ({ depasse: false, valeur: 1, indisponible: false }),
+  plafondJournalierDepasse: async () => ({
+    depasse: etats.plafondPreuves,
+    valeur: 10,
+    indisponible: false,
+  }),
   secondesAvantMinuitAbidjan: () => 3600,
 }));
 
@@ -90,6 +95,7 @@ const postConfirmation = (t?: string) =>
 beforeEach(() => {
   etats.commande = commande();
   etats.ecritures = 0;
+  etats.plafondPreuves = false;
   vi.spyOn(console, 'warn').mockImplementation(() => {});
   vi.spyOn(console, 'error').mockImplementation(() => {});
 });
@@ -163,5 +169,38 @@ describe('/api/confirmation — le verbe qui annule', () => {
     const rep = await confirmer(postConfirmation(JETON));
     expect(rep.status).toBe(200);
     expect(etats.ecritures).toBeGreaterThan(0);
+  });
+});
+
+describe('/api/suivi — la seconde preuve, pour qui a perdu son lien', () => {
+  const urlPreuve = (tel4: string) =>
+    new Request(`https://exemple.test/api/suivi?ref=ATT-1000000006&tel4=${tel4}`);
+
+  it('laisse passer les quatre bons chiffres, sans aucun jeton', async () => {
+    const rep = await suivi(urlPreuve('0000'));
+    expect(rep.status).toBe(200);
+    const corps = await rep.json();
+    expect(corps.order_id).toBe('ATT-1000000006');
+  });
+
+  it('REFUSE quatre mauvais chiffres', async () => {
+    const rep = await suivi(urlPreuve('1111'));
+    expect(rep.status).toBe(404);
+  });
+
+  it('refuse une fois le plafond de la commande atteint, MEME avec les bons chiffres', async () => {
+    // Le plafond porte la COMMANDE et non l'appelant : une attaque repartie
+    // sur cent adresses ne gagne rien. Il s'applique donc aussi a un essai
+    // juste, sinon il ne bornerait rien.
+    etats.plafondPreuves = true;
+    const rep = await suivi(urlPreuve('0000'));
+    expect(rep.status).toBe(404);
+  });
+
+  it('ne dit pas « trop d’essais » — cela confirmerait la commande', async () => {
+    etats.plafondPreuves = true;
+    const rep = await suivi(urlPreuve('0000'));
+    const corps = await rep.json();
+    expect(corps.error).toBe('Commande introuvable');
   });
 });

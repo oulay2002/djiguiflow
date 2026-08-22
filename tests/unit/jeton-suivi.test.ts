@@ -2,9 +2,11 @@ import { describe, expect, it } from 'vitest';
 import {
   JETON_EXIGE,
   JOURNAL_SANS_JETON,
+  PLAFOND_PREUVES_PAR_COMMANDE,
   ageEnHeures,
   jetonRefuse,
   verdictJeton,
+  verdictTelephone,
 } from '@/lib/jetonSuivi';
 
 /**
@@ -105,5 +107,47 @@ describe('ageEnHeures', () => {
   it('ne rend jamais d’age negatif', () => {
     const dansUneHeure = new Date(Date.now() + 3_600_000).toISOString();
     expect(ageEnHeures(dansUneHeure)).toBe(0);
+  });
+});
+
+describe('verdictTelephone — la seconde preuve', () => {
+  const TEL = '2250759486701';
+
+  it('accepte les quatre derniers chiffres', () => {
+    expect(verdictTelephone('6701', TEL)).toBe('ok');
+  });
+
+  it('ignore ce qui n’est pas un chiffre, qu’un client colle parfois', () => {
+    expect(verdictTelephone('67 01', TEL)).toBe('ok');
+    expect(verdictTelephone('-6701-', TEL)).toBe('ok');
+  });
+
+  it('dit « absent » quand rien n’est saisi', () => {
+    expect(verdictTelephone('', TEL)).toBe('absent');
+    expect(verdictTelephone(null, TEL)).toBe('absent');
+    expect(verdictTelephone('abcd', TEL)).toBe('absent');
+  });
+
+  it('refuse quatre mauvais chiffres', () => {
+    expect(verdictTelephone('0000', TEL)).toBe('invalide');
+  });
+
+  it('refuse une saisie qui n’a pas exactement quatre chiffres', () => {
+    // Trois chiffres justes ne suffisent pas, et huit non plus : accepter un
+    // prefixe reviendrait a diviser l'espace de recherche par dix.
+    expect(verdictTelephone('701', TEL)).toBe('invalide');
+    expect(verdictTelephone('486701', TEL)).toBe('invalide');
+  });
+
+  it('refuse quand la commande n’a pas de telephone', () => {
+    expect(verdictTelephone('6701', null)).toBe('invalide');
+    expect(verdictTelephone('6701', '12')).toBe('invalide');
+  });
+
+  it('borne les essais a dix par commande et par jour', () => {
+    // C'est CE plafond qui rend quatre chiffres tenables : 10 000 possibilites
+    // a dix essais par jour font un millier de jours. Sans lui, l'obstacle
+    // tomberait en quelques heures.
+    expect(PLAFOND_PREUVES_PAR_COMMANDE).toBe(10);
   });
 });

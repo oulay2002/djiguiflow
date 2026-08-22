@@ -94,6 +94,49 @@ export function jetonRefuse(verdict: VerdictJeton): boolean {
 }
 
 /**
+ * LA SECONDE PREUVE : les quatre derniers chiffres du telephone.
+ *
+ * POURQUOI ELLE EXISTE. La page `/suivi` laisse le client TAPER sa reference.
+ * Ce chemin n'a pas de jeton, et la phase 4 le refuserait — or c'est
+ * precisement le client qui a perdu son message WhatsApp, celui qui a le plus
+ * besoin de suivre sa commande. Le punir serait le contraire du but.
+ *
+ * CE QU'ELLE VAUT, HONNETEMENT. Quatre chiffres, c'est 10 000 possibilites :
+ * ce n'est pas un secret, c'est un OBSTACLE. Il ne tient que parce qu'il est
+ * borne — voir `PLAFOND_PREUVES_PAR_COMMANDE`. Sans ce plafond, il tomberait
+ * en quelques heures.
+ *
+ * Le client, lui, connait son numero et le tape du premier coup.
+ */
+export function verdictTelephone(
+  quatreChiffres: string | null | undefined,
+  telephoneComplet: string | null | undefined,
+): VerdictJeton {
+  const saisi = String(quatreChiffres ?? '').replace(/\D/g, '');
+  if (!saisi) return 'absent';
+
+  const attendu = String(telephoneComplet ?? '').replace(/\D/g, '');
+  // Sans telephone en base, aucune preuve de ce type ne peut etre juste : on
+  // refuse plutot que de laisser passer.
+  if (attendu.length < 4) return 'invalide';
+
+  return saisi.length === 4 && memeJeton(saisi, attendu.slice(-4)) ? 'ok' : 'invalide';
+}
+
+/**
+ * Combien de preuves fausses une commande tolere par jour.
+ *
+ * C'EST CE PLAFOND QUI FAIT TENIR LES QUATRE CHIFFRES. Dix essais par jour et
+ * par commande, c'est un millier de jours pour balayer 10 000 possibilites.
+ * Le compteur porte la COMMANDE et non l'appelant : une attaque repartie sur
+ * cent adresses ne gagne rien.
+ *
+ * Un client qui connait son numero le tape du premier coup ; les dix essais ne
+ * genent que celui qui ne le connait pas.
+ */
+export const PLAFOND_PREUVES_PAR_COMMANDE = 10;
+
+/**
  * Compte un acces sans jeton, pour pouvoir trancher la phase 4 sur un chiffre.
  *
  * CE QU'ON JOURNALISE, ET POURQUOI. L'age de la commande separe le vieux lien
