@@ -24,6 +24,12 @@ const etats = vi.hoisted(() => ({
     indisponible: boolean;
   },
   clesRafale: [] as string[],
+  clesFenetre: [] as string[],
+  fenetre: { depassee: false, valeur: 1, indisponible: false } as {
+    depassee: boolean;
+    valeur: number | null;
+    indisponible: boolean;
+  },
   catalogueLu: false,
 }));
 
@@ -38,6 +44,12 @@ vi.mock('@/lib/limiteur', () => ({
   rafaleDepassee: (cle: string) => {
     etats.clesRafale.push(cle);
     return etats.rafales.shift() ?? { depassee: false, attendreSecondes: 0 };
+  },
+  // Le deuxieme etage vit en base : la doublure enregistre sa cle comme celle
+  // de la rafale, pour qu'on puisse verifier qu'il ne porte PAS l'adresse.
+  fenetreDepassee: async (cle: string) => {
+    etats.clesFenetre.push(cle);
+    return etats.fenetre;
   },
   plafondJournalierDepasse: async () => etats.plafond,
   secondesAvantMinuitAbidjan: () => 3600,
@@ -90,6 +102,8 @@ beforeEach(() => {
   etats.rafales = [];
   etats.plafond = { depasse: false, valeur: 1, indisponible: false };
   etats.clesRafale = [];
+  etats.clesFenetre = [];
+  etats.fenetre = { depassee: false, valeur: 1, indisponible: false };
   etats.catalogueLu = false;
   vi.spyOn(console, 'error').mockImplementation(() => {});
 });
@@ -125,29 +139,32 @@ describe('le frein par appelant', () => {
   });
 });
 
-describe('le frein par boutique', () => {
+describe('le frein par boutique — celui qui vit en BASE', () => {
   it('refuse en 429 meme quand l’appelant, lui, est dans les clous', async () => {
-    // Premiere rafale : l'appelant passe. Deuxieme : la boutique sature.
-    etats.rafales = [
-      { depassee: false, attendreSecondes: 0 },
-      { depassee: true, attendreSecondes: 300 },
-    ];
+    etats.fenetre = { depassee: true, valeur: 21, indisponible: false };
     const rep = await POST(requete(), ctx);
     expect(rep.status).toBe(429);
-    expect(rep.headers.get('Retry-After')).toBe('300');
+    expect(rep.headers.get('Retry-After')).toBe('600');
     expect(etats.catalogueLu).toBe(false);
   });
 
   it('borne le degat toutes adresses confondues', async () => {
-    etats.rafales = [
-      { depassee: false, attendreSecondes: 0 },
-      { depassee: true, attendreSecondes: 300 },
-    ];
+    etats.fenetre = { depassee: true, valeur: 21, indisponible: false };
     await POST(requete(), ctx);
-    // La seconde cle ne porte PAS l'adresse : c'est ce qui la rend efficace
-    // contre une attaque repartie.
-    expect(etats.clesRafale[1]).toBe('commande:boutique-test');
-    expect(etats.clesRafale[1]).not.toContain('203.0.113.7');
+    // La cle ne porte PAS l'adresse : c'est ce qui la rend efficace contre une
+    // attaque repartie, et c'est pour cela qu'elle doit vivre en base — un
+    // compteur en memoire ne voit qu'une instance sur plusieurs.
+    expect(etats.clesFenetre[0]).toBe('commande:boutique-test');
+    expect(etats.clesFenetre[0]).not.toContain('203.0.113.7');
+  });
+
+  it('rend 503, et non 429, quand le compteur est injoignable', async () => {
+    // Une panne n'est pas un refus de quota : l'appelant doit pouvoir les
+    // distinguer, ne serait-ce que pour savoir s'il a le droit de reessayer.
+    etats.fenetre = { depassee: true, valeur: null, indisponible: true };
+    const rep = await POST(requete(), ctx);
+    expect(rep.status).toBe(503);
+    expect(etats.catalogueLu).toBe(false);
   });
 });
 
@@ -188,10 +205,14 @@ describe('ce que les freins ne doivent PAS casser', () => {
     const rep = await POST(requete(), ctx);
     expect(rep.status).toBe(404);
     expect(etats.clesRafale).toHaveLength(0);
+    expect(etats.clesFenetre).toHaveLength(0);
   });
 
   it('consulte les trois etages dans l’ordre sur un appel qui passe', async () => {
     await POST(requete(), ctx);
-    expect(etats.clesRafale).toEqual(['commande:boutique-test:203.0.113.7', 'commande:boutique-test']);
+    // Premier etage en memoire, porte par l'adresse. Deuxieme en base, porte
+    // par la seule boutique.
+    expect(etats.clesRafale).toEqual(['commande:boutique-test:203.0.113.7']);
+    expect(etats.clesFenetre).toEqual(['commande:boutique-test']);
   });
 });
