@@ -120,16 +120,16 @@ export default function Page() {
     <div className="min-h-screen bg-[var(--background)] p-4 lg:p-6">
       <div className="mx-auto max-w-[1600px]">
         <main className="min-w-0 space-y-6">
-          <header className="flex flex-col gap-4 rounded-[2rem] border border-white/70 bg-white/75 p-5 shadow-[0_20px_60px_rgba(49,35,20,0.08)] backdrop-blur-xl md:flex-row md:items-center md:justify-between">
+          <header className="flex flex-col gap-4 border border-white/70 bg-white/75 p-5 soft-shadow backdrop-blur-xl md:flex-row md:items-center md:justify-between">
             <div>
               <p className="text-sm uppercase tracking-[0.2em] text-chaux-600">Votre boutique aujourd’hui</p>
               <h1 className="mt-2 font-display text-3xl font-black">Bonjour, {nomBoutique}</h1>
             </div>
             <div className="flex items-center gap-3">
-              <button className="flex h-11 w-11 items-center justify-center rounded-full border border-[var(--hairline)] bg-chaux-50 text-chaux-600 hover:text-primary-700">
+              <button className="flex h-11 w-11 items-center justify-center border border-[var(--hairline)] bg-chaux-50 text-chaux-600 hover:text-primary-700">
                 <Bell className="h-5 w-5" />
               </button>
-              <Link href="/boutiques" className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-primary-600 to-primary-500 px-4 py-2.5 text-sm font-semibold text-white shadow-lg">
+              <Link href="/boutiques" className="inline-flex items-center gap-2 bg-nuit-900 px-4 py-2.5 text-sm font-semibold text-white soft-shadow hover:bg-nuit-800">
                 Voir ma boutique <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
@@ -155,8 +155,8 @@ export default function Page() {
             {kpis.map(k => {
               const Icon = k.icon;
               return (
-                <div key={k.label} className="rounded-[1.5rem] border border-white/70 bg-white/80 p-5 shadow-[0_18px_45px_rgba(48,35,20,0.08)] backdrop-blur-sm">
-                  <div className={`flex h-12 w-12 items-center justify-center rounded-2xl ${k.accent}`}>
+                <div key={k.label} className=" border border-white/70 bg-white/80 p-5 soft-shadow backdrop-blur-sm">
+                  <div className={`flex h-12 w-12 items-center justify-center ${k.accent}`}>
                     <Icon className="h-6 w-6" />
                   </div>
                   <p className="mt-4 text-sm text-chaux-600">{k.label}</p>
@@ -178,9 +178,9 @@ export default function Page() {
               visible, commandes acceptees, et personne au bout. Le marchand
               voyait une commande arriver et croyait tout en ordre. */}
           {manques.length > 0 && (
-            <section className="rounded-[1.5rem] border border-bissap-200 bg-bissap-50 p-5">
+            <section className=" border border-bissap-200 bg-bissap-50 p-5">
               <div className="flex flex-wrap items-start gap-4">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-bissap-100 text-bissap-700">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center bg-bissap-100 text-bissap-700">
                   <AlertTriangle className="h-6 w-6" />
                 </div>
                 <div className="min-w-0 flex-1">
@@ -197,7 +197,7 @@ export default function Page() {
                   <div className="mt-3 flex flex-wrap items-center gap-3">
                   <Link
                     href="/onboarding"
-                    className="inline-flex items-center gap-2 rounded-xl bg-bissap-600 px-4 py-2 text-sm font-semibold text-white hover:bg-bissap-700"
+                    className="inline-flex items-center gap-2 bg-bissap-600 px-4 py-2 text-sm font-semibold text-white hover:bg-bissap-700"
                   >
                     Terminer le branchement <ArrowRight className="h-4 w-4" />
                   </Link>
@@ -218,9 +218,9 @@ export default function Page() {
           )}
 
           {((perdus?.nombre ?? 0) > 0 || (attendues?.nombre ?? 0) > 0) && (
-            <section className="rounded-[1.5rem] border border-mangue-200 bg-mangue-50/70 p-5">
+            <section className=" border border-mangue-200 bg-mangue-50/70 p-5">
               <div className="flex flex-wrap items-start gap-4">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-mangue-100 text-mangue-700">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center bg-mangue-100 text-mangue-700">
                   <ShoppingBag className="h-6 w-6" />
                 </div>
                 <div className="min-w-0 space-y-3">
@@ -258,38 +258,34 @@ export default function Page() {
           )}
 
           <section className="grid gap-6 xl:grid-cols-[1.6fr_1fr]">
-            <div className="rounded-[1.75rem] border border-[var(--hairline)] bg-white/80 p-6 shadow-[0_18px_45px_rgba(48,35,20,0.08)] backdrop-blur-sm">
+            <div className=" border border-[var(--hairline)] bg-white/80 p-6 soft-shadow backdrop-blur-sm">
               <div className="mb-4 flex items-center justify-between">
                 <div>
                   <p className="text-sm text-chaux-600">Performance</p>
                   <h2 className="text-2xl font-black">Évolution du CA · 7 jours</h2>
                 </div>
-                <span className="rounded-full bg-mangue-100 px-3 py-1.5 text-sm font-bold text-mangue-700">
+                <span className=" bg-mangue-100 px-3 py-1.5 text-sm font-bold text-mangue-700">
                   {s ? s.caTotal.toLocaleString('fr-FR') : 0} F au total
                 </span>
               </div>
               <svg viewBox={`0 0 ${W} ${H}`} className="w-full">
                 <defs>
                   <linearGradient id="gradArea" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#c4123f" stopOpacity="0.30" />
-                    <stop offset="100%" stopColor="#c4123f" stopOpacity="0.02" />
-                  </linearGradient>
-                  <linearGradient id="gradLine" x1="0" y1="0" x2="1" y2="0">
-                    <stop offset="0%" stopColor="#d85372" />
-                    <stop offset="100%" stopColor="#a50e36" />
+                    <stop offset="0%" stopColor="var(--color-bissap-500)" stopOpacity="0.30" />
+                    <stop offset="100%" stopColor="var(--color-bissap-500)" stopOpacity="0.02" />
                   </linearGradient>
                 </defs>
                 {[0.25, 0.5, 0.75, 1].map(t => (
-                  <line key={t} x1={P} x2={W - P} y1={H - P - t * (H - 2 * P)} y2={H - P - t * (H - 2 * P)} stroke="#e0ddd3" strokeDasharray="4 6" />
+                  <line key={t} x1={P} x2={W - P} y1={H - P - t * (H - 2 * P)} y2={H - P - t * (H - 2 * P)} stroke="var(--color-chaux-200)" strokeDasharray="4 6" />
                 ))}
                 <path d={area} fill="url(#gradArea)" />
-                <path d={line} fill="none" stroke="url(#gradLine)" strokeWidth="3" strokeLinecap="round" />
+                <path d={line} fill="none" stroke="var(--color-bissap-500)" strokeWidth="3" strokeLinecap="butt" />
                 {pts.map((p, i) => (
                   <g key={i}>
-                    <circle cx={p[0]} cy={p[1]} r="5" fill="#fff" stroke="#c4123f" strokeWidth="3">
+                    <circle cx={p[0]} cy={p[1]} r="5" fill="#fff" stroke="var(--color-bissap-500)" strokeWidth="3">
                       <title>{serie[i].jour} : {serie[i].ca.toLocaleString('fr-FR')} F · {serie[i].nb} cmd</title>
                     </circle>
-                    <text x={p[0]} y={H - 8} textAnchor="middle" fontSize="11" fill="#837e70">{serie[i].jour}</text>
+                    <text x={p[0]} y={H - 8} textAnchor="middle" fontSize="11" fill="var(--color-chaux-500)">{serie[i].jour}</text>
                   </g>
                 ))}
               </svg>
@@ -297,7 +293,7 @@ export default function Page() {
             </div>
 
             <div className="space-y-6">
-              <div className="rounded-[1.75rem] border border-[var(--hairline)] bg-white/80 p-6 shadow-[0_18px_45px_rgba(48,35,20,0.08)] backdrop-blur-sm">
+              <div className=" border border-[var(--hairline)] bg-white/80 p-6 soft-shadow backdrop-blur-sm">
                 <h3 className="text-xl font-black">Canaux de vente</h3>
                 <div className="mt-4 space-y-4">
                   {s && Object.entries(s.parCanal).map(([canal, nb]) => {
@@ -310,8 +306,8 @@ export default function Page() {
                           <span className="flex items-center gap-2 font-semibold text-nuit-800"><Icon className="h-4 w-4 text-chaux-600" aria-hidden />{m.label}</span>
                           <span className="font-bold">{nb} · {pct}%</span>
                         </div>
-                        <div className="mt-1.5 h-2.5 overflow-hidden rounded-full bg-chaux-100">
-                          <div className="h-full rounded-full bg-bissap-500" style={{ width: `${pct}%` }} />
+                        <div className="mt-1.5 h-2.5 overflow-hidden bg-chaux-100">
+                          <div className="h-full bg-bissap-500" style={{ width: `${pct}%` }} />
                         </div>
                       </div>
                     );
@@ -319,16 +315,16 @@ export default function Page() {
                 </div>
               </div>
 
-              <div className="rounded-[1.75rem] border border-[var(--hairline)] bg-white/80 p-6 shadow-[0_18px_45px_rgba(48,35,20,0.08)] backdrop-blur-sm">
+              <div className=" border border-[var(--hairline)] bg-white/80 p-6 soft-shadow backdrop-blur-sm">
                 <div className="flex items-center gap-2">
                   <Trophy className="h-5 w-5 text-mangue-600" />
                   <h3 className="text-xl font-black">Top produits</h3>
                 </div>
                 <div className="mt-4 space-y-3">
                   {s?.topPlats.slice(0, 4).map(([nom, q], i) => (
-                    <div key={nom} className="flex items-center justify-between rounded-[1rem] bg-chaux-50 p-3">
+                    <div key={nom} className="flex items-center justify-between bg-chaux-50 p-3">
                       <span className="flex items-center gap-3">
-                        <span className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-black ${i === 0 ? 'bg-mangue-400 text-white' : 'bg-chaux-200 text-chaux-600'}`}>{i + 1}</span>
+                        <span className={`flex h-7 w-7 items-center justify-center text-xs font-black ${i === 0 ? 'bg-mangue-400 text-white' : 'bg-chaux-200 text-chaux-600'}`}>{i + 1}</span>
                         <span className="font-semibold text-nuit-800">{nom}</span>
                       </span>
                       <span className="text-sm font-bold text-chaux-600">{q} vendus</span>
