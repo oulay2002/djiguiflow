@@ -8,6 +8,37 @@ import {
 import { isMockBillingMode } from '@/lib/billing/mode';
 import { paiementConfigure, prestataireActif } from '@/lib/billing/prestataire';
 
+/**
+ * Peut-on encaisser de l'ARGENT REEL, ici, maintenant ?
+ *
+ * Trois conditions, et chacune s'est deja trouvee en defaut :
+ *  - un prestataire configure ;
+ *  - pas de mode simule ;
+ *  - et surtout : des cles de PRODUCTION. Une cle de bac a sable laisse la
+ *    chaine entiere fonctionner — 200, ligne de paiement creee, montant juste —
+ *    et n'encaisse rien.
+ */
+function encaissementReel(): { ok: boolean; motif: string | null } {
+  if (!paiementConfigure()) {
+    return { ok: false, motif: 'aucun prestataire configure' };
+  }
+  if (isMockBillingMode()) {
+    return { ok: false, motif: 'mode simule (BILLING_MODE=mock)' };
+  }
+  if (prestataireActif() === 'geniuspay' && geniuspayBacASable()) {
+    return {
+      ok: false,
+      motif:
+        'la cle GeniusPay est une cle de BAC A SABLE : le marchand recoit une ' +
+        'URL de paiement simulee et aucun franc n est encaisse',
+    };
+  }
+  if (geniuspayClesCoherentes() === false) {
+    return { ok: false, motif: 'les deux cles GeniusPay ne sont pas du meme monde' };
+  }
+  return { ok: true, motif: null };
+}
+
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
@@ -91,6 +122,14 @@ export async function GET(req: Request) {
       GENIUSPAY_API_KEY: longueur(process.env.GENIUSPAY_API_KEY),
       GENIUSPAY_API_SECRET: longueur(process.env.GENIUSPAY_API_SECRET),
     },
+    // `BILLING_MODE` NE CHOISIT RIEN. `prestataireActif()` prend GeniusPay des
+    // qu'il est configure, quoi que dise cette variable. Elle se lit pourtant
+    // comme un interrupteur — le 22 aout elle valait « cinetpay » pendant que
+    // GeniusPay encaissait. On le dit plutot que de laisser croire.
+    billingModeIgnore:
+      Boolean(process.env.BILLING_MODE) &&
+      process.env.BILLING_MODE !== prestataireActif() &&
+      !isMockBillingMode(),
     // Qui encaisse sur CE deploiement. Sans cette ligne, il fallait deviner
     // lequel des deux prestataires repondait, alors que c'est la premiere
     // question qu'on se pose devant un paiement qui n'aboutit pas.
@@ -102,12 +141,27 @@ export async function GET(req: Request) {
       // sur le prefixe des cles, donc l'incoherence n'est pas toujours decidable.
       geniuspayClesCoherentes: geniuspayClesCoherentes(),
       cinetpayConfigure: cinetpayConfigure(),
+      // LE DRAPEAU QUI DECIDE SI UN FAUX PAIEMENT OUVRE UN VRAI ACCES, et qui
+      // n'etait rapporte nulle part. `encaissement.ts` refuse une transaction
+      // de bac a sable sauf si elle vaut exactement « 1 » ; c'est donc le
+      // reglage le plus dangereux de toute la facturation, et le seul qu'on ne
+      // pouvait pas lire sans ouvrir Vercel.
+      accepteBacASable: process.env.GENIUSPAY_ACCEPTE_SANDBOX === '1',
     },
-    // Repondait sur CINETPAY seul : avec GeniusPay en service et CinetPay non
-    // configure, cette ligne annoncait « false » alors que la plateforme
-    // encaissait parfaitement. Un diagnostic qui se trompe envoie chercher la
-    // panne au mauvais endroit, ce qui est pire que pas de diagnostic.
-    pretAEncaisser: paiementConfigure() && !isMockBillingMode(),
+    // ELLE MESURAIT « DES CLES EXISTENT », PAS « L'ARGENT ARRIVERA ».
+    //
+    // Constate le 22 aout 2026 : la ligne annoncait `true` alors que la cle
+    // GeniusPay active etait une cle de BAC A SABLE. Un vrai marchand cliquant
+    // « s'abonner » recevait une URL contenant `SANDBOX_` — verifie de bout en
+    // bout. Aucun franc ne pouvait etre encaisse, et le diagnostic disait que
+    // tout allait bien.
+    //
+    // Un feu vert qui mesure autre chose que ce qu'on lui demande est pire
+    // qu'un feu absent : on ne va pas verifier ce qui est deja vert.
+    pretAEncaisser: encaissementReel().ok,
+    // Quand ce n'est pas pret, DIRE POURQUOI. « false » sans motif envoie
+    // chercher au hasard.
+    pourquoi: encaissementReel().motif,
     commentSonder:
       'POST sur cette meme route, avec un corps JSON optionnel {"surcharges": {...}} ' +
       'pour essayer d autres champs sans redeployer.',
@@ -141,10 +195,34 @@ export async function POST(req: Request) {
   // `url` permet d'essayer un autre hote sans redeployer. Indispensable quand
   // l'appel echoue avant meme d'etre parti : la premiere hypothese est alors
   // que le nom d'hote est faux.
+  // LA SONDE N'INTERROGE QUE CINETPAY. Le 22 aout 2026 elle rendait
+  // `INVALID_TOKEN` — un vrai refus, mais de CinetPay, qui n'encaisse plus rien
+  // depuis que GeniusPay est configure. Un exploitant devant ce resultat conclut
+  // que les paiements sont casses alors que le prestataire actif n'a meme pas
+  // ete appele.
+  //
+  // Ecrire une sonde GeniusPay demanderait de creer un vrai paiement chez lui,
+  // ce qui n'est pas anodin. En attendant, la sonde DIT qui elle a interroge et
+  // si c'est bien celui qui encaisse — un resultat qu'on sait mal interpreter
+  // est plus dangereux qu'un resultat absent.
   const sonde = await sonderInitialisation(surcharges, corps.url);
+  const actif = prestataireActif();
 
   // Toujours 200 : c'est un rapport d'observation, pas un verdict. Repondre en
   // erreur ferait croire que la sonde a echoue alors qu'elle a parfaitement
   // rempli son role — rapporter le refus du prestataire.
-  return NextResponse.json({ deploiement: deploiement(), sonde });
+  return NextResponse.json({
+    deploiement: deploiement(),
+    prestataireSonde: 'cinetpay',
+    prestataireActif: actif,
+    sondeLeBonPrestataire: actif === 'cinetpay',
+    ...(actif !== 'cinetpay'
+      ? {
+          avertissement:
+            `Cette sonde a interroge CinetPay, mais c'est ${actif ?? 'aucun prestataire'} ` +
+            'qui encaisse. Le resultat ci-dessous ne dit RIEN de la chaine reelle.',
+        }
+      : {}),
+    sonde,
+  });
 }
