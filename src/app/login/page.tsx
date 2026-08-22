@@ -129,7 +129,7 @@ function LoginPageContent() {
           )}
 
           <div className="mt-9">
-            <BoutonGoogle suite={suite} libelle="Se connecter avec Google" forme="carree" />
+            <BoutonGoogle suite={suite} libelle="Se connecter avec Google" />
           </div>
 
           {/* La couture entre les deux façons d'entrer. Le mot reste : une

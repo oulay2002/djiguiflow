@@ -64,7 +64,7 @@ export function Etiquette({
 }) {
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${TONS[ton].pastille} ${className}`}
+      className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold ${TONS[ton].pastille} ${className}`}
     >
       {children}
     </span>
@@ -93,7 +93,7 @@ export function TuileStat({
   ton?: Ton;
 }) {
   return (
-    <div className="rounded-2xl border border-[var(--hairline)] bg-white/75 p-4 soft-shadow">
+    <div className=" border border-[var(--hairline)] bg-white/75 p-4 soft-shadow">
       {/* Le chiffre est en haut, l'intitule en dessous : c'est le chiffre
           qu'on compare d'une tuile a l'autre, il doit rester sur la meme
           ligne quelle que soit la longueur de l'intitule. */}
@@ -103,7 +103,7 @@ export function TuileStat({
           {unite && <span className="ml-1 text-sm font-semibold text-chaux-600">{unite}</span>}
         </p>
         <span
-          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${TONS[ton].pastille}`}
+          className={`flex h-9 w-9 shrink-0 items-center justify-center ${TONS[ton].pastille}`}
         >
           <Icone className="h-5 w-5" />
         </span>

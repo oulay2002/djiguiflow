@@ -21,15 +21,29 @@ export type VarianteBouton = 'action' | 'calme' | 'fantome' | 'contraste' | 'voi
 export type TailleBouton = 'sm' | 'md';
 
 /**
- * La silhouette, et elle depend de l'ecran.
+ * La silhouette. UNE SEULE, DESORMAIS.
  *
- * Le tableau de bord est un outil : ses boutons sont des pilules, comme le
- * reste de l'application. La vitrine est un imprime — bon de commande, carte
- * affichee — et n'a pas un seul angle arrondi. `carree` existe pour qu'elle
- * puisse le dire sans qu'on aille modifier le socle commun, ce qui aurait
- * change tous les ecrans du marchand par ricochet.
+ * CE QUI ETAIT ECRIT ICI, ET POURQUOI CA A CHANGE. « Le tableau de bord est un
+ * outil : ses boutons sont des pilules ; la vitrine est un imprime et n'a pas
+ * un seul angle arrondi. » Deux langues, donc, et une seule tenue : le 22 aout
+ * 2026, la vitrine, l'onboarding, le suivi et le guide ne portaient AUCUN
+ * arrondi, quand le tableau de bord en comptait NEUF — `lg`, `xl`, `2xl`,
+ * `3xl`, `full`, plus quatre valeurs ecrites a la main espacees de 0,25 rem.
+ * Personne ne voit la difference entre 1,5 et 1,75 rem ; tout le monde sent
+ * qu'aucune n'a ete choisie. C'est la signature d'un reglage iteratif, et
+ * c'est exactement ce qui fait dire « c'est genere ».
+ *
+ * `pilule` A ETE SUPPRIMEE, PAS DEPRECIEE. Aucun appel ne la demandait :
+ * elle ne survivait que comme valeur par defaut, et c'est ainsi que neuf
+ * rayons etaient revenus. Le parametre reste, a un seul membre — un futur
+ * `forme="pilule"` ne compile plus, et le seul endroit ou une seconde
+ * geometrie peut naitre est ce fichier.
+ *
+ * Le cercle, lui, n'est pas un arrondi : c'est une forme. Un avatar reste
+ * rond, un point qui pulse reste rond. Une pilule d'etat et une barre de
+ * progression, non.
  */
-export type FormeBouton = 'pilule' | 'carree';
+export type FormeBouton = 'carree';
 
 const SOCLE =
   'inline-flex items-center justify-center gap-2 font-semibold ' +
@@ -57,14 +71,13 @@ const TAILLES: Record<TailleBouton, string> = {
 };
 
 const FORMES: Record<FormeBouton, string> = {
-  pilule: 'rounded-full',
   carree: 'rounded-none',
 };
 
 export function classesBouton(
   variante: VarianteBouton = 'action',
   taille: TailleBouton = 'md',
-  forme: FormeBouton = 'pilule',
+  forme: FormeBouton = 'carree',
 ): string {
   return `${SOCLE} ${FORMES[forme]} ${VARIANTES[variante]} ${TAILLES[taille]}`;
 }
@@ -80,7 +93,7 @@ type ProprietesBouton = ButtonHTMLAttributes<HTMLButtonElement> & {
 export function Bouton({
   variante = 'action',
   taille = 'md',
-  forme = 'pilule',
+  forme = 'carree',
   chargement = false,
   className = '',
   disabled,

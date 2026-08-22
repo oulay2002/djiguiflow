@@ -152,7 +152,7 @@ export default function RegisterPage() {
           <div className="tear absolute inset-x-0 top-14 sm:top-16" />
 
           <div className="mt-9">
-            <BoutonGoogle libelle="S’inscrire avec Google" forme="carree" />
+            <BoutonGoogle libelle="S’inscrire avec Google" />
           </div>
 
           <p className="mt-3 text-center text-xs text-chaux-600">

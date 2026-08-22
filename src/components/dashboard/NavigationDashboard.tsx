@@ -78,7 +78,7 @@ function BarreLaterale({ actif }: { actif: string | null }) {
   return (
     <aside className="fixed inset-y-0 left-0 z-30 hidden w-72 flex-col gap-6 overflow-y-auto border-r border-[var(--hairline)] bg-white/80 p-5 backdrop-blur-xl lg:flex">
       <Link href="/dashboard" className="flex items-center gap-3 px-2">
-        <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-nuit-900 font-display text-lg font-black text-mangue-300">
+        <span className="flex h-11 w-11 items-center justify-center bg-nuit-900 font-display text-lg font-black text-mangue-300">
           D
         </span>
         <span>
@@ -95,7 +95,7 @@ function BarreLaterale({ actif }: { actif: string | null }) {
             key={href}
             href={href}
             aria-current={href === actif ? 'page' : undefined}
-            className={`flex items-center gap-3 rounded-2xl px-3 py-3 text-sm font-semibold transition ${
+            className={`flex items-center gap-3 px-3 py-3 text-sm font-semibold transition ${
               href === actif
                 ? 'bg-gradient-to-r from-primary-600 to-primary-500 text-white shadow-lg'
                 : 'text-chaux-600 hover:bg-chaux-100'
@@ -109,7 +109,7 @@ function BarreLaterale({ actif }: { actif: string | null }) {
 
       <button
         onClick={deconnecter}
-        className="flex w-full items-center justify-center gap-2 rounded-2xl border border-[var(--hairline)] bg-chaux-50 px-4 py-3 text-sm font-semibold hover:bg-chaux-100"
+        className="flex w-full items-center justify-center gap-2 border border-[var(--hairline)] bg-chaux-50 px-4 py-3 text-sm font-semibold hover:bg-chaux-100"
       >
         <LogOut className="h-4 w-4" />
         Déconnexion
@@ -162,16 +162,16 @@ function Tiroir({ actif, ouvert, fermer }: { actif: string | null; ouvert: boole
         role="dialog"
         aria-modal="true"
         aria-label="Menu de navigation"
-        className="absolute inset-x-0 bottom-0 max-h-[85vh] overflow-y-auto rounded-t-[2rem] border-t border-[var(--hairline)] bg-white p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] shadow-[0_-20px_60px_rgba(12,18,41,0.25)]"
+        className="absolute inset-x-0 bottom-0 max-h-[85vh] overflow-y-auto-[2rem] border-t border-[var(--hairline)] bg-white p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] shadow-[0_-20px_60px_rgba(12,18,41,0.25)]"
       >
-        <div className="mx-auto mb-5 h-1.5 w-12 rounded-full bg-chaux-200" />
+        <div className="mx-auto mb-5 h-1.5 w-12 bg-chaux-200" />
 
         <div className="mb-4 flex items-center justify-between">
           <p className="text-lg font-black">Menu</p>
           <button
             onClick={fermer}
             aria-label="Fermer le menu"
-            className="flex h-11 w-11 items-center justify-center rounded-full border border-[var(--hairline)] bg-chaux-50 text-chaux-600"
+            className="flex h-11 w-11 items-center justify-center border border-[var(--hairline)] bg-chaux-50 text-chaux-600"
           >
             <X className="h-5 w-5" />
           </button>
@@ -184,7 +184,7 @@ function Tiroir({ actif, ouvert, fermer }: { actif: string | null; ouvert: boole
               href={href}
               onClick={fermer}
               aria-current={href === actif ? 'page' : undefined}
-              className={`flex min-h-[3.5rem] items-center gap-3 rounded-2xl px-3.5 py-3 text-sm font-semibold transition ${
+              className={`flex min-h-[3.5rem] items-center gap-3 px-3.5 py-3 text-sm font-semibold transition ${
                 href === actif
                   ? 'bg-gradient-to-r from-primary-600 to-primary-500 text-white shadow-lg'
                   : 'bg-chaux-50 text-chaux-600 active:bg-chaux-100'
@@ -198,7 +198,7 @@ function Tiroir({ actif, ouvert, fermer }: { actif: string | null; ouvert: boole
 
         <button
           onClick={deconnecter}
-          className="mt-4 flex min-h-[3rem] w-full items-center justify-center gap-2 rounded-2xl border border-bissap-200 bg-bissap-50 px-4 py-3 text-sm font-semibold text-bissap-700"
+          className="mt-4 flex min-h-[3rem] w-full items-center justify-center gap-2 border border-bissap-200 bg-bissap-50 px-4 py-3 text-sm font-semibold text-bissap-700"
         >
           <LogOut className="h-4 w-4" />
           Déconnexion
