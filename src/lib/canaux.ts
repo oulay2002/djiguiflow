@@ -97,6 +97,55 @@ async function resoudreJeton(
   return plateforme ? { jeton: plateforme, via: 'plateforme' } : null;
 }
 
+/**
+ * Le salon vers lequel detourner les envois d'une boutique de banc.
+ *
+ * Rend `null` pour toute boutique reelle — c'est le cas de tout le monde sauf
+ * les boutiques de banc, dont c'est la seule raison d'exister.
+ *
+ * ON N'ECHOUE PAS SUR UNE LECTURE RATEE. Si la base ne repond pas, on rend
+ * `null` et l'envoi part normalement : mieux vaut un message reellement
+ * delivre qu'un message perdu parce qu'une colonne de test etait illisible.
+ * Le risque inverse — une vraie boutique detournee par erreur — est exclu par
+ * la forme de la colonne : elle porte une DESTINATION, pas un booleen.
+ */
+async function salonDeBanc(boutique: string): Promise<string | null> {
+  const sb = getSupabaseAdmin();
+  if (!sb) return null;
+
+  // `boutique` est tantot un slug, tantot un uuid selon l'appelant. Filtrer sur
+  // `id` avec un slug fait lever Postgres au lieu de ne rien rendre.
+  const estUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(boutique);
+
+  try {
+    const requete = sb.from('boutiques').select('banc_telegram_id');
+    const { data, error } = estUuid
+      ? await requete.eq('id', boutique).maybeSingle()
+      : await requete.eq('slug', boutique).maybeSingle();
+
+    if (error) {
+      console.error(`Canaux — lecture du salon de banc impossible (${boutique}) :`, error.message);
+      return null;
+    }
+    const salon = String(data?.banc_telegram_id ?? '').trim();
+    return salon || null;
+  } catch (e) {
+    console.error(`Canaux — salon de banc illisible (${boutique}) :`, e);
+    return null;
+  }
+}
+
+/**
+ * Ce que le salon de banc recoit a la place du destinataire reel.
+ *
+ * L'en-tete est la moitie utile du detournement : sans lui on lirait un message
+ * sans savoir A QUI ni PAR QUEL CANAL il devait partir — c'est-a-dire sans
+ * pouvoir verifier l'isolement, qui est justement ce qu'on eprouve.
+ */
+export function messageDeBanc(canal: Canal, destinataire: string, message: string): string {
+  return `🧪 BANC · ${canal} → ${destinataire || '(destinataire vide)'}\n\n${message}`;
+}
+
 async function envoyerWhatsApp(
   jeton: string,
   destinataire: string,
@@ -284,6 +333,45 @@ export async function envoyerMessage(params: {
   // Le texte analyse (HTML) garde ses balises : ses appelants les composent
   // volontairement et echappent ce qu'ils y inserent.
   const texte = html === true ? message : sansGrasMarkdown(message);
+
+  // ---- LE DETOURNEMENT DE BANC. Il vient APRES le frein, a dessein : le
+  // frein doit voir le vrai destinataire, sinon le banc n'eprouve pas la regle
+  // qu'il pretend eprouver — la liste STOP et l'espacement sont keyes sur le
+  // client, pas sur le salon.
+  //
+  // Il vient AVANT la resolution du jeton, aussi a dessein : une boutique de
+  // banc n'a pas besoin d'avoir des canaux branches. C'est meme le contraire
+  // qu'on veut — qu'elle n'en ait aucun, pour qu'aucune erreur de configuration
+  // ne puisse la faire ecrire a quelqu'un.
+  const salon = await salonDeBanc(boutique);
+  if (salon) {
+    const jetonVeille = process.env.TELEGRAM_ALERTE_TOKEN?.trim();
+    if (!jetonVeille) {
+      return {
+        ok: false,
+        canal,
+        raison: 'boutique de banc sans TELEGRAM_ALERTE_TOKEN : rien ne peut etre observe',
+        statut: 424,
+      };
+    }
+
+    const envoi = await envoyerTelegram(
+      jetonVeille,
+      salon,
+      messageDeBanc(canal, destinataire, texte),
+      clavier,
+      html === true,
+    );
+
+    if (!envoi.ok) {
+      console.error(`Canaux — detournement de banc refuse (${boutique}) :`, envoi.raison);
+      return { ok: false, canal, raison: envoi.raison ?? 'refus', statut: envoi.statut };
+    }
+    // `via: 'plateforme'` est exact : c'est le bot de veille qui a servi, pas
+    // le marchand. Un appelant qui exige `via === 'marchand'` doit donc
+    // considerer un envoi de banc comme non concluant, et c'est correct.
+    return { ok: true, canal, via: 'plateforme' };
+  }
 
   const jeton = await resoudreJeton(boutique, canal);
   if (!jeton) {
