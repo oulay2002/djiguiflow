@@ -147,6 +147,63 @@ export function messageDeBanc(canal: Canal, destinataire: string, message: strin
   return `🧪 BANC · ${canal} → ${destinataire || '(destinataire vide)'}\n\n${message}`;
 }
 
+/**
+ * Ce destinataire est-il quelqu'un DE LA MAISON — le gerant ou les livreurs ?
+ *
+ * Sert a decider si le jeton de la PLATEFORME a le droit de porter ce message.
+ * On ne demande rien a l'appelant : la boutique porte deja le chat du gerant et
+ * le groupe des livreurs, donc la reponse est en base. Quatorze appelants n8n
+ * n'ont pas a apprendre une nouvelle regle pour que la regle s'applique.
+ *
+ * TOUT CE QUI N'EST PAS RECONNU EST UN CLIENT. C'est le bon defaut : se tromper
+ * en croyant parler a un client refuse un envoi et se voit ; se tromper dans
+ * l'autre sens ecrit a un inconnu depuis le numero de la plateforme.
+ *
+ * Lu UNIQUEMENT dans le chemin de repli, qui est rare : une boutique branchee
+ * ne paie jamais cette lecture.
+ */
+async function destinataireDeLaMaison(boutique: string, destinataire: string): Promise<boolean> {
+  const sb = getSupabaseAdmin();
+  if (!sb) return false;
+
+  const cible = String(destinataire ?? '').trim();
+  if (!cible) return false;
+
+  const estUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(boutique);
+
+  try {
+    const requete = sb.from('boutiques').select('telegram_marchand, groupe_livreurs, telephone');
+    const { data, error } = estUuid
+      ? await requete.eq('id', boutique).maybeSingle()
+      : await requete.eq('slug', boutique).maybeSingle();
+    if (error || !data) return false;
+
+    const siens = [data.telegram_marchand, data.groupe_livreurs, data.telephone]
+      .map((v) => String(v ?? '').trim())
+      .filter(Boolean);
+
+    // LE NUMERO DU GERANT PEUT ETRE NOTE AVEC OU SANS INDICATIF, et le local
+    // est un SUFFIXE de l'international : « 0700000001 » contre
+    // « 2250700000001 ». Une egalite stricte y voyait deux personnes, et le
+    // gerant perdait ses propres alertes de commande.
+    //
+    // Huit chiffres au minimum : en dessous, un suffixe peut coincider par
+    // hasard, et reconnaitre un inconnu comme « quelqu'un de la maison »
+    // rouvrirait exactement la porte qu'on ferme.
+    const chiffres = (v: string) => v.replace(/[^0-9]/g, '');
+    const c = chiffres(cible);
+    return siens.some((v) => {
+      if (v === cible) return true;
+      const d = chiffres(v);
+      if (!d || !c || Math.min(d.length, c.length) < 8) return false;
+      return d.endsWith(c) || c.endsWith(d);
+    });
+  } catch (e) {
+    console.error(`Canaux — lecture des destinataires maison impossible (${boutique}) :`, e);
+    return false;
+  }
+}
+
 async function envoyerWhatsApp(
   jeton: string,
   destinataire: string,
@@ -385,6 +442,44 @@ export async function envoyerMessage(params: {
       ok: false,
       canal,
       raison: `aucun jeton ${canal} pour ${boutique} ni pour la plateforme`,
+      statut: 424,
+    };
+  }
+
+  // ---- LE REPLI PLATEFORME NE PORTE PLUS UN MESSAGE AU CLIENT.
+  //
+  // Tranche le 22 aout 2026. Le repli existait pour la transition : tant qu'un
+  // marchand n'avait pas branche ses canaux, la plateforme ecrivait a sa place.
+  // Neuf appelants sur dix ignoraient `via`, donc personne ne le savait.
+  //
+  // CE QUE CA PRODUISAIT, MESURE : une des deux boutiques en service a Telegram
+  // mais PAS WhatsApp. Ses clients recevaient donc leurs mises a jour de
+  // commande depuis le numero WhatsApp de DjiguiFlow — un numero inconnu qui
+  // ecrit au sujet de votre commande, c'est-a-dire la forme exacte d'une
+  // arnaque.
+  //
+  // ET LE RISQUE SE MUTUALISE. wasender bannit au premier contact non
+  // sollicite. Une seule session portant les clients de TOUS les marchands non
+  // branches accumule le risque de tous : un bannissement, et ils tombent
+  // ensemble. C'est l'argument qui ne se rattrape pas.
+  //
+  // LA PLATEFORME GARDE LE DROIT DE PARLER AUX SIENS — le gerant, les livreurs.
+  // Eux la connaissent, ils sont venus par elle. Ce n'est pas le meme acte.
+  //
+  // Le marchand non branche n'est pas laisse dans le noir : « Tester ma
+  // boutique » le lui dit, et la veille des chaines detecte `client_non_prevenu`
+  // dans le quart d'heure. Un manque qu'on voit vaut mieux qu'un envoi qui
+  // trompe.
+  if (jeton.via === 'plateforme' && !(await destinataireDeLaMaison(boutique, destinataire))) {
+    console.error(
+      `Canaux — envoi client refuse (${boutique}/${canal}) : la boutique n'a pas son propre jeton.`,
+    );
+    return {
+      ok: false,
+      canal,
+      raison:
+        `la boutique ${boutique} n'a pas de jeton ${canal} : un message au client ne peut pas`
+        + ' partir depuis le compte de la plateforme',
       statut: 424,
     };
   }
