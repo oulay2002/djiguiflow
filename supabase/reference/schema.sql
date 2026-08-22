@@ -1,3 +1,11 @@
+-- INSTANTANE DU 2026-08-22 18:05 UTC
+-- DERNIERE MIGRATION APPLIQUEE : 20260822163305
+--
+-- Pour restaurer : rejouer ce fichier, PUIS tous les fichiers de
+-- supabase/migrations/ dont l'horodatage est superieur a 20260822163305.
+-- Sauter cette etape ramene le schema jusqu'a vingt-quatre heures en
+-- arriere, verrous compris.
+
 
 
 
@@ -732,7 +740,7 @@ $$;
 ALTER FUNCTION "public"."vitrine_boutique"("p_ref" "text") OWNER TO "postgres";
 
 
-CREATE OR REPLACE FUNCTION "public"."vitrine_boutiques"() RETURNS TABLE("id" "uuid", "slug" "text", "nom" "text", "description" "text", "zone" "text", "categorie" "text", "logo_url" "text", "articles" integer, "note_moyenne" numeric, "avis" integer, "commandes_livrees" integer)
+CREATE OR REPLACE FUNCTION "public"."vitrine_boutiques"() RETURNS TABLE("id" "uuid", "slug" "text", "nom" "text", "description" "text", "zone" "text", "categorie" "text", "logo_url" "text", "articles" integer, "note_moyenne" numeric, "avis" integer, "palier_livraisons" integer)
     LANGUAGE "sql" STABLE SECURITY DEFINER
     SET "search_path" TO 'public'
     AS $$
@@ -748,7 +756,17 @@ CREATE OR REPLACE FUNCTION "public"."vitrine_boutiques"() RETURNS TABLE("id" "uu
          (select count(c.note_client)
             from commandes c
            where c.boutique_id = b.id)::int,
-         (select count(*)
+         (select case
+                   when count(*) = 0   then 0
+                   when count(*) < 10  then 1
+                   when count(*) < 25  then 10
+                   when count(*) < 50  then 25
+                   when count(*) < 100 then 50
+                   when count(*) < 250 then 100
+                   when count(*) < 500 then 250
+                   when count(*) < 1000 then 500
+                   else 1000
+                 end
             from commandes c
            where c.boutique_id = b.id
              and c.statut = 'livree')::int
