@@ -146,7 +146,13 @@ export async function GET(req: Request) {
       // de bac a sable sauf si elle vaut exactement « 1 » ; c'est donc le
       // reglage le plus dangereux de toute la facturation, et le seul qu'on ne
       // pouvait pas lire sans ouvrir Vercel.
-      accepteBacASable: process.env.GENIUSPAY_ACCEPTE_SANDBOX === '1',
+      // La VALEUR posee, et son EFFET REEL — qui n'est pas le meme en
+      // production, ou le drapeau est ignore. Rapporter la valeur seule
+      // laisserait croire a une porte ouverte qui ne l'est plus.
+      accepteBacASableDemande: process.env.GENIUSPAY_ACCEPTE_SANDBOX === '1',
+      accepteBacASableEffectif:
+        process.env.GENIUSPAY_ACCEPTE_SANDBOX === '1' &&
+        process.env.VERCEL_ENV !== 'production',
     },
     // ELLE MESURAIT « DES CLES EXISTENT », PAS « L'ARGENT ARRIVERA ».
     //
