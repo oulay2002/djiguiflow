@@ -114,7 +114,7 @@ export default function BoutonPause() {
 
   if (enPause) {
     return (
-      <div className="mb-6 rounded-2xl border border-mangue-200 bg-mangue-50 p-4">
+      <div className="mb-6 border border-mangue-200 bg-mangue-50 p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <PauseCircle className="h-6 w-6 shrink-0 text-mangue-600" />
@@ -152,7 +152,7 @@ export default function BoutonPause() {
           Je ferme un moment
         </button>
       ) : (
-        <div className="rounded-2xl border border-[var(--hairline)] bg-white p-4">
+        <div className=" border border-[var(--hairline)] bg-white p-4">
           <p className="mb-1 font-semibold text-nuit-900">Fermer les commandes pendant…</p>
           <p className="mb-3 text-sm text-chaux-600">
             La boutique rouvrira toute seule. Vous pourrez reprendre avant, à tout moment.

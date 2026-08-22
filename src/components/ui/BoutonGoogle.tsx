@@ -42,15 +42,14 @@ function LogoGoogle() {
 export default function BoutonGoogle({
 	suite,
 	libelle = 'Continuer avec Google',
-	forme = 'pilule',
 }: {
 	/** Chemin interne a rejoindre une fois connecte. */
 	suite?: string | null;
 	libelle?: string;
 	/** La silhouette suit l'ecran : pilule dans l'outil, carree sur un bon. */
-	forme?: 'pilule' | 'carree';
 }) {
-	const rayon = forme === 'carree' ? 'rounded-none' : 'rounded-full';
+	// Une seule geometrie dans la maison : voir `FormeBouton` dans Bouton.tsx.
+	const rayon = 'rounded-none';
 	const [chargement, setChargement] = useState(false);
 	const [erreur, setErreur] = useState('');
 
@@ -101,7 +100,7 @@ export default function BoutonGoogle({
 			</button>
 
 			{erreur && (
-				<div className={`${rayon === 'rounded-none' ? '' : 'rounded-xl'} border border-bissap-200 bg-bissap-50 px-4 py-3 text-sm text-bissap-700`}>
+				<div className={`border border-bissap-200 bg-bissap-50 px-4 py-3 text-sm text-bissap-700`}>
 					{erreur}
 				</div>
 			)}

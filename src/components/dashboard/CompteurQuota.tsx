@@ -77,7 +77,7 @@ export default function CompteurQuota() {
   const jours = joursRestants(quota.fenetreFin);
 
   return (
-    <section className={`rounded-[1.5rem] border p-5 ${ton.cadre}`}>
+    <section className={` border p-5 ${ton.cadre}`}>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
           <p className="flex items-center gap-2 text-sm font-semibold text-nuit-900">
@@ -99,15 +99,15 @@ export default function CompteurQuota() {
             {jours !== null && ` · remise à zéro dans ${jours} jour${jours > 1 ? 's' : ''}`}
           </p>
 
-          <div className="mt-3 h-2 w-full max-w-md overflow-hidden rounded-full bg-white/70">
-            <div className={`h-full rounded-full ${ton.barre}`} style={{ width: `${part}%` }} />
+          <div className="mt-3 h-2 w-full max-w-md overflow-hidden bg-white/70">
+            <div className={`h-full ${ton.barre}`} style={{ width: `${part}%` }} />
           </div>
         </div>
 
         {!quota.exempt && (
           <Link
             href="/dashboard/paiements"
-            className="inline-flex min-h-[2.75rem] shrink-0 items-center justify-center gap-2 rounded-full bg-bissap-500 px-5 py-2.5 text-sm font-bold text-white active:bg-bissap-600"
+            className="inline-flex min-h-[2.75rem] shrink-0 items-center justify-center gap-2 bg-bissap-500 px-5 py-2.5 text-sm font-bold text-white active:bg-bissap-600"
           >
             Augmenter mon plafond
             <ArrowRight className="h-4 w-4" />
