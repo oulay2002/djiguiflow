@@ -62,6 +62,10 @@ export async function POST(req: Request) {
   return Response.json([
     {
       order_id: data.reference,
+      // Le jeton qui rend le lien de suivi indevinable. n8n en a besoin pour
+      // construire le lien qu'il envoie au client : une reference se devine,
+      // et deviner permettait d'annuler la commande d'un inconnu.
+      jeton_suivi: data.jeton_suivi ?? '',
       customer_name: data.client_nom ?? '',
       phone: data.client_telephone ?? '',
       address: data.client_adresse ?? '',
