@@ -314,3 +314,70 @@ export async function envoyerMessage(params: {
     return { ok: false, canal, raison, statut: 502 };
   }
 }
+
+export type ReponseTelegram =
+  | { ok: true; via: 'marchand' | 'plateforme'; resultat: Record<string, unknown> }
+  | { ok: false; raison: string; statut: number };
+
+/**
+ * Interroge Telegram en LECTURE, avec le jeton du marchand.
+ *
+ * Le pendant silencieux de `envoyerMessage` : `getMe`, `getWebhookInfo`,
+ * `getChat` et `getChatMember` disent l'etat d'un branchement sans qu'aucun
+ * message ne parte. C'est ce qui permet de verifier qu'un bot est bien dans le
+ * groupe des livreurs, et qu'il y est administrateur, SANS notifier de vrais
+ * livreurs pour une course qui n'existe pas.
+ *
+ * ELLE VIT ICI, avec `envoyerMessage`, pour la meme raison que celle-ci : le
+ * jeton du marchand ne quitte pas ce fichier. Une route de diagnostic qui
+ * lirait le Vault elle-meme ouvrirait un second chemin vers les secrets, et
+ * deux chemins finissent toujours par diverger.
+ *
+ * `via` EST RENDU ET COMPTE. Un `getMe` qui reussit avec le jeton de la
+ * plateforme ne prouve rien du bot du marchand : l'appelant doit exiger
+ * `via === 'marchand'`, sinon il valide le branchement de quelqu'un d'autre.
+ */
+export async function interrogerTelegram(
+  boutique: string,
+  methode: 'getMe' | 'getWebhookInfo' | 'getChat' | 'getChatMember',
+  params: Record<string, unknown> = {},
+): Promise<ReponseTelegram> {
+  const jeton = await resoudreJeton(boutique, 'telegram');
+  if (!jeton) {
+    return {
+      ok: false,
+      raison: `aucun jeton telegram pour ${boutique} ni pour la plateforme`,
+      statut: 424,
+    };
+  }
+
+  try {
+    const res = await fetch(`https://api.telegram.org/bot${jeton.jeton}/${methode}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(params),
+    });
+
+    // Telegram rend 200 avec `ok: false` sur certaines erreurs metier : lire le
+    // corps est obligatoire, le code HTTP seul ment.
+    const corps = (await res.json().catch(() => null)) as {
+      ok?: boolean;
+      description?: string;
+      result?: unknown;
+    } | null;
+
+    if (!res.ok || corps?.ok !== true) {
+      return {
+        ok: false,
+        raison: corps?.description || res.statusText || 'refus',
+        statut: res.status || 502,
+      };
+    }
+
+    return { ok: true, via: jeton.via, resultat: (corps.result ?? {}) as Record<string, unknown> };
+  } catch (e) {
+    const raison = e instanceof Error ? e.message : 'erreur reseau';
+    console.error(`Canaux — ${methode} impossible (${boutique}) :`, raison);
+    return { ok: false, raison, statut: 502 };
+  }
+}
