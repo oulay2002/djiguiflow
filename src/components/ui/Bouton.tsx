@@ -53,13 +53,21 @@ const SOCLE =
   'disabled:pointer-events-none disabled:opacity-45 disabled:shadow-none';
 
 const VARIANTES: Record<VarianteBouton, string> = {
-  // L'ombre teintee imite l'encre qui bave sous un tampon appuye.
-  action:
-    'bg-bissap-500 text-white shadow-[0_8px_20px_-8px_rgba(196,18,63,0.8)] ' +
-    'hover:bg-bissap-600 hover:shadow-[0_10px_24px_-8px_rgba(196,18,63,0.9)]',
+  /**
+   * UNE SEULE OMBRE DANS LA MAISON, celle declaree par `.soft-shadow`.
+   *
+   * Il y avait ici une ombre bissap diffuse, censee imiter « l'encre qui bave
+   * sous un tampon appuye ». Sous une pilule, elle passait. Sous l'angle vif
+   * du 22 aout 2026, elle ne bave plus : elle AUREOLE — un halo rouge flou
+   * autour d'une arete nette, ce qu'aucun tampon ne fait.
+   *
+   * L'action se distingue par sa COULEUR, pas par une lueur. Le bissap sur la
+   * chaux n'a besoin de rien de plus.
+   */
+  action: 'bg-bissap-500 text-white soft-shadow hover:bg-bissap-600',
   calme: 'border border-[var(--hairline)] bg-white/75 text-nuit-700 hover:bg-white',
   fantome: 'text-nuit-600 hover:bg-nuit-50 hover:text-nuit-900',
-  contraste: 'bg-white text-nuit-800 shadow-[0_8px_20px_-8px_rgba(12,18,41,0.55)] hover:bg-chaux-50',
+  contraste: 'bg-white text-nuit-800 soft-shadow hover:bg-chaux-50',
   voile: 'border border-white/25 bg-white/15 text-white hover:bg-white/25',
 };
 
@@ -124,7 +132,13 @@ export function LienRetour({ href, children }: { href: string; children: ReactNo
   return (
     <Link
       href={href}
-      className="stub group inline-flex min-h-10 items-center gap-2 rounded-r-full bg-white/80 py-2 pl-4 pr-5 text-sm font-semibold text-nuit-600 hover:bg-white hover:text-nuit-900"
+      /* LE PAPIER EST OPAQUE, ET C'EST LE CORRECTIF.
+         `bg-white/80` marchait sur fond clair. Les douze pages qui posent ce
+         talon le posent sur le bandeau INDIGO : a 80 % d'opacite il y virait
+         au gris sale, et la perforation en pointilles — qui EST le motif —
+         devenait invisible. Un talon qu'on ne reconnait pas est une pilule.
+         Le papier plein se detache du bandeau et rend ses pointilles. */
+      className="stub group inline-flex min-h-10 items-center gap-2 rounded-r-full bg-chaux-50 py-2 pl-4 pr-5 text-sm font-semibold text-nuit-700 hover:bg-white hover:text-nuit-900"
     >
       <ArrowLeft className="h-4 w-4 transition-transform duration-150 group-hover:-translate-x-0.5" />
       {children}
