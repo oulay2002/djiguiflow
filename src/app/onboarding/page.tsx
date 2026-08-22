@@ -6,7 +6,7 @@ import { ArrowUpRight } from 'lucide-react';
 import { fetchDashboard } from '@/lib/apiClient';
 import { useBoutique, avecBoutique } from '@/lib/boutique';
 import { classesBouton } from '@/components/ui/Bouton';
-import { TONS } from '@/components/ui/Etat';
+import { TONS, type Ton } from '@/components/ui/Etat';
 
 /**
  * Le branchement d'une boutique, en cinq etapes.
@@ -38,26 +38,75 @@ type Boutique = {
 /** Les trois issues d'un geste : en cours, abouti, echoue. */
 type TonMessage = 'ok' | 'erreur' | 'attente';
 
+/** Ce que rend /api/dashboard/boutique/diagnostic. */
+type Controle = {
+  cle: string;
+  /** L'etape de /aide/brancher a reprendre. 0 quand le controle n'en depend d'aucune. */
+  etape: number;
+  etat: 'ok' | 'echec' | 'avertissement';
+  message: string;
+};
+
+type Diagnostic = { pret: boolean; controles: Controle[]; verifie_le: string };
+
+/**
+ * Le nom court de chaque controle.
+ *
+ * Le marchand lit un titre, puis une phrase. Le mot-cle technique (`cle`) ne
+ * lui est jamais montre : il sert aux journaux et aux tests, pas a l'ecran.
+ */
+const LIBELLE: Record<string, string> = {
+  numero: 'votre numéro',
+  whatsapp: 'whatsapp',
+  telegram_bot: 'votre bot',
+  telegram_gerant: 'vos alertes',
+  groupe: 'vos livreurs',
+  webhook_whatsapp: 'liaison signée',
+  catalogue: 'vos articles',
+};
+
+/** Le ton du systeme pour chaque verdict. Aucune teinte n'est choisie ici. */
+const TON_VERDICT: Record<Controle['etat'], Ton> = {
+  ok: 'fait',
+  echec: 'urgent',
+  avertissement: 'encours',
+};
+
+/**
+ * Le carre du voyant, une teinte par ton.
+ *
+ * TONS ne porte que les classes de texte et de surface ; ce point-ci demande
+ * une nuance pleine. Les cinq sont declarees ensemble pour qu'un ton ajoute au
+ * systeme ne puisse pas arriver ici sans sa couleur.
+ */
+const POINT: Record<Ton, string> = {
+  fait: 'bg-accent-500',
+  eteint: 'bg-chaux-500',
+  urgent: 'bg-bissap-500',
+  encours: 'bg-mangue-500',
+  neutre: 'bg-nuit-500',
+};
+
 /**
  * Un voyant, pas une phrase : l'etat se lit avant de se relire.
  *
- * Sa couleur vient de TONS, jamais d'une teinte recopiee : `fait` quand le
- * canal repond, `eteint` tant qu'il ne repond pas. Recopiee, la valeur finit
- * par diverger de celle des etiquettes du tableau de bord, et deux verts
+ * Sa couleur vient de TONS, jamais d'une teinte recopiee. Recopiee, la valeur
+ * finit par diverger de celle des etiquettes du tableau de bord, et deux verts
  * differents pour le meme fait valent moins qu'un seul.
+ *
+ * IL PREND UN TON, PAS UN BOOLEEN. Il n'en connaissait que deux — branche ou
+ * pas — et le diagnostic en a trois : `fait` quand le canal repond, `urgent`
+ * quand il faut agir, `encours` pour ce qui est commence sans etre fini. Un
+ * catalogue vide a la fin du branchement n'est pas une panne, et le peindre en
+ * rouge dirait le contraire.
  */
-function Voyant({ actif, quand, sinon }: { actif?: boolean; quand: string; sinon: string }) {
+function Voyant({ ton, children }: { ton: Ton; children: React.ReactNode }) {
   return (
     <span
-      className={`inline-flex items-center gap-1.5 font-mono text-xs uppercase tracking-[0.14em] ${
-        TONS[actif ? 'fait' : 'eteint'].texte
-      }`}
+      className={`inline-flex items-center gap-1.5 font-mono text-xs uppercase tracking-[0.14em] ${TONS[ton].texte}`}
     >
-      <span
-        aria-hidden
-        className={`h-1.5 w-1.5 shrink-0 ${actif ? 'bg-accent-500' : 'bg-chaux-500'}`}
-      />
-      {actif ? quand : sinon}
+      <span aria-hidden className={`h-1.5 w-1.5 shrink-0 ${POINT[ton]}`} />
+      {children}
     </span>
   );
 }
@@ -116,6 +165,8 @@ export default function OnboardingPage() {
   const [boutique, setBoutique] = useState<Boutique | null>(null);
   const [chargement, setChargement] = useState(true);
   const [message, setMessage] = useState<{ ton: TonMessage; texte: string } | null>(null);
+  const [diagnostic, setDiagnostic] = useState<Diagnostic | null>(null);
+  const [enTest, setEnTest] = useState(false);
 
   // Un seul minuteur, tenu par une reference. Deux enregistrements rapproches
   // en posaient deux : celui du premier geste effacait le message du second
@@ -235,6 +286,54 @@ export default function OnboardingPage() {
     }
   };
 
+  /**
+   * Eprouve le branchement, et nomme l'etape en cause.
+   *
+   * ELLE NE PASSE AUCUNE COMMANDE. Deux messages d'essai partent — sur le
+   * numero de la boutique et sur le Telegram du gerant — et le groupe des
+   * livreurs est verifie sans qu'aucun message n'y soit envoye. Un livreur
+   * derange pour une course qui n'existe pas apprend a ignorer le groupe.
+   *
+   * Le resultat vit dans son propre etat, pas dans le bandeau : le bandeau
+   * s'efface quand il annonce un succes, et la liste, elle, doit rester lisible
+   * le temps que le marchand reprenne l'etape qu'elle designe.
+   */
+  const tester = async () => {
+    setEnTest(true);
+    annoncer('attente', 'Vérification…');
+    try {
+      const r = await fetchDashboard(
+        avecBoutique('/api/dashboard/boutique/diagnostic', boutiqueId),
+        { method: 'POST' },
+      );
+      const j = await r.json().catch(() => null);
+
+      if (!r.ok) {
+        // 429 porte le delai dans son en-tete : le dire vaut mieux que de
+        // laisser le marchand cliquer a nouveau pour rien.
+        const attendre = Number(r.headers.get('Retry-After') ?? 0);
+        annoncer(
+          'erreur',
+          attendre > 0
+            ? `Vous venez de tester votre boutique. Réessayez dans ${Math.ceil(attendre / 60)} min.`
+            : j?.error || 'La vérification a échoué.',
+        );
+        return;
+      }
+
+      setDiagnostic(j as Diagnostic);
+      if ((j as Diagnostic)?.pret) {
+        annoncer('ok', 'Votre boutique est branchée.', 6000);
+      } else {
+        annoncer('erreur', 'Votre boutique n’est pas encore prête. Le détail est ci-dessous.');
+      }
+    } catch {
+      annoncer('erreur', 'Connexion impossible.');
+    } finally {
+      setEnTest(false);
+    }
+  };
+
   /** Un secret ne se reaffiche pas : le champ se vide une fois envoye. */
   const enregistrerSecret = async (champ: string, e: React.FocusEvent<HTMLInputElement>) => {
     const valeur = e.target.value.trim();
@@ -328,17 +427,17 @@ export default function OnboardingPage() {
                   n&apos;avez qu&apos;un QR code à scanner, aucune clé à manipuler.
                 </p>
                 <span className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1">
-                  <Voyant
-                    actif={boutique.whatsapp_connecte}
-                    quand="numéro connecté"
-                    sinon="écrivez-nous pour recevoir votre QR"
-                  />
+                  <Voyant ton={boutique.whatsapp_connecte ? 'fait' : 'eteint'}>
+                    {boutique.whatsapp_connecte
+                      ? 'numéro connecté'
+                      : 'écrivez-nous pour recevoir votre QR'}
+                  </Voyant>
                   {boutique.whatsapp_connecte && (
-                    <Voyant
-                      actif={boutique.whatsapp_webhook_protege}
-                      quand="réception sécurisée"
-                      sinon="réception non sécurisée"
-                    />
+                    <Voyant ton={boutique.whatsapp_webhook_protege ? 'fait' : 'eteint'}>
+                      {boutique.whatsapp_webhook_protege
+                        ? 'réception sécurisée'
+                        : 'réception non sécurisée'}
+                    </Voyant>
                   )}
                 </span>
               </div>
@@ -365,11 +464,9 @@ export default function OnboardingPage() {
                   }
                 />
                 <p className="mt-3">
-                  <Voyant
-                    actif={boutique.telegram_webhook_branche}
-                    quand="bot branché"
-                    sinon="bot pas encore branché"
-                  />
+                  <Voyant ton={boutique.telegram_webhook_branche ? 'fait' : 'eteint'}>
+                    {boutique.telegram_webhook_branche ? 'bot branché' : 'bot pas encore branché'}
+                  </Voyant>
                 </p>
               </div>
             </Etape>
@@ -465,8 +562,81 @@ export default function OnboardingPage() {
               </p>
             </Etape>
 
+            {/* LE TEST N'EST PAS UNE SIXIEME ETAPE : il ne demande rien a
+                remplir, il verifie les cinq precedentes. Il porte donc un
+                encadre, pas un rang. */}
+            <section className="border border-[var(--hairline)] bg-chaux-50 p-6 soft-shadow">
+              <h2 className="font-display text-xl font-bold text-nuit-900">Tester ma boutique</h2>
+              <p className="mt-2 text-sm leading-relaxed text-chaux-600">
+                Nous écrivons sur votre WhatsApp et sur votre Telegram pour vérifier que vos
+                canaux répondent, et nous vérifions votre groupe de livreurs sans rien y envoyer.
+                Aucune commande n’est créée, et vos livreurs ne reçoivent rien.
+              </p>
+
+              <button
+                type="button"
+                onClick={tester}
+                disabled={enTest}
+                className={`${classesBouton(
+                  diagnostic?.pret ? 'calme' : 'action',
+                  'md',
+                  'carree',
+                )} mt-5 disabled:opacity-60`}
+              >
+                {enTest ? 'Vérification…' : diagnostic ? 'Tester à nouveau' : 'Tester ma boutique'}
+              </button>
+
+              {diagnostic && (
+                <div className="mt-6">
+                  {/* UN SUCCES SE LIT COMME UN SUCCES. Un decompte
+                      « 5 controles sur 7 » transformerait un branchement fini
+                      en bulletin de notes, alors que les deux avertissements
+                      possibles ne sont pas des fautes du marchand. */}
+                  <p className="font-display text-lg font-bold text-nuit-900">
+                    {diagnostic.pret
+                      ? 'Votre boutique est branchée.'
+                      : 'Il reste une étape à reprendre.'}
+                  </p>
+
+                  <ul className="mt-4 flex flex-col divide-y divide-chaux-200 border-y border-chaux-200">
+                    {diagnostic.controles.map((c) => (
+                      <li key={c.cle} className="py-3">
+                        <Voyant ton={TON_VERDICT[c.etat]}>{LIBELLE[c.cle] ?? c.cle}</Voyant>
+                        <p className="mt-1 max-w-[62ch] text-sm leading-snug text-chaux-600">
+                          {c.message}
+                          {/* Le renvoi fait ce que le texte promet : il mene a
+                              l'etape en cause, dans le guide, plutot que de
+                              laisser le marchand la chercher. */}
+                          {c.etat === 'echec' && c.etape > 0 && (
+                            <>
+                              {' '}
+                              <a
+                                href={`/aide/brancher#etape-${c.etape}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="font-semibold text-nuit-700 underline decoration-nuit-200 underline-offset-4 transition-[text-decoration-color] duration-150 hover:decoration-nuit-700"
+                              >
+                                Voir l’étape&nbsp;{c.etape}
+                              </a>
+                            </>
+                          )}
+                        </p>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </section>
+
+            {/* LA COULEUR FORTE DESIGNE CE QU'IL RESTE A FAIRE. Un seul
+                `action` a l'ecran a tout instant : le test tant que la boutique
+                n'est pas prouvee branchee, le tableau de bord une fois qu'elle
+                l'est. */}
             <div className="pt-2">
-              <Link href="/dashboard" className={classesBouton('action', 'md', 'carree')}>
+              <Link
+                href="/dashboard"
+                className={classesBouton(diagnostic?.pret ? 'action' : 'calme', 'md', 'carree')}
+              >
                 Aller au tableau de bord
               </Link>
             </div>
