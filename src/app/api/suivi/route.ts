@@ -175,17 +175,26 @@ export async function GET(req: Request) {
   // L'une OU l'autre suffit. Un jeton juste rend la seconde preuve inutile.
   const passe = verdict === 'ok' || verdictSecondaire === 'ok';
 
-  if (!passe && (jetonRefuse(verdict) || verdictSecondaire === 'invalide')) {
-    console.error(`Suivi — acces refuse (jeton=${verdict}) depuis ${appelant}.`);
-    return Response.json({ error: 'Commande introuvable' }, { status: 404 });
-  }
-
-  if (!passe) {
+  // ON COMPTE AVANT DE REFUSER, et l'ordre n'est pas cosmetique.
+  //
+  // En phase 3 ce journal servait a decider de la bascule. En phase 4 il sert a
+  // savoir si la bascule a CASSE quelqu'un — c'est-a-dire au moment ou il est
+  // le plus utile. Place apres le `return`, il se taisait justement la : on
+  // aurait bascule, puis on serait devenu aveugle.
+  //
+  // Un jeton INVALIDE n'est pas compte : ce n'est pas un client qui a perdu son
+  // lien, c'est quelqu'un qui essaie. Le marqueur doit rester lisible.
+  if (!passe && verdict === 'absent' && verdictSecondaire === 'absent') {
     journaliserAccesSansJeton({
       route: 'suivi',
       appelant,
       ageHeures: ageEnHeures(c.created_at),
     });
+  }
+
+  if (!passe && (jetonRefuse(verdict) || verdictSecondaire === 'invalide')) {
+    console.error(`Suivi — acces refuse (jeton=${verdict}) depuis ${appelant}.`);
+    return Response.json({ error: 'Commande introuvable' }, { status: 404 });
   }
 
   // Le nom de l'enseigne se lit apres coup, sur la boutique que la commande

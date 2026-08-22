@@ -61,7 +61,7 @@ describe('verdictJeton', () => {
 });
 
 describe('jetonRefuse — la porte', () => {
-  it('refuse TOUJOURS un jeton invalide, meme en phase 3', () => {
+  it('refuse TOUJOURS un jeton invalide, quelle que soit la phase', () => {
     // C'est ce qui empeche le jeton d'etre purement decoratif : sans cela, un
     // enumerateur n'aurait qu'a envoyer n'importe quoi.
     expect(jetonRefuse('invalide')).toBe(true);
@@ -71,18 +71,30 @@ describe('jetonRefuse — la porte', () => {
     expect(jetonRefuse('ok')).toBe(false);
   });
 
+  // PHASE 4 : l'absence est desormais refusee. Le test lit le drapeau plutot
+  // que de recopier `true` — le jour d'un retour arriere, il suivra au lieu de
+  // mentir.
   it('suit le drapeau de phase sur un jeton absent', () => {
     expect(jetonRefuse('absent')).toBe(JETON_EXIGE);
+  });
+
+  it('est en PHASE 4 : le jeton est exige', () => {
+    expect(JETON_EXIGE).toBe(true);
+    expect(jetonRefuse('absent')).toBe(true);
   });
 });
 
 describe('la phase en cours', () => {
-  it('est la PHASE 3 : le jeton n’est pas encore exige', () => {
-    // TRIPWIRE VOLONTAIRE. Ce test echouera le jour ou l'on passera en phase 4.
-    // C'est le but : il force a relire ce que ce passage implique — les liens
-    // sans jeton encore dans les WhatsApp des clients cesseront de fonctionner,
-    // et la saisie manuelle d'une reference sur /suivi aussi.
-    expect(JETON_EXIGE).toBe(false);
+  it('est la PHASE 4 : le jeton est exige', () => {
+    // LE TRIPWIRE A SERVI. Il a echoue a la bascule du 22 aout 2026, comme
+    // prevu, et a force a relire ce que ce passage implique. Il garde le meme
+    // role dans l'autre sens : revenir en arriere rouvre l'enumeration, et ne
+    // doit pas pouvoir se faire d'un caractere sans que rien ne rougisse.
+    //
+    // Ce qui a permis de basculer n'est pas un delai mais une mesure : 57
+    // commandes, ZERO sans jeton, et une seule confirmation en attente, vieille
+    // de 7,5 jours et deja abandonnee.
+    expect(JETON_EXIGE).toBe(true);
   });
 
   it('expose un marqueur de journal stable, qu’on puisse compter', () => {

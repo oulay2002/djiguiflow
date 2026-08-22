@@ -123,14 +123,32 @@ describe('/api/suivi', () => {
     expect(JSON.stringify(corps)).not.toContain('Awa');
   });
 
-  it('tolere l’absence de jeton en phase 3, mais la COMPTE', async () => {
+  // PHASE 4, basculee le 22 aout 2026. L'absence n'est plus toleree — mais elle
+  // reste COMPTEE : le journal dit qui frappe encore sans jeton, et c'est la
+  // seule facon de savoir si la bascule a casse quelqu'un.
+  it('REFUSE l’absence de jeton, et la compte quand meme', async () => {
     const rep = await suivi(urlSuivi());
-    expect(rep.status).toBe(200);
+    expect(rep.status).toBe(404);
     expect(console.warn).toHaveBeenCalled();
     const ligne = String((console.warn as unknown as { mock: { calls: string[][] } }).mock.calls[0][0]);
     expect(ligne).toContain('ACCES_SANS_JETON');
     expect(ligne).toContain('route=suivi');
     expect(ligne).toContain('age_heures=2');
+  });
+
+  // Le refus ne doit pas apprendre que la reference existe : meme code, meme
+  // corps qu'une reference inventee. Sinon la bascule rendrait l'enumeration
+  // PLUS facile qu'avant.
+  it('ne dit pas que la reference existe', async () => {
+    const sansJeton = await suivi(urlSuivi());
+    const inventee = await suivi(
+      new Request('https://exemple.test/api/suivi?ref=CETTE-REFERENCE-N-EXISTE-PAS'),
+    );
+    // Meme code ET meme corps : c'est la seule facon de ne rien apprendre a un
+    // enumerateur. Un 404 « commande introuvable » face a un 403 « jeton
+    // manquant » lui confirmerait la moitie de ce qu'il cherche.
+    expect(sansJeton.status).toBe(inventee.status);
+    expect(await sansJeton.text()).toBe(await inventee.text());
   });
 
   it('ne renvoie JAMAIS le jeton au navigateur', async () => {
@@ -156,10 +174,14 @@ describe('/api/confirmation — le verbe qui annule', () => {
     expect(etats.ecritures).toBe(0);
   });
 
-  it('tolere l’absence de jeton en phase 3, et ecrit', async () => {
+  // LE TEST QUI COMPTE LE PLUS SUR CETTE ROUTE. C'est le verbe qui ANNULE une
+  // commande : en phase 3, deviner une reference suffisait a annuler celle d'un
+  // inconnu. Depuis la bascule, l'absence de jeton refuse — et surtout N'ECRIT
+  // PAS.
+  it('REFUSE l’absence de jeton, et n’ecrit RIEN', async () => {
     const rep = await confirmer(postConfirmation());
-    expect(rep.status).toBe(200);
-    expect(etats.ecritures).toBeGreaterThan(0);
+    expect(rep.status).toBe(404);
+    expect(etats.ecritures).toBe(0);
     expect(console.warn).toHaveBeenCalled();
     const ligne = String((console.warn as unknown as { mock: { calls: string[][] } }).mock.calls[0][0]);
     expect(ligne).toContain('route=confirmation:reponse');
