@@ -100,6 +100,9 @@ export async function POST(req: Request) {
     ok: true,
     trouve: true,
     order_id: commande.reference,
+    // Meme raison que dans `fiche` : sans lui, n8n ne peut construire qu'un
+    // lien devinable.
+    jeton_suivi: commande.jeton_suivi ?? '',
     customer_name: commande.client_nom ?? '',
     phone: commande.client_telephone ?? '',
     address: commande.client_adresse ?? '',
