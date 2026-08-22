@@ -67,8 +67,19 @@ export async function POST(req: Request) {
 
   // Le nom lisible de chaque boutique, pour que l'alerte nomme le marchand
   // plutot que de rendre un uuid que personne ne reconnait.
-  const { data: boutiques } = await sb.from('boutiques').select('id, slug, nom');
+  const { data: boutiques } = await sb.from('boutiques').select('id, slug, nom, essai');
   const nomDe = new Map((boutiques ?? []).map((b) => [String(b.id), String(b.nom || b.slug || '?')]));
+
+  // LES BOUTIQUES DE BANC NE SONT PAS DES PANNES. Depuis que le banc de chaine
+  // existe, chacun de ses passages laisse derriere lui des commandes qui, vues
+  // d'ici, ressemblent a des chaines rompues — stock non decompte, panier
+  // oublie. Les signaler ferait crier la veille a chaque essai, et une veille
+  // qu'on bruite est une veille qu'on cesse de lire. C'est le meme raisonnement
+  // que le drapeau `essai` cote dispatch : fidele la ou ca compte, muet la ou
+  // ca derangerait.
+  const deBanc = new Set(
+    (boutiques ?? []).filter((b) => b.essai === true).map((b) => String(b.id)),
+  );
 
   const lire = async (
     type: string,
@@ -87,6 +98,7 @@ export async function POST(req: Request) {
     }
 
     for (const c of data ?? []) {
+      if (deBanc.has(String(c.boutique_id))) continue;
       trouvees.push({
         type,
         reference: String(c.reference ?? ''),
