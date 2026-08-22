@@ -78,6 +78,29 @@ jobs:
           git add n8n/
           git commit -m "n8n : etat des workflows au $(date -u '+%Y-%m-%d')" \
                      -m "Export automatique. Le diff est la revue : il ne contient que ce qu'un humain a change dans l'interface n8n."
+          # `--force-with-lease` SANS REFERENCE DISTANTE REFUSE DE POUSSER.
+          #
+          # Il compare a la ref de suivi `origin/$BRANCHE` — que ce clone n'a
+          # pas, puisqu'il ne connait que `main`. Git repond alors « stale
+          # info » et abandonne, sans jamais toucher au distant.
+          #
+          # CE QUE CA PRODUISAIT, LU DANS L'HISTORIQUE LE 22 AOUT 2026 : cet
+          # export n'a REUSSI que les fois ou il n'avait RIEN a pousser. Les
+          # quatre executions porteuses d'un changement ont echoue, et un run
+          # « rien n'a bouge » se rapporte en succes — donc personne ne l'a vu.
+          # Le depot portait une copie perimee, et le garde qui devait
+          # l'empecher etait justement celui qui ne tournait pas.
+          #
+          # On rapatrie donc la branche AVANT de pousser, avec un refspec
+          # EXPLICITE. `actions/checkout` configure un refspec limite a la
+          # branche extraite : un simple `git fetch origin "$BRANCHE"` remplit
+          # FETCH_HEAD sans creer `refs/remotes/origin/$BRANCHE`, et le bail
+          # n'aurait toujours rien a quoi se comparer. Corriger a moitie aurait
+          # laisse croire que c'etait repare.
+          #
+          # `|| true` : la premiere fois la branche n'existe pas, et c'est
+          # normal — le bail accepte alors une creation.
+          git fetch origin "+refs/heads/$BRANCHE:refs/remotes/origin/$BRANCHE" || true
           git push --force-with-lease origin "$BRANCHE"
 
           if gh pr view "$BRANCHE" --json state --jq .state 2>/dev/null | grep -q OPEN; then
