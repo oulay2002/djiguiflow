@@ -79,6 +79,43 @@ jobs:
           fi
           echo "reference : $(wc -l < supabase/reference/schema.sql) lignes"
 
+          # LA REFERENCE DOIT DIRE DE QUOI ELLE EST L'INSTANTANE.
+          #
+          # Eprouve le 22 aout 2026 par une vraie restauration : la reference
+          # avait ete ecrite a 16 h 29, la migration des paliers appliquee a
+          # 16 h 33. La base restauree portait donc encore l'ancienne
+          # `vitrine_boutiques()` — celle qui publie le COMPTE EXACT des
+          # livraisons. Restaurer aurait ROUVERT la fuite qu'on venait de
+          # fermer, et l'application, qui lit `palier_livraisons`, aurait
+          # affiche « Nouvelle boutique » pour tout le monde.
+          #
+          # Une reference retarde d'au plus vingt-quatre heures. Ce n'est pas un
+          # defaut : c'est la nature d'un instantane. Le defaut etait que RIEN
+          # ne le disait, donc que personne n'aurait pense a rattraper. Ce
+          # filigrane donne la borne exacte : rejouer les fichiers de
+          # `supabase/migrations/` dont l'horodatage lui est superieur.
+          DERNIERE=$(supabase migration list --linked --project-ref xshksvlnrgxijsznmkkj \
+            --output-format json 2>/dev/null \
+            | python3 -c "import sys,json;m=[x['remote'] for x in json.load(sys.stdin)['migrations'] if x.get('remote')];print(m[-1] if m else '')")
+
+          if [ -z "$DERNIERE" ]; then
+            echo "::error::Impossible de lire la derniere migration appliquee. Une reference sans filigrane ne dit pas ce qu'il faut rattraper."
+            exit 1
+          fi
+
+          { echo "-- INSTANTANE DU $(date -u '+%Y-%m-%d %H:%M') UTC"
+            echo "-- DERNIERE MIGRATION APPLIQUEE : $DERNIERE"
+            echo "--"
+            echo "-- Pour restaurer : rejouer ce fichier, PUIS tous les fichiers de"
+            echo "-- supabase/migrations/ dont l'horodatage est superieur a $DERNIERE."
+            echo "-- Sauter cette etape ramene le schema jusqu'a vingt-quatre heures en"
+            echo "-- arriere, verrous compris."
+            echo ""
+            cat supabase/reference/schema.sql
+          } > supabase/reference/schema.sql.tmp
+          mv supabase/reference/schema.sql.tmp supabase/reference/schema.sql
+          echo "filigrane : $DERNIERE"
+
       - name: Y a-t-il un vrai changement ?
         id: diff
         run: |

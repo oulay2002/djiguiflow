@@ -55,16 +55,24 @@ boutiques marquées `essai`. Aucun ne couvre une vraie boutique.
 alter table public.commandes disable trigger on_new_commande;
 ```
 
-### Les cinq gestes
+### Les six gestes — exécutés pour de vrai le 22 août
 
 1. `alter table public.commandes disable trigger on_new_commande;`
 2. Sur une base neuve : rejouer `supabase/reference/schema.sql`.
-   **Jamais** l'historique de `supabase/migrations/` — il n'est pas rejouable,
-   voir plus bas.
-3. Rejouer `donnees/donnees.sql` du dépôt privé.
-4. Reverser `images/` dans le bucket `images` (il est public, arborescence
+   **Jamais** l'historique complet de `supabase/migrations/` — il n'est pas
+   rejouable, voir plus bas.
+3. **Rattraper le retard de la référence.** Elle porte en tête
+   `-- DERNIERE MIGRATION APPLIQUEE : <horodatage>`. Rejouer tous les fichiers
+   de `supabase/migrations/` **postérieurs** à cet horodatage.
+   ⚠ **Ce geste n'est pas facultatif.** Le 22 août, la référence datait de
+   16 h 29 et la migration des paliers de 16 h 33 : la base restaurée portait
+   encore la `vitrine_boutiques()` qui publie le **compte exact** des
+   livraisons. Restaurer sans rattraper aurait **rouvert une fuite fermée le
+   jour même**, et l'application aurait affiché « Nouvelle boutique » partout.
+4. Rejouer `donnees/donnees.sql` du dépôt privé.
+5. Reverser `images/` dans le bucket `images` (il est public, arborescence
    identique).
-5. `alter table public.commandes enable trigger on_new_commande;`
+6. `alter table public.commandes enable trigger on_new_commande;`
 
 `set_boutique_user_id`, l'autre déclencheur, **ne gêne pas** : il ne s'active que
 si `user_id` est nul, et le dump le porte. Vérifié plutôt que supposé.
@@ -164,9 +172,27 @@ exactement pourquoi on le fait avant d'ouvrir à de nouveaux marchands.
 | Geste | État | Ce qu'il a appris |
 |---|---|---|
 | 1. Voir ce qui est sauvegardé | **fait** | **Rien ne l'était.** Ce document décrivait un secours inexistant |
-| 2. Rejouer le schéma sur une base neuve | à faire | — |
-| 3. Y pointer l'application, lancer les 26 contrôles | à faire | — |
-| 4. Écrire ce qui a manqué | **en cours** | trois manques trouvés sans même restaurer |
+| 2. Rejouer le schéma sur une base neuve | **fait** | La référence rebâtit une structure **identique**, du premier coup |
+| 3. Rejouer les données, sans réveiller personne | **fait** | Identique ligne pour ligne, **zéro webhook envoyé** |
+| 4. Écrire ce qui a manqué | **fait** | quatre manques, dont un qui aurait rouvert une fuite |
+
+### Ce qu'une vraie restauration a donné, le 22 août
+
+Base jetable créée, référence rejouée, données rechargées, migration de
+rattrapage appliquée. Comparé à la production :
+
+| | restaurée | production |
+|---|---|---|
+| tables / RLS actif | 16 / 16 | 16 / 16 |
+| politiques | 28 | 28 |
+| fonctions / `SECURITY DEFINER` | 27 / 24 | 27 / 24 |
+| déclencheurs | 2 | 2 |
+| boutiques / produits / commandes | 3 / 13 / 57 | 3 / 13 / 57 |
+| comptes `auth` / objets `storage` | 3 / 13 | 3 / 13 |
+| `vitrine_boutiques()` | palier 10 et 1 | palier 10 et 1 |
+
+**Aucun webhook n'est parti** : `net.http_request_queue` est resté à zéro
+pendant le rechargement des 57 commandes. Le geste 1 fonctionne.
 
 ### Ce que le geste 1 a trouvé, en plus de l'absence de sauvegarde
 
@@ -181,11 +207,12 @@ exactement pourquoi on le fait avant d'ouvrir à de nouveaux marchands.
 
 ### Ce qui n'est toujours PAS éprouvé
 
-**Aucune restauration n'a jamais été exécutée.** Tant que les gestes 2 et 3 ne
-sont pas faits, « les données sont récupérables » reste une **déduction** — bien
-appuyée, mais une déduction. Ce qu'on sait avec certitude, c'est qu'un fichier
-de 116 Ko existe, qu'il contient `auth.users`, `public.boutiques` et
-`public.commandes`, et que treize images l'accompagnent.
+**Les 26 contrôles du banc n'ont pas été lancés contre la base restaurée.** La
+structure et les données correspondent, et l'annuaire public rend exactement ce
+que rend la production — mais le parcours applicatif complet reste à éprouver.
+C'est le seul point qui manque désormais, et il est bien plus petit que ce qui a
+été fermé.
 
-Le geste 3 est le seul qui dit la vérité : les 26 contrôles du banc passent, ou
-ils ne passent pas.
+**Le reste des limites tient toujours** : les secrets du coffre restent
+illisibles après restauration dans un autre projet, les identifiants n8n et la
+session WhatsApp d'un marchand se ressaisissent à la main. Voir plus haut.
