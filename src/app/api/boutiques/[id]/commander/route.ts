@@ -156,6 +156,20 @@ async function tariferPanier(
  *    forfait le plus large en couvre mille par MOIS : ce plafond ne peut donc
  *    pas gener un marchand reel, il n'arrete qu'un abus.
  *
+ * DEUX DE CES TROIS ETAGES NE TIENNENT PAS A L'ECHELLE, et il faut le savoir.
+ * Les deux rafales sont EN MEMOIRE DU PROCESSUS : Vercel repartit les appels
+ * sur plusieurs instances, et sept appels de suite peuvent n'en saturer
+ * aucune. Constate le 22 aout 2026 par le banc multi-marchand, qui declenche
+ * le 429 en local et ne le declenche pas en production.
+ *
+ * CE QUI BORNE REELLEMENT LE DEGAT EST DONC LE PLAFOND DU JOUR, lui seul
+ * partage puisqu'il vit en base. Les rafales restent utiles — elles arretent
+ * la boucle depuis un poste, qui est le cas courant — mais ce sont des
+ * planchers, pas des plafonds, exactement comme `limiteur.ts` le dit.
+ *
+ * La correction de fond serait un compteur en base sur une fenetre courte.
+ * Elle n'existe pas encore.
+ *
  * CE N'EST PAS UNE PROTECTION ANTI-BOT COMPLETE, et il ne faut pas le croire.
  * Un attaquant reparti sur des centaines d'adresses reste capable de nuire
  * plus lentement. La reponse propre a ce niveau-la est une protection de
