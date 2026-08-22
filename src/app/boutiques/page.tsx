@@ -156,7 +156,7 @@ export default function VitrinePage() {
   }, [boutiques, categorie, recherche, tri]);
 
   return (
-    <main className="min-h-screen bg-chaux-100">
+    <main id="contenu" className="min-h-screen bg-chaux-100">
       {/* La souche du carnet : ce que c'est, et un seul chiffre, qui est vrai. */}
       <header className="indigo-weave bg-nuit-900 text-chaux-50">
         <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 sm:py-20">

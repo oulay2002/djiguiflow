@@ -149,7 +149,7 @@ export default function CustomersPage() {
             celle de son contenu, et le conteneur defilant du tableau ne peut
             jamais retrecir — la page entiere partait en defilement
             horizontal, jusqu'a 1 103 px de large sur un telephone. */}
-        <main className="min-w-0">
+        <main id="contenu" className="min-w-0">
           <header className="mb-8 flex flex-col gap-4 border border-[var(--hairline)] bg-white p-5 soft-shadow md:flex-row md:items-center md:justify-between">
             <div>
               <p className="text-sm font-medium uppercase tracking-[0.2em] text-chaux-600">Clients</p>
@@ -170,9 +170,13 @@ export default function CustomersPage() {
                   className="w-full border border-chaux-200 bg-chaux-50 py-2.5 pl-9 pr-4 text-sm text-nuit-700 outline-none transition focus:border-primary-400 focus:ring-2 focus:ring-primary-100 sm:w-56"
                 />
               </div>
-              <button className="flex h-11 w-11 items-center justify-center border border-chaux-200 bg-chaux-50 text-chaux-600 transition hover:border-primary-300 hover:text-primary-700">
-                <Bell className="h-5 w-5" />
-              </button>
+              <Link
+                href="/dashboard/reglages/notifications"
+                aria-label="Reglages des notifications"
+                className="flex h-11 w-11 items-center justify-center border border-chaux-200 bg-chaux-50 text-chaux-600 transition hover:border-primary-300 hover:text-primary-700"
+              >
+                <Bell aria-hidden className="h-5 w-5" />
+              </Link>
               {/* Navigation, pas action : le bissap reste réservé au geste
                   qui engage. */}
               <Link href="/dashboard/commandes" className={classesBouton('calme')}>

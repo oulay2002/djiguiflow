@@ -512,7 +512,7 @@ export default function Page() {
         <div className="perf-line absolute inset-x-0 bottom-0 text-white" />
       </header>
 
-      <main className="mx-auto max-w-6xl px-5 py-8 sm:px-8">
+      <main id="contenu" className="mx-auto max-w-6xl px-5 py-8 sm:px-8">
         {confirmation && (
           <div className="mb-8 flex flex-wrap items-center gap-4 border border-accent-200 bg-accent-50 p-5">
             <span className="stamp font-mono text-xs font-bold text-accent-700">REÇUE</span>

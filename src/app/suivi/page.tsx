@@ -181,7 +181,7 @@ function Suivre() {
   const idxActif = etapes.map((e) => e.ok).lastIndexOf(true);
 
   return (
-    <main className="min-h-screen bg-chaux-100">
+    <main id="contenu" className="min-h-screen bg-chaux-100">
       <header className="indigo-weave relative bg-nuit-900 px-5 pb-10 pt-10 text-chaux-50 sm:px-8">
         <div className="mx-auto max-w-xl">
           <p className="font-mono text-xs uppercase tracking-[0.28em] text-mangue-300">

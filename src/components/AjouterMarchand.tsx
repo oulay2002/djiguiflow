@@ -123,8 +123,12 @@ export default function AjouterMarchand() {
               <h2 className="flex items-center gap-2 text-lg font-black text-nuit-800">
                 <Store className="h-5 w-5 text-mangue-600" /> Nouveau marchand
               </h2>
-              <button onClick={fermer} className=" p-1 hover:bg-chaux-100">
-                <X className="h-5 w-5" />
+              <button
+                onClick={fermer}
+                aria-label="Fermer"
+                className=" p-1 hover:bg-chaux-100"
+              >
+                <X aria-hidden className="h-5 w-5" />
               </button>
             </div>
 

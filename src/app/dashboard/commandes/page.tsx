@@ -259,7 +259,7 @@ export default function Page() {
   return (
     <div className="min-h-screen bg-[var(--background)] p-4 lg:p-6">
       <div className="mx-auto max-w-[1600px]">
-        <main className="min-w-0 space-y-6">
+        <main id="contenu" className="min-w-0 space-y-6">
           <header className="flex flex-col gap-4 border border-[var(--hairline)] bg-white p-5 soft-shadow md:flex-row md:items-center md:justify-between">
             <div>
               <p className="text-sm uppercase tracking-[0.2em] text-chaux-600">Ce qui arrive</p>

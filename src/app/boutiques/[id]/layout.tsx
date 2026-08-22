@@ -23,6 +23,28 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     return { title: 'Boutique introuvable', robots: { index: false, follow: false } };
   }
 
+  // RETIREE DE L'ANNUAIRE : meme traitement qu'une page d'erreur.
+  //
+  // Jusqu'au 22 aout 2026, une boutique `actif = false` rendait `index, follow`
+  // avec sa canonique et ses donnees structurees completes — exactement comme
+  // une boutique en ligne. La plateforme la cachait de son propre annuaire et
+  // la designait a Google dans le meme temps.
+  //
+  // Ce que ca coute : la boutique de demonstration etait soumise a
+  // l'indexation ; et le jour ou un marchand part ou est suspendu, sa page lui
+  // survit dans les resultats de recherche, avec un balisage `Restaurant` qui
+  // affirme un commerce en activite. Le commentaire de TYPES_SCHEMA le dit plus
+  // bas : « Google sanctionne les donnees structurees non conformes a la page ».
+  //
+  // La page reste ATTEIGNABLE — un lien deja partage ne doit pas casser — mais
+  // elle n'est plus proposee.
+  if (!m.actif) {
+    return {
+      title: `${m.nom} — boutique momentanement hors annuaire`,
+      robots: { index: false, follow: false },
+    };
+  }
+
   const titre = `${m.nom} — commander en ligne a Abidjan`;
   const description =
     `Commandez chez ${m.nom}${m.secteur ? ` (${m.secteur.toLowerCase()})` : ''} ` +
@@ -80,7 +102,9 @@ export default async function BoutiqueLayout({ children, params }: Props) {
   const { id } = await params;
   const m = await getMarchand(id);
 
-  const donneesStructurees = m
+  // Meme raison que le `noindex` plus haut : ne pas affirmer un commerce en
+  // activite pour une boutique retiree de l'annuaire.
+  const donneesStructurees = m && m.actif
     ? {
         '@context': 'https://schema.org',
         '@type': typeSchema(m.secteur ?? ''),

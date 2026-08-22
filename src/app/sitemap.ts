@@ -30,7 +30,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // ferait chuter la frequence de passage du robot.
   let boutiques: MetadataRoute.Sitemap = [];
   try {
-    boutiques = (await listerMarchands()).map((m) => ({
+    // ON NE SOUMET QUE CE QUE L'ANNUAIRE MONTRE. Jusqu'au 22 aout 2026 ce
+    // sitemap proposait TOUTES les boutiques, y compris celles retirees de
+    // l'annuaire : Googlebot se voyait donc designer des pages que la
+    // plateforme cache. La boutique de demonstration y figurait, et le jour ou
+    // un marchand part, sa page lui aurait survecu dans les resultats.
+    boutiques = (await listerMarchands())
+      .filter((m) => m.actif)
+      .map((m) => ({
       url: `${SITE_URL}/boutiques/${m.id}`,
       lastModified: maintenant,
       changeFrequency: 'daily' as const,

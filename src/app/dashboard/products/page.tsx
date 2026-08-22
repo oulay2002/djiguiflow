@@ -221,7 +221,7 @@ export default function Page() {
   return (
     <div className="min-h-screen bg-[var(--background)] p-4 lg:p-6">
       <div className="mx-auto max-w-[1600px]">
-        <main className="min-w-0 space-y-6">
+        <main id="contenu" className="min-w-0 space-y-6">
           <header className="indigo-weave relative overflow-hidden bg-nuit-900 p-6 text-chaux-50 soft-shadow">
             <div className="relative z-10 flex flex-wrap items-center justify-between gap-4">
               <div>

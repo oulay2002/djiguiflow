@@ -134,6 +134,23 @@ export default function RootLayout({
       className={`${bricolage.variable} ${instrumentSans.variable} ${plexMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
+        {/*
+          LE LIEN D'EVITEMENT. Premier element focalisable de la page, invisible
+          jusqu'a ce qu'on l'atteigne au clavier.
+
+          Sans lui, quelqu'un qui navigue a la tabulation traverse la barre de
+          navigation entiere AVANT d'atteindre le contenu — a chaque page, et
+          l'annuaire en compte une par boutique. C'est le critere WCAG 2.4.1,
+          de niveau A, et c'est celui qui coute le moins cher a poser.
+
+          Il vise `#contenu`, pose sur la balise principale de chaque page.
+        */}
+        <a
+          href="#contenu"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:bg-nuit-900 focus:px-4 focus:py-2 focus:text-chaux-50"
+        >
+          Aller au contenu
+        </a>
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(donneesStructurees) }}

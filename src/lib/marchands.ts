@@ -14,6 +14,17 @@ export type Marchand = {
   whatsapp: string;
   /** Chat Telegram du gerant, pour lui adresser ses alertes. */
   telegramMarchand: string;
+  /**
+   * La boutique est-elle LISTEE publiquement ?
+   *
+   * `false` la retire de l'annuaire et de `vitrine_boutiques()`. Le champ
+   * remonte jusqu'ici parce que le sitemap et les metadonnees en ont besoin :
+   * jusqu'au 22 aout 2026, une boutique retiree de l'annuaire restait soumise
+   * a l'indexation et rendait `index, follow`. Google se voyait donc designer
+   * une boutique que la plateforme cachait — et le jour ou un marchand part,
+   * sa page lui survit dans les resultats.
+   */
+  actif: boolean;
 };
 
 /**
@@ -81,7 +92,7 @@ async function depuisSupabase(): Promise<Marchand[]> {
   const { data, error } = await sb
     .from('boutiques')
     .select(
-      'id, slug, nom, categorie, emoji, sheet_document_id, sheet_commandes, sheet_menu, groupe_livreurs, telephone, telegram_marchand',
+      'id, slug, nom, categorie, emoji, sheet_document_id, sheet_commandes, sheet_menu, groupe_livreurs, telephone, telegram_marchand, actif',
     );
 
   if (error) {
@@ -121,6 +132,9 @@ async function depuisSupabase(): Promise<Marchand[]> {
       groupeLivreurs: String(b.groupe_livreurs || ''),
       whatsapp: String(b.telephone || ''),
       telegramMarchand: String(b.telegram_marchand || ''),
+      // `null` vaut ACTIF : c'est la regle de `vitrine_boutiques()`, on ne la
+      // duplique pas differemment ici.
+      actif: b.actif !== false,
       };
     });
 }

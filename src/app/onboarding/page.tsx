@@ -344,7 +344,7 @@ export default function OnboardingPage() {
 
   if (chargement) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-chaux-100">
+      <main id="contenu" className="flex min-h-screen items-center justify-center bg-chaux-100">
         <p className="font-mono text-xs uppercase tracking-[0.2em] text-chaux-600">Chargement…</p>
       </main>
     );

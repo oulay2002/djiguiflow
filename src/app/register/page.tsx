@@ -116,7 +116,7 @@ export default function RegisterPage() {
   };
 
   return (
-    <main className="min-h-screen bg-[var(--background)]">
+    <main id="contenu" className="min-h-screen bg-[var(--background)]">
       <header className="indigo-weave relative bg-nuit-900 px-4 pb-9 pt-6 text-white">
         <div className="mx-auto max-w-md">
           <LienRetour href="/">Retour à l&apos;accueil</LienRetour>
