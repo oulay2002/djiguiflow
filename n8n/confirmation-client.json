@@ -1,8 +1,8 @@
 {
   "active": true,
   "activeVersion": {
-    "authors": "JEAN PAUL OULAI (via MCP)",
-    "autosaved": false,
+    "authors": "JEAN PAUL OULAI",
+    "autosaved": true,
     "connections": {
       "Code in JavaScript": {
         "main": [
@@ -84,8 +84,8 @@
         ]
       }
     },
-    "description": null,
-    "name": null,
+    "description": "",
+    "name": "Version ca18adbd",
     "nodeGroups": [],
     "nodes": [
       {
@@ -216,7 +216,6 @@
         "typeVersion": 3.4
       },
       {
-        "disabled": false,
         "id": "bedd6438-facb-4796-8b60-092a7b69abf2",
         "maxTries": 3,
         "name": "Notifier client - Commande acceptée",
@@ -226,6 +225,7 @@
           "workflowId": {
             "__rl": true,
             "cachedResultName": "Envoyer réponse client",
+            "cachedResultUrl": "/workflow/JkNvcqsZaY22dfk5",
             "mode": "list",
             "value": "JkNvcqsZaY22dfk5"
           },
@@ -270,7 +270,7 @@
               "boutique": "={{ $json.slug }}",
               "canal": "={{ $json.canal_client }}",
               "destinataire": "={{ $json.destinataire_client }}",
-              "message": "=🍽️ Bonjour {{ $json.nom }},\n\nVotre commande {{ $json.reference }} ({{ $json.total }} F) chez {{ $json.nom_boutique }} est bien reçue.\n\nAvant de lancer la préparation, confirmez-vous être disponible pour la réception ?\n\n✅ Je confirme :\nhttps://www.djiguiflow.com/api/confirmation?ref={{ $json.reference }}&r=oui\n\n❌ J'annule :\nhttps://www.djiguiflow.com/api/confirmation?ref={{ $json.reference }}&r=non"
+              "message": "=🍽️ Bonjour {{ $json.nom }},\n\nVotre commande {{ $json.reference }} ({{ $json.total }} F) chez {{ $json.nom_boutique }} est bien reçue.\n\nAvant de lancer la préparation, confirmez-vous être disponible pour la réception ?\n\n👉 Confirmer ou annuler :\nhttps://www.djiguiflow.com/api/confirmation?ref={{ encodeURIComponent(String($json.reference || '')) }}{{ $json.jeton_suivi ? '&t=' + encodeURIComponent(String($json.jeton_suivi)) : '' }}"
             }
           }
         },
@@ -290,7 +290,6 @@
             "name": "Header Auth account 2"
           }
         },
-        "disabled": false,
         "id": "3474107f-b8ea-4e0b-8519-c90670036e4e",
         "maxTries": 3,
         "name": "Sync Supabase",
@@ -357,7 +356,6 @@
         "waitBetweenTries": 2000
       },
       {
-        "disabled": false,
         "id": "1a848fa9-9b93-40e8-a55d-1d504238ee44",
         "maxTries": 3,
         "name": "Notifier Marchands - Commande acceptée",
@@ -425,7 +423,6 @@
         "waitBetweenTries": 2000
       },
       {
-        "disabled": false,
         "id": "3e1334f5-02dc-4ef4-b534-b15b28d4d296",
         "maxTries": 3,
         "name": "Lancer livreurs",
@@ -568,7 +565,6 @@
         "waitBetweenTries": 2000
       },
       {
-        "disabled": false,
         "id": "97e76f63-897b-4625-8e8a-8984d093f758",
         "maxTries": 3,
         "name": "Notifier Marchands - Commande refusée",
@@ -674,7 +670,7 @@
           "width": 540
         },
         "position": [
-          -200,
+          -208,
           -320
         ],
         "type": "n8n-nodes-base.stickyNote",
@@ -701,7 +697,7 @@
           "url": "https://www.djiguiflow.com/api/internal/commandes/stock"
         },
         "position": [
-          900,
+          912,
           320
         ],
         "type": "n8n-nodes-base.httpRequest",
@@ -712,7 +708,7 @@
     "workflowPublishHistory": [
       {
         "event": "activated",
-        "id": 176,
+        "id": 230,
         "userId": "81519f6f-0887-498a-ad83-5ffd6d591e9a",
         "workflowId": "Ks6tpQSDYSQ3UG1o"
       }
@@ -933,7 +929,6 @@
       "typeVersion": 3.4
     },
     {
-      "disabled": false,
       "id": "bedd6438-facb-4796-8b60-092a7b69abf2",
       "maxTries": 3,
       "name": "Notifier client - Commande acceptée",
@@ -943,6 +938,7 @@
         "workflowId": {
           "__rl": true,
           "cachedResultName": "Envoyer réponse client",
+          "cachedResultUrl": "/workflow/JkNvcqsZaY22dfk5",
           "mode": "list",
           "value": "JkNvcqsZaY22dfk5"
         },
@@ -987,7 +983,7 @@
             "boutique": "={{ $json.slug }}",
             "canal": "={{ $json.canal_client }}",
             "destinataire": "={{ $json.destinataire_client }}",
-            "message": "=🍽️ Bonjour {{ $json.nom }},\n\nVotre commande {{ $json.reference }} ({{ $json.total }} F) chez {{ $json.nom_boutique }} est bien reçue.\n\nAvant de lancer la préparation, confirmez-vous être disponible pour la réception ?\n\n✅ Je confirme :\nhttps://www.djiguiflow.com/api/confirmation?ref={{ $json.reference }}&r=oui\n\n❌ J'annule :\nhttps://www.djiguiflow.com/api/confirmation?ref={{ $json.reference }}&r=non"
+            "message": "=🍽️ Bonjour {{ $json.nom }},\n\nVotre commande {{ $json.reference }} ({{ $json.total }} F) chez {{ $json.nom_boutique }} est bien reçue.\n\nAvant de lancer la préparation, confirmez-vous être disponible pour la réception ?\n\n👉 Confirmer ou annuler :\nhttps://www.djiguiflow.com/api/confirmation?ref={{ encodeURIComponent(String($json.reference || '')) }}{{ $json.jeton_suivi ? '&t=' + encodeURIComponent(String($json.jeton_suivi)) : '' }}"
           }
         }
       },
@@ -1007,7 +1003,6 @@
           "name": "Header Auth account 2"
         }
       },
-      "disabled": false,
       "id": "3474107f-b8ea-4e0b-8519-c90670036e4e",
       "maxTries": 3,
       "name": "Sync Supabase",
@@ -1074,7 +1069,6 @@
       "waitBetweenTries": 2000
     },
     {
-      "disabled": false,
       "id": "1a848fa9-9b93-40e8-a55d-1d504238ee44",
       "maxTries": 3,
       "name": "Notifier Marchands - Commande acceptée",
@@ -1142,7 +1136,6 @@
       "waitBetweenTries": 2000
     },
     {
-      "disabled": false,
       "id": "3e1334f5-02dc-4ef4-b534-b15b28d4d296",
       "maxTries": 3,
       "name": "Lancer livreurs",
@@ -1285,7 +1278,6 @@
       "waitBetweenTries": 2000
     },
     {
-      "disabled": false,
       "id": "97e76f63-897b-4625-8e8a-8984d093f758",
       "maxTries": 3,
       "name": "Notifier Marchands - Commande refusée",
@@ -1391,7 +1383,7 @@
         "width": 540
       },
       "position": [
-        -200,
+        -208,
         -320
       ],
       "type": "n8n-nodes-base.stickyNote",
@@ -1418,7 +1410,7 @@
         "url": "https://www.djiguiflow.com/api/internal/commandes/stock"
       },
       "position": [
-        900,
+        912,
         320
       ],
       "type": "n8n-nodes-base.httpRequest",
@@ -1427,10 +1419,11 @@
   ],
   "settings": {
     "availableInMCP": true,
+    "binaryMode": "separate",
     "errorWorkflow": "NfWU666FLz9jR1Zv",
     "executionOrder": "v1"
   },
   "sourceWorkflowId": null,
   "tags": [],
-  "versionCounter": 9
+  "versionCounter": 11
 }
