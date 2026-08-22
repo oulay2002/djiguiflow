@@ -1,0 +1,173 @@
+# La sauvegarde des DONNEES. Celle qui n'existait pas.
+#
+# CE QU'ON A DECOUVERT LE 22 AOUT 2026. Le tableau de bord Supabase, onglet
+# « Scheduled backups » : AUCUNE sauvegarde. Le projet est sur l'offre gratuite,
+# qui n'en fait pas. `docs/REPRISE.md` affirmait pourtant que les donnees se
+# restauraient « depuis les sauvegardes Supabase ». Un document de reprise qui
+# designe un secours inexistant est pire que pas de document : on ne cherche pas
+# d'alternative tant qu'on croit en avoir une.
+#
+# Consequence, avant ce fichier : une migration qui efface une colonne, un
+# `delete` sans `where`, une suppression de projet — tous DEFINITIFS. Le depot
+# ne rattrapait rien : `supabase/reference/schema.sql` reconstruit les tables
+# VIDES. Le code se reecrit, une commande perdue est perdue.
+#
+# POURQUOI CA NE PEUT PAS ATTERRIR ICI. Le depot djiguiflow est PUBLIC, et un
+# export de donnees contient les noms, telephones et adresses de vrais clients.
+# Les artefacts d'un depot public sont telechargeables par n'importe qui : il
+# n'y a pas de version « discrete » de cette erreur. Le dump est donc ecrit dans
+# $RUNNER_TEMP, hors de l'arbre de travail, et pousse vers un depot PRIVE.
+#
+# LA CLE EST UNE CLE DE DEPLOIEMENT, PAS UN JETON DE COMPTE. Elle n'ouvre qu'un
+# seul depot, en ecriture, et rien d'autre. Un jeton personnel aurait donne
+# acces a tout le compte depuis un secret pose dans un depot public.
+#
+# ON PASSE PAR LA CLI SUPABASE, jamais par une connexion Postgres directe :
+# l'hote direct de Supabase est joignable en IPv6 seulement, et les executeurs
+# GitHub n'ont que de l'IPv4. C'est la panne deja rencontree cote n8n. La CLI
+# passe par le pooler et fonctionne — `sauvegarde-schema.yml` le prouve depuis
+# le 22 aout.
+name: Sauvegarde des donnees
+
+on:
+  schedule:
+    # Abidjan ne change jamais d'heure : UTC = heure locale. 4 h 30, AVANT
+    # l'export n8n et la reference de schema, pour que la sauvegarde la plus
+    # irremplacable passe en premier si le quota d'executions se resserre.
+    - cron: '30 4 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sauvegarde-donnees
+  cancel-in-progress: false
+
+jobs:
+  sauvegarder:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      # Un secret absent doit se dire en clair. Sans ce garde, le job echouerait
+      # plus loin sur un message d'authentification illisible.
+      - name: Verifier que les secrets sont poses
+        env:
+          JETON: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          CLE: ${{ secrets.SAUVEGARDE_DEPLOY_KEY }}
+        run: |
+          manque=0
+          [ -z "$JETON" ] && { echo "::error::SUPABASE_ACCESS_TOKEN est absent."; manque=1; }
+          [ -z "$CLE" ]   && { echo "::error::SAUVEGARDE_DEPLOY_KEY est absent."; manque=1; }
+          exit $manque
+
+      - name: Ecrire les donnees
+        id: dump
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          set -uo pipefail
+          mkdir -p "$RUNNER_TEMP/donnees"
+
+          # Les donnees metier : commandes, produits, boutiques, livreurs.
+          # Celles qui ne se retrouvent nulle part ailleurs.
+          supabase db dump --linked --project-ref xshksvlnrgxijsznmkkj \
+            --data-only -f "$RUNNER_TEMP/donnees/public.sql"
+
+          # UN DUMP VIDE SERAIT PIRE QU'UNE ABSENCE DE DUMP : on croirait avoir
+          # une sauvegarde. On refuse plutot que d'ecrire un fichier creux.
+          if [ ! -s "$RUNNER_TEMP/donnees/public.sql" ]; then
+            echo "::error::Le dump des donnees est vide. Rien n'est pousse."
+            exit 1
+          fi
+          echo "public : $(wc -l < "$RUNNER_TEMP/donnees/public.sql") lignes"
+
+          # LES COMPTES. Sans `auth.users`, les marchands ne peuvent plus se
+          # connecter et `boutiques.user_id` pointe dans le vide : la base
+          # serait restauree, la plateforme inutilisable. On tente, et on note
+          # honnetement si ca ne marche pas — sans faire perdre le dump metier,
+          # qui est deja acquis a ce stade.
+          if supabase db dump --linked --project-ref xshksvlnrgxijsznmkkj \
+               --data-only --schema auth -f "$RUNNER_TEMP/donnees/auth.sql" \
+             && [ -s "$RUNNER_TEMP/donnees/auth.sql" ]; then
+            echo "auth=oui" >> "$GITHUB_OUTPUT"
+            echo "auth : $(wc -l < "$RUNNER_TEMP/donnees/auth.sql") lignes"
+          else
+            echo "auth=non" >> "$GITHUB_OUTPUT"
+            rm -f "$RUNNER_TEMP/donnees/auth.sql"
+            echo "::warning::Le schema auth n'a pas pu etre exporte. Les comptes ne sont PAS sauvegardes."
+          fi
+
+      # On ne « cat » jamais ces fichiers : les journaux d'un depot public sont
+      # lisibles par tout le monde. On ne montre que des nombres de lignes.
+      - name: Pousser vers le depot prive
+        env:
+          CLE: ${{ secrets.SAUVEGARDE_DEPLOY_KEY }}
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          printf '%s\n' "$CLE" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -t ed25519 github.com >> ~/.ssh/known_hosts 2>/dev/null
+
+          git clone --depth 1 git@github.com:oulay2002/djiguiflow-sauvegardes.git "$RUNNER_TEMP/prive"
+          cd "$RUNNER_TEMP/prive"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          mkdir -p donnees
+          cp "$RUNNER_TEMP"/donnees/*.sql donnees/
+
+          if [ -z "$(git status --porcelain donnees/)" ]; then
+            echo "Les donnees n'ont pas bouge depuis hier."
+            exit 0
+          fi
+
+          git add donnees/
+          git commit -m "donnees au $(date -u '+%Y-%m-%d')" \
+                     -m "Comptes auth inclus : ${{ steps.dump.outputs.auth }}"
+          git push
+          echo "Pousse. L'historique du depot prive EST la profondeur de retention."
+
+      # UNE SAUVEGARDE QUI ECHOUE EN SILENCE N'EST PAS UNE SAUVEGARDE. C'est
+      # meme le pire des cas : on croit etre couvert. L'alerte part sur le bot
+      # de veille de la plateforme, sans parse_mode — un texte d'erreur avec un
+      # `_` ou une `*` ferait echouer l'envoi et rendrait la panne muette.
+      - name: Alerter si la sauvegarde a echoue
+        if: failure()
+        env:
+          TOKEN: ${{ secrets.TELEGRAM_ALERTE_TOKEN }}
+          CHAT: ${{ vars.TELEGRAM_ALERTE_CHAT_ID }}
+        run: |
+          [ -z "$TOKEN" ] || [ -z "$CHAT" ] && exit 0
+          curl -s -X POST "https://api.telegram.org/bot$TOKEN/sendMessage" \
+            --data-urlencode "chat_id=$CHAT" \
+            --data-urlencode "text=SAUVEGARDE DES DONNEES EN ECHEC. C'est la seule copie des commandes, produits et marchands : tant que ceci n'est pas repare, une perte de donnees est definitive. Voir ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+            > /dev/null
+
+      # Le succes se dit aussi, mais une seule fois par semaine : une alerte
+      # quotidienne qui dit « tout va bien » ne se lit plus au bout de dix
+      # jours, et c'est ainsi qu'on rate celle qui compte.
+      #
+      # ELLE NE PARLE QUE DE CETTE NUIT-LA. Une premiere redaction annoncait
+      # « les sept dernieres nuits sont passees » : une execution ne sait rien
+      # des six precedentes. C'est le defaut deja rencontre avec la sonde reseau,
+      # qui affirmait l'inverifiable — et une alerte qui exagere se fait ignorer
+      # exactement comme une alerte qui ment.
+      - name: Confirmer le lundi
+        if: success() && github.event_name == 'schedule'
+        env:
+          TOKEN: ${{ secrets.TELEGRAM_ALERTE_TOKEN }}
+          CHAT: ${{ vars.TELEGRAM_ALERTE_CHAT_ID }}
+        run: |
+          [ "$(date -u '+%u')" = "1" ] || exit 0
+          [ -z "$TOKEN" ] || [ -z "$CHAT" ] && exit 0
+          curl -s -X POST "https://api.telegram.org/bot$TOKEN/sendMessage" \
+            --data-urlencode "chat_id=$CHAT" \
+            --data-urlencode "text=Sauvegarde des donnees : la nuit de ce lundi est passee. Comptes auth inclus : ${{ steps.dump.outputs.auth }}. L'historique complet se lit dans le depot prive." \
+            > /dev/null

@@ -14,7 +14,41 @@
 | L'histoire du schéma | `supabase/migrations/` — 58 fichiers = 58 migrations | oui, par la CI à chaque push |
 | Les workflows n8n | `n8n/` — 24 fichiers, export quotidien à 5 h | oui, PR à chaque écart |
 | La liste des variables d'environnement | `.env.example` | oui, tirée du code |
-| Les données (commandes, produits, marchands) | sauvegardes Supabase | **jamais éprouvé** |
+| Les données (commandes, produits, marchands) | **rien** | **il n'existe aucune sauvegarde** |
+
+---
+
+## ⚠ IL N'EXISTE AUCUNE SAUVEGARDE DES DONNÉES
+
+Vérifié le 22 août 2026 dans le tableau de bord Supabase, onglet
+« Scheduled backups » : **aucune sauvegarde listée**. Le projet est sur l'offre
+gratuite, qui n'en fait aucune — la page propose de passer au plan Pro pour les
+activer.
+
+Ce document affirmait auparavant que les données étaient récupérables « depuis
+les sauvegardes Supabase », en signalant seulement que le chemin n'avait jamais
+été éprouvé. **C'était faux, et dans le sens le plus dangereux : il n'y a rien
+à éprouver.** Un document de reprise qui désigne un secours inexistant est pire
+que pas de document — on ne cherche pas d'alternative tant qu'on croit en avoir
+une.
+
+Concrètement, aujourd'hui :
+
+- une migration qui efface une colonne est **définitive** ;
+- un `delete` sans `where` est **définitif** ;
+- une suppression de projet est **définitive** ;
+- le dépôt ne rattrape rien : `supabase/reference/schema.sql` reconstruit les
+  **tables vides**, pas ce qu'elles contiennent.
+
+Le schéma, les workflows n8n et la liste des variables sont sauvegardés. **Les
+données ne le sont pas.** C'est le seul élément de cette liste qui ne se
+retrouve nulle part ailleurs : le code se réécrit, une commande perdue est
+perdue.
+
+**Ce qui ne doit jamais être fait :** déposer un export de données dans ce
+dépôt. Il est **public**, et un dump contient les noms, téléphones et adresses
+de vrais clients. Même chiffré, même en pièce jointe d'un job : les artefacts
+d'un dépôt public sont téléchargeables par n'importe qui.
 
 ---
 
@@ -90,9 +124,9 @@ Le job `schema` refusera tout écart entre le dépôt et la base, ce qui rend la
 dérive visible au push suivant.
 
 ### 4. Des données sont perdues ou corrompues
-**Le geste :** restaurer depuis les sauvegardes Supabase.
-⚠ **Ce chemin n'a jamais été éprouvé sur ce projet.** Voir « L'exercice qui
-manque » plus bas.
+**Il n'y a pas de geste.** Voir l'encart en haut de ce document : aucune
+sauvegarde n'existe. C'est le seul incident de cette liste auquel on ne sait pas
+répondre, et le seul dont les conséquences sont irréversibles.
 
 ### 5. La session WhatsApp d'un marchand est bannie
 Ses clients ne peuvent plus lui écrire. Le tableau de bord et Telegram
