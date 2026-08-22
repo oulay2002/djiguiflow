@@ -2,6 +2,9 @@
 
 > État au 22 août 2026. Ce document ne dit que ce qui a été **mesuré**. Ce qui
 > n'a jamais été éprouvé est signalé comme tel — c'est la partie la plus utile.
+>
+> **La restauration complète a été exécutée le 22 août**, données et parcours
+> applicatif compris. Ce n'est plus une espérance.
 
 ---
 
@@ -174,7 +177,8 @@ exactement pourquoi on le fait avant d'ouvrir à de nouveaux marchands.
 | 1. Voir ce qui est sauvegardé | **fait** | **Rien ne l'était.** Ce document décrivait un secours inexistant |
 | 2. Rejouer le schéma sur une base neuve | **fait** | La référence rebâtit une structure **identique**, du premier coup |
 | 3. Rejouer les données, sans réveiller personne | **fait** | Identique ligne pour ligne, **zéro webhook envoyé** |
-| 4. Écrire ce qui a manqué | **fait** | quatre manques, dont un qui aurait rouvert une fuite |
+| 4. Lancer les 26 contrôles du banc | **fait** | **26/26 passent** contre la base restaurée |
+| 5. Écrire ce qui a manqué | **fait** | six manques, dont un qui aurait rouvert une fuite |
 
 ### Ce qu'une vraie restauration a donné, le 22 août
 
@@ -205,14 +209,25 @@ pendant le rechargement des 57 commandes. Le geste 1 fonctionne.
   contenait déjà. La sauvegarde vérifie désormais sa propre portée à chaque
   exécution, au lieu de faire confiance au comportement par défaut de la CLI.
 
-### Ce qui n'est toujours PAS éprouvé
+### Le parcours applicatif, éprouvé de bout en bout
 
-**Les 26 contrôles du banc n'ont pas été lancés contre la base restaurée.** La
-structure et les données correspondent, et l'annuaire public rend exactement ce
-que rend la production — mais le parcours applicatif complet reste à éprouver.
-C'est le seul point qui manque désormais, et il est bien plus petit que ce qui a
-été fermé.
+`BASE=http://localhost:3100 node scripts/essai-multi-marchand.mjs` contre la
+base restaurée : **26 contrôles sur 26**. Prise de commande, stock décompté,
+article épuisé refusé en le nommant, jeton de suivi accepté et jamais renvoyé,
+jeton faux refusé sans révéler que la référence existe, isolement entre
+marchands, pause, frein de rafale.
 
-**Le reste des limites tient toujours** : les secrets du coffre restent
-illisibles après restauration dans un autre projet, les identifiants n8n et la
-session WhatsApp d'un marchand se ressaisissent à la main. Voir plus haut.
+Et **zéro webhook** : `net.http_request_queue` est resté à 0 pendant tout
+l'exercice — restauration des 57 commandes comprise.
+
+Un garde-fou vaut d'être répété : avant de lancer le banc contre une base
+restaurée, **prouver que le serveur lit bien cette base**. Une boutique témoin
+insérée seulement là, puis `GET /api/boutiques/<son-id>`, suffit. Sans cette
+vérification, 26 contrôles écriraient dans la production.
+
+### Ce qui reste vrai malgré tout
+
+Les secrets du coffre restent **illisibles** après restauration dans un autre
+projet, les identifiants n8n et la session WhatsApp d'un marchand se
+ressaisissent à la main. Voir plus haut — c'est la partie qu'aucune sauvegarde
+ne couvre.

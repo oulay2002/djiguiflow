@@ -23,6 +23,22 @@
  * muet la ou il derangerait.
  *
  * A LANCER AVANT TOUT DEPLOIEMENT QUI TOUCHE LA COMMANDE.
+ *
+ * ⚠ IL DEPEND D'UN CACHE DE TRENTE SECONDES, et c'est sa seule fragilite
+ * connue. `getMarchand` garde le registre des boutiques en memoire pendant
+ * `TTL = 30_000` (`src/lib/marchands.ts`). Le banc cree sa boutique puis
+ * demande sa fiche dans la foulee : si le cache a ete rempli MOINS de trente
+ * secondes avant, la boutique n'y est pas encore et le premier controle rend
+ * 404 — puis tout le reste s'effondre.
+ *
+ * Contre la production le probleme ne se voit pas : chaque appel tombe souvent
+ * sur une instance fraiche, au cache vide. Contre un serveur local qui vit
+ * plusieurs minutes, il se voit tout de suite. Constate le 22 aout 2026 en
+ * eprouvant une base restauree : un simple appel de verification, une minute
+ * plus tot, avait suffi a faire echouer les 26 controles.
+ *
+ * Le remede est de ne pas solliciter `${BASE}` dans les trente secondes qui
+ * precedent, ou de redemarrer le serveur juste avant.
  */
 
 import { readFileSync } from 'node:fs';
@@ -76,8 +92,26 @@ async function json(chemin, options) {
 }
 
 // ---------------------------------------------------------------- INSTALLER
+/**
+ * UNE INSTALLATION QUI ECHOUE DOIT LE DIRE. Ces deux insertions ignoraient leur
+ * resultat : si la boutique n'etait pas creee, le banc deroulait quand meme et
+ * rendait vingt-six echecs dont aucun ne nommait la cause. On perd alors le
+ * temps a chercher une regression applicative qui n'existe pas.
+ *
+ * Constate le 22 aout 2026 en eprouvant une base restauree : le premier
+ * controle rendait 404 et rien ne distinguait « la boutique n'a pas ete creee »
+ * de « la route ne la trouve pas ». C'etait la seconde, mais il a fallu le
+ * prouver a la main.
+ */
+function exigerSucces(quoi, { error }) {
+  if (!error) return;
+  console.error(`\n⛔ installation impossible — ${quoi} : ${error.message}`);
+  console.error('   Le banc s arrete ici : derouler sur une installation ratee ne prouve rien.');
+  process.exit(1);
+}
+
 async function installer() {
-  await sb.from('boutiques').insert({
+  exigerSucces('la boutique d essai', await sb.from('boutiques').insert({
     id: UUID,
     user_id: COMPTE,
     slug: SLUG,
@@ -90,9 +124,9 @@ async function installer() {
     // course envoyee a de vrais livreurs, donc pas d'alerte technique a chaque
     // execution.
     essai: true,
-  });
+  }));
 
-  await sb.from('produits').insert([
+  exigerSucces('les articles temoins', await sb.from('produits').insert([
     {
       boutique_id: UUID, nom: 'Article temoin', categorie: 'Essai',
       prix: 1000, disponible: true, stock: 5, menu_du_jour: false,
@@ -101,7 +135,7 @@ async function installer() {
       boutique_id: UUID, nom: 'Article epuise', categorie: 'Essai',
       prix: 2000, disponible: true, stock: 0, menu_du_jour: false,
     },
-  ]);
+  ]));
 }
 
 // ------------------------------------------------------------------ DEROULER
