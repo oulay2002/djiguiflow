@@ -44,10 +44,10 @@ export type Database = {
           essai: boolean
           groupe_livreurs: string | null
           horaires: Json | null
-          pause_jusqua: string | null
           id: string
           logo_url: string | null
           nom: string | null
+          pause_jusqua: string | null
           sheet_commandes: string | null
           sheet_document_id: string | null
           sheet_menu: string | null
@@ -72,10 +72,10 @@ export type Database = {
           essai?: boolean
           groupe_livreurs?: string | null
           horaires?: Json | null
-          pause_jusqua?: string | null
           id?: string
           logo_url?: string | null
           nom?: string | null
+          pause_jusqua?: string | null
           sheet_commandes?: string | null
           sheet_document_id?: string | null
           sheet_menu?: string | null
@@ -100,10 +100,10 @@ export type Database = {
           essai?: boolean
           groupe_livreurs?: string | null
           horaires?: Json | null
-          pause_jusqua?: string | null
           id?: string
           logo_url?: string | null
           nom?: string | null
+          pause_jusqua?: string | null
           sheet_commandes?: string | null
           sheet_document_id?: string | null
           sheet_menu?: string | null
@@ -182,6 +182,7 @@ export type Database = {
           heure_prise_en_charge: string | null
           id: string
           instructions: string | null
+          jeton_suivi: string
           latitude: number | null
           longitude: number | null
           nom_livreur: string | null
@@ -191,9 +192,9 @@ export type Database = {
           position_recue_le: string | null
           reference: string | null
           relance_le: string | null
-          stock_decremente_le: string | null
           statut: string | null
           statut_livraison: string | null
+          stock_decremente_le: string | null
           total: number
         }
         Insert: {
@@ -213,6 +214,7 @@ export type Database = {
           heure_prise_en_charge?: string | null
           id?: string
           instructions?: string | null
+          jeton_suivi?: string
           latitude?: number | null
           longitude?: number | null
           nom_livreur?: string | null
@@ -222,9 +224,9 @@ export type Database = {
           position_recue_le?: string | null
           reference?: string | null
           relance_le?: string | null
-          stock_decremente_le?: string | null
           statut?: string | null
           statut_livraison?: string | null
+          stock_decremente_le?: string | null
           total: number
         }
         Update: {
@@ -244,6 +246,7 @@ export type Database = {
           heure_prise_en_charge?: string | null
           id?: string
           instructions?: string | null
+          jeton_suivi?: string
           latitude?: number | null
           longitude?: number | null
           nom_livreur?: string | null
@@ -253,9 +256,9 @@ export type Database = {
           position_recue_le?: string | null
           reference?: string | null
           relance_le?: string | null
-          stock_decremente_le?: string | null
           statut?: string | null
           statut_livraison?: string | null
+          stock_decremente_le?: string | null
           total?: number
         }
         Relationships: [
@@ -564,6 +567,13 @@ export type Database = {
             columns: ["boutique_id"]
             isOneToOne: false
             referencedRelation: "boutiques"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "paniers_commande_id_fkey"
+            columns: ["commande_id"]
+            isOneToOne: false
+            referencedRelation: "commandes"
             referencedColumns: ["id"]
           },
         ]
