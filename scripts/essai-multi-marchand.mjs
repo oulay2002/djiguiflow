@@ -258,14 +258,22 @@ async function derouler() {
     !JSON.stringify(fauxJeton.corps ?? {}).includes('Client du banc'),
   );
 
-  // PHASE 3 : l'absence est encore toleree, parce que des clients ont des liens
-  // sans jeton dans leur WhatsApp. Ce controle devra passer a 404 le jour ou
-  // `JETON_EXIGE` passera a true — il est ecrit pour qu'on s'en apercoive.
+  // PHASE 4, depuis le 22 aout 2026 : l'absence de jeton est REFUSEE. Ce
+  // controle attendait 200 et disait « passera a 404 » — il a fait son travail
+  // le jour de la bascule.
+  //
+  // La seconde preuve reste ouverte a qui tape sa reference a la main : quatre
+  // chiffres du telephone, plafonnes par commande. C'est elle qui evite que la
+  // phase 4 punisse le client qui a perdu son message.
   const sansJeton = await json(`/api/suivi?ref=${encodeURIComponent(reference)}`);
   verifier(
-    'l’absence de jeton est encore toleree (phase 3)',
-    sansJeton.statut === 200,
-    `HTTP ${sansJeton.statut} — passera a 404 en phase 4`,
+    'l’absence de jeton est REFUSEE (phase 4)',
+    sansJeton.statut === 404,
+    `HTTP ${sansJeton.statut}`,
+  );
+  verifier(
+    'et le refus ne dit pas que la reference existe',
+    !JSON.stringify(sansJeton.corps ?? {}).includes('Client du banc'),
   );
 
   // ---- 7. LE VOISIN N'A PAS BOUGE.

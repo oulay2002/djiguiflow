@@ -21,15 +21,25 @@ import { timingSafeEqual } from 'node:crypto';
  * Le jeton est-il OBLIGATOIRE ?
  *
  * Faux pendant la phase 3, et c'est tout l'objet de cette phase : on tolere
- * l'absence, mais on la COMPTE. Des clients ont en ce moment des liens sans
- * jeton dans leur WhatsApp, pour des commandes en cours — exiger le jeton
- * aujourd'hui casserait leur suivi.
+ * l'absence, mais on la COMPTE.
  *
- * Le passer a `true` est la phase 4. Ne le faire QUE lorsque le journal montre
- * qu'aucun acces legitime n'arrive plus sans jeton. Voir `JOURNAL_SANS_JETON`
- * pour le motif a compter.
+ * PHASE 4 — BASCULE LE 22 AOUT 2026, SUR MESURE ET NON SUR CALENDRIER.
+ *
+ * La consigne etait d'attendre que le journal ne montre plus d'acces legitime
+ * sans jeton. Le journal etait vide — mais `/api/suivi` et `/api/confirmation`
+ * n'avaient recu AUCUN trafic en vingt-quatre heures : zero sur zero ne prouve
+ * rien, et basculer la-dessus aurait ete basculer sur une absence de donnees.
+ *
+ * Ce qui a decide, c'est la base :
+ *   - 57 commandes, ZERO sans jeton — le remplissage a tout couvert ;
+ *   - UNE SEULE commande en attente de confirmation, vieille de 7,5 jours et
+ *     deja `abandonnee` : la confirmer n'a plus d'objet.
+ *
+ * Le risque que ce drapeau protegeait — un client tenant un lien sans jeton
+ * dans son WhatsApp — n'existe donc plus. On mesure, puis on bascule ; on
+ * n'attend pas un delai pour se rassurer.
  */
-export const JETON_EXIGE = false;
+export const JETON_EXIGE = true;
 
 /**
  * Le prefixe des lignes de journal a compter avant la phase 4.

@@ -286,6 +286,16 @@ function refusDuJeton(
 ): Response | null {
   const verdict = verdictJeton(jetonFourni, ligne.jeton_suivi);
 
+  // ON COMPTE AVANT DE REFUSER. En phase 3 ce journal servait a decider de la
+  // bascule ; en phase 4 il sert a savoir si la bascule a CASSE quelqu'un.
+  // Place apres le refus, il se taisait justement au moment le plus utile.
+  //
+  // Un jeton INVALIDE n'est pas compte : ce n'est pas un client qui a perdu son
+  // lien, c'est quelqu'un qui essaie.
+  if (verdict === 'absent') {
+    journaliserAccesSansJeton({ route, appelant, ageHeures: ageEnHeures(ligne.created_at) });
+  }
+
   if (jetonRefuse(verdict)) {
     console.error(`Confirmation — jeton refuse (${verdict}) sur ${route} depuis ${appelant}.`);
     return reponseHtml(
@@ -295,10 +305,6 @@ function refusDuJeton(
       'Vérifiez le lien reçu.',
       404,
     );
-  }
-
-  if (verdict === 'absent') {
-    journaliserAccesSansJeton({ route, appelant, ageHeures: ageEnHeures(ligne.created_at) });
   }
 
   return null;
