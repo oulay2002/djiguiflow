@@ -265,7 +265,7 @@ export default function ReglagePush({ variante = 'complet' }: { variante?: Varia
             </span>
             <div className="min-w-0">
               <p className="font-bold text-nuit-900">Vous pouvez rater une commande</p>
-              <p className="mt-1 text-sm leading-snug text-chaux-700">
+              <p className="mt-1 text-sm leading-snug text-chaux-600">
                 {etat === 'refuse'
                   ? 'Les notifications sont bloquées pour ce site. Réautorisez-les dans les réglages de votre navigateur pour être prévenu.'
                   : 'Cet appareil ne sonne pas quand une commande arrive. Activez les alertes — elles fonctionnent même application fermée.'}

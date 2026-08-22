@@ -65,6 +65,20 @@ jobs:
       - name: Tests unitaires
         run: npm test
 
+      # LE GARDE DU LANGAGE VISUEL, et il n'est pas en continue-on-error.
+      #
+      # Le 22 aout 2026, la seance visuelle a ramene 228 rayons a 8 et supprime
+      # 17 ombres ecrites a la main. Neuf d'entre elles etaient des ombres
+      # Tailwind PAR DEFAUT, et ce balayage — qui existait deja — ne les avait
+      # jamais vues : il ne cherchait que des couleurs. Le nivellement s'etait
+      # donc reinstalle sous un controle qui tournait.
+      #
+      # Il attrape aussi une classe MORTE : une couleur d'ombre sans ombre
+      # n'emet que `--tw-shadow-color`, que rien ne lit. Deux existaient. Elles
+      # se relisaient comme une intention, ce qui est pire qu'une absence.
+      - name: Langage visuel
+        run: npm run verifier:palette
+
       - name: Build
         run: npm run build
 

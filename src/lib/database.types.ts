@@ -977,12 +977,12 @@ export type Database = {
           articles: number
           avis: number
           categorie: string
-          commandes_livrees: number
           description: string
           id: string
           logo_url: string
           nom: string
           note_moyenne: number
+          palier_livraisons: number
           slug: string
           zone: string
         }[]

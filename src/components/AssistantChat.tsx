@@ -276,8 +276,26 @@ export default function AssistantChat() {
               {messages.map((message) => (
                 <div
                   key={`floating-${message.id}`}
+                  /* LES BULLES RESTENT CARREES. La rondeur portait un sens —
+                     la parole — mais ce qu'il fallait vraiment, c'est qu'on ne
+                     confonde jamais ce que l'assistante a dit avec ce que le
+                     client a dit : elle ecrit des commandes. Un rayon ne dit
+                     pas qui parle ; un contraste, oui.
+
+                     La paire vient de la maison, elle n'est pas inventee ici :
+                     `bg-nuit-900 / bg-chaux-100` distingue deja l'onglet actif
+                     des autres dans le carnet de commandes et le catalogue.
+                     `primary-100 / primary-950` etait une TROISIEME facon
+                     d'ecrire la meme idee — et `primary-950` n'existe pas : la
+                     rampe s'arrete a 900, donc le texte du client heritait sa
+                     couleur au lieu de la recevoir.
+
+                     Le fonce va au client, dont les messages sont courts ; le
+                     papier a l'assistante, dont les reponses sont longues. */
                   className={`max-w-[88%] px-4 py-3 text-sm leading-6 ${
-                    message.role === 'assistant' ? 'bg-chaux-100 text-nuit-700' : 'ml-auto bg-primary-100 text-primary-950'
+                    message.role === 'assistant'
+                      ? 'bg-chaux-100 text-nuit-700'
+                      : 'ml-auto bg-nuit-900 text-chaux-50'
                   }`}
                 >
                   {message.content}
@@ -335,7 +353,7 @@ export default function AssistantChat() {
           <MessageSquare className="h-5 w-5" />
           <span className="hidden sm:inline">Assistant IA</span>
           {showLauncherBadge && !isFloatingOpen && (
-            <span className="absolute -right-1.5 -top-1.5 inline-flex h-6 min-w-6 items-center justify-center border-2 border-white bg-bissap-500 px-1 text-xs font-black text-white soft-shadow shadow-bissap-500/35 animate-pulse">
+            <span className="absolute -right-1.5 -top-1.5 inline-flex h-6 min-w-6 items-center justify-center border-2 border-white bg-bissap-500 px-1 text-xs font-black text-white soft-shadow animate-pulse">
               1
             </span>
           )}

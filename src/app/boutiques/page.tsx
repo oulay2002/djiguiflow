@@ -33,7 +33,7 @@ type VitrineRow = {
   articles: number | null;
   note_moyenne: number | string | null;
   avis: number | null;
-  commandes_livrees: number | null;
+  palier_livraisons: number | null;
 };
 
 type Boutique = {
@@ -47,7 +47,7 @@ type Boutique = {
   produits: number;
   note: number | null;
   avis: number;
-  livrees: number;
+  palier: number;
 };
 
 const TRIS = [
@@ -58,12 +58,25 @@ const TRIS = [
 
 type Tri = (typeof TRIS)[number]['cle'];
 
-/** Un nombre sans son unite ne veut rien dire ; avec, il se passe d'etoile. */
+/**
+ * Un nombre sans son unite ne veut rien dire ; avec, il se passe d'etoile.
+ *
+ * LE COMPTE EXACT N'ARRIVE PLUS JUSQU'ICI, et c'est voulu. `vitrine_boutiques()`
+ * rend un PALIER : ce qu'un client cherche est « cette boutique livre
+ * vraiment », pas « sept plutot que douze ». La precision, elle, ne servait
+ * qu'a un concurrent qui releve le chiffre chaque jour et en tire un taux de
+ * croissance. Arrondir ici aurait laisse le nombre exact voyager jusqu'au
+ * navigateur, lisible dans l'onglet reseau.
+ *
+ * LE PREMIER PALIER NE PORTE AUCUN CHIFFRE. « 3 commandes livrees » se lit plus
+ * mal que « Nouvelle boutique » : le nombre qui rassure le leader dessert le
+ * nouveau, et une plateforme qui vit de l'arrivee de marchands ne peut pas
+ * publier une mesure qui punit les arrivants.
+ */
 function ligneConfiance(b: Boutique): string {
   if (b.avis > 0) return `${b.avis} avis`;
-  if (b.livrees > 0) {
-    return `${b.livrees} commande${b.livrees > 1 ? 's' : ''} livrée${b.livrees > 1 ? 's' : ''}`;
-  }
+  if (b.palier >= 10) return `Plus de ${b.palier} commandes livrées`;
+  if (b.palier > 0) return 'Premières commandes livrées';
   return 'Nouvelle boutique';
 }
 
@@ -126,7 +139,7 @@ export default function VitrinePage() {
             produits: f.articles ?? 0,
             note: moyenne !== null && Number.isFinite(moyenne) ? moyenne : null,
             avis: f.avis ?? 0,
-            livrees: f.commandes_livrees ?? 0,
+            palier: f.palier_livraisons ?? 0,
           };
         }),
       );
