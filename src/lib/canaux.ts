@@ -1,4 +1,5 @@
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
+import { DELAI_MESSAGE, delai } from '@/lib/reseau';
 
 /**
  * Envoi de messages aux clients et aux livreurs.
@@ -161,6 +162,8 @@ async function envoyerWhatsApp(
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({ to: numero, text: message }),
+    // Un fournisseur qui PEND retient tous les appelants de la sortie unique.
+    signal: delai(DELAI_MESSAGE),
   });
 
   if (!res.ok) {
@@ -200,6 +203,7 @@ async function envoyerTelegram(
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(corps),
+    signal: delai(DELAI_MESSAGE),
   });
 
   if (!res.ok) {
@@ -444,6 +448,7 @@ export async function interrogerTelegram(
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(params),
+      signal: delai(DELAI_MESSAGE),
     });
 
     // Telegram rend 200 avec `ok: false` sur certaines erreurs metier : lire le

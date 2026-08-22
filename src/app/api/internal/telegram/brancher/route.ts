@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import { brancherBotTelegram, urlWebhookTelegram } from '@/lib/telegramBranchement';
+import { DELAI_MESSAGE, delai } from '@/lib/reseau';
 
 export const dynamic = 'force-dynamic';
 
@@ -35,8 +36,12 @@ export async function GET(req: Request) {
 
   try {
     const [me, hook] = await Promise.all([
-      fetch(`https://api.telegram.org/bot${jeton}/getMe`).then((r) => r.json()),
-      fetch(`https://api.telegram.org/bot${jeton}/getWebhookInfo`).then((r) => r.json()),
+      fetch(`https://api.telegram.org/bot${jeton}/getMe`, { signal: delai(DELAI_MESSAGE) }).then(
+        (r) => r.json(),
+      ),
+      fetch(`https://api.telegram.org/bot${jeton}/getWebhookInfo`, {
+        signal: delai(DELAI_MESSAGE),
+      }).then((r) => r.json()),
     ]);
 
     return NextResponse.json({

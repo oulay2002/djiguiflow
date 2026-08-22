@@ -1,5 +1,6 @@
 import { randomBytes } from 'node:crypto';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
+import { DELAI_MESSAGE, delai } from '@/lib/reseau';
 
 /**
  * Branchement du bot Telegram d'un marchand sur son propre webhook.
@@ -80,6 +81,7 @@ export async function brancherBotTelegram(
         allowed_updates: ['message', 'edited_message', 'callback_query'],
         drop_pending_updates: false,
       }),
+      signal: delai(DELAI_MESSAGE),
     });
     reponse = (await res.json()) as { ok?: boolean; description?: string };
   } catch (e) {

@@ -1,5 +1,6 @@
 import { randomBytes } from 'node:crypto';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
+import { DELAI_MESSAGE, delai } from '@/lib/reseau';
 
 /**
  * Rattachement d'un livreur a son compte Telegram.
@@ -73,7 +74,9 @@ export async function nomBotTelegram(slug: string): Promise<string | null> {
 
   let username = '';
   try {
-    const res = await fetch(`https://api.telegram.org/bot${jeton}/getMe`);
+    const res = await fetch(`https://api.telegram.org/bot${jeton}/getMe`, {
+      signal: delai(DELAI_MESSAGE),
+    });
     const rep = (await res.json()) as { ok?: boolean; result?: { username?: string } };
     username = String(rep?.result?.username ?? '').trim();
   } catch (e) {

@@ -11,6 +11,7 @@ import {
   secondesAvantMinuitAbidjan,
 } from '@/lib/limiteur';
 import { secretWebhookN8n } from '@/lib/secretN8n';
+import { DELAI_WEBHOOK, delai } from '@/lib/reseau';
 
 /**
  * Prise de commande depuis la boutique en ligne.
@@ -585,7 +586,8 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
           // Le repli a ete supprime cote n8n, ce champ est donc obligatoire.
           groupeLivreurs: m.groupeLivreurs,
         }),
-      });
+      signal: delai(DELAI_WEBHOOK),
+    });
     } catch (e) {
       // n8n injoignable : la commande est en base, le marchand la voit. Non
       // bloquant, donc — mais journalise. Ce `catch` etait vide, et il avalait
@@ -621,7 +623,8 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
           total: String(total),
           boutique_id: m.boutiqueId,
         }),
-      });
+      signal: delai(DELAI_WEBHOOK),
+    });
     } catch (e) {
       // Non bloquant : la commande est en base. Mais journalise, pour la meme
       // raison que ci-dessus — un `catch` muet cache un coffre injoignable.
