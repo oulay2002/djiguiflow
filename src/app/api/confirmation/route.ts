@@ -7,6 +7,7 @@ import {
 import { adresseAppelante, rafaleDepassee } from '@/lib/limiteur';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import { secretWebhookN8n } from '@/lib/secretN8n';
+import { DELAI_WEBHOOK, delai } from '@/lib/reseau';
 
 export const dynamic = 'force-dynamic';
 
@@ -429,6 +430,7 @@ export async function POST(req: Request) {
       const telClient = ligne.client_telephone || ligne.chat_id || '';
       await fetch(n8n, {
         method: 'POST',
+        signal: delai(DELAI_WEBHOOK),
         headers: {
           'Content-Type': 'application/json',
           // Un seul secret pour tous les webhooks n8n, lu au coffre Supabase.

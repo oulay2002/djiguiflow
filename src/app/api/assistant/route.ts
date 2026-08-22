@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { BILLING_PLANS, DUREES_PREPAYEES } from '@/lib/billing/plans';
+import { DELAI_MODELE, delai } from '@/lib/reseau';
 import {
   adresseAppelante,
   plafondJournalierDepasse,
@@ -206,6 +207,10 @@ export async function POST(request: Request) {
   try {
     const mistralResponse = await fetch('https://api.mistral.ai/v1/chat/completions', {
       method: 'POST',
+      // Le modele ne diffuse pas en flux : borner la requete entiere est sans
+      // risque, et un client qui attend une reponse ne doit pas attendre cinq
+      // minutes qu'un fournisseur muet rende la main.
+      signal: delai(DELAI_MODELE),
       headers: {
         Authorization: `Bearer ${apiKey}`,
         'Content-Type': 'application/json',

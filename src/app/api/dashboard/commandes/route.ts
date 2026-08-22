@@ -1,6 +1,7 @@
 import { exigerAccesMarchand } from '@/lib/dashboardAuth';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import { secretWebhookN8n } from '@/lib/secretN8n';
+import { DELAI_WEBHOOK, delai } from '@/lib/reseau';
 
 export const dynamic = 'force-dynamic';
 
@@ -142,7 +143,8 @@ export async function PATCH(req: Request) {
           total: String(data.total ?? 0),
           boutique_id: m.boutiqueId,
         }),
-      });
+      signal: delai(DELAI_WEBHOOK),
+    });
     } catch (e) {
       console.error('Relance n8n impossible :', e);
       return Response.json({ error: 'Relance impossible' }, { status: 503 });
