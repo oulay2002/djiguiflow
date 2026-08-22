@@ -136,20 +136,44 @@ async function installer() {
   );
 }
 
+/**
+ * L'ordre suit les dependances : articles, puis commandes, puis produits, puis
+ * la boutique.
+ *
+ * `commandes.boutique_id` est en NO ACTION quand toutes les autres tables
+ * CASCADENT — et c'est juste : une commande est une piece comptable, supprimer
+ * une boutique ne doit pas effacer son histoire. Une boutique qui a pris une
+ * commande ne se supprime donc PAS d'un seul `delete`.
+ *
+ * Ce nettoyage est celui de `essai-multi-marchand.mjs`, repris tel quel. La
+ * premiere version de ce script en avait ecrit un nouveau, plus court, qui
+ * echouait en silence — il a laisse une boutique de banc en production, avec
+ * sa commande. Reecrire ce qui marche deja est une facon fiable de casser.
+ */
 async function nettoyer() {
+  const { data: commandes } = await sb.from('commandes').select('id').eq('boutique_id', UUID);
+  const ids = (commandes ?? []).map((c) => c.id);
+  if (ids.length) await sb.from('commande_items').delete().in('commande_id', ids);
+  await sb.from('commandes').delete().eq('boutique_id', UUID);
+  await sb.from('produits').delete().eq('boutique_id', UUID);
   await sb.from('boutiques').delete().eq('id', UUID);
+
   const { data } = await sb.from('boutiques').select('id').eq('id', UUID).maybeSingle();
   verifier('la boutique de banc a disparu', !data);
 }
 
 /** Combien d'executions n8n existent, tous workflows confondus. */
 async function executionsN8n() {
-  const api = env('N8N_API_URL');
+  // L'URL a un defaut : seule la CLE doit etre secrete. Exiger les deux rendait
+  // le controle muet sur un poste qui a pourtant tout ce qu'il faut — constate
+  // au premier passage, ou le banc a pose la commande sans pouvoir conclure.
+  const api = env('N8N_API_URL') || 'https://n8n.djiguiflow.com/api/v1';
   const clef = env('N8N_VPS_KEY') || env('N8N_API_KEY');
-  if (!api || !clef) return null;
+  if (!clef) return null;
   try {
     const r = await fetch(`${api.replace(/\/+$/, '')}/executions?limit=1`, {
       headers: { 'X-N8N-API-KEY': clef },
+      signal: AbortSignal.timeout(15000),
     });
     if (!r.ok) return null;
     const j = await r.json();
@@ -178,18 +202,32 @@ try {
     .eq('boutique_id', UUID)
     .maybeSingle();
 
-  const r = await fetch(`${BASE}/api/boutiques/${SLUG}/commander`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      nom: 'Client du banc de chaine',
-      tel: '0102030405',
-      adresse: 'Banc de test',
-      panier: [{ id: article?.id, quantite: 1 }],
-    }),
-  });
-  const corps = await r.json().catch(() => null);
-  verifier('la commande est acceptee', r.status === 200, `HTTP ${r.status}`);
+  // UNE PANNE RESEAU EST UN CONTROLE EN ECHEC, PAS UN PLANTAGE. Au premier
+  // passage, un `ConnectTimeoutError` a tue le processus apres le nettoyage :
+  // on perdait le compte-rendu, et un banc qui s'interrompt se lit comme un
+  // banc qu'on n'a pas lance. Le delai est genereux — la prise de commande
+  // ecrit trois tables et appelle deux webhooks.
+  let r = null;
+  let corps = null;
+  let panne = '';
+  try {
+    r = await fetch(`${BASE}/api/boutiques/${SLUG}/commander`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        nom: 'Client du banc de chaine',
+        tel: '0102030405',
+        adresse: 'Banc de test',
+        panier: [{ id: article?.id, quantite: 1 }],
+      }),
+      signal: AbortSignal.timeout(30000),
+    });
+    corps = await r.json().catch(() => null);
+  } catch (e) {
+    panne = e instanceof Error ? e.message : 'erreur reseau';
+  }
+
+  verifier('la commande est acceptee', r?.status === 200, panne || `HTTP ${r?.status}`);
   verifier('elle rend une reference', Boolean(corps?.order_id), corps?.order_id ?? '(aucune)');
 
   if (avant !== null) {
