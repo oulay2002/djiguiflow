@@ -110,10 +110,10 @@ export default function Page() {
     : [];
 
   const kpis = s ? [
-    { label: 'Ventes du jour', value: `${s.caJour.toLocaleString('fr-FR')} F`, sub: `${s.nbJour} commande(s) aujourd'hui`, icon: Wallet, accent: 'bg-mangue-100 text-mangue-700' },
-    { label: 'Commandes', value: String(s.nbCommandes), sub: `${s.enCours} en cours · ${s.livrees} livrées`, icon: ShoppingCart, accent: 'bg-nuit-100 text-nuit-700' },
-    { label: 'Produits vendus', value: String(s.produitsVendus), sub: `panier moyen ${s.panierMoyen.toLocaleString('fr-FR')} F`, icon: Package2, accent: 'bg-nuit-100 text-nuit-700' },
-    { label: 'Satisfaction', value: s.noteMoyenne ? `${s.noteMoyenne}/5` : '—', sub: `${s.nbNotes} avis clients`, icon: Star, accent: 'bg-accent-100 text-accent-700' },
+    { label: 'Ventes du jour', value: `${s.caJour.toLocaleString('fr-FR')} F`, sub: `${s.nbJour} commande(s) aujourd'hui`, icon: Wallet },
+    { label: 'Commandes', value: String(s.nbCommandes), sub: `${s.enCours} en cours · ${s.livrees} livrées`, icon: ShoppingCart },
+    { label: 'Produits vendus', value: String(s.produitsVendus), sub: `panier moyen ${s.panierMoyen.toLocaleString('fr-FR')} F`, icon: Package2 },
+    { label: 'Satisfaction', value: s.noteMoyenne ? `${s.noteMoyenne}/5` : '—', sub: `${s.nbNotes} avis clients`, icon: Star },
   ] : [];
 
   return (
@@ -152,11 +152,28 @@ export default function Page() {
           <CompteurQuota />
 
           <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            {/* LA TUILE NE PORTE PLUS DE TEINTE, et ce n'est pas une question
+                de gout. La palette de la maison est SEMANTIQUE : mangue veut
+                dire « en cours, a surveiller », feuille veut dire « confirme,
+                encaisse ». Ces quatre tuiles les depensaient en decoration, et
+                deux disaient quelque chose de FAUX — mangue sur les ventes du
+                jour lisait « a surveiller » tous les jours, feuille sur la
+                satisfaction lisait « encaisse ».
+
+                Et surtout : la couleur d'alerte ne fonctionne que si elle est
+                RARE. Quatre tuiles teintees en permanence, juste au-dessus d'un
+                bandeau bissap qui signale une boutique mal branchee, diluent
+                exactement le signal qu'on veut voir. C'est un argument de
+                fonctionnement, pas d'esthetique.
+
+                Le releve se hierarchise par la typographie — la valeur est en
+                `text-3xl font-black` — et la couleur reste disponible pour
+                quand il y a quelque chose a dire. */}
             {kpis.map(k => {
               const Icon = k.icon;
               return (
                 <div key={k.label} className=" border border-[var(--hairline)] bg-white p-5 soft-shadow">
-                  <div className={`flex h-12 w-12 items-center justify-center ${k.accent}`}>
+                  <div className="flex h-12 w-12 items-center justify-center bg-chaux-100 text-nuit-700">
                     <Icon className="h-6 w-6" />
                   </div>
                   <p className="mt-4 text-sm text-chaux-600">{k.label}</p>

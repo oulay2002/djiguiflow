@@ -429,7 +429,7 @@ export default function PaiementsPage() {
                       key={plan.key}
                       className={` border p-6 ${
                         plan.popular
-                          ? 'border-primary-500 bg-nuit-900 text-white soft-shadow shadow-primary-500/20'
+                          ? 'border-primary-500 bg-nuit-900 text-white soft-shadow'
                           : 'border-[var(--hairline)] bg-white soft-shadow'
                       } ${isHighlighted ? 'ring-2 ring-mangue-300' : ''}`}
                     >
