@@ -85,8 +85,44 @@ const enNomDeFichier = (nom) =>
     .toLowerCase()
     .slice(0, 70);
 
-async function api(chemin) {
-  const r = await fetch(`${BASE}/api/v1${chemin}`, { headers: { 'X-N8N-API-KEY': CLE } });
+/**
+ * UN SEUL APPEL RATE NE DOIT PAS TUER L'EXPORT.
+ *
+ * Le 22 aout 2026, cette execution est morte sur un `ConnectTimeoutError` vers
+ * n8n depuis l'executeur GitHub — dix secondes de delai de connexion, aucun
+ * reessai, une exception non rattrapee. n8n repondait parfaitement : verifie
+ * trois fois de suite dans la minute qui a suivi, plus l'API. Le hoquet etait
+ * du cote du reseau de l'executeur.
+ *
+ * Une sauvegarde qui tombe au premier hoquet n'est pas une sauvegarde. C'est
+ * la meme lecon que la sonde de veille, qui criait « n8n injoignable » sur un
+ * seul fetch rate : un echec isole ne prouve rien.
+ *
+ * TROIS ESSAIS, PAS DIX. Au-dela, on n'attend plus un hoquet, on masque une
+ * panne — et une panne masquee revient plus tard, plus grosse.
+ *
+ * ON NE REESSAIE PAS UN REFUS. Un 401 ou un 404 ne guerit pas en attendant :
+ * seuls les echecs de TRANSPORT valent un second essai.
+ */
+async function api(chemin, essai = 1) {
+  const ESSAIS = 3;
+  let r;
+  try {
+    r = await fetch(`${BASE}/api/v1${chemin}`, {
+      headers: { 'X-N8N-API-KEY': CLE },
+      signal: AbortSignal.timeout(30_000),
+    });
+  } catch (e) {
+    if (essai >= ESSAIS) {
+      const raison = e instanceof Error ? e.message : 'erreur reseau';
+      throw new Error(`${chemin} -> injoignable apres ${ESSAIS} essais : ${raison}`);
+    }
+    const attente = essai * 2000;
+    console.error(`n8n injoignable (essai ${essai}/${ESSAIS}), nouvelle tentative dans ${attente / 1000} s...`);
+    await new Promise((ok) => setTimeout(ok, attente));
+    return api(chemin, essai + 1);
+  }
+
   const texte = await r.text();
   if (!r.ok) throw new Error(`${chemin} -> ${r.status} ${texte.slice(0, 200)}`);
   return JSON.parse(texte);
