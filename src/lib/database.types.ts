@@ -271,6 +271,24 @@ export type Database = {
           },
         ]
       }
+      compteurs_fenetre: {
+        Row: {
+          cle: string
+          fenetre: string
+          valeur: number
+        }
+        Insert: {
+          cle: string
+          fenetre: string
+          valeur?: number
+        }
+        Update: {
+          cle?: string
+          fenetre?: string
+          valeur?: number
+        }
+        Relationships: []
+      }
       compteurs_journaliers: {
         Row: {
           cle: string
@@ -919,6 +937,13 @@ export type Database = {
           produit: string
           quantite: number
           slug: string
+        }[]
+      }
+      reserver_fenetre: {
+        Args: { p_cle: string; p_plafond: number; p_secondes?: number }
+        Returns: {
+          autorise: boolean
+          valeur: number
         }[]
       }
       reserver_relance: {
