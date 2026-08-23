@@ -63,6 +63,23 @@ l'en-tête HTTP.**
 Elle ne figure **nulle part dans ce dépôt** — vérifié. Sans elle, même une
 sauvegarde de la base de n8n est illisible : les identifiants restent chiffrés.
 
+⚠ **ELLE N'EST PAS DANS `/docker/n8n/.env`.** Ce document l'y plaçait ; c'est
+faux, et vérifié sur la machine le 23 août 2026 : `grep N8N_ENCRYPTION_KEY
+/docker/n8n/.env` ne rend **rien**. n8n en génère une au premier démarrage et la
+range dans son propre dossier, à l'intérieur du conteneur :
+
+```
+docker exec n8n-n8n-1 cat /home/node/.n8n/config
+```
+
+La valeur est celle du champ `encryptionKey`. Les deux conteneurs de
+l'installation Hostinger sont `n8n-n8n-1` et `n8n-traefik-1`.
+
+**C'est le pire endroit possible pour une valeur irremplaçable** : un fichier
+dans un conteneur, sur un seul disque, que personne n'a jamais lu. Un manuel qui
+envoie au mauvais fichier le jour d'un incident est pire qu'un manuel absent —
+d'où cette correction.
+
 ### 3. La connexion OAuth Google
 
 Remplir Client ID et Client Secret **ne suffit pas** : le bouton « Sign in with
@@ -87,12 +104,31 @@ aurait décalé de deux heures le cron 7 h-21 h de l'alerte retard.
 Rien de ce qui suit ne se rattrape après coup.
 
 1. **Mettre `N8N_ENCRYPTION_KEY` à l'abri**, hors du VPS et hors de ce dépôt
-   — qui est public. Le coffre Supabase convient, ou le gestionnaire de mots de
-   passe du gérant.
-2. **Y mettre aussi les sept identifiants**, sous leur forme d'origine : jetons
-   Telegram, Bearer wasender, les deux secrets d'en-tête, la clé Mistral. Ce
-   sont des valeurs qu'on possède déjà ailleurs ; les rassembler en un endroit
-   connu transforme une journée de reconstruction en une heure.
+   — qui est public. Le **gestionnaire de mots de passe** du gérant, de
+   préférence au coffre Supabase : mettre la clé de n8n dans Supabase lie deux
+   systèmes qui doivent pouvoir tomber séparément.
+
+   La noter avec son ORIGINE et son MODE D'EMPLOI, pas seule : un secret sans
+   contexte ne sert à rien dans l'urgence.
+
+2. **CINQ DES SEPT IDENTIFIANTS SONT DÉJÀ RÉCUPÉRABLES**, vérifié le 23 août
+   2026 — il n'y a donc presque rien à rassembler :
+
+   | Identifiant n8n | Où sa valeur vit déjà |
+   |---|---|
+   | `Header Auth account 2` (47 nœuds) | Vercel, `SYNC_SECRET` |
+   | `Header Auth account` (les 3 webhooks) | coffre Supabase, `n8n_webhook_secret` |
+   | `Telegram account` | coffre, `telegram_zahara` |
+   | `Bearer Auth account` (wasender) | coffre, `wasender_zahara` |
+   | `Telegram Veille DjiguiFlow` | GitHub, `TELEGRAM_ALERTE_TOKEN` |
+   | `Mistral Cloud account` | **nulle part** — ré-émissible en console |
+   | `Google Sheets account` | **nulle part** — et l'OAuth est à refaire à la main de toute façon |
+
+   Le partage des rôles a été relu dans l'export du jour, pas d'après des
+   notes : `Header Auth account` garde les webhooks ENTRANTS
+   (`x-djiguiflow-secret`), `Header Auth account 2` sert à APPELER
+   `/api/internal/*` et `/api/canaux/*` (`x-sync-secret`). Les confondre avait
+   mis 29 nœuds en 401 lors de la migration.
 3. **Copier `/docker/n8n/.env`** au même endroit.
 4. **Poser une clé SSH sur le poste du gérant.** Il n'y en a aucune aujourd'hui :
    personne ne peut inspecter le VPS depuis ici, ni le redémarrer.
