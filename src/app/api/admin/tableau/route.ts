@@ -112,8 +112,16 @@ export async function GET(req: Request) {
       articles: nbArticles,
       commandes: stats.commandes,
       commandesRecentes: stats.recentes,
-      ca: stats.ca,
-      caRecent: stats.caRecent,
+      // LE CHIFFRE D'AFFAIRES N'Y EST PLUS, ET C'EST DELIBERE.
+      //
+      // Pour savoir QUI A BESOIN D'AIDE, l'etat, la date de derniere vente et
+      // ce qui manque suffisent. Le montant encaisse par un commercant est son
+      // affaire : le faire figurer dans un tableau d'exploitation, c'est le
+      // regarder sans qu'il l'ait demande, pour une information qui ne change
+      // aucune de nos actions.
+      //
+      // Le nombre de commandes reste : c'est la mesure du forfait, donc une
+      // donnee de la relation commerciale, pas du commerce du marchand.
       derniereVente: stats.derniere ? new Date(stats.derniere).toISOString() : null,
       manque,
       etat,

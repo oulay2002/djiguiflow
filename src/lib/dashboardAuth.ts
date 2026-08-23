@@ -59,6 +59,18 @@ export async function exigerAccesMarchand(
 
   const admin = estAdmin(utilisateur.email);
   if (admin) {
+    // LE PASSE-DROIT LAISSE UNE TRACE.
+    //
+    // Un administrateur ouvre n'importe quel tableau de bord marchand comme
+    // s'il en etait proprietaire — commandes, clients, livreurs. C'est
+    // NECESSAIRE : on ne depanne pas un commercant qu'on ne peut pas voir.
+    //
+    // Mais c'etait jusqu'ici invisible et sans trace. Un acces qu'on ne peut
+    // pas relire n'est pas un acces qu'on peut defendre le jour ou un marchand
+    // demande qui a consulte ses chiffres.
+    console.warn(
+      `[acces-admin] ${utilisateur.email} a ouvert la boutique « ${marchand.id} »`,
+    );
     return { ok: true, marchand, userId: utilisateur.id, admin: true };
   }
 

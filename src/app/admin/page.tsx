@@ -27,8 +27,6 @@ type Marchand = {
   articles: number;
   commandes: number;
   commandesRecentes: number;
-  ca: number;
-  caRecent: number;
   derniereVente: string | null;
   manque: string[];
   etat: 'non branche' | 'branche sans vente' | 'vend' | 'en sommeil';
@@ -41,8 +39,6 @@ type Tableau = {
   anomalies: { type: string; reference: string; signale_le: string }[];
   fenetres: { activiteJours: number; sommeilJours: number };
 };
-
-const fcfa = (n: number) => n.toLocaleString('fr-FR');
 
 /** L'ordre de l'entonnoir est celui que TRAVERSE un marchand, pas l'alphabet. */
 const ETAPES = [
@@ -84,17 +80,19 @@ export default function AdminPage() {
     })();
   }, []);
 
+  // ON NE MONTRE PAS LA PORTE A QUI N'A PAS LA CLE.
+  //
+  // Un marchand qui tapait cette adresse voyait « reserve a l administration
+  // DjiguiFlow » : aucune donnee ne fuyait — la route est fermee cote serveur —
+  // mais l'ecran ANNONCAIT l'existence d'une zone d'exploitation et invitait a
+  // y revenir. Le renvoi vers son propre tableau de bord ne dit rien de plus
+  // que ce qu'il sait deja.
+  //
+  // Le renvoi n'est PAS le controle d'acces : celui-ci reste `exigerAdmin`,
+  // cote serveur. Masquer un ecran n'a jamais protege une donnee.
   if (erreur) {
-    return (
-      <main className="min-h-screen bg-chaux-50 px-5 py-20">
-        <div className="mx-auto max-w-lg border border-bissap-300 bg-bissap-50 p-6">
-          <p className="font-display text-lg font-bold text-bissap-700">{erreur}</p>
-          <p className="mt-2 text-sm text-nuit-800">
-            Cette page est réservée à l’administration de la plateforme.
-          </p>
-        </div>
-      </main>
-    );
+    if (typeof window !== 'undefined') window.location.replace('/dashboard');
+    return null;
   }
 
   if (!t) {
@@ -106,7 +104,7 @@ export default function AdminPage() {
   }
 
   const total = t.marchands.length;
-  const caTotal = t.marchands.reduce((s, m) => s + m.caRecent, 0);
+  const commandesRecentes = t.marchands.reduce((s, m) => s + m.commandesRecentes, 0);
 
   return (
     <main className="min-h-screen bg-chaux-50">
@@ -120,8 +118,8 @@ export default function AdminPage() {
             Qui a besoin de vous aujourd’hui&nbsp;?
           </h1>
           <p className="mt-3 max-w-2xl text-nuit-700">
-            {total} marchand{total > 1 ? 's' : ''} · {fcfa(caTotal)} F encaissés sur{' '}
-            {t.fenetres.activiteJours} jours.
+            {total} marchand{total > 1 ? 's' : ''} · {commandesRecentes} commande
+            {commandesRecentes > 1 ? 's' : ''} sur {t.fenetres.activiteJours} jours.
           </p>
         </header>
 
@@ -157,7 +155,6 @@ export default function AdminPage() {
                   <th className="py-2 pr-4 font-normal">État</th>
                   <th className="py-2 pr-4 text-right font-normal">Articles</th>
                   <th className="py-2 pr-4 text-right font-normal">Cmd. {t.fenetres.activiteJours}j</th>
-                  <th className="py-2 pr-4 text-right font-normal">CA {t.fenetres.activiteJours}j</th>
                   <th className="py-2 font-normal">Dernière vente</th>
                 </tr>
               </thead>
@@ -189,7 +186,6 @@ export default function AdminPage() {
                     </td>
                     <td className="py-3 pr-4 text-right tabular-nums">{m.articles}</td>
                     <td className="py-3 pr-4 text-right tabular-nums">{m.commandesRecentes}</td>
-                    <td className="py-3 pr-4 text-right tabular-nums">{fcfa(m.caRecent)} F</td>
                     <td className="py-3 text-chaux-600">{depuis(m.derniereVente)}</td>
                   </tr>
                 ))}
