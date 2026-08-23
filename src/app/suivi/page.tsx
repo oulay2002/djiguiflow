@@ -25,6 +25,15 @@ type Suivi = {
   nom_boutique?: string;
   nom_livreur: string;
   statut_livraison: string;
+  /**
+   * Ou en est la confirmation demandee au client.
+   *
+   * `demandee` veut dire QU IL DOIT REPONDRE : sa commande n'est pas lancee
+   * tant qu'il ne l'a pas fait. L'ecran l'ignorait, affichait « Commande
+   * recue » et laissait croire que tout suivait son cours -- pendant que la
+   * boutique attendait une reponse qu'il ne savait pas devoir donner.
+   */
+  confirmation_statut?: string;
   heure_livraison: string;
   /** `null` tant que le livreur n'a rien annonce. Jamais 0 par defaut. */
   frais_livraison?: number | null;
@@ -97,8 +106,23 @@ function Suivre() {
         setSuivi(await res.json());
       } else {
         setSuivi(null);
+        /**
+         * LE SERVEUR SAIT POURQUOI, ET ON LE JETAIT.
+         *
+         * Quatre situations tres differentes -- reference inconnue (404), trop
+         * de consultations (429), suivi indisponible (503), preuve refusee --
+         * recevaient toutes le meme texte : « recopiez la reference ». On
+         * demandait au client de recopier une reference qui etait juste, et
+         * s il tatonnait il consommait ses dix essais du jour.
+         *
+         * Le repli ne vaut plus que pour le 404 muet.
+         */
+        const corps = (await res.json().catch(() => null)) as { error?: string } | null;
+        const duServeur = String(corps?.error ?? '').trim();
         setErreur(
-          "Aucune commande sous cette référence. Recopiez-la telle qu'elle apparaît dans votre message de confirmation.",
+          duServeur && res.status !== 404
+            ? duServeur
+            : "Aucune commande sous cette référence. Vérifiez-la, ainsi que les quatre derniers chiffres de votre numéro.",
         );
       }
     } catch {
@@ -132,6 +156,7 @@ function Suivre() {
           const nouveau = charge.new as {
             nom_livreur: string | null;
             statut_livraison: string | null;
+            confirmation_statut: string | null;
             heure_livraison: string | null;
           };
           setSuivi((prec) =>
@@ -140,6 +165,10 @@ function Suivre() {
                   ...prec,
                   nom_livreur: nouveau.nom_livreur ?? '',
                   statut_livraison: nouveau.statut_livraison ?? '',
+                  // Sans lui, le bandeau « repondez au message » restait
+                  // affiche apres que le client a repondu -- jusqu au sondage
+                  // suivant, quinze secondes plus tard.
+                  confirmation_statut: nouveau.confirmation_statut ?? '',
                   heure_livraison: nouveau.heure_livraison ?? '',
                 }
               : prec,
@@ -166,6 +195,13 @@ function Suivre() {
   const enRoute =
     !!suivi && /part|route|cours|livraison/i.test(suivi.statut_livraison) && !suivi.heure_livraison;
   const livree = !!suivi && (/livr/i.test(suivi.statut_livraison) || !!suivi.heure_livraison);
+
+  // La confirmation est DEMANDEE et pas encore donnee : rien n'avance tant
+  // qu'il n'a pas repondu, et c'est la seule etape ou l'action lui revient.
+  const aConfirmer =
+    !!suivi
+    && /demand/i.test(suivi.confirmation_statut ?? '')
+    && !acceptee && !enRoute && !livree;
 
   const etapes = [
     { label: 'Commande reçue', ok: !!suivi, detail: horodatage(suivi?.timestamp ?? '') },
@@ -231,7 +267,11 @@ function Suivre() {
 
             <button
               onClick={() => void charger(ref, boutique, '', tel4)}
-              disabled={chargement || !ref}
+              // Les quatre chiffres sont EXIGES par le serveur pour qui n a pas
+              // de jeton. Sans eux le bouton partait quand meme, le serveur
+              // repondait 404, et le message accusait la reference -- tout en
+              // consommant un des dix essais quotidiens de la commande.
+              disabled={chargement || !ref || (!jetonUrl && tel4.length !== 4)}
               className={classesBouton('action', 'md', 'carree')}
             >
               {chargement ? 'Recherche…' : 'Suivre'}
@@ -280,6 +320,25 @@ function Suivre() {
               En attente de votre référence
             </p>
           </article>
+        )}
+
+        {/* LA SEULE ETAPE OU L ACTION REVIENT AU CLIENT.
+            Sans ce bandeau, il lisait « Commande reçue ✓ » et attendait sa
+            livraison, pendant que la boutique attendait une reponse qu il ne
+            savait pas devoir donner. Les deux s attendaient. */}
+        {aConfirmer && (
+          <div
+            role="status"
+            className="mb-4 border border-mangue-300 bg-mangue-50 px-4 py-3"
+          >
+            <p className="text-sm font-bold text-nuit-900">
+              Votre commande attend votre confirmation.
+            </p>
+            <p className="mt-1 text-sm text-chaux-600">
+              Un message vous a été envoyé sur WhatsApp. Répondez-y — tant que ce
+              n’est pas fait, le commerçant ne prépare pas votre commande.
+            </p>
+          </div>
         )}
 
         {suivi && (

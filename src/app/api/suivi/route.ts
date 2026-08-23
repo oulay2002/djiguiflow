@@ -98,7 +98,7 @@ export async function GET(req: Request) {
     .from('commandes')
     .select(
       'reference, jeton_suivi, client_telephone, client_nom, client_adresse, total, created_at,' +
-        ' nom_livreur, statut_livraison,' +
+        ' nom_livreur, statut_livraison, confirmation_statut,' +
         ' frais_livraison,' +
         ' heure_prise_en_charge, heure_livraison, boutique_id,' +
         ' commande_items(nom_produit, quantite, prix_unitaire)',
@@ -120,7 +120,8 @@ export async function GET(req: Request) {
     client_nom: string | null; client_adresse: string | null;
     total: number | null; created_at: string | null; nom_livreur: string | null;
     frais_livraison: number | null;
-    statut_livraison: string | null; heure_prise_en_charge: string | null;
+    statut_livraison: string | null; confirmation_statut: string | null;
+    heure_prise_en_charge: string | null;
     heure_livraison: string | null; boutique_id: string;
     commande_items: LigneItem[] | null;
   };
@@ -224,6 +225,14 @@ export async function GET(req: Request) {
     timestamp: c.created_at ?? '',
     nom_livreur: c.nom_livreur ?? '',
     statut_livraison: c.statut_livraison ?? '',
+    // CE QUE LE SUIVI NE DISAIT PAS. Tant que le client n'a pas repondu au
+    // message de confirmation, sa commande N'EST PAS lancee — mais le suivi
+    // affichait « Commande recue » et rien d'autre. Le client attendait sa
+    // livraison, la boutique attendait sa reponse, et aucun des deux ne savait
+    // que l'autre attendait.
+    //
+    // Vide = on ne lui a rien demande. `demandee` = la balle est dans son camp.
+    confirmation_statut: c.confirmation_statut ?? '',
     heure_prise_en_charge: c.heure_prise_en_charge ?? '',
     heure_livraison: c.heure_livraison ?? '',
   });

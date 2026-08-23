@@ -180,8 +180,28 @@ const COMMANDES_PAR_BOUTIQUE = 20;
 const FENETRE_COMMANDES_MS = 10 * 60_000;
 const COMMANDES_PAR_JOUR = 300;
 
-const TROP_DE_COMMANDES =
-  'Trop de commandes coup sur coup. Patientez quelques minutes avant de réessayer.';
+/**
+ * TROIS FREINS, TROIS MESSAGES -- ET PAS UN SEUL.
+ *
+ * Le meme texte sortait des trois refus ET des trois pannes de compteur. Deux
+ * consequences, toutes deux mesurees a la lecture :
+ *
+ *  - Le plafond de boutique est PAR BOUTIQUE, pas par client : au coup de feu,
+ *    le 21e client d un maquis se faisait dire qu il commandait trop. Il n y
+ *    est pour rien, et le texte l accusait.
+ *  - Quand le compteur est simplement injoignable, la route repond 503 -- une
+ *    PANNE -- avec un texte qui parle de quota. La vitrine affiche `error`
+ *    verbatim et ne lit pas le statut : le client lisait « patientez » sur une
+ *    indisponibilite.
+ */
+const TROP_VITE =
+  'Vous avez envoyé plusieurs commandes coup sur coup. Patientez quelques minutes.';
+const BOUTIQUE_SATUREE =
+  'Cette boutique reçoit beaucoup de commandes en ce moment. Réessayez dans quelques minutes.';
+const BOUTIQUE_COMPLETE =
+  'Cette boutique a atteint son nombre de commandes pour aujourd’hui. Réessayez demain.';
+const SERVICE_INDISPONIBLE =
+  'Service momentanément indisponible. Réessayez dans un instant.';
 
 export async function POST(req: Request, ctx: { params: Promise<{ id: string }> }) {
   const { id } = await ctx.params;
@@ -201,7 +221,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
   if (rafaleAppelant.depassee) {
     console.error(`Commande — rafale refusee pour « ${m.id} » depuis ${appelant}.`);
     return Response.json(
-      { error: TROP_DE_COMMANDES },
+      { error: TROP_VITE },
       { status: 429, headers: { 'Retry-After': String(rafaleAppelant.attendreSecondes) } },
     );
   }
@@ -220,7 +240,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
         + ` plus de ${COMMANDES_PAR_BOUTIQUE} commandes en ${FENETRE_COMMANDES_MS / 60_000} min.`,
     );
     return Response.json(
-      { error: TROP_DE_COMMANDES },
+      { error: rafaleBoutique.indisponible ? SERVICE_INDISPONIBLE : BOUTIQUE_SATUREE },
       {
         // 503 quand le compteur est injoignable : ce n'est pas un refus de
         // quota, c'est une panne, et l'appelant doit pouvoir les distinguer.
@@ -241,7 +261,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
         + `/${COMMANDES_PAR_JOUR}).`,
     );
     return Response.json(
-      { error: TROP_DE_COMMANDES },
+      { error: plafondJour.indisponible ? SERVICE_INDISPONIBLE : BOUTIQUE_COMPLETE },
       {
         status: plafondJour.indisponible ? 503 : 429,
         headers: { 'Retry-After': String(secondesAvantMinuitAbidjan()) },
@@ -380,7 +400,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     if (error || !creee) {
       console.error(`Commande ${order_id} — insertion Supabase refusee :`, error);
       return Response.json(
-        { error: 'Commande non enregistree, merci de reessayer' },
+        { error: 'Commande non enregistrée, merci de réessayer' },
         { status: 503 },
       );
     }
@@ -404,7 +424,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
       console.error(`Commande ${order_id} — articles refuses, annulation :`, errArticles);
       await sb.from('commandes').delete().eq('id', creee.id);
       return Response.json(
-        { error: 'Commande non enregistree, merci de reessayer' },
+        { error: 'Commande non enregistrée, merci de réessayer' },
         { status: 503 },
       );
     }
@@ -501,7 +521,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     );
     return Response.json(
       {
-        error: 'Commande non enregistree, merci de reessayer',
+        error: 'Commande non enregistrée, merci de réessayer',
         // Nomme la cause pour que l'exploitant la distingue d'un refus
         // d'insertion, sans rien exposer de la configuration.
         raison: 'supabase_indisponible',
