@@ -19,7 +19,62 @@ type Produit = {
   duJour?: boolean;
   /** `null` = le marchand ne compte pas ce produit. Jamais confondu avec zero. */
   stock?: number | null;
+  /** Articles de meme `groupe` = un seul article en plusieurs coloris. */
+  groupe?: string;
+  couleur?: string;
 };
+
+/**
+ * Un article et ses coloris.
+ *
+ * LE PROBLEME QU'ON RESOUD. Un vendeur de vetements saisit le meme ensemble en
+ * blanc, en noir et en rouge. La vitrine en faisait TROIS cartes identiques :
+ * le client croyait voir trois articles, et le catalogue paraissait plus riche
+ * qu'il n'est — jusqu'a ce qu'il regarde les photos.
+ *
+ * Chaque coloris reste un produit a part entiere : son stock, sa photo, son
+ * prix, et c'est LUI qui entre au panier. Seul l'affichage regroupe.
+ */
+type Article = {
+  cle: string;
+  /** Le nom sans le coloris : « Ensemble enfant », pas « Ensemble enfant blanc ». */
+  titre: string;
+  variantes: Produit[];
+};
+
+/**
+ * Regroupe les produits en articles.
+ *
+ * L'ORDRE DU CATALOGUE EST CONSERVE : un article prend la place de sa premiere
+ * declinaison. Trier par groupe remonterait les articles a coloris en tete de
+ * page sans que le marchand l'ait demande.
+ */
+function grouperEnArticles(produits: Produit[]): Article[] {
+  const articles: Article[] = [];
+  const parGroupe = new Map<string, Article>();
+
+  for (const p of produits) {
+    const groupe = String(p.groupe ?? '').trim();
+
+    // Sans groupe, l'article est seul — comportement d'avant, a l'identique.
+    if (!groupe) {
+      articles.push({ cle: p.id, titre: p.nom, variantes: [p] });
+      continue;
+    }
+
+    const existant = parGroupe.get(groupe);
+    if (existant) {
+      existant.variantes.push(p);
+      continue;
+    }
+
+    const article: Article = { cle: `groupe:${groupe}`, titre: groupe, variantes: [p] };
+    parGroupe.set(groupe, article);
+    articles.push(article);
+  }
+
+  return articles;
+}
 
 const fcfa = (n: number) => n.toLocaleString('fr-FR');
 
@@ -159,6 +214,15 @@ export default function Page() {
   const [produits, setProduits] = useState<Produit[]>([]);
   const [chargement, setChargement] = useState(true);
   const [panier, setPanier] = useState<Record<string, number>>({});
+  /**
+   * Le coloris regarde, par article. Clef = l'article, valeur = le produit.
+   *
+   * Il n'est PAS pose au chargement : sans choix explicite, la carte ouvre sur
+   * la premiere declinaison encore en stock. Figer un defaut au chargement
+   * afficherait « epuise » sur un article dont trois coloris sur quatre sont
+   * disponibles.
+   */
+  const [coloris, setColoris] = useState<Record<string, string>>({});
   const [categorie, setCategorie] = useState('tout');
   const [nom, setNom] = useState('');
   const [tel, setTel] = useState('');
@@ -379,79 +443,170 @@ export default function Page() {
     }
   };
 
-  const grille = (liste: Produit[]) => (
+  /**
+   * Une carte par ARTICLE, pas par coloris.
+   *
+   * Le coloris choisi commande tout ce que la carte montre — la photo, le prix,
+   * le stock — et c'est LUI qui entre au panier. Les autres restent a portee de
+   * pouce, en vignettes.
+   */
+  const grille = (articles: Article[]) => (
     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-      {liste.map(p => (
-        <article
-          key={p.id}
-          className="group flex flex-col overflow-hidden border border-[var(--hairline)] bg-chaux-50 transition duration-200 soft-shadow hover:-translate-y-1"
-        >
-          <Visuel p={p} />
+      {articles.map(article => {
+        // Le coloris retenu, ou le premier qui reste en stock. Ouvrir une carte
+        // sur une declinaison epuisee ferait croire l'article indisponible.
+        const choisi = article.variantes.find(v => v.id === coloris[article.cle])
+          ?? article.variantes.find(v => v.stock !== 0)
+          ?? article.variantes[0];
 
-          <div className="flex flex-1 flex-col p-4">
-            <h3 className="font-display text-lg font-bold leading-tight text-nuit-900">{p.nom}</h3>
-            {p.description && (
-              <p className="mt-1.5 text-sm leading-snug text-chaux-600">{p.description}</p>
-            )}
+        const p = choisi;
+        const plusieurs = article.variantes.length > 1;
 
-            <div className="mt-auto flex items-center justify-between gap-3 pt-4">
-              {/* Le prix est une donnée : en mono, il s'aligne d'une carte
-                  à l'autre et se compare d'un coup d'œil. */}
-              <p className="font-mono text-lg font-bold leading-none text-bissap-600">
-                {fcfa(p.prix)}
-                <span className="ml-1 text-xs font-semibold text-chaux-600">FCFA</span>
-              </p>
+        // Ce que le client a deja pris dans les AUTRES coloris. Sans cette
+        // ligne, il ajoute du blanc, passe au noir, et son panier semble vide.
+        const ailleurs = article.variantes
+          .filter(v => v.id !== p.id && panier[v.id])
+          .map(v => `${panier[v.id]} ${v.couleur || v.nom}`);
 
-              {panier[p.id] ? (
-                <div className="flex items-center border border-[var(--hairline)] bg-white">
-                  <button
-                    onClick={() => retirer(p.id)}
-                    aria-label={`Retirer un ${p.nom}`}
-                    className="flex h-9 w-9 items-center justify-center text-nuit-700 transition hover:bg-chaux-100"
-                  >
-                    <Minus className="h-4 w-4" />
-                  </button>
-                  <span className="w-7 text-center font-mono text-sm font-bold text-nuit-900">
-                    {panier[p.id]}
+        return (
+          <article
+            key={article.cle}
+            className="group flex flex-col overflow-hidden border border-[var(--hairline)] bg-chaux-50 transition duration-200 soft-shadow hover:-translate-y-1"
+          >
+            <Visuel p={p} />
+
+            <div className="flex flex-1 flex-col p-4">
+              <h3 className="font-display text-lg font-bold leading-tight text-nuit-900">
+                {article.titre}
+              </h3>
+
+              {/* Le coloris se lit sous le titre, comme sur une etiquette. */}
+              {p.couleur && (
+                <p className="mt-0.5 font-mono text-xs uppercase tracking-[0.14em] text-chaux-600">
+                  {p.couleur}
+                </p>
+              )}
+
+              {p.description && (
+                <p className="mt-1.5 text-sm leading-snug text-chaux-600">{p.description}</p>
+              )}
+
+              {/* ---- Les coloris, quand il y en a plusieurs. */}
+              {plusieurs && (
+                <div className="mt-3">
+                  <p className="font-mono text-xs uppercase tracking-[0.14em] text-chaux-600">
+                    {article.variantes.length} coloris disponibles
+                  </p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {article.variantes.map(v => {
+                      const actif = v.id === p.id;
+                      const vide = v.stock === 0;
+                      return (
+                        <button
+                          key={v.id}
+                          onClick={() => setColoris(c => ({ ...c, [article.cle]: v.id }))}
+                          aria-pressed={actif}
+                          aria-label={`Voir ${article.titre} en ${v.couleur || v.nom}${vide ? ' (épuisé)' : ''}`}
+                          title={v.couleur || v.nom}
+                          className={`relative h-12 w-12 shrink-0 overflow-hidden border transition ${
+                            actif
+                              ? 'border-nuit-900 ring-1 ring-nuit-900'
+                              : 'border-[var(--hairline)] hover:border-nuit-400'
+                          }`}
+                        >
+                          {v.image ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={v.image} alt="" className="h-full w-full object-cover" />
+                          ) : (
+                            <span className="flex h-full w-full items-center justify-center bg-chaux-100 font-display text-sm font-black text-nuit-900/30">
+                              {initiale(v.couleur || v.nom)}
+                            </span>
+                          )}
+                          {/* Un coloris epuise reste VISIBLE mais se dit tel :
+                              le masquer ferait croire qu'il n'existe pas. */}
+                          {vide && (
+                            <span
+                              aria-hidden
+                              className="absolute inset-0 flex items-center justify-center bg-chaux-50/75 font-mono text-[9px] font-bold uppercase tracking-wider text-chaux-600"
+                            >
+                              Épuisé
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              <div className="mt-auto flex items-center justify-between gap-3 pt-4">
+                {/* Le prix est une donnée : en mono, il s'aligne d'une carte
+                    à l'autre et se compare d'un coup d'œil. */}
+                <p className="font-mono text-lg font-bold leading-none text-bissap-600">
+                  {fcfa(p.prix)}
+                  <span className="ml-1 text-xs font-semibold text-chaux-600">FCFA</span>
+                </p>
+
+                {panier[p.id] ? (
+                  <div className="flex items-center border border-[var(--hairline)] bg-white">
+                    <button
+                      onClick={() => retirer(p.id)}
+                      aria-label={`Retirer un ${p.nom}`}
+                      className="flex h-9 w-9 items-center justify-center text-nuit-700 transition hover:bg-chaux-100"
+                    >
+                      <Minus className="h-4 w-4" />
+                    </button>
+                    <span className="w-7 text-center font-mono text-sm font-bold text-nuit-900">
+                      {panier[p.id]}
+                    </span>
+                    <button
+                      onClick={() => ajouter(p.id)}
+                      disabled={typeof p.stock === 'number' && panier[p.id] >= p.stock}
+                      aria-label={`Ajouter un ${p.nom}`}
+                      className="flex h-9 w-9 items-center justify-center bg-bissap-500 text-white transition hover:bg-bissap-600 disabled:cursor-not-allowed disabled:bg-chaux-300"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </button>
+                  </div>
+                ) : p.stock === 0 ? (
+                  /* Epuise : on le DIT plutot que de masquer le plat. Le client
+                     voit qu'il existe et reviendra le chercher ; un plat disparu
+                     donne l'impression d'une carte pauvre.
+                     Le serveur refuse de toute facon la commande — cet affichage
+                     evite au client de composer un panier pour rien. */
+                  <span className="border border-[var(--hairline)] bg-chaux-100 px-3 py-2 font-mono text-xs font-bold uppercase tracking-[0.15em] text-chaux-600">
+                    Épuisé
                   </span>
+                ) : (
                   <button
                     onClick={() => ajouter(p.id)}
-                    disabled={typeof p.stock === 'number' && panier[p.id] >= p.stock}
-                    aria-label={`Ajouter un ${p.nom}`}
-                    className="flex h-9 w-9 items-center justify-center bg-bissap-500 text-white transition hover:bg-bissap-600 disabled:cursor-not-allowed disabled:bg-chaux-300"
+                    className={classesBouton('action', 'sm', 'carree')}
                   >
-                    <Plus className="h-4 w-4" />
+                    <Plus className="h-4 w-4" /> Ajouter
                   </button>
-                </div>
-              ) : p.stock === 0 ? (
-                /* Epuise : on le DIT plutot que de masquer le plat. Le client
-                   voit qu'il existe et reviendra le chercher ; un plat disparu
-                   donne l'impression d'une carte pauvre.
-                   Le serveur refuse de toute facon la commande — cet affichage
-                   evite au client de composer un panier pour rien. */
-                <span className="border border-[var(--hairline)] bg-chaux-100 px-3 py-2 font-mono text-xs font-bold uppercase tracking-[0.15em] text-chaux-600">
-                  Épuisé
-                </span>
-              ) : (
-                <button
-                  onClick={() => ajouter(p.id)}
-                  className={classesBouton('action', 'sm', 'carree')}
-                >
-                  <Plus className="h-4 w-4" /> Ajouter
-                </button>
+                )}
+              </div>
+
+              {/* Un bouton grise sans explication passe pour une panne. On dit ce
+                  qui reste, et seulement quand le client bute dessus. */}
+              {typeof p.stock === 'number' && p.stock > 0 && panier[p.id] >= p.stock && (
+                <p className="mt-2 text-right font-mono text-xs font-semibold text-chaux-600">
+                  Il n’en reste que {p.stock}
+                </p>
+              )}
+
+              {/* Le panier suit le CLIENT, pas la carte : ce qu'il a pris dans
+                  un autre coloris doit rester visible quand il en regarde un
+                  troisieme. */}
+              {ailleurs.length > 0 && (
+                <p className="mt-2 text-right font-mono text-xs text-chaux-600">
+                  Déjà au panier : {ailleurs.join(', ')}
+                </p>
               )}
             </div>
-
-            {/* Un bouton grise sans explication passe pour une panne. On dit ce
-                qui reste, et seulement quand le client bute dessus. */}
-            {typeof p.stock === 'number' && p.stock > 0 && panier[p.id] >= p.stock && (
-              <p className="mt-2 text-right font-mono text-xs font-semibold text-chaux-600">
-                Il n’en reste que {p.stock}
-              </p>
-            )}
-          </div>
-        </article>
-      ))}
+          </article>
+        );
+      })}
     </div>
   );
 
@@ -588,18 +743,18 @@ export default function Page() {
                     {mots.duJour}
                     <span className="h-px flex-1 bg-mangue-200" />
                   </h2>
-                  {grille(duJour)}
+                  {grille(grouperEnArticles(duJour))}
                 </section>
                 <section>
                   <h2 className="mb-4 flex items-center gap-3 font-mono text-xs font-bold uppercase tracking-[0.24em] text-chaux-600">
                     {mots.reste}
                     <span className="h-px flex-1 bg-chaux-200" />
                   </h2>
-                  {grille(carte)}
+                  {grille(grouperEnArticles(carte))}
                 </section>
               </>
             ) : (
-              grille(visibles)
+              grille(grouperEnArticles(visibles))
             )}
           </div>
 

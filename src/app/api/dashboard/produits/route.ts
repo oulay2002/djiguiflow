@@ -42,7 +42,7 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  const { nom, categorie, prix, description, disponible, image, stock, seuil_alerte } = await req.json();
+  const { nom, categorie, prix, description, disponible, image, stock, seuil_alerte, groupe, couleur } = await req.json();
   if (!nom) return Response.json({ error: 'Nom requis' }, { status: 400 });
 
   const { searchParams } = new URL(req.url);
@@ -77,6 +77,11 @@ export async function POST(req: Request) {
       stock: stockNum,
       stock_initial: stockNum,
       seuil_alerte: seuilNum,
+      // LA DECLINAISON. Deux articles de meme `groupe`, dans une meme boutique,
+      // sont le meme article en plusieurs coloris : la vitrine n'en fait qu'une
+      // carte. Vides, ils ne changent rien — l'article s'affiche seul.
+      groupe: String(groupe ?? '').trim() || null,
+      couleur: String(couleur ?? '').trim() || null,
     },
     { onConflict: 'boutique_id,reference' },
   );
@@ -132,7 +137,7 @@ export async function PATCH(req: Request) {
 
   const corps = await req.json();
   const { reference, stock, seuil_alerte, disponible } = corps;
-  const { nom, categorie, prix, description, image } = corps;
+  const { nom, categorie, prix, description, image, groupe, couleur } = corps;
   if (!reference) return Response.json({ error: 'Reference requise' }, { status: 400 });
 
   // Un nom vide viderait la fiche et casserait tout rapprochement avec les
@@ -153,11 +158,17 @@ export async function PATCH(req: Request) {
     prix?: number;
     description?: string;
     photo_url?: string | null;
+    groupe?: string | null;
+    couleur?: string | null;
   } = {};
 
   if (stock !== undefined) patch.stock = stock === null || stock === '' ? null : Number(stock);
   if (seuil_alerte !== undefined) patch.seuil_alerte = seuil_alerte === null || seuil_alerte === '' ? null : Number(seuil_alerte);
   if (disponible !== undefined) patch.disponible = Boolean(disponible);
+  // Une chaine vide EFFACE la declinaison, elle ne l'ignore pas : c'est ainsi
+  // qu'un marchand detache un coloris devenu un article a part entiere.
+  if (groupe !== undefined) patch.groupe = String(groupe).trim() || null;
+  if (couleur !== undefined) patch.couleur = String(couleur).trim() || null;
   if (nom !== undefined) patch.nom = String(nom).trim();
   if (categorie !== undefined) patch.categorie = String(categorie || 'Divers');
   if (prix !== undefined) patch.prix = Number(prix) || 0;

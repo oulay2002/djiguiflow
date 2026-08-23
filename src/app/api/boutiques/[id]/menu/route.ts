@@ -14,7 +14,7 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }
     // photo_url et menu_du_jour manquaient : les photos televersees par le
     // marchand n'atteignaient jamais la vitrine, et le menu du jour qu'il
     // compose restait invisible.
-    .select('reference, id, nom, categorie, prix, description, photo_url, menu_du_jour, stock')
+    .select('reference, id, nom, categorie, prix, description, photo_url, menu_du_jour, stock, groupe, couleur')
     .eq('boutique_id', m.boutiqueId)
     .eq('disponible', true)
     .order('categorie', { ascending: true })
@@ -45,6 +45,11 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }
     // confondre les deux epuiserait d'un coup tout le catalogue de ceux qui ne
     // tiennent pas de stock.
     stock: p.stock === null || p.stock === undefined ? null : Number(p.stock),
+    // LA DECLINAISON. Deux articles partageant `groupe` dans une meme boutique
+    // sont le meme article en plusieurs coloris : la vitrine n'en fait qu'une
+    // carte. Vide, l'article s'affiche seul, exactement comme avant.
+    groupe: String(p.groupe ?? '').trim(),
+    couleur: String(p.couleur ?? '').trim(),
   }));
 
   return Response.json(produits);

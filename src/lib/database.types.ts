@@ -603,9 +603,11 @@ export type Database = {
         Row: {
           boutique_id: string
           categorie: string | null
+          couleur: string | null
           created_at: string | null
           description: string | null
           disponible: boolean | null
+          groupe: string | null
           id: string
           menu_du_jour: boolean
           nom: string | null
@@ -620,9 +622,11 @@ export type Database = {
         Insert: {
           boutique_id?: string
           categorie?: string | null
+          couleur?: string | null
           created_at?: string | null
           description?: string | null
           disponible?: boolean | null
+          groupe?: string | null
           id?: string
           menu_du_jour?: boolean
           nom?: string | null
@@ -637,9 +641,11 @@ export type Database = {
         Update: {
           boutique_id?: string
           categorie?: string | null
+          couleur?: string | null
           created_at?: string | null
           description?: string | null
           disponible?: boolean | null
+          groupe?: string | null
           id?: string
           menu_du_jour?: boolean
           nom?: string | null

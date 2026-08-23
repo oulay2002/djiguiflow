@@ -29,6 +29,15 @@ export default function Page() {
   const [fNom, setFNom] = useState('');
   const [fCat, setFCat] = useState('');
   const [fPrix, setFPrix] = useState('');
+  /**
+   * La declinaison : un meme `groupe` rassemble les coloris d'un seul article.
+   *
+   * Le marchand n'a rien de nouveau a comprendre — il saisit ses articles comme
+   * avant, un par coloris, et donne simplement le meme nom d'article aux
+   * quatre. La vitrine fait le reste.
+   */
+  const [fGroupe, setFGroupe] = useState('');
+  const [fCouleur, setFCouleur] = useState('');
   const [fDesc, setFDesc] = useState('');
   const [fDispo, setFDispo] = useState(true);
   const [fUrl, setFUrl] = useState('');
@@ -108,6 +117,7 @@ export default function Page() {
           description: fDesc, disponible: fDispo, image,
           stock: fStock === '' ? null : Number(fStock),
           seuil_alerte: fSeuil === '' ? null : Number(fSeuil),
+          groupe: fGroupe, couleur: fCouleur,
         }),
       });
       const d = await res.json();
@@ -115,6 +125,7 @@ export default function Page() {
       setOuvert(false);
       setFNom(''); setFCat(''); setFPrix(''); setFDesc(''); setFUrl('');
       setFFile(null); setFDispo(true); setFStock(''); setFSeuil('5');
+      setFGroupe(''); setFCouleur('');
       await charger();
     } catch (e) {
       setMsg(e instanceof Error ? e.message : 'Erreur inconnue');
@@ -346,6 +357,38 @@ export default function Page() {
               <input className=" border p-2" placeholder="Catégorie (ex : Burger)" value={fCat} onChange={e => setFCat(e.target.value)} />
               <input className=" border p-2" placeholder="Prix (FCFA) *" type="number" value={fPrix} onChange={e => setFPrix(e.target.value)} />
               <input className=" border p-2" placeholder="Description" value={fDesc} onChange={e => setFDesc(e.target.value)} />
+            </div>
+
+            {/* LES COLORIS.
+                Le marchand saisit ses articles comme avant, un par coloris. Il
+                donne simplement le MEME nom d'article aux quatre, et la vitrine
+                n'en fait qu'une carte avec quatre vignettes.
+
+                Le bloc est facultatif et se lit comme tel : la plupart des
+                marchands n'en auront jamais besoin, et un champ obligatoire de
+                plus les ferait renoncer. */}
+            <div className="grid gap-3 border border-chaux-200 bg-chaux-50 p-3 sm:grid-cols-2">
+              <div className="sm:col-span-2">
+                <p className="font-semibold text-nuit-900">Cet article existe en plusieurs coloris ?</p>
+                <p className="mt-0.5 text-sm text-chaux-600">
+                  Facultatif. Donnez le même nom d’article à chaque coloris — ils
+                  s’afficheront sur une seule carte.
+                </p>
+              </div>
+              <input
+                className="border p-2"
+                placeholder="Nom de l’article (ex : Ensemble enfant)"
+                value={fGroupe}
+                onChange={e => setFGroupe(e.target.value)}
+                aria-label="Nom de l’article commun aux coloris"
+              />
+              <input
+                className="border p-2"
+                placeholder="Ce coloris (ex : blanc)"
+                value={fCouleur}
+                onChange={e => setFCouleur(e.target.value)}
+                aria-label="Coloris de cette déclinaison"
+              />
             </div>
 
             <div className="grid gap-3 border border-mangue-200 bg-mangue-50 p-3 sm:grid-cols-2">
