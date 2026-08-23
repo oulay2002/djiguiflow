@@ -156,6 +156,9 @@ async function nettoyer() {
   if (ids.length) await sb.from('commande_items').delete().in('commande_id', ids);
   await sb.from('commandes').delete().eq('boutique_id', UUID);
   await sb.from('produits').delete().eq('boutique_id', UUID);
+  // Les fiches livreur AVANT la boutique : `livreurs.boutique_id` cascade, mais
+  // `commandes.livreur_id` est en SET NULL et les commandes viennent de partir.
+  await sb.from('livreurs').delete().eq('boutique_id', UUID);
   await sb.from('boutiques').delete().eq('id', UUID);
 
   const { data } = await sb.from('boutiques').select('id').eq('id', UUID).maybeSingle();
@@ -187,6 +190,12 @@ console.log(`--- banc de la chaine — ${BASE} ---`);
 console.log(`    boutique de banc : ${SLUG}`);
 console.log(`    tout part au salon ${SALON}, prefixe « 🧪 BANC »\n`);
 
+// Hisses hors du `try` : le `finally` lit la reference pour l'annoncer quand on
+// conserve la boutique de banc.
+let r = null;
+let corps = null;
+let panne = '';
+
 try {
   await installer();
 
@@ -207,9 +216,7 @@ try {
   // on perdait le compte-rendu, et un banc qui s'interrompt se lit comme un
   // banc qu'on n'a pas lance. Le delai est genereux — la prise de commande
   // ecrit trois tables et appelle deux webhooks.
-  let r = null;
-  let corps = null;
-  let panne = '';
+  panne = '';
   try {
     r = await fetch(`${BASE}/api/boutiques/${SLUG}/commander`, {
       method: 'POST',
@@ -250,9 +257,123 @@ try {
     console.log('\n  Lisez le salon de veille : les messages « 🧪 BANC » disent');
     console.log('  exactement ce que le client et le livreur auraient recu.');
   }
+
+  /**
+   * ---- QUI A LIVRE ? Le maillon que ce banc ne couvrait pas.
+   *
+   * Le banc s'arretait a « n8n a execute ». Il ne disait rien du RETOUR : la
+   * course acceptee est-elle rattachee a une fiche de l'annuaire ? C'est
+   * exactement le trou par lequel le defaut du 23 aout est passe — trois
+   * compteurs faux affiches au marchand pendant des semaines, parce que
+   * `commandes` n'avait aucune clef vers `livreurs`.
+   *
+   * ON APPELLE LA ROUTE DE PRODUCTION, avec le corps EXACT que n8n envoie
+   * depuis « Refleter dans Supabase ». Ce n'est donc pas une simulation de la
+   * regle : c'est la regle deployee, exercee telle quelle.
+   *
+   * L'IDENTIFIANT TELEGRAM EST FICTIF, ET CE N'EST PAS UN PIS-ALLER. Le depot
+   * est public : y ecrire celui d'un vrai livreur en ferait une donnee
+   * personnelle rattachable. Un identifiant invente exerce le meme chemin —
+   * la route resout ce qu'on lui donne contre l'annuaire de LA boutique.
+   */
+  const secret = env('SYNC_SECRET');
+  const reference = corps?.order_id;
+
+  if (!secret) {
+    console.log('\n  note  SYNC_SECRET absente : le rattachement du livreur n est pas verifie.');
+  } else if (!reference) {
+    console.log('\n  note  aucune reference : le rattachement du livreur n est pas verifie.');
+  } else {
+    console.log('\n--- qui a livre ---');
+
+    const TG_FICTIF = `9${marque}`;
+    const { data: fiche } = await sb
+      .from('livreurs')
+      .insert({
+        boutique_id: UUID,
+        nom: 'Livreur du banc',
+        telephone: '0700000001',
+        type: 'interne',
+        statut: 'disponible',
+        telegram_id: TG_FICTIF,
+        rattache_le: new Date().toISOString(),
+      })
+      .select('id')
+      .single();
+
+    verifier('la fiche livreur du banc existe', Boolean(fiche?.id));
+
+    const livrer = async (telegramId) =>
+      fetch(`${BASE}/api/internal/commandes/livraison`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-sync-secret': secret },
+        body: JSON.stringify({
+          reference,
+          statut_livraison: 'livre',
+          nom_livreur: 'Livreur du banc',
+          livreur_telegram_id: telegramId,
+        }),
+        signal: AbortSignal.timeout(20000),
+      }).then((x) => x.json().catch(() => null));
+
+    // ---- Le cas nominal : ce livreur est dans l'annuaire de CETTE boutique.
+    const rep = await livrer(TG_FICTIF);
+    verifier('la route annonce le rattachement', rep?.livreur_attribue === true, JSON.stringify(rep?.livreur_attribue));
+
+    const { data: apresLivraison } = await sb
+      .from('commandes')
+      .select('livreur_id')
+      .eq('reference', reference)
+      .maybeSingle();
+
+    verifier(
+      'la commande porte la fiche du livreur',
+      apresLivraison?.livreur_id === fiche?.id,
+      apresLivraison?.livreur_id ?? '(vide)',
+    );
+
+    // ---- LE CAS QUI COMPTE AUTANT : un identifiant inconnu de cette boutique
+    // ne doit RIEN rattacher. Un identifiant Telegram est mondial ; sans
+    // cloisonnement, les courses d'un marchand tomberaient chez le livreur d'un
+    // autre. Le test unitaire le prouve par mutation, celui-ci le prouve contre
+    // la production.
+    const repInconnu = await livrer(`0${marque}`);
+    verifier("un livreur inconnu de la boutique n est pas rattache", repInconnu?.livreur_attribue === false);
+
+    const { data: apresInconnu } = await sb
+      .from('commandes')
+      .select('livreur_id')
+      .eq('reference', reference)
+      .maybeSingle();
+
+    verifier(
+      'et il n a pas efface le rattachement precedent',
+      apresInconnu?.livreur_id === fiche?.id,
+      apresInconnu?.livreur_id ?? '(vide)',
+    );
+  }
 } finally {
-  console.log('\n--- nettoyage ---');
-  await nettoyer();
+  /**
+   * `--garder` laisse la boutique de banc en place.
+   *
+   * Utile pour la seule moitie que ce script ne peut pas couvrir seul :
+   * declencher `Acceptation Livraison` dans n8n, ce que l'API publique ne
+   * permet pas (`/run` repond 405). On garde alors la commande vivante, on
+   * declenche le workflow a la main, puis on relance le nettoyage.
+   *
+   * ⚠ NE PAS OUBLIER DE NETTOYER. Une boutique de banc laissee en production
+   * est deja arrivee une fois — voir le commentaire de `nettoyer()`.
+   */
+  if (process.argv.includes('--garder')) {
+    console.log('\n--- boutique de banc CONSERVEE (--garder) ---');
+    console.log(`    slug      : ${SLUG}`);
+    console.log(`    uuid      : ${UUID}`);
+    console.log(`    reference : ${corps?.order_id ?? '(aucune)'}`);
+    console.log('    Pensez a relancer le nettoyage.');
+  } else {
+    console.log('\n--- nettoyage ---');
+    await nettoyer();
+  }
 }
 
 console.log(

@@ -110,52 +110,72 @@ export default function BoutiquesEnLigne() {
               key={b.lien}
               href={`/boutiques/${b.lien}`}
               aria-label={`${b.nom} — voir la boutique`}
-              className="group flex flex-col border border-[var(--hairline)] bg-white transition duration-200 soft-shadow hover:-translate-y-1"
+              className="group flex flex-col overflow-hidden border border-chaux-200/80 bg-white transition duration-300 soft-shadow hover:-translate-y-1 hover:border-chaux-300"
             >
-              {/* LA MARCHANDISE D'ABORD. C'est ce qu'on regarde, et c'est la
-                  seule chose qui donne envie d'entrer. La bande ne s'affiche
-                  que s'il y a de vraies photos : des cadres vides feraient
-                  paraitre la boutique plus pauvre que le silence. */}
+              {/* LA MARCHANDISE D'ABORD, ET EN GRAND.
+                  Quatre carres egaux separes de filets se lisaient comme une
+                  planche-contact : un inventaire, pas une devanture. Une image
+                  dominante et deux d'appui, sans filet entre elles, donnent a
+                  la premiere le poids qu'elle merite — c'est elle qu'on
+                  regarde, les autres disent seulement qu'il y a du choix.
+
+                  La bande ne s'affiche que s'il y a de vraies photos : des
+                  cadres vides feraient paraitre la boutique plus pauvre que le
+                  silence. */}
               {b.apercus.length > 0 && (
-                <div className="grid grid-cols-4 gap-px bg-[var(--hairline)]">
-                  {b.apercus.slice(0, 4).map((photo, i) => (
+                <div
+                  className={`grid overflow-hidden bg-chaux-100 ${
+                    b.apercus.length >= 3
+                      ? 'aspect-[3/2] grid-cols-3 grid-rows-2'
+                      : b.apercus.length === 2
+                        ? 'aspect-[3/2] grid-cols-2'
+                        : 'aspect-[3/2]'
+                  }`}
+                >
+                  {b.apercus.slice(0, 3).map((photo, i) => (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       key={i}
                       src={photo}
                       alt=""
                       loading="lazy"
-                      className="aspect-square w-full bg-chaux-100 object-cover transition duration-500 group-hover:brightness-105"
+                      className={`h-full w-full object-cover transition duration-700 group-hover:scale-[1.03] ${
+                        i === 0 && b.apercus.length >= 3 ? 'col-span-2 row-span-2' : ''
+                      }`}
                     />
                   ))}
                 </div>
               )}
 
-              <div className="flex items-center gap-4 p-4">
+              <div className="flex items-center gap-4 px-5 pb-4 pt-5">
+                {/* SANS CADRE. Un logo porte deja sa propre limite ; l'enfermer
+                    dans une bordure lui ajoute une seconde frontiere et le fait
+                    passer pour une vignette. */}
                 <Enseigne
                   nom={b.nom}
                   logo={b.logo}
-                  className="h-12 w-12 shrink-0 text-xl"
+                  cadre={!b.logo}
+                  className="h-11 w-11 shrink-0 text-lg"
                 />
 
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate font-display text-lg font-bold leading-tight text-nuit-900">
+                  <span className="block truncate font-display text-xl font-bold leading-tight tracking-[-0.01em] text-nuit-900">
                     {b.nom}
                   </span>
-                  <span className="mt-0.5 block truncate font-mono text-xs uppercase tracking-[0.16em] text-chaux-600">
+                  <span className="mt-1 block truncate font-mono text-xs uppercase tracking-[0.16em] text-chaux-500">
                     {b.secteur}
                     {b.zone && ` · ${b.zone}`}
                   </span>
                 </span>
 
-                <ArrowUpRight className="h-5 w-5 shrink-0 text-chaux-400 transition group-hover:text-bissap-500" />
+                <ArrowUpRight className="h-5 w-5 shrink-0 text-chaux-300 transition group-hover:translate-x-0.5 group-hover:text-nuit-900" />
               </div>
 
               {/* Le prix plancher et l'heure : deux raisons d'entrer, ou une
                   raison de revenir plus tard. On l'apprenait apres avoir
                   clique, et c'est la boutique qu'on jugeait — pas l'heure. */}
               {(b.prixMin !== null || b.messageHoraire) && (
-                <p className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-[var(--hairline)] px-4 py-2.5 font-mono text-xs uppercase tracking-[0.14em]">
+                <p className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-chaux-200/70 px-5 py-3 font-mono text-xs uppercase tracking-[0.14em]">
                   {b.prixMin !== null && (
                     <span className="text-nuit-900">dès {b.prixMin.toLocaleString('fr-FR')} F</span>
                   )}
