@@ -88,6 +88,7 @@ type FicheRow = {
   telephone: string | null;
   zone: string | null;
   emoji: string | null;
+  logo_url: string | null;
 };
 
 type ProduitRow = {
@@ -209,7 +210,14 @@ export default function Page() {
   const [ouvert, setOuvert] = useState(true);
   const [messageHoraire, setMessageHoraire] = useState('');
 
-  const [header, setHeader] = useState({ nom: 'Boutique', secteur: 'Commerce', emoji: EMOJI_DEFAUT });
+  // `logo` vide veut dire « le marchand n'en a pas depose », jamais « on n'a
+  // pas su le lire » : les deux sources le rendent desormais explicitement.
+  const [header, setHeader] = useState({
+    nom: 'Boutique',
+    secteur: 'Commerce',
+    emoji: EMOJI_DEFAUT,
+    logo: '',
+  });
   const [zone, setZone] = useState('');
   const [produits, setProduits] = useState<Produit[]>([]);
   const [chargement, setChargement] = useState(true);
@@ -251,7 +259,12 @@ export default function Page() {
           const m = await res.json();
           if (annule) return;
           setEstMarchandSheets(true);
-          setHeader({ nom: m.nom, secteur: m.secteur, emoji: m.emoji });
+          setHeader({
+            nom: m.nom,
+            secteur: m.secteur,
+            emoji: m.emoji,
+            logo: String(m.logo ?? '').trim(),
+          });
           setOuvert(m.ouvert !== false);
           setMessageHoraire(String(m.messageHoraire ?? ''));
 
@@ -281,6 +294,9 @@ export default function Page() {
           nom: b.nom ?? 'Boutique',
           secteur: b.categorie ?? 'Commerce',
           emoji: b.emoji || EMOJI_DEFAUT,
+          // `vitrine_boutique` rendait deja cette colonne ; la fiche ne la
+          // lisait pas. La marque etait donc perdue au dernier maillon.
+          logo: String(b.logo_url ?? '').trim(),
         });
         setZone(String(b.zone ?? ''));
         setTelBoutique(String(b.telephone ?? ''));
@@ -625,9 +641,20 @@ export default function Page() {
                 {zone && ` · ${zone}`}
               </p>
               <div className="mt-1.5 flex items-center gap-3 sm:mt-2 sm:gap-4">
+                {/* LA MARQUE DU MARCHAND, PAS UNE VIGNETTE GENERIQUE.
+                    Cet ecran affichait l'emoji meme quand le commercant avait
+                    depose son logo : le champ ne montait simplement pas
+                    jusqu'ici. C'est sa page — sa marque y passe avant tout.
+
+                    Pas de cadre autour d'un vrai logo : il porte deja sa
+                    limite, et une bordure de plus l'enferme dans une vignette.
+                    Le cadre reste pour l'emoji et l'initiale, qui sans lui se
+                    liraient comme un caractere au fil du texte. */}
                 <Enseigne
                   nom={header.nom}
                   emoji={header.emoji}
+                  logo={header.logo || null}
+                  cadre={!header.logo}
                   variante="nuit"
                   className="h-12 w-12 text-2xl sm:h-16 sm:w-16 sm:text-3xl"
                 />

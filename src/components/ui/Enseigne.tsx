@@ -13,6 +13,10 @@
  * MAIS UN VRAI LOGO N'EN A PAS BESOIN — il porte deja sa propre limite, et le
  * cadre lui ajoute une seconde bordure qui l'enferme. Les ecrans qui donnent
  * de l'air a la marque passent donc `cadre={false}`.
+ *
+ * SUR FOND NUIT, UN VRAI LOGO RECOIT UNE PLAQUE BLANCHE. Voir le commentaire
+ * au rendu : on ne peut pas supposer que le logo depose par un marchand se
+ * lise sur notre indigo.
  */
 
 /** Emoji propose par defaut a l'inscription : le garder signifie « pas choisi ». */
@@ -51,8 +55,21 @@ export function Enseigne({
       : 'border border-[var(--hairline)] bg-chaux-100';
 
   if (logo) {
+    // UN LOGO DE MARCHAND N'EST PAS FAIT POUR NOTRE FOND SOMBRE.
+    //
+    // Le bandeau de la fiche est indigo. Pose a nu dessus, un logo sombre ou
+    // fortement colore s'y noie, et un PNG transparent disparait purement et
+    // simplement — la marque du commercant devient invisible sur SA PROPRE
+    // page. On ne peut rien supposer de ce qu'un marchand depose : c'est a la
+    // plateforme de garantir qu'il se lise, quel qu'il soit.
+    //
+    // D'ou la plaque claire, sur fond nuit UNIQUEMENT. Ce n'est pas le cadre
+    // qu'on vient de retirer : celui-la etait une bordure qui enfermait le
+    // logo dans une vignette, celle-ci est le papier sur lequel il est
+    // imprime. Sur fond clair, aucune plaque : le papier y est deja.
+    const plaque = variante === 'nuit' ? 'bg-white p-1.5' : '';
     return (
-      <span className={`shrink-0 overflow-hidden ${habillage} ${className}`}>
+      <span className={`shrink-0 overflow-hidden ${plaque} ${habillage} ${className}`}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={logo}

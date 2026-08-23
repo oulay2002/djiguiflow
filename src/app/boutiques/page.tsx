@@ -6,6 +6,7 @@ import { ArrowRight, MapPin, Search } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { ligneConfiance } from '@/lib/paliers';
 import { etatBoutique } from '@/lib/horaires';
+import { Enseigne } from '@/components/ui/Enseigne';
 
 /**
  * La vitrine des marchands, en bons de commande.
@@ -327,18 +328,23 @@ export default function VitrinePage() {
                         <span className="stamp font-mono text-xs uppercase text-bissap-500">
                           {b.categorie}
                         </span>
-                        {b.logo && (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={b.logo}
-                            alt=""
-                            // Meme regle que sur l'accueil : pas de cadre autour
-                            // d'un vrai logo — il porte deja sa limite — et
-                            // `contain` plutot que `cover`, qui rognait la
-                            // marque du commercant pour remplir un carre.
-                            className="h-11 w-11 shrink-0 object-contain"
-                          />
-                        )}
+                        {/* UNE MARQUE POUR CHAQUE BOUTIQUE, PAS SEULEMENT
+                            POUR CELLES QUI ONT UN LOGO.
+                            Ce coin restait VIDE quand le marchand n'en avait
+                            pas depose : sa carte paraissait inachevee a cote
+                            de celle du voisin, pour une raison qui ne dit rien
+                            de son commerce. `Enseigne` retombe sur l'initiale
+                            de l'enseigne, comme sur l'accueil.
+
+                            Pas de cadre autour d'un vrai logo — il porte deja
+                            sa limite. Le cadre reste pour l'initiale, qui sans
+                            lui se lirait comme une lettre au fil du texte. */}
+                        <Enseigne
+                          nom={b.nom}
+                          logo={b.logo}
+                          cadre={!b.logo}
+                          className="h-11 w-11 shrink-0 text-lg"
+                        />
                       </div>
 
                       <h2 className="mt-6 font-display text-[1.7rem] font-black uppercase leading-[0.95] tracking-tight text-nuit-900">
