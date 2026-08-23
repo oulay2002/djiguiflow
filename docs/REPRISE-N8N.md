@@ -235,16 +235,34 @@ trace** : sans n8n, le message n'est jamais lu et aucune ligne n'est créée.
 
 ## Ce qui reste NON prouvé
 
-**La purge de l'historique d'exécutions.** Au 23 août : 2 906 exécutions
-stockées, la plus ancienne datant du 16 août 17 h 51 — c'est-à-dire l'instant de
-la migration. **Rien n'a encore été purgé, mais rien ne prouve que la purge soit
-active** : le défaut de n8n purge à 14 jours, et l'instance n'en a que 7. La
-première preuve tombera vers le **30 août**. Si à cette date le compte continue
-de croître sans rien perdre, la purge est absente et le disque se remplira —
-c'est une panne à date, pas un aléa.
+**~~La purge de l'historique d'exécutions.~~ TRANCHÉ le 23 août au soir.**
 
-À ~420 exécutions/jour pour trois boutiques, vingt marchands en feraient
-plusieurs milliers.
+Relevé sur la machine, `docker exec n8n-n8n-1 env | grep EXECUTIONS` :
+
+```
+EXECUTIONS_DATA_PRUNE=true
+EXECUTIONS_DATA_MAX_AGE=336
+```
+
+336 heures = **14 jours**. L'instance est née le 16 août : rien n'avait encore
+l'âge d'être purgé, d'où le compte qui ne faisait que croître. La première
+purge tombe donc vers le **30 août**, exactement la date annoncée. Le disque ne
+se remplira pas indéfiniment.
+
+⚠ **IL MANQUE UN PLAFOND EN NOMBRE**, et c'est ce qui compte à l'échelle.
+~425 exécutions/jour pour trois boutiques donnent ~6 000 conservées en régime
+stable — sans risque. Vingt marchands en feraient ~2 800/jour, soit **~39 000
+conservées en permanence**, chacune portant les données de tous ses nœuds.
+L'âge seul ne borne pas ça.
+
+À poser dans `/docker/n8n/.env` **avant** de monter en charge, pas pendant :
+
+```
+EXECUTIONS_DATA_MAX_COUNT=10000
+```
+
+Le premier des deux plafonds qui se déclenche gagne. Ce réglage se pose en trois
+minutes quand tout va bien, et jamais quand le disque est plein.
 
 **Le trou de nuit.** La sonde ne vérifie rien hors de la fenêtre 7 h-21 h, au
 motif — juste — que le témoin ne tourne pas la nuit et que son silence ne
