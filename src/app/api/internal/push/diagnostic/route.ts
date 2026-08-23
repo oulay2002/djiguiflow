@@ -54,7 +54,11 @@ export async function GET(req: Request) {
       SYNC_SECRET: Boolean(process.env.SYNC_SECRET),
       NEXT_PUBLIC_SUPABASE_URL: Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL),
       SUPABASE_SERVICE_ROLE_KEY: Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY),
-      N8N_WEBHOOK_SECRET: Boolean(process.env.N8N_WEBHOOK_SECRET),
+      // `N8N_WEBHOOK_SECRET` ne figure plus ici : elle a ete supprimee de Vercel
+      // le 23 aout, le secret vivant desormais au SEUL coffre Supabase. La
+      // laisser aurait fait rapporter « absente » a chaque passage -- une
+      // fausse alerte permanente, et une invitation a la reposer avec une
+      // valeur perimee. Se verifie en SQL, jamais par une variable.
       ADMIN_EMAILS: Boolean(process.env.ADMIN_EMAILS),
       STRIPE_SECRET_KEY: Boolean(process.env.STRIPE_SECRET_KEY),
     },
