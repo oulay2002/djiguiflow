@@ -6,6 +6,7 @@ import { ArrowRight, MapPin, Search } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { ligneConfiance } from '@/lib/paliers';
 import { etatBoutique } from '@/lib/horaires';
+import { Enseigne } from '@/components/ui/Enseigne';
 
 /**
  * La vitrine des marchands, en bons de commande.
@@ -40,6 +41,8 @@ type VitrineRow = {
   prix_min: number | string | null;
   horaires: unknown;
   pause_jusqua: string | null;
+  vedette: string | null;
+  vedette_commandes: number | null;
 };
 
 type Boutique = {
@@ -58,6 +61,11 @@ type Boutique = {
   apercus: string[];
   /** Plancher de prix, `null` quand rien n'est encore chiffre. */
   prixMin: number | null;
+  /**
+   * Le produit que le plus de clients DIFFERENTS ont commande ces trente
+   * jours. Vide tant qu'aucun ne se detache : voir le commentaire au rendu.
+   */
+  vedette: string | null;
   ouvert: boolean;
   messageHoraire: string | null;
 };
@@ -136,6 +144,9 @@ export default function VitrinePage() {
             // raison d'entrer.
             apercus: (f.apercus ?? []).filter(u => String(u ?? '').trim()),
             prixMin: prix !== null && Number.isFinite(prix) && prix > 0 ? prix : null,
+            // La base ne la renvoie qu'au-dela de trois commandes distinctes :
+            // en dessous, ce serait une preference habillee en tendance.
+            vedette: f.vedette?.trim() || null,
             // L'etat d'ouverture vient de la MEME fonction que la fiche et que
             // le refus de commande : une carte qui annoncerait « ouvert » quand
             // le serveur refuse serait pire que pas d'indication du tout.
@@ -317,18 +328,23 @@ export default function VitrinePage() {
                         <span className="stamp font-mono text-xs uppercase text-bissap-500">
                           {b.categorie}
                         </span>
-                        {b.logo && (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={b.logo}
-                            alt=""
-                            // Meme regle que sur l'accueil : pas de cadre autour
-                            // d'un vrai logo — il porte deja sa limite — et
-                            // `contain` plutot que `cover`, qui rognait la
-                            // marque du commercant pour remplir un carre.
-                            className="h-11 w-11 shrink-0 object-contain"
-                          />
-                        )}
+                        {/* UNE MARQUE POUR CHAQUE BOUTIQUE, PAS SEULEMENT
+                            POUR CELLES QUI ONT UN LOGO.
+                            Ce coin restait VIDE quand le marchand n'en avait
+                            pas depose : sa carte paraissait inachevee a cote
+                            de celle du voisin, pour une raison qui ne dit rien
+                            de son commerce. `Enseigne` retombe sur l'initiale
+                            de l'enseigne, comme sur l'accueil.
+
+                            Pas de cadre autour d'un vrai logo — il porte deja
+                            sa limite. Le cadre reste pour l'initiale, qui sans
+                            lui se lirait comme une lettre au fil du texte. */}
+                        <Enseigne
+                          nom={b.nom}
+                          logo={b.logo}
+                          cadre={!b.logo}
+                          className="h-11 w-11 shrink-0 text-lg"
+                        />
                       </div>
 
                       <h2 className="mt-6 font-display text-[1.7rem] font-black uppercase leading-[0.95] tracking-tight text-nuit-900">
@@ -362,6 +378,31 @@ export default function VitrinePage() {
                             />
                           ))}
                         </div>
+                      )}
+
+                      {/* CE QUE LES AUTRES ONT PRIS.
+                          Sur une page ou l'on COMPARE des boutiques, c'est le
+                          renseignement le plus utile qu'on puisse donner : le
+                          nombre d'articles dit la taille du catalogue, le prix
+                          plancher dit le budget, mais seul celui-ci dit ce qui
+                          marche. Un visiteur qui hesite entre deux enseignes
+                          n'a pas d'autre facon de le savoir.
+
+                          Il compte les COMMANDES DISTINCTES, pas les unites :
+                          un client qui prend cinq burgers ne fait pas un
+                          best-seller. Et il se tait sous trois commandes —
+                          cette plateforme a deja paye pour avoir affiche une
+                          note calculee a la place d'une note reelle.
+
+                          La photo en tete de bande est la sienne : la fonction
+                          de vitrine la remonte en premier. */}
+                      {b.vedette && (
+                        <p className="mt-3 flex items-baseline gap-2 font-mono text-xs uppercase tracking-[0.14em]">
+                          <span className="text-chaux-600">le plus commandé</span>
+                          <span className="min-w-0 truncate normal-case tracking-normal text-nuit-900">
+                            {b.vedette}
+                          </span>
+                        </p>
                       )}
 
                       <dl className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 font-mono text-xs uppercase tracking-[0.14em] text-chaux-600">

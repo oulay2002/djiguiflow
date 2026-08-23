@@ -108,10 +108,21 @@ export async function PATCH(req: Request) {
   if (error || !data) return Response.json({ error: 'Commande introuvable' }, { status: 404 });
 
   // Remet le statut à null (pour que le badge redevienne "à confirmer")
-  await sb
+  //
+  // SON ECHEC INTERDIT LA RELANCE. Sans ce controle, on redemandait une
+  // confirmation au client pendant que la base portait encore l'ancienne
+  // reponse — parfois `refusee`. Le client recevait alors « confirmez votre
+  // commande » pour une commande qu'il venait d'annuler, et sa nouvelle reponse
+  // se heurtait a un etat qui n'avait pas bouge.
+  const { error: errRemise } = await sb
     .from('commandes')
     .update({ confirmation_statut: null, confirmation_heure: null })
     .eq('reference', reference);
+
+  if (errRemise) {
+    console.error(`Relance ${reference} — remise a zero impossible :`, errRemise.message);
+    return Response.json({ error: 'Relance impossible, réessayez' }, { status: 503 });
+  }
 
   const n8n = process.env.N8N_CONFIRMATION_URL;
   if (n8n) {

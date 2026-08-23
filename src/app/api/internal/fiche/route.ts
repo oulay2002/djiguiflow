@@ -62,26 +62,57 @@ export async function GET(req: Request) {
 
   let data: unknown = null;
 
-  // 1) par ID uuid (si le slug en est un)
-  if (UUID_RE.test(slug)) {
-    const r = await sb.from('boutiques').select('*').eq('id', slug).maybeSingle();
-    data = r.data;
-  }
+  /**
+   * UNE PANNE DE BASE N'EST PAS UNE BOUTIQUE INTROUVABLE.
+   *
+   * Les trois recherches ignoraient leur `error`. Une secousse de Supabase sur
+   * la premiere — la plus empruntee — retombait sur la deuxieme, puis la
+   * troisieme, et si elles blanchissaient aussi la route rendait un 404
+   * « Boutique introuvable ».
+   *
+   * CE QUE CA PRODUIT. C'est la requete que fait CHAQUE webhook WhatsApp et
+   * Telegram avant de toucher aux secrets de canal du marchand. n8n lisait donc
+   * « ce marchand n'existe pas » — un defaut de configuration, qu'on ne
+   * reessaie pas — la ou il fallait lire « la base a hoquete, reessaie ». Et
+   * aucune ligne de journal ne nommait la vraie cause.
+   *
+   * On leve des la premiere erreur : chercher plus loin apres une panne, c'est
+   * fabriquer un 404 a partir d'une indisponibilite.
+   */
+  const chercher = async (
+    quoi: string,
+    requete: PromiseLike<{ data: unknown; error: { message: string } | null }>,
+  ): Promise<unknown> => {
+    const r = await requete;
+    if (r.error) {
+      console.error(`Fiche ${slug} — recherche par ${quoi} impossible :`, r.error.message);
+      throw new Error(r.error.message);
+    }
+    return r.data;
+  };
 
-  // 2) par slug exact
-  if (!data) {
-    const r = await sb.from('boutiques').select('*').eq('slug', slug).maybeSingle();
-    data = r.data;
-  }
+  try {
+    // 1) par ID uuid (si le slug en est un)
+    if (UUID_RE.test(slug)) {
+      data = await chercher('id', sb.from('boutiques').select('*').eq('id', slug).maybeSingle());
+    }
 
-  // 3) par nom (contient)
-  if (!data) {
-    const r = await sb
-      .from('boutiques')
-      .select('*')
-      .ilike('nom', `%${slug}%`)
-      .maybeSingle();
-    data = r.data;
+    // 2) par slug exact
+    if (!data) {
+      data = await chercher('slug', sb.from('boutiques').select('*').eq('slug', slug).maybeSingle());
+    }
+
+    // 3) par nom (contient)
+    if (!data) {
+      data = await chercher(
+        'nom',
+        sb.from('boutiques').select('*').ilike('nom', `%${slug}%`).maybeSingle(),
+      );
+    }
+  } catch {
+    // Le detail est deja journalise. 503 et non 404 : l'appelant doit reessayer,
+    // pas conclure que la boutique n'existe pas.
+    return NextResponse.json({ error: 'Registre indisponible' }, { status: 503 });
   }
 
   if (!data) return NextResponse.json({ error: 'Boutique introuvable' }, { status: 404 });

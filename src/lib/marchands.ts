@@ -7,6 +7,16 @@ export type Marchand = {
   nom: string;
   secteur: string;
   emoji: string;
+  /**
+   * Le logo depose par le marchand, s'il en a un.
+   *
+   * IL N'ETAIT PAS LU, ET C'EST LA QUE LA MARQUE SE PERDAIT. Un commercant
+   * qui deposait son logo a l'inscription voyait l'emoji generique sur SA
+   * PROPRE FICHE — l'ecran ou sa marque compte le plus. La colonne existait
+   * en base et la fonction de vitrine la rendait deja : seul ce registre
+   * l'oubliait, et la fiche n'avait donc rien a afficher.
+   */
+  logo: string;
   sheetId: string;
   sheetCommandes: string;
   sheetMenu: string;
@@ -92,7 +102,7 @@ async function depuisSupabase(): Promise<Marchand[]> {
   const { data, error } = await sb
     .from('boutiques')
     .select(
-      'id, slug, nom, categorie, emoji, sheet_document_id, sheet_commandes, sheet_menu, groupe_livreurs, telephone, telegram_marchand, actif',
+      'id, slug, nom, categorie, emoji, logo_url, sheet_document_id, sheet_commandes, sheet_menu, groupe_livreurs, telephone, telegram_marchand, actif',
     );
 
   if (error) {
@@ -115,6 +125,7 @@ async function depuisSupabase(): Promise<Marchand[]> {
       nom: String(b.nom ?? ''),
       secteur: String(b.categorie ?? ''),
       emoji: String(b.emoji || '🏪'),
+      logo: String(b.logo_url ?? '').trim(),
       // LE DOCUMENT DU MARCHAND, PAS UN SEUL POUR TOUT LE MONDE.
       //
       // Ce registre imposait `SHEET_ID` a tous, alors que n8n lit

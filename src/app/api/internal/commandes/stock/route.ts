@@ -78,10 +78,38 @@ export async function POST(req: Request) {
   }
 
   // ---- 2. Ce qui a ete commande.
-  const { data: articles } = await sb
+  //
+  // L'ERREUR DE LECTURE DOIT RENDRE LA RESERVATION. Le verrou anti-doublon
+  // (`stock_decremente_le`) vient d'etre pose : a partir d'ici, tout retour
+  // `ok` marque la commande comme decomptee POUR TOUJOURS, et n8n ne rejouera
+  // pas puisqu'il a recu un 200.
+  //
+  // Sans ce controle, une simple secousse de Supabase sur cette lecture etait
+  // indiscernable de « cette commande n'a aucun article » : la route repondait
+  // `aucun_article`, et le stock du marchand derivait en silence — le defaut
+  // meme que `livree_sans_decompte` existe pour attraper, reintroduit par une
+  // lecture non verifiee.
+  //
+  // On rend donc le verrou avant de repondre en echec : rien n'a encore ete
+  // decompte a ce stade, la liberer ne peut pas produire de double decompte.
+  const { data: articles, error: errArticles } = await sb
     .from('commande_items')
     .select('nom_produit, quantite, produit_id')
     .eq('commande_id', commande.id);
+
+  if (errArticles) {
+    const { error: errRendu } = await sb
+      .from('commandes')
+      .update({ stock_decremente_le: null })
+      .eq('id', commande.id);
+
+    console.error(
+      `Stock ${reference} — articles illisibles :`,
+      errArticles.message,
+      errRendu ? `(reservation NON rendue : ${errRendu.message})` : '(reservation rendue)',
+    );
+    return Response.json({ error: 'Articles illisibles' }, { status: 503 });
+  }
 
   const lignes = (articles ?? []) as Article[];
   if (!lignes.length) {

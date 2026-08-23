@@ -67,8 +67,39 @@ export async function POST(req: Request) {
     return Response.json({ error: 'Assignation impossible, réessayez' }, { status: 503 });
   }
 
-  await sb.from('commandes').update({ statut: 'en_livraison' }).eq('id', commandeId);
-  await sb.from('livreurs').update({ statut: 'en_livraison' }).eq('id', livreurId);
+  /**
+   * CES DEUX ECRITURES ETAIENT LES SEULES DU FICHIER A N'ETRE PAS VERIFIEES.
+   *
+   * L'insertion dans `livraisons` juste au-dessus teste son erreur et abandonne.
+   * Ces deux-la ne declaraient meme pas de variable d'erreur : en cas d'echec,
+   * la route envoyait quand meme ses deux messages — « votre course est
+   * assignee » au livreur, « un livreur arrive » au client — et rendait
+   * `ok: true`, pendant que `commandes.statut` pouvait rester `en_attente`.
+   *
+   * Le tableau de bord et le livreur racontaient alors deux histoires
+   * differentes, sans une ligne de journal pour le dire.
+   *
+   * ON N'ABANDONNE PAS POUR AUTANT : la livraison EST enregistree, et refuser
+   * ici laisserait le marchand croire que rien n'a eu lieu. On journalise, et
+   * on le rend a l'appelant.
+   */
+  const [{ error: errCommande }, { error: errLivreur }] = await Promise.all([
+    sb.from('commandes').update({ statut: 'en_livraison' }).eq('id', commandeId),
+    sb.from('livreurs').update({ statut: 'en_livraison' }).eq('id', livreurId),
+  ]);
+
+  if (errCommande) {
+    console.error(
+      `Assignation ${commande.reference} — statut de la commande non pose :`,
+      errCommande.message,
+    );
+  }
+  if (errLivreur) {
+    console.error(
+      `Assignation ${commande.reference} — statut du livreur non pose :`,
+      errLivreur.message,
+    );
+  }
 
   // ---- 2. Prevenir, ce qui n'etait jamais fait.
   //
@@ -124,5 +155,13 @@ export async function POST(req: Request) {
     notifications.client = 'aucun numéro';
   }
 
-  return Response.json({ ok: true, reference, notifications });
+  return Response.json({
+    ok: true,
+    reference,
+    notifications,
+    // Vrai quand la course est enregistree mais qu'un des deux statuts n'a pas
+    // suivi : l'ecran peut alors inviter a rafraichir plutot que d'afficher un
+    // tableau qui contredit le message recu par le livreur.
+    ...(errCommande || errLivreur ? { statuts_incomplets: true } : {}),
+  });
 }

@@ -49,6 +49,8 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }
     nom: m.nom,
     secteur: m.secteur,
     emoji: m.emoji,
+    // Le logo est PUBLIC : c'est la devanture, pas une donnee d'exploitation.
+    logo: m.logo,
     ouvert,
     messageHoraire,
   });
