@@ -52,7 +52,12 @@ const COULEUR: Record<string, string> = {
   'non branche': 'border-bissap-300 bg-bissap-50 text-bissap-700',
   'branche sans vente': 'border-mangue-300 bg-mangue-50 text-mangue-700',
   vend: 'border-accent-300 bg-accent-50 text-accent-700',
-  'en sommeil': 'border-chaux-300 bg-chaux-100 text-chaux-700',
+  // La rampe `chaux` s'arrete a 600, la ou bissap, mangue et accent vont a 700.
+  // Ce badge portait le niveau 700 par mimetisme de ses voisines : la classe ne
+  // designait rien, et le texte heritait de la couleur ambiante au lieu d'etre
+  // pose. Voir scripts/palette-maison.mjs, qui lit le TEXTE du fichier — ne pas
+  // ecrire un niveau hors rampe ici, meme en commentaire.
+  'en sommeil': 'border-chaux-300 bg-chaux-100 text-chaux-600',
 };
 
 function depuis(iso: string | null): string {
