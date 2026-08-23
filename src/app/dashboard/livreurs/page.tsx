@@ -13,7 +13,6 @@ import {
   User,
   Phone,
   Mail,
-  Star,
   TrendingUp,
   Plus,
   Search,
@@ -61,9 +60,6 @@ type Livreur = {
   statut: 'disponible' | 'en_livraison' | 'indisponible';
   vehicule_type?: string;
   vehicule_immatriculation?: string;
-  note_moyenne: number;
-  total_livraisons: number;
-  gain_total: number;
   latitude?: number;
   longitude?: number;
   /**
@@ -73,6 +69,37 @@ type Livreur = {
    */
   telegram_id?: string | null;
 };
+
+/**
+ * Ce qu'on sait des courses d'un livreur — CALCULE, jamais stocke.
+ *
+ * `livreurs` portait `total_livraisons`, `gain_total` et `note_moyenne`.
+ * Personne ne les ecrivait : mesure le 23 aout 2026, le seul livreur de la
+ * plateforme y lisait « 0 Livraisons — 0F — ★ 0.0 » alors qu'il en avait fait
+ * quinze. Un chiffre faux affiche avec assurance, pas une fonctionnalite
+ * manquante.
+ *
+ * Ces trois colonnes ont ete supprimees. Le compte et les gains se lisent
+ * desormais dans `commandes`, la source de verite : une somme ne peut pas
+ * deriver d'elle-meme. La note, elle, n'est pas remplacee — voir la migration
+ * `livreurs_note_moyenne_morte`.
+ */
+type Courses = {
+  livraisons: number;
+  /** Somme des frais de livraison encaisses par ce livreur. */
+  gains: number;
+};
+
+/**
+ * Le total qu'AUCUNE fiche ne revendique.
+ *
+ * Une livraison sans `livreur_id` veut dire « on ne sait pas qui l'a faite » —
+ * un livreur du groupe Telegram qui n'a jamais ouvert son lien d'invitation, ou
+ * une course anterieure a l'attribution. La taire ferait croire au marchand que
+ * la somme des fiches est le total de ses livraisons ; l'annoncer lui dit
+ * exactement ce qui lui echappe, et pourquoi.
+ */
+type Orphelines = { livraisons: number };
 
 /** Ce que l'ecran sait du lien d'invitation d'un livreur, le temps de la visite. */
 type Invitation = {
@@ -100,6 +127,17 @@ export default function LivreursPage() {
   const [search, setSearch] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [invitations, setInvitations] = useState<Record<string, Invitation>>({});
+  const [courses, setCourses] = useState<Record<string, Courses>>({});
+  const [orphelines, setOrphelines] = useState<Orphelines>({ livraisons: 0 });
+  /**
+   * La lecture des courses a-t-elle abouti ?
+   *
+   * Sans ce drapeau, un livreur sans aucune course et une lecture en echec se
+   * ressemblent : les deux rendent une entree absente. Le premier vaut « 0 »,
+   * le second « on ne sait pas », et les confondre est exactement le defaut
+   * qu'on vient de fermer.
+   */
+  const [coursesLues, setCoursesLues] = useState(false);
   const [copie, setCopie] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     nom: '',
@@ -132,6 +170,51 @@ export default function LivreursPage() {
     if (data) {
       setLivreurs(data as Livreur[]);
     }
+
+    /**
+     * Les courses se comptent DANS `commandes`, a chaque affichage.
+     *
+     * Pas de route serveur ici : le marchand a deja le droit de lire ses
+     * propres commandes — la politique « Voir ses propres commandes » les
+     * cadre sur `boutiques.user_id = auth.uid()`. Passer par une API n'aurait
+     * rien protege de plus et aurait ajoute une surface a garder.
+     *
+     * Une lecture qui echoue laisse les compteurs vides plutot que de les
+     * mettre a zero : l'ecran affiche alors « — », pas « 0 ». C'est toute la
+     * difference entre « aucune course » et « on ne sait pas ».
+     */
+    const { data: livrees, error: errCourses } = await supabase
+      .from('commandes')
+      .select('livreur_id, frais_livraison')
+      .eq('boutique_id', uuid)
+      .eq('statut_livraison', 'livre');
+
+    if (errCourses) {
+      console.error('Livreurs — courses illisibles :', errCourses.message);
+      setCoursesLues(false);
+    } else {
+      const parLivreur: Record<string, Courses> = {};
+      let sansFiche = 0;
+
+      for (const c of livrees ?? []) {
+        const id = c.livreur_id ? String(c.livreur_id) : '';
+        if (!id) {
+          sansFiche += 1;
+          continue;
+        }
+        const cumul = parLivreur[id] ?? { livraisons: 0, gains: 0 };
+        cumul.livraisons += 1;
+        // NULL ne veut pas dire gratuit : c'est « le livreur n'a pas annonce
+        // ses frais ». On ne l'ajoute pas, et la course reste comptee.
+        cumul.gains += Number(c.frais_livraison ?? 0);
+        parLivreur[id] = cumul;
+      }
+
+      setCourses(parLivreur);
+      setOrphelines({ livraisons: sansFiche });
+      setCoursesLues(true);
+    }
+
     setLoading(false);
   }, [router, boutiqueId]);
 
@@ -297,6 +380,28 @@ export default function LivreursPage() {
         <TuileStat icone={TrendingUp} intitule="Indépendants" valeur={stats.independants} ton="eteint" />
       </div>
 
+      {/* CE QUI ECHAPPE AU COMPTE SE DIT, IL NE SE TAIT PAS.
+          Sans cette ligne, un marchand additionnerait les courses de ses fiches
+          et croirait tenir le total de ses livraisons. Une course sans fiche
+          vient d'un livreur present dans le groupe Telegram mais qui n'a jamais
+          ouvert son lien d'invitation — et le geste pour y remedier est juste
+          en dessous, sur sa fiche. */}
+      {coursesLues && orphelines.livraisons > 0 && (
+        <div className="mb-6 rounded-xl border border-mangue-300 bg-mangue-50 px-4 py-3">
+          <p className="text-sm text-nuit-900">
+            <span className="font-bold">
+              {orphelines.livraisons} livraison{orphelines.livraisons > 1 ? 's' : ''}
+            </span>{' '}
+            {orphelines.livraisons > 1 ? 'ne sont rattachées' : "n'est rattachée"} à aucune fiche.
+          </p>
+          <p className="text-sm text-chaux-600 mt-1">
+            Elles ont bien été faites, mais on ignore par qui : le livreur a pris la course
+            depuis le groupe sans avoir ouvert son lien d’invitation. Envoyez-lui son lien
+            ci-dessous, et ses prochaines courses seront comptées.
+          </p>
+        </div>
+      )}
+
       {/* Filtres et recherche */}
       <div className="bg-white border border-chaux-200 p-4 mb-6">
         <div className="flex flex-col md:flex-row gap-4">
@@ -388,21 +493,25 @@ export default function LivreursPage() {
                     )}
                   </div>
 
-                  <div className="grid grid-cols-3 gap-3 mb-4 pt-4 border-t border-chaux-200">
+                  {/* Deux chiffres, plus trois.
+                      L'etoile a disparu : elle valait 0 pour tout le monde,
+                      et « ★ 0.0 » ne se lit pas « pas encore note » mais
+                      « mauvais livreur ». Voir la migration
+                      `livreurs_note_moyenne_morte`. */}
+                  <div className="grid grid-cols-2 gap-3 mb-4 pt-4 border-t border-chaux-200">
                     <div className="text-center">
-                      <div className="flex items-center justify-center gap-1 text-mangue-600 font-bold">
-                        <Star className="w-4 h-4 fill-current" />
-                        {livreur.note_moyenne.toFixed(1)}
-                      </div>
-                      <p className="text-xs text-chaux-600 mt-1">Note</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="font-bold text-nuit-900">{livreur.total_livraisons}</p>
+                      <p className="font-bold text-nuit-900">
+                        {coursesLues ? (courses[livreur.id]?.livraisons ?? 0) : '—'}
+                      </p>
                       <p className="text-xs text-chaux-600 mt-1">Livraisons</p>
                     </div>
                     <div className="text-center">
-                      <p className="font-bold text-nuit-900">{livreur.gain_total.toLocaleString()}F</p>
-                      <p className="text-xs text-chaux-600 mt-1">Gains</p>
+                      <p className="font-bold text-nuit-900">
+                        {coursesLues
+                          ? `${(courses[livreur.id]?.gains ?? 0).toLocaleString()}F`
+                          : '—'}
+                      </p>
+                      <p className="text-xs text-chaux-600 mt-1">Frais encaissés</p>
                     </div>
                   </div>
 
