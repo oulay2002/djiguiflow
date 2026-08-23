@@ -5,6 +5,7 @@ import { LienRetour, classesBouton } from '@/components/ui/Bouton';
 import { supabase, utilisateurCourant } from '@/lib/supabase';
 import { useBoutique, uuidBoutiqueCourante } from '@/lib/boutique';
 import ReglagePush from '@/components/pwa/ReglagePush';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
@@ -160,6 +161,35 @@ export default function NotificationsPage() {
             les autres passent par un fournisseur tiers, celui-ci sonne
             directement sur l'appareil. */}
         <ReglagePush />
+
+        {/**
+         * CE QUE CET ECRAN COMMANDE VRAIMENT, DIT AU MARCHAND.
+         *
+         * `notification_settings` n'est lue par AUCUN envoi : ni
+         * `src/lib/canaux.ts`, ni le diagnostic, ni un workflow n8n. Les vrais
+         * canaux se reglent dans « Branchement », et c'est `boutiques`
+         * (`telegram_marchand`, `telephone`) qui decide qui recoit quoi.
+         *
+         * L ecran est CONSERVE -- decision du 23 aout 2026 -- mais il ne doit
+         * pas laisser croire qu il gouverne des envois. Un ecran qui enregistre
+         * des preferences que personne ne lit est la meme famille de defaut que
+         * les compteurs a zero de la page Livreurs : il a l air de marcher.
+         *
+         * A RETIRER LE JOUR OU CES PREFERENCES SERONT HONOREES.
+         */}
+        <div className="border border-mangue-300 bg-mangue-50 px-4 py-3">
+          <p className="text-sm font-bold text-nuit-900">
+            Les notifications par push, ci-dessus, fonctionnent dès maintenant.
+          </p>
+          <p className="mt-1 text-sm text-chaux-600">
+            Les préférences ci-dessous sont enregistrées, mais elles ne pilotent pas
+            encore les envois. Aujourd’hui, c’est{' '}
+            <Link href="/onboarding" className="font-semibold underline underline-offset-4">
+              Branchement
+            </Link>{' '}
+            qui décide sur quel canal vous êtes prévenu.
+          </p>
+        </div>
 
         {/* WhatsApp */}
         <motion.div
