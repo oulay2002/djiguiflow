@@ -118,14 +118,26 @@ function Voyant({ ton, children }: { ton: Ton; children: React.ReactNode }) {
   );
 }
 
-/** Une etape du branchement : son rang, son titre, ce qu'elle demande. */
+/**
+ * Une etape du branchement : son rang, son titre, ce qu'elle demande.
+ *
+ * SANS RANG, CE N'EST PAS UNE ETAPE. Le classeur Google portait le numero 5 sur
+ * 5, sous un titre annoncant « Cinq etapes, dans cet ordre » -- alors que le
+ * guide le range parmi les surprises : « le classeur Google est facultatif,
+ * sans lui tout fonctionne quand meme ». Un marchand non technicien voyait un
+ * numero, le croyait obligatoire, et s'y bloquait au dernier pas.
+ *
+ * Numeroter, c'est promettre que la chose est requise. On ne numerote donc que
+ * ce qui l'est.
+ */
 function Etape({
   rang,
   titre,
   aide,
   children,
 }: {
-  rang: number;
+  /** Absent = bloc facultatif, hors de la sequence annoncee. */
+  rang?: number;
   titre: string;
   aide: React.ReactNode;
   children: React.ReactNode;
@@ -137,9 +149,15 @@ function Etape({
           Cinq numeros en bissap contre un bouton, et c'est le bouton qu'on ne
           voit plus. */}
       <div className="flex items-baseline gap-3">
-        <span className="w-6 shrink-0 font-mono text-2xl font-bold leading-none tabular-nums text-nuit-900">
-          {rang}
-        </span>
+        {rang === undefined ? (
+          <span className="shrink-0 border border-chaux-300 px-2 py-0.5 font-mono text-[0.65rem] uppercase tracking-[0.16em] text-chaux-600">
+            Facultatif
+          </span>
+        ) : (
+          <span className="w-6 shrink-0 font-mono text-2xl font-bold leading-none tabular-nums text-nuit-900">
+            {rang}
+          </span>
+        )}
         <h2 className="font-display text-xl font-bold text-nuit-900">{titre}</h2>
       </div>
       <p className="mt-2 text-sm leading-relaxed text-chaux-600">{aide}</p>
@@ -371,7 +389,7 @@ export default function OnboardingPage() {
             {boutique?.nom || 'Votre boutique'}
           </h1>
           <p className="mt-3 max-w-lg text-sm text-chaux-200">
-            Cinq étapes, dans cet ordre. Vos clients écriront à votre propre numéro, et vos
+            Quatre étapes, dans cet ordre. Vos clients écriront à votre propre numéro, et vos
             livreurs recevront les courses par votre propre bot.
           </p>
           {/* Le guide s'ouvre a cote, pas a la place : le marchand a les mains
@@ -522,9 +540,8 @@ export default function OnboardingPage() {
             </Etape>
 
             <Etape
-              rang={5}
               titre="Vos feuilles Google"
-              aide="Le nom des onglets où sont tenus vos commandes, votre menu et vos notes."
+              aide="Sans ce classeur, tout fonctionne quand même : vos commandes vivent dans DjiguiFlow. Ne le remplissez que si vous tenez déjà vos ventes dans une feuille Google et voulez l’y retrouver."
             >
               <div className="grid gap-3 sm:grid-cols-3">
                 {(
