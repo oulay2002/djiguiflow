@@ -336,14 +336,25 @@ export default function VitrinePage() {
                             de son commerce. `Enseigne` retombe sur l'initiale
                             de l'enseigne, comme sur l'accueil.
 
-                            Pas de cadre autour d'un vrai logo — il porte deja
-                            sa limite. Le cadre reste pour l'initiale, qui sans
-                            lui se lirait comme une lettre au fil du texte. */}
+                            AUCUN FOND, MEME POUR L'INITIALE. C'est la seule
+                            regle qui tienne sur une grille de cartes : le
+                            logo, lui, ne peut pas en avoir — il porte deja sa
+                            limite. Encadrer l'initiale et pas le logo faisait
+                            deux traitements cote a cote, et l'oeil lisait la
+                            difference comme si elle disait quelque chose des
+                            deux boutiques. Elle ne dit que ceci : l'une a
+                            televerse une image, l'autre non.
+
+                            L'initiale se lit sans cadre parce qu'elle est
+                            ISOLEE dans le coin de la carte, loin de tout
+                            texte. Ce n'est pas vrai partout : `Enseigne` garde
+                            le cadre par defaut pour les ecrans ou la marque
+                            est posee au fil d'une ligne. */}
                         <Enseigne
                           nom={b.nom}
                           logo={b.logo}
-                          cadre={!b.logo}
-                          className="h-11 w-11 shrink-0 text-lg"
+                          cadre={false}
+                          className="h-11 w-11 shrink-0 text-2xl"
                         />
                       </div>
 

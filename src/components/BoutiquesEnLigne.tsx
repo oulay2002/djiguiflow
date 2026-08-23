@@ -171,14 +171,28 @@ export default function BoutiquesEnLigne() {
               )}
 
               <div className="flex items-center gap-4 px-5 pb-4 pt-5">
-                {/* SANS CADRE. Un logo porte deja sa propre limite ; l'enfermer
-                    dans une bordure lui ajoute une seconde frontiere et le fait
-                    passer pour une vignette. */}
+                {/* SANS CADRE, ET POUR LES DEUX CAS.
+                    Un logo porte deja sa propre limite ; l'enfermer dans une
+                    bordure lui ajoute une seconde frontiere et le fait passer
+                    pour une vignette. Il ne peut donc pas en avoir.
+
+                    L'initiale non plus, ici. Encadrer l'une et pas l'autre
+                    mettait deux traitements cote a cote sur la meme grille, et
+                    l'oeil lisait cette difference comme si elle disait quelque
+                    chose des deux boutiques. Elle ne dit que ceci : l'une a
+                    televerse une image, l'autre non — ce qui ne regarde pas le
+                    visiteur.
+
+                    Elle tient sans cadre parce qu'elle occupe un EMPLACEMENT :
+                    onze pixels carres devant un bloc de deux lignes, separee
+                    par un ecart franc. Ce n'est pas une lettre au fil du
+                    texte, et `Enseigne` garde son cadre par defaut pour les
+                    ecrans ou elle en serait une. */}
                 <Enseigne
                   nom={b.nom}
                   logo={b.logo}
-                  cadre={!b.logo}
-                  className="h-11 w-11 shrink-0 text-lg"
+                  cadre={false}
+                  className="h-11 w-11 shrink-0 text-2xl"
                 />
 
                 <span className="min-w-0 flex-1">
