@@ -36,8 +36,21 @@ export default function Page() {
    * avant, un par coloris, et donne simplement le meme nom d'article aux
    * quatre. La vitrine fait le reste.
    */
-  const [fGroupe, setFGroupe] = useState('');
-  const [fCouleur, setFCouleur] = useState('');
+  /**
+   * Les coloris saisis en une seule fois.
+   *
+   * CE QU'IL FALLAIT FAIRE AVANT. Le marchand rouvrait le formulaire pour
+   * chaque coloris, en retapant le nom, la categorie, le prix et la
+   * description a l'identique — quatre fois pour quatre couleurs, avec quatre
+   * occasions de se tromper d'un caractere et de casser le regroupement.
+   *
+   * Ce qui est COMMUN reste en haut ; ce qui DIFFERE — la couleur, sa photo,
+   * son stock — se repete ici. C'est la seule chose qui distingue vraiment
+   * deux declinaisons.
+   */
+  const [fColoris, setFColoris] = useState<
+    { couleur: string; stock: string; fichier: File | null }[]
+  >([]);
   const [fDesc, setFDesc] = useState('');
   const [fDispo, setFDispo] = useState(true);
   const [fUrl, setFUrl] = useState('');
@@ -109,23 +122,69 @@ export default function Page() {
           setMsg(`Photo retravaillée : ${ko(d.octetsAvant)} → ${ko(d.octets)}.`);
         }
       }
-      const res = await fetchDashboard(avecBoutique('/api/dashboard/produits', boutiqueId), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          nom: fNom, categorie: fCat, prix: Number(fPrix) || 0,
-          description: fDesc, disponible: fDispo, image,
+      /** Une photo part au serveur, qui la redresse et l'allege, et rend son URL. */
+      const televerser = async (fichier: File) => {
+        const formulaire = new FormData();
+        formulaire.append('fichier', fichier);
+        formulaire.append('boutique_id', boutiqueId);
+        const rep = await fetchDashboard('/api/dashboard/produits/photo', {
+          method: 'POST', body: formulaire,
+        });
+        const d = await rep.json();
+        if (!rep.ok) throw new Error(d?.error || `Envoi de la photo échoué (${rep.status})`);
+        return String(d.url || '');
+      };
+
+      const creer = async (corps: Record<string, unknown>) => {
+        const res = await fetchDashboard(avecBoutique('/api/dashboard/produits', boutiqueId), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(corps),
+        });
+        const d = await res.json();
+        if (!d.ok) throw new Error(d.error || 'Erreur serveur');
+      };
+
+      const commun = {
+        categorie: fCat, prix: Number(fPrix) || 0,
+        description: fDesc, disponible: fDispo,
+        seuil_alerte: fSeuil === '' ? null : Number(fSeuil),
+      };
+
+      // Les coloris renseignes, ceux dont la couleur est nommee. Une ligne
+      // laissee vide est une ligne que le marchand a ouverte puis abandonnee :
+      // la creer produirait un article fantome sans nom de couleur.
+      const declinaisons = fColoris.filter(c => c.couleur.trim());
+
+      if (declinaisons.length === 0) {
+        await creer({
+          ...commun, nom: fNom, image,
           stock: fStock === '' ? null : Number(fStock),
-          seuil_alerte: fSeuil === '' ? null : Number(fSeuil),
-          groupe: fGroupe, couleur: fCouleur,
-        }),
-      });
-      const d = await res.json();
-      if (!d.ok) throw new Error(d.error || 'Erreur serveur');
+        });
+      } else {
+        // UN PRODUIT PAR COLORIS, relies par le nom de l'article. Chacun garde
+        // son stock et sa photo — c'est ce qui permet a la vitrine de refuser
+        // le rouge sans toucher au bleu.
+        //
+        // En serie et non en parallele : le serveur redimensionne chaque photo,
+        // et lancer quatre traitements d'image a la fois sur une connexion
+        // d'Abidjan echoue plus souvent qu'il n'accelere.
+        for (const c of declinaisons) {
+          const photo = c.fichier ? await televerser(c.fichier) : image;
+          await creer({
+            ...commun,
+            nom: `${fNom} ${c.couleur.trim()}`.trim(),
+            groupe: fNom,
+            couleur: c.couleur.trim(),
+            image: photo,
+            stock: c.stock === '' ? null : Number(c.stock),
+          });
+        }
+      }
       setOuvert(false);
       setFNom(''); setFCat(''); setFPrix(''); setFDesc(''); setFUrl('');
       setFFile(null); setFDispo(true); setFStock(''); setFSeuil('5');
-      setFGroupe(''); setFCouleur('');
+      setFColoris([]);
       await charger();
     } catch (e) {
       setMsg(e instanceof Error ? e.message : 'Erreur inconnue');
@@ -359,36 +418,90 @@ export default function Page() {
               <input className=" border p-2" placeholder="Description" value={fDesc} onChange={e => setFDesc(e.target.value)} />
             </div>
 
-            {/* LES COLORIS.
-                Le marchand saisit ses articles comme avant, un par coloris. Il
-                donne simplement le MEME nom d'article aux quatre, et la vitrine
-                n'en fait qu'une carte avec quatre vignettes.
+            {/* LES COLORIS, SAISIS EN UNE SEULE FOIS.
+                Le marchand rouvrait le formulaire pour chaque couleur, en
+                retapant le nom, la categorie, le prix et la description a
+                l'identique — quatre fois pour quatre coloris, avec quatre
+                occasions de se tromper d'un caractere et de casser le
+                regroupement.
 
-                Le bloc est facultatif et se lit comme tel : la plupart des
-                marchands n'en auront jamais besoin, et un champ obligatoire de
-                plus les ferait renoncer. */}
-            <div className="grid gap-3 border border-chaux-200 bg-chaux-50 p-3 sm:grid-cols-2">
-              <div className="sm:col-span-2">
-                <p className="font-semibold text-nuit-900">Cet article existe en plusieurs coloris ?</p>
-                <p className="mt-0.5 text-sm text-chaux-600">
-                  Facultatif. Donnez le même nom d’article à chaque coloris — ils
-                  s’afficheront sur une seule carte.
-                </p>
+                Ce qui est COMMUN reste au-dessus ; ce qui DIFFERE se repete
+                ici. Le bloc reste ferme tant qu'on ne l'ouvre pas : la plupart
+                des marchands n'en auront jamais besoin. */}
+            <div className="border border-chaux-200 bg-chaux-50 p-3">
+              <div className="flex flex-wrap items-baseline justify-between gap-2">
+                <div>
+                  <p className="font-semibold text-nuit-900">
+                    Cet article existe en plusieurs coloris ?
+                  </p>
+                  <p className="mt-0.5 text-sm text-chaux-600">
+                    Facultatif. Chaque coloris garde son propre stock et sa
+                    propre photo, sur une seule carte en vitrine.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setFColoris(c => [...c, { couleur: '', stock: '', fichier: null }])}
+                  className="border border-nuit-900 px-3 py-1.5 text-sm font-semibold text-nuit-900 transition hover:bg-nuit-900 hover:text-white"
+                >
+                  + Ajouter un coloris
+                </button>
               </div>
-              <input
-                className="border p-2"
-                placeholder="Nom de l’article (ex : Ensemble enfant)"
-                value={fGroupe}
-                onChange={e => setFGroupe(e.target.value)}
-                aria-label="Nom de l’article commun aux coloris"
-              />
-              <input
-                className="border p-2"
-                placeholder="Ce coloris (ex : blanc)"
-                value={fCouleur}
-                onChange={e => setFCouleur(e.target.value)}
-                aria-label="Coloris de cette déclinaison"
-              />
+
+              {fColoris.length > 0 && (
+                <div className="mt-3 flex flex-col gap-2">
+                  {fColoris.map((c, i) => (
+                    <div key={i} className="grid items-center gap-2 sm:grid-cols-[1fr_7rem_auto_auto]">
+                      <input
+                        className="border p-2"
+                        placeholder={`Coloris ${i + 1} (ex : bleu)`}
+                        value={c.couleur}
+                        onChange={e => setFColoris(l =>
+                          l.map((x, j) => (j === i ? { ...x, couleur: e.target.value } : x)))}
+                        aria-label={`Nom du coloris ${i + 1}`}
+                      />
+                      <input
+                        className="border p-2"
+                        type="number"
+                        min="0"
+                        placeholder="Stock"
+                        value={c.stock}
+                        onChange={e => setFColoris(l =>
+                          l.map((x, j) => (j === i ? { ...x, stock: e.target.value } : x)))}
+                        aria-label={`Stock du coloris ${i + 1}`}
+                      />
+                      {/* Une photo PAR coloris : c'est elle que le client
+                          regarde pour choisir, bien avant le nom de la
+                          couleur. Sans elle, la vignette montre la meme image
+                          trois fois. */}
+                      <label className="cursor-pointer border border-dashed border-chaux-300 px-3 py-2 text-sm text-chaux-600 hover:border-nuit-400">
+                        {c.fichier ? '✓ photo choisie' : '📸 Photo'}
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={e => setFColoris(l =>
+                            l.map((x, j) => (j === i ? { ...x, fichier: e.target.files?.[0] ?? null } : x)))}
+                        />
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => setFColoris(l => l.filter((_, j) => j !== i))}
+                        aria-label={`Retirer le coloris ${i + 1}`}
+                        className="px-2 py-2 text-chaux-500 transition hover:text-bissap-600"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ))}
+
+                  <p className="mt-1 text-sm text-chaux-600">
+                    Le nom de l’article et le prix ci-dessus valent pour tous les
+                    coloris. Le stock saisi plus bas est ignoré : chaque coloris
+                    a le sien.
+                  </p>
+                </div>
+              )}
             </div>
 
             <div className="grid gap-3 border border-mangue-200 bg-mangue-50 p-3 sm:grid-cols-2">

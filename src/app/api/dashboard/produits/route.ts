@@ -50,7 +50,14 @@ export async function POST(req: Request) {
   if (!acces.ok) return Response.json({ error: acces.message }, { status: acces.statut });
   const m = acces.marchand;
 
-  const reference = `P${Date.now()}`;
+  // LA REFERENCE NE DOIT PAS POUVOIR SE REPETER.
+  //
+  // Elle ne valait que l'horodatage a la milliseconde, et l'ecriture est un
+  // `upsert` sur `(boutique_id, reference)` : deux articles crees dans la meme
+  // milliseconde — ce que fait la saisie de plusieurs coloris d'un coup — se
+  // seraient ECRASES l'un l'autre, sans erreur, le marchand ne voyant qu'un
+  // seul de ses deux coloris apparaitre.
+  const reference = `P${Date.now()}${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
   const stockNum = stock === null || stock === undefined || stock === '' ? null : Number(stock);
   const seuilNum = seuil_alerte === null || seuil_alerte === undefined || seuil_alerte === '' ? null : Number(seuil_alerte);
 
