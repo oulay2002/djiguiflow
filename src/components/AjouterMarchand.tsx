@@ -1,5 +1,7 @@
 'use client';
 
+import Link from 'next/link';
+
 import { useEffect, useState } from 'react';
 import { Plus, Store, X } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
@@ -106,7 +108,16 @@ export default function AjouterMarchand() {
   return (
     <>
       <div className="border-b border-mangue-200/70 bg-chaux-50/95 px-4 py-2">
-        <div className="mx-auto flex max-w-6xl justify-end">
+        <div className="mx-auto flex max-w-6xl items-center justify-end gap-4">
+          {/* Le tableau de l'exploitant vit ici, dans la barre qui n'apparait
+              deja qu'aux admins : un lien de plus dans la navigation marchande
+              serait vu par tout le monde et cliquable par personne. */}
+          <Link
+            href="/admin"
+            className="font-mono text-xs uppercase tracking-[0.16em] text-nuit-700 underline underline-offset-4 transition hover:text-bissap-600"
+          >
+            Tableau plateforme
+          </Link>
           <Bouton
             taille="sm"
             onClick={() => { setOuvert(true); setSucces(null); setErreur(''); }}
