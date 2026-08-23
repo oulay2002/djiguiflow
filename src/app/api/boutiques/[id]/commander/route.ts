@@ -299,11 +299,48 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
   if (sb && boutiqueUuid) {
     const { data: fiche } = await sb
       .from('boutiques')
-      .select('horaires, pause_jusqua, essai')
+      // En UNE seule chaine litterale : concatenee, elle perd son inference et
+      // le type retombe sur `GenericStringError`.
+      .select('horaires, pause_jusqua, essai, wasender_secret_id, telegram_secret_id, groupe_livreurs')
       .eq('id', boutiqueUuid)
       .maybeSingle();
 
     boutiqueEssai = fiche?.essai === true;
+
+    /**
+     * UNE BOUTIQUE NON BRANCHEE NE PREND PAS DE COMMANDE.
+     *
+     * Le guide met les articles a l'etape 2 et les canaux aux etapes 3 a 6 : en
+     * suivant l'ordre officiel, il existe une fenetre ou la vitrine vend et ou
+     * PERSONNE n'est prevenu. Le client attend une commande que rien n'a
+     * transmise, et il s'en prend au commercant.
+     *
+     * Le catalogue de la vitrine ecarte deja ces boutiques -- mais un onglet
+     * reste ouvert, un lien se partage, un appel se forge. Comme pour les
+     * horaires, le refus se prononce ICI.
+     *
+     * Les BOUTIQUES DE BANC sont dispensees : elles portent `essai` ou
+     * `banc_telegram_id` et n'ont justement pas de canal reel. Les bloquer
+     * casserait le seul essai qui exerce la chaine entiere.
+     */
+    const canalClient = Boolean(fiche?.wasender_secret_id || fiche?.telegram_secret_id);
+    const groupeLivreurs = Boolean(String(fiche?.groupe_livreurs ?? '').trim());
+
+    if (!boutiqueEssai && (!canalClient || !groupeLivreurs)) {
+      console.error(
+        `Commande refusee — « ${m.id} » n'est pas branchee :`
+          + ` canal client ${canalClient ? 'ok' : 'ABSENT'},`
+          + ` groupe livreurs ${groupeLivreurs ? 'ok' : 'ABSENT'}.`,
+      );
+      return Response.json(
+        {
+          error:
+            `${m.nom} n’est pas encore prête à recevoir des commandes.`
+            + ' Contactez la boutique directement.',
+        },
+        { status: 409 },
+      );
+    }
 
     const etat = etatBoutique(fiche?.horaires, new Date(), fiche?.pause_jusqua);
     if (!etat.ouvert) {

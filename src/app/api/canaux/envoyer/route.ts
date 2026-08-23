@@ -1,4 +1,5 @@
 import { envoyerMessage, type Canal, type TypeEnvoi } from '@/lib/canaux';
+import { notificationAutorisee, typeNotification } from '@/lib/preferencesNotifications';
 
 export const dynamic = 'force-dynamic';
 
@@ -67,6 +68,34 @@ export async function POST(req: Request) {
   const type: TypeEnvoi = String(corps.type ?? '').toLowerCase() === 'relance' ? 'relance' : 'service';
   const motif = String(corps.motif ?? '').trim() || undefined;
 
+  /**
+   * LA PREFERENCE DU MARCHAND, HONOREE ICI ET NULLE PART AILLEURS.
+   *
+   * C'est le seul point de passage de tout ce que n8n envoie. Y placer le
+   * filtre evite de le repeter dans chaque workflow -- et un workflow ajoute
+   * demain en herite sans rien faire.
+   *
+   * `notification` est FACULTATIF : sans lui, rien ne change. Les appels
+   * existants continuent exactement comme avant, et le filtre ne s'applique
+   * qu'aux workflows qui nomment leur notification.
+   *
+   * UN REFUS N'EST PAS UN ECHEC. On rend 200 avec `envoye: false` : n8n doit
+   * poursuivre son execution, pas la teindre en rouge. Une execution rouge
+   * masque les vraies pannes -- c'est la lecon du 20 aout.
+   */
+  const notification = typeNotification(corps.notification);
+  const verdict = await notificationAutorisee({ boutique, destinataire, type: notification });
+
+  if (!verdict.envoyer) {
+    console.log(`Canaux — envoi tu pour « ${boutique} » : ${verdict.raison}.`);
+    return Response.json({
+      ok: true,
+      envoye: false,
+      canal: canalBrut,
+      raison: verdict.raison,
+    });
+  }
+
   const resultat = await envoyerMessage({
     boutique,
     canal: canalBrut as Canal,
@@ -90,5 +119,5 @@ export async function POST(req: Request) {
     );
   }
 
-  return Response.json({ ok: true, canal: resultat.canal, via: resultat.via });
+  return Response.json({ ok: true, envoye: true, canal: resultat.canal, via: resultat.via });
 }
