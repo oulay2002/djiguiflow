@@ -13,7 +13,7 @@ import { LienRetour, classesBouton } from '@/components/ui/Bouton';
 import { supabase, utilisateurCourant } from '@/lib/supabase';
 import { BUCKET_IMAGES, dossierMarchand, nomFichierSain } from '@/lib/storage';
 import { useBoutique } from '@/lib/boutique';
-import { genererSlug } from '@/lib/provisioning';
+import { genererSlug } from '@/lib/slug';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { 
