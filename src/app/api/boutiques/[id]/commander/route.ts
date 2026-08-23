@@ -3,6 +3,7 @@ import { getMarchand, prefixeReference, type Marchand } from '@/lib/marchands';
 import { resoudreBoutiqueUuid } from '@/lib/boutiques';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import { etatBoutique } from '@/lib/horaires';
+import { boutiquePeutVendre } from '@/lib/boutiquePrete';
 import {
   adresseAppelante,
   fenetreDepassee,
@@ -301,7 +302,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
       .from('boutiques')
       // En UNE seule chaine litterale : concatenee, elle perd son inference et
       // le type retombe sur `GenericStringError`.
-      .select('horaires, pause_jusqua, essai, wasender_secret_id, telegram_secret_id, groupe_livreurs')
+      .select('horaires, pause_jusqua, essai, banc_telegram_id, wasender_secret_id, telegram_secret_id, groupe_livreurs')
       .eq('id', boutiqueUuid)
       .maybeSingle();
 
@@ -319,18 +320,22 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
      * reste ouvert, un lien se partage, un appel se forge. Comme pour les
      * horaires, le refus se prononce ICI.
      *
-     * Les BOUTIQUES DE BANC sont dispensees : elles portent `essai` ou
-     * `banc_telegram_id` et n'ont justement pas de canal reel. Les bloquer
-     * casserait le seul essai qui exerce la chaine entiere.
+     * La regle vit dans `@/lib/boutiquePrete` pour etre EPROUVEE : en ligne ici,
+     * la tester demandait de simuler les freins, la tarification et le stock,
+     * donc personne ne la testait -- et elle a casse le banc de chaine des son
+     * premier passage.
      */
-    const canalClient = Boolean(fiche?.wasender_secret_id || fiche?.telegram_secret_id);
-    const groupeLivreurs = Boolean(String(fiche?.groupe_livreurs ?? '').trim());
+    const verdict = boutiquePeutVendre({
+      essai: fiche?.essai,
+      bancTelegramId: fiche?.banc_telegram_id,
+      wasenderSecretId: fiche?.wasender_secret_id,
+      telegramSecretId: fiche?.telegram_secret_id,
+      groupeLivreurs: fiche?.groupe_livreurs,
+    });
 
-    if (!boutiqueEssai && (!canalClient || !groupeLivreurs)) {
+    if (!verdict.peutVendre) {
       console.error(
-        `Commande refusee — « ${m.id} » n'est pas branchee :`
-          + ` canal client ${canalClient ? 'ok' : 'ABSENT'},`
-          + ` groupe livreurs ${groupeLivreurs ? 'ok' : 'ABSENT'}.`,
+        `Commande refusee — « ${m.id} » n'est pas branchee : ${verdict.manque.join(', ')}.`,
       );
       return Response.json(
         {
