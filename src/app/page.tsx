@@ -4,6 +4,7 @@ import type { CSSProperties, ReactNode } from 'react';
 import Link from 'next/link';
 import AssistantChat from '@/components/AssistantChat';
 import BoutiquesEnLigne from '@/components/BoutiquesEnLigne';
+import AiguillageVisiteur from '@/components/AiguillageVisiteur';
 import { BILLING_PLANS } from '@/lib/billing/plans';
 
 const NUIT = '#131c3d';
@@ -182,7 +183,15 @@ export default function Home() {
       </nav>
 
       {/* ---------------------------------------------------------------- héros */}
-      <section className="indigo-weave relative overflow-hidden bg-nuit-800 pt-28 pb-16 text-white sm:pt-32 lg:pb-24">
+      {/* DEUX PORTES, AVANT L'ARGUMENTAIRE.
+          Cette page vend DjiguiFlow aux commercants. Un visiteur venu ACHETER
+          y arrivait sur un argumentaire et devait descendre jusqu'au bas de
+          page pour trouver une boutique. On ne sait pas lequel des deux publics
+          arrive vraiment : plutot que de parier, on offre les deux portes et on
+          compte les clics. Ce sont les chiffres qui trancheront. */}
+      <AiguillageVisiteur />
+
+      <section className="indigo-weave relative overflow-hidden bg-nuit-800 pt-16 pb-16 text-white sm:pt-20 lg:pb-24">
         <div className="relative mx-auto grid max-w-6xl gap-14 px-4 sm:px-6 lg:grid-cols-[1.02fr_0.98fr] lg:items-center lg:gap-12">
           <div>
             <div className="flex items-start gap-2.5">
