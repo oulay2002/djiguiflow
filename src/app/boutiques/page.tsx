@@ -322,7 +322,11 @@ export default function VitrinePage() {
                           <img
                             src={b.logo}
                             alt=""
-                            className="h-11 w-11 shrink-0 border border-[var(--hairline)] object-cover"
+                            // Meme regle que sur l'accueil : pas de cadre autour
+                            // d'un vrai logo — il porte deja sa limite — et
+                            // `contain` plutot que `cover`, qui rognait la
+                            // marque du commercant pour remplir un carre.
+                            className="h-11 w-11 shrink-0 object-contain"
                           />
                         )}
                       </div>
