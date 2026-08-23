@@ -375,14 +375,14 @@ export default function Page() {
                             rattachent prix et photo au produit PAR SON NOM. */}
                         <button
                           onClick={() => ouvrirFiche(p)}
-                          className=" bg-nuit-50 px-3 py-1 text-xs font-semibold text-nuit-700 transition hover:bg-nuit-100"
+                          className=" flex min-h-11 items-center justify-center bg-nuit-50 px-3 text-sm font-semibold text-nuit-700 transition hover:bg-nuit-100"
                         >
                           <Pencil className="mr-1 inline h-3 w-3" />
                           Modifier
                         </button>
                         <button
                           onClick={() => ouvrirStock(p)}
-                          className=" bg-chaux-100 px-3 py-1 text-xs font-semibold text-nuit-700 transition hover:bg-chaux-200"
+                          className=" flex min-h-11 items-center justify-center bg-chaux-100 px-3 text-sm font-semibold text-nuit-700 transition hover:bg-chaux-200"
                         >
                           Stock
                         </button>
@@ -600,7 +600,7 @@ export default function Page() {
 
       {editProd && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-md space-y-4 bg-white p-6 soft-shadow">
+          <div className="max-h-[90vh] w-full max-w-md space-y-4 overflow-y-auto bg-white p-6 soft-shadow">
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-xl font-black text-nuit-900">Gérer le stock</h2>

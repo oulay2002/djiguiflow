@@ -254,7 +254,7 @@ export default function VitrinePage() {
                   type="button"
                   onClick={() => setCategorie(c)}
                   aria-pressed={actif}
-                  className={`border px-3.5 py-1.5 font-mono text-xs uppercase tracking-[0.16em] transition ${
+                  className={`flex min-h-11 items-center border px-3.5 font-mono text-xs uppercase tracking-[0.16em] transition ${
                     actif
                       ? 'border-nuit-900 bg-nuit-900 text-chaux-50'
                       : 'border-[var(--hairline)] text-chaux-600 hover:border-nuit-900 hover:text-nuit-900'

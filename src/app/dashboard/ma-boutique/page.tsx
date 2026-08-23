@@ -449,7 +449,7 @@ export default function MaBoutiquePage() {
                     const c = horaires[jour] ?? null;
                     return (
                       <div key={jour} className="flex flex-wrap items-center gap-3 bg-chaux-50 px-3 py-2">
-                        <label className="flex w-40 items-center gap-2 text-sm font-semibold text-nuit-800">
+                        <label className="flex w-full items-center gap-2 text-sm font-semibold text-nuit-800 sm:w-40">
                           <input
                             type="checkbox"
                             checked={c !== null}
@@ -462,7 +462,7 @@ export default function MaBoutiquePage() {
                         </label>
 
                         {c ? (
-                          <div className="flex items-center gap-2 text-sm">
+                          <div className="flex flex-wrap items-center gap-2 text-sm">
                             <input
                               type="time"
                               value={c.ouvre}

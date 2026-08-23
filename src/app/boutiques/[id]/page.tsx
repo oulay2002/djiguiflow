@@ -568,7 +568,7 @@ export default function Page() {
                     <button
                       onClick={() => retirer(p.id)}
                       aria-label={`Retirer un ${p.nom}`}
-                      className="flex h-9 w-9 items-center justify-center text-nuit-700 transition hover:bg-chaux-100"
+                      className="flex h-11 w-11 items-center justify-center text-nuit-700 transition hover:bg-chaux-100"
                     >
                       <Minus className="h-4 w-4" />
                     </button>
@@ -579,7 +579,7 @@ export default function Page() {
                       onClick={() => ajouter(p.id)}
                       disabled={typeof p.stock === 'number' && panier[p.id] >= p.stock}
                       aria-label={`Ajouter un ${p.nom}`}
-                      className="flex h-9 w-9 items-center justify-center bg-bissap-500 text-white transition hover:bg-bissap-600 disabled:cursor-not-allowed disabled:bg-chaux-300"
+                      className="flex h-11 w-11 items-center justify-center bg-bissap-500 text-white transition hover:bg-bissap-600 disabled:cursor-not-allowed disabled:bg-chaux-300"
                     >
                       <Plus className="h-4 w-4" />
                     </button>
@@ -596,7 +596,7 @@ export default function Page() {
                 ) : (
                   <button
                     onClick={() => ajouter(p.id)}
-                    className={classesBouton('action', 'sm', 'carree')}
+                    className={classesBouton('action', 'md', 'carree')}
                   >
                     <Plus className="h-4 w-4" /> Ajouter
                   </button>

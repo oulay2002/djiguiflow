@@ -162,7 +162,7 @@ function Tiroir({ actif, ouvert, fermer }: { actif: string | null; ouvert: boole
         role="dialog"
         aria-modal="true"
         aria-label="Menu de navigation"
-        className="absolute inset-x-0 bottom-0 max-h-[85vh] overflow-y-auto-[2rem] border-t border-[var(--hairline)] bg-white p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] soft-shadow"
+        className="absolute inset-x-0 bottom-0 max-h-[85vh] overflow-y-auto rounded-t-[2rem] border-t border-[var(--hairline)] bg-white p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] soft-shadow"
       >
         <div className="mx-auto mb-5 h-1.5 w-12 bg-chaux-200" />
 

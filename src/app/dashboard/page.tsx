@@ -70,7 +70,7 @@ export default function Page() {
   }
 
   const serie = s?.serie7j ?? [];
-  const W = 640, H = 240, P = 36;
+  const W = 360, H = 200, P = 28;
   const max = Math.max(...serie.map(x => x.ca), 1);
   const pts = serie.map((x, i) => [
     P + (i * (W - 2 * P)) / Math.max(serie.length - 1, 1),
@@ -306,7 +306,7 @@ export default function Page() {
                     <circle cx={p[0]} cy={p[1]} r="5" fill="#fff" stroke="var(--color-bissap-500)" strokeWidth="3">
                       <title>{serie[i].jour} : {serie[i].ca.toLocaleString('fr-FR')} F · {serie[i].nb} cmd</title>
                     </circle>
-                    <text x={p[0]} y={H - 8} textAnchor="middle" fontSize="11" fill="var(--color-chaux-500)">{serie[i].jour}</text>
+                    <text x={p[0]} y={H - 8} textAnchor="middle" fontSize="13" fill="var(--color-chaux-500)">{serie[i].jour}</text>
                   </g>
                 ))}
               </svg>

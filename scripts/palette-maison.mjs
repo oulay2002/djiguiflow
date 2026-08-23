@@ -235,6 +235,33 @@ for (const [, famille, niveau] of readFileSync('src/app/globals.css', 'utf8').ma
 
 const HORS_RAMPE = new RegExp(`(?<![\\w-])(?:${PREFIXES})-([a-z]+)-(\\d{2,3})`, 'g');
 
+/**
+ * DES UTILITAIRES QUI N'ACCEPTENT AUCUNE VALEUR ENTRE CROCHETS.
+ *
+ * `overflow-y-auto-[2rem]` a vecu dans le tiroir de navigation du tableau de
+ * bord : Tailwind n'emet AUCUNE regle pour cette classe. Le tiroir avait donc
+ * une hauteur maximale sans defilement, et « Deconnexion » sortait de l'ecran
+ * des que le clavier s'ouvrait. Trouve le 23 aout 2026.
+ *
+ * C'est la MEME FAMILLE que « niveau hors rampe » — une classe qui a l'air
+ * juste et ne produit rien — et ce garde ne la voyait pas : il ne surveillait
+ * que les couleurs. Deux occurrences dans la meme journee en ont fait une regle.
+ *
+ * La liste est volontairement COURTE ET SURE : uniquement des utilitaires dont
+ * la valeur est un mot-cle ferme. En ajouter un qui accepte l'arbitraire
+ * produirait de fausses alertes — et une alerte fausse fait cesser de lire les
+ * vraies.
+ */
+const SANS_VALEUR_ARBITRAIRE = [
+  'overflow-x', 'overflow-y', 'overflow',
+  'flex-wrap', 'whitespace', 'pointer-events', 'cursor',
+];
+
+const CLASSE_MORTE = new RegExp(
+  `(?<![\\w-])(?:${SANS_VALEUR_ARBITRAIRE.join('|')})-[a-z]+-\\[[^\\]]+\\]`,
+  'g',
+);
+
 // Les deux passages de CONTROLE balayent tout `src`, la ou la TRADUCTION reste
 // bornee aux ecrans qui n'avaient jamais recu le systeme. Un controle qui ne
 // regarde qu'une partie du code laisse le defaut renaitre dans l'autre.
@@ -264,6 +291,10 @@ for (const fichier of fichiers('src')) {
       }
     }
 
+    for (const trouve of ligne.matchAll(CLASSE_MORTE)) {
+      signaler(trouve[0], 'valeur entre crochets refusee ici → classe morte');
+    }
+
     for (const [classe, famille, niveau] of ligne.matchAll(HORS_RAMPE)) {
       // Une famille inconnue n'est pas un defaut ici : c'est le travail du
       // premier passage, qui la traduit. On ne juge que les familles maison.
@@ -278,7 +309,7 @@ for (const fichier of fichiers('src')) {
 
 console.log(
   defauts === 0
-    ? '\nControles : aucune ombre hors maison, aucun niveau hors rampe.'
+    ? '\nControles : aucune ombre hors maison, aucun niveau hors rampe, aucune classe morte.'
     : `\nControles : ${defauts} defaut(s). La seule ombre declaree est --shadow-soft ;` +
         ' les rampes sont celles de globals.css.',
 );
