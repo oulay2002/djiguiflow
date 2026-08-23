@@ -2,10 +2,30 @@
 
 import type { CSSProperties, ReactNode } from 'react';
 import Link from 'next/link';
-import AssistantChat from '@/components/AssistantChat';
+import dynamic from 'next/dynamic';
 import BoutiquesEnLigne from '@/components/BoutiquesEnLigne';
 import AiguillageVisiteur from '@/components/AiguillageVisiteur';
 import { BILLING_PLANS } from '@/lib/billing/plans';
+
+/**
+ * L'ASSISTANTE ARRIVE APRES LE RESTE.
+ *
+ * Elle est le seul endroit de tout le parcours client a tirer
+ * `framer-motion` — mesure le 23 aout 2026 : l'accueil pesait 970 ko de
+ * JavaScript contre 823 pour le catalogue, qui n'a pas ce composant. Cent
+ * cinquante kilo-octets pour un lanceur de conversation dans un coin.
+ *
+ * SUR UNE 3G IVOIRIENNE A 200 ko/s, cela fait trois quarts de seconde avant
+ * que le visiteur voie les boutiques. Or il vient d'un lien WhatsApp, sur un
+ * telephone bas de gamme, et ce qu'il attend c'est la marchandise.
+ *
+ * `ssr: false` parce qu'elle n'a rien a rendre cote serveur : c'est un bouton
+ * flottant qui ouvre une conversation. Rien de ce qu'elle affiche n'entre dans
+ * le premier ecran, et rien de ce que le visiteur cherche n'en depend.
+ */
+const AssistantChat = dynamic(() => import('@/components/AssistantChat'), {
+  ssr: false,
+});
 
 const NUIT = '#131c3d';
 const CHAUX = '#eeece5';
