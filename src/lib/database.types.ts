@@ -1006,6 +1006,8 @@ export type Database = {
           pause_jusqua: string
           prix_min: number
           slug: string
+          vedette: string
+          vedette_commandes: number
           zone: string
         }[]
       }

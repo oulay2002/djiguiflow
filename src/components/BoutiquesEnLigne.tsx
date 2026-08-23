@@ -18,6 +18,8 @@ type Ligne = {
   prix_min: number | string | null;
   horaires: unknown;
   pause_jusqua: string | null;
+  vedette: string | null;
+  vedette_commandes: number | null;
 };
 
 type Boutique = {
@@ -30,6 +32,8 @@ type Boutique = {
   prixMin: number | null;
   ouvert: boolean;
   messageHoraire: string | null;
+  /** Le produit que le plus de clients differents ont commande. Vide si aucun ne se detache. */
+  vedette: string | null;
 };
 
 /**
@@ -81,6 +85,10 @@ export default function BoutiquesEnLigne() {
               prixMin: prix !== null && Number.isFinite(prix) && prix > 0 ? prix : null,
               ouvert: etat.ouvert,
               messageHoraire: etat.message,
+              // La fonction ne la rend que si trois clients differents au moins
+              // l'ont commandee ces trente jours : en dessous, « le plus
+              // commande » serait du bruit habille en donnee.
+              vedette: f.vedette?.trim() || null,
             };
           }),
         );
@@ -124,7 +132,7 @@ export default function BoutiquesEnLigne() {
                   silence. */}
               {b.apercus.length > 0 && (
                 <div
-                  className={`grid overflow-hidden bg-chaux-100 ${
+                  className={`relative grid overflow-hidden bg-chaux-100 ${
                     b.apercus.length >= 3
                       ? 'aspect-[3/2] grid-cols-3 grid-rows-2'
                       : b.apercus.length === 2
@@ -144,6 +152,21 @@ export default function BoutiquesEnLigne() {
                       }`}
                     />
                   ))}
+
+                  {/* CE QUE LES CLIENTS CHOISISSENT, NOMME SUR L'IMAGE.
+                      La photo dominante est desormais celle du produit le plus
+                      commande — pas la premiere du catalogue, qui ne disait que
+                      l'ordre de saisie du marchand. L'etiquette dit pourquoi
+                      elle est la : sans elle, le visiteur voit une photo de
+                      plus ; avec elle, il voit un choix collectif.
+
+                      Posee en bas a gauche, sur la seule zone que la mosaique
+                      garde toujours pleine. */}
+                  {b.vedette && (
+                    <span className="absolute bottom-0 left-0 max-w-[80%] truncate bg-nuit-900/85 px-2.5 py-1.5 font-mono text-[10px] uppercase tracking-[0.14em] text-white backdrop-blur-[2px]">
+                      Le plus commandé · {b.vedette}
+                    </span>
+                  )}
                 </div>
               )}
 
