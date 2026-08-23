@@ -1,8 +1,8 @@
--- INSTANTANE DU 2026-08-22 18:05 UTC
--- DERNIERE MIGRATION APPLIQUEE : 20260822163305
+-- INSTANTANE DU 2026-08-23 05:53 UTC
+-- DERNIERE MIGRATION APPLIQUEE : 20260822225555
 --
 -- Pour restaurer : rejouer ce fichier, PUIS tous les fichiers de
--- supabase/migrations/ dont l'horodatage est superieur a 20260822163305.
+-- supabase/migrations/ dont l'horodatage est superieur a 20260822225555.
 -- Sauter cette etape ramene le schema jusqu'a vingt-quatre heures en
 -- arriere, verrous compris.
 
@@ -842,7 +842,8 @@ CREATE TABLE IF NOT EXISTS "public"."boutiques" (
     "telegram_bot_username" "text",
     "horaires" "jsonb",
     "pause_jusqua" timestamp with time zone,
-    "essai" boolean DEFAULT false NOT NULL
+    "essai" boolean DEFAULT false NOT NULL,
+    "banc_telegram_id" "text"
 );
 
 
@@ -894,6 +895,10 @@ COMMENT ON COLUMN "public"."boutiques"."pause_jusqua" IS 'Fermeture exceptionnel
 
 
 COMMENT ON COLUMN "public"."boutiques"."essai" IS 'Boutique de test : ses commandes ne declenchent pas le dispatch livreurs. Faux par defaut — une vraie boutique ne devient jamais un banc d essai par accident.';
+
+
+
+COMMENT ON COLUMN "public"."boutiques"."banc_telegram_id" IS 'Salon Telegram vers lequel TOUT message de cette boutique est detourne, canal et destinataire reels en prefixe. Renseigne uniquement sur les boutiques de banc : NULL sur toute boutique reelle. Voir envoyerMessage dans src/lib/canaux.ts.';
 
 
 
@@ -1355,6 +1360,26 @@ CREATE INDEX "commandes_stock_a_decompter_idx" ON "public"."commandes" USING "bt
 
 
 
+CREATE INDEX "commandes_veille_paniers_idx" ON "public"."commandes" USING "btree" ("created_at") WHERE ("statut" = 'panier'::"text");
+
+
+
+CREATE INDEX "commandes_veille_sans_frais_idx" ON "public"."commandes" USING "btree" ("created_at" DESC) WHERE (("statut_livraison" = 'livre'::"text") AND ("frais_livraison" IS NULL));
+
+
+
+CREATE INDEX "commandes_veille_sans_livreur_idx" ON "public"."commandes" USING "btree" ("created_at") WHERE (("statut" = 'en_attente'::"text") AND ("confirmation_statut" = 'confirmee'::"text") AND ("nom_livreur" IS NULL));
+
+
+
+CREATE INDEX "commandes_veille_sans_nom_livreur_idx" ON "public"."commandes" USING "btree" ("created_at" DESC) WHERE (("statut_livraison" = 'livre'::"text") AND ("nom_livreur" IS NULL));
+
+
+
+CREATE INDEX "commandes_veille_stock_idx" ON "public"."commandes" USING "btree" ("created_at" DESC) WHERE (("statut" = 'livree'::"text") AND ("stock_decremente_le" IS NULL));
+
+
+
 CREATE INDEX "compteurs_fenetre_purge_idx" ON "public"."compteurs_fenetre" USING "btree" ("fenetre");
 
 
@@ -1523,6 +1548,11 @@ ALTER TABLE ONLY "public"."paniers"
 
 ALTER TABLE ONLY "public"."paniers"
     ADD CONSTRAINT "paniers_commande_id_fkey" FOREIGN KEY ("commande_id") REFERENCES "public"."commandes"("id") ON DELETE SET NULL;
+
+
+
+ALTER TABLE ONLY "public"."produits"
+    ADD CONSTRAINT "produits_boutique_id_fkey" FOREIGN KEY ("boutique_id") REFERENCES "public"."boutiques"("id") ON DELETE CASCADE;
 
 
 
