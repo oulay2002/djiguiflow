@@ -52,7 +52,7 @@ export async function GET(req: Request) {
   const lectureFiche = Promise.resolve(
     sb
       .from('boutiques')
-      .select('wasender_secret_id, telegram_secret_id, groupe_livreurs')
+      .select('wasender_secret_id, telegram_secret_id, groupe_livreurs, horaires')
       .eq('id', m.boutiqueId)
       .maybeSingle(),
   );
@@ -198,6 +198,10 @@ export async function GET(req: Request) {
       groupeLivreurs: Boolean(String(fiche?.groupe_livreurs ?? '').trim()),
       // Sans article disponible, la vitrine est vide.
       catalogue: (nbProduits ?? 0) > 0,
+      // NULL veut dire « ouverte a toute heure » -- un choix assume cote
+      // serveur, mais que rien n annoncait au marchand. Il ne le decouvrait
+      // qu en recevant une commande en pleine nuit.
+      horaires: fiche?.horaires !== null && fiche?.horaires !== undefined,
     };
   } catch (e) {
     // Un diagnostic illisible ne doit pas priver le marchand de ses chiffres.

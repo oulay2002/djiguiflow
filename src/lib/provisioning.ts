@@ -23,15 +23,13 @@ export const ENTETES_MENU = [
   'id', 'nom', 'categorie', 'prix', 'description', 'disponible', 'image',
 ];
 
-/** Transforme « ROSE MonDE » en « rosemonde ». */
-export function genererSlug(nom: string): string {
-  return nom
-    .normalize('NFD')
-    .replace(/\p{Diacritic}/gu, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-}
+// La fonction vit desormais dans `@/lib/slug` : c'est une fonction de chaine,
+// et ce module-ci tire `google-auth-library`, ce qui interdit de l'importer
+// depuis un composant client. Reexportee pour ne rien casser chez ses appelants.
+export { genererSlug } from '@/lib/slug';
+// Reexporter ne met pas le symbole dans la portee de CE module, qui s'en sert
+// plus bas. Les deux lignes sont donc necessaires.
+import { genererSlug } from '@/lib/slug';
 
 /** « rosemonde » -> « Rosemonde », pour composer un nom d'onglet lisible. */
 function capitaliser(slug: string): string {

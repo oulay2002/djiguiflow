@@ -13,6 +13,7 @@ import { LienRetour, classesBouton } from '@/components/ui/Bouton';
 import { supabase, utilisateurCourant } from '@/lib/supabase';
 import { BUCKET_IMAGES, dossierMarchand, nomFichierSain } from '@/lib/storage';
 import { useBoutique } from '@/lib/boutique';
+import { genererSlug } from '@/lib/slug';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { 
@@ -229,9 +230,27 @@ export default function MaBoutiquePage() {
 
       error = updateError;
     } else {
+      /**
+       * LE SLUG N ETAIT PAS ECRIT, ET RIEN NE LE POSAIT.
+       *
+       * La colonne est nullable et aucun declencheur ne la remplit. Une
+       * deuxieme enseigne creee ici naissait donc sans slug -- et devenait
+       * INVISIBLE PARTOUT : `listerMarchands` ecarte les boutiques sans slug,
+       * elle n apparaissait ni dans la vitrine ni dans le selecteur, et
+       * `/api/onboarding` refusait son jeton Telegram en 409 « Boutique sans
+       * slug ». Le marchand lisait « sauvegardee ! » et elle n existait nulle
+       * part.
+       *
+       * Le suffixe garantit l unicite sans aller-retour : deux enseignes
+       * peuvent legitimement porter le meme nom, et une contrainte violee
+       * ferait echouer la creation au lieu de la nommer.
+       */
+      const base = genererSlug(formData.nom) || 'boutique';
+      const slug = `${base}-${Math.random().toString(36).slice(2, 7)}`;
+
       const { data: creee, error: insertError } = await supabase
         .from('boutiques')
-        .insert({ user_id: userId, ...champs })
+        .insert({ user_id: userId, slug, ...champs })
         .select('id')
         .single();
 
