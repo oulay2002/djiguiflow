@@ -41,8 +41,15 @@ type TonMessage = 'ok' | 'erreur' | 'attente';
 /** Ce que rend /api/dashboard/boutique/diagnostic. */
 type Controle = {
   cle: string;
-  /** L'etape de /aide/brancher a reprendre. 0 quand le controle n'en depend d'aucune. */
+  /** L'etape de CETTE page a reprendre, celle que cite le message. */
   etape: number;
+  /**
+   * Le rang correspondant dans `/aide/brancher`, qui n'est PAS le meme nombre :
+   * cette page compte cinq etapes, le guide en compte huit. Passer l'un pour
+   * l'autre envoyait « Voir l'etape 4 » -- le groupe des livreurs -- sur
+   * « Connectez vos messageries ».
+   */
+  guide?: number;
   etat: 'ok' | 'echec' | 'avertissement';
   message: string;
 };
@@ -607,16 +614,20 @@ export default function OnboardingPage() {
                           {/* Le renvoi fait ce que le texte promet : il mene a
                               l'etape en cause, dans le guide, plutot que de
                               laisser le marchand la chercher. */}
-                          {c.etat === 'echec' && c.etape > 0 && (
+                          {c.etat === 'echec' && (c.guide ?? 0) > 0 && (
                             <>
                               {' '}
                               <a
-                                href={`/aide/brancher#etape-${c.etape}`}
+                                href={`/aide/brancher#etape-${c.guide}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="font-semibold text-nuit-700 underline decoration-nuit-200 underline-offset-4 transition-[text-decoration-color] duration-150 hover:decoration-nuit-700"
                               >
-                                Voir l’étape&nbsp;{c.etape}
+                                {/* Plus de numero dans le libelle : celui du
+                                    message designe /onboarding, celui du lien
+                                    designe le guide, et les afficher tous les
+                                    deux ne ferait qu embrouiller. */}
+                                Voir dans le guide
                               </a>
                             </>
                           )}

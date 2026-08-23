@@ -25,7 +25,13 @@ type Stats = {
   /** Commandes WhatsApp dont le client n'a jamais confirme la reception. */
   confirmationsAttendues?: { nombre: number; valeur: number };
   /** Ce qui manque pour que la boutique puisse reellement servir un client. */
-  configuration?: { canalClient: boolean; groupeLivreurs: boolean; catalogue: boolean } | null;
+  configuration?: {
+    canalClient: boolean;
+    groupeLivreurs: boolean;
+    catalogue: boolean;
+    /** Faux = aucun horaire declare, donc ouverte nuit comprise. */
+    horaires: boolean;
+  } | null;
 };
 
 const canalMeta: Record<string, { label: string; icon: ComponentType<{ className?: string }> }> = {
@@ -38,6 +44,8 @@ export default function Page() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [s, setS] = useState<Stats | null>(null);
+  /** La lecture des statistiques a-t-elle echoue ? Distinct de « pas encore de boutique ». */
+  const [panne, setPanne] = useState(false);
   const { boutiqueId, boutiques, pret } = useBoutique();
   const nomBoutique = boutiques.find(b => b.id === boutiqueId)?.nom ?? 'DjiguiFlow';
 
@@ -54,7 +62,18 @@ export default function Page() {
         if (!r.ok) throw new Error(d?.error || `HTTP ${r.status}`);
         if (isMounted) setS(d);
       } catch (e) {
+        /**
+         * UN TABLEAU DE BORD VIDE N EST PAS UN TABLEAU DE BORD A ZERO.
+         *
+         * `s` restait `null` : KPIs vides, courbe plate, « 0 F au total » -- et
+         * AUCUN message. Pire, le bandeau rouge « votre boutique ne peut pas
+         * encore servir une commande » est calcule sur `s.configuration` :
+         * il s eteignait precisement quand le diagnostic devenait illisible.
+         *
+         * L absence de boutique, elle, reste couverte par `SansBoutique`.
+         */
         console.error('Chargement des statistiques :', e);
+        if (isMounted) setPanne(true);
       }
       if (isMounted) setLoading(false);
     })();
@@ -106,6 +125,14 @@ export default function Page() {
           titre: 'Aucun article en vente',
           detail: 'Votre vitrine est visible mais vide.',
         },
+        // UN HORAIRE ABSENT VEUT DIRE « OUVERT 24 H SUR 24 ». C est un choix
+        // assume cote serveur, mais rien ne le disait au marchand : ni le
+        // diagnostic, ni cette liste. Il ne l apprenait qu en recevant une
+        // commande a 3 h du matin.
+        !s.configuration.horaires && {
+          titre: 'Aucun horaire déclaré',
+          detail: 'Votre boutique accepte des commandes à toute heure, nuit comprise.',
+        },
       ].filter(Boolean as unknown as (v: unknown) => v is { titre: string; detail: string })
     : [];
 
@@ -118,6 +145,20 @@ export default function Page() {
 
   return (
     <div className="min-h-screen bg-[var(--background)] p-4 lg:p-6">
+      {/* Sans ce bandeau, une lecture en echec donnait un tableau de bord a zero
+          -- indiscernable d une journee sans vente -- et faisait DISPARAITRE
+          l alerte de configuration, qui se calcule sur les memes donnees. */}
+      {panne && (
+        <div role="alert" className="mb-4 border border-bissap-300 bg-bissap-50 px-4 py-3">
+          <p className="text-sm font-bold text-nuit-900">
+            Vos chiffres n’ont pas pu être chargés.
+          </p>
+          <p className="mt-1 text-sm text-chaux-600">
+            Ce que vous voyez ci-dessous est incomplet — ce ne sont pas vos vrais
+            résultats. Rafraîchissez la page dans un instant.
+          </p>
+        </div>
+      )}
       <div className="mx-auto max-w-[1600px]">
         <main id="contenu" className="min-w-0 space-y-6">
           <header className="flex flex-col gap-4 border border-[var(--hairline)] bg-white p-5 soft-shadow md:flex-row md:items-center md:justify-between">
@@ -317,6 +358,13 @@ export default function Page() {
               <div className=" border border-[var(--hairline)] bg-white p-6 soft-shadow">
                 <h3 className="text-xl font-black">Canaux de vente</h3>
                 <div className="mt-4 space-y-4">
+                  {/* Le reste de la page gere tres bien le vide ; ces deux
+                      cadres rendaient un titre et une boite blanche. */}
+                  {s && Object.keys(s.parCanal).length === 0 && (
+                    <p className="text-sm text-chaux-600">
+                      Vos canaux apparaîtront ici après votre première commande.
+                    </p>
+                  )}
                   {s && Object.entries(s.parCanal).map(([canal, nb]) => {
                     const m = canalMeta[canal] || { label: canal, icon: Globe2 };
                     const Icon = m.icon;
@@ -342,6 +390,11 @@ export default function Page() {
                   <h3 className="text-xl font-black">Top produits</h3>
                 </div>
                 <div className="mt-4 space-y-3">
+                  {s && s.topPlats.length === 0 && (
+                    <p className="text-sm text-chaux-600">
+                      Vos meilleures ventes apparaîtront ici dès les premières commandes.
+                    </p>
+                  )}
                   {s?.topPlats.slice(0, 4).map(([nom, q], i) => (
                     <div key={nom} className="flex items-center justify-between bg-chaux-50 p-3">
                       <span className="flex items-center gap-3">

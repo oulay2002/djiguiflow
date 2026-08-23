@@ -40,6 +40,7 @@ export default function NotificationsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [erreur, setErreur] = useState('');
   const [boutiqueId, setBoutiqueId] = useState<string>('');
   const [settings, setSettings] = useState<NotificationSettings>({
     whatsapp_numero: '',
@@ -96,15 +97,35 @@ export default function NotificationsPage() {
     setSaving(true);
     setSuccess(false);
 
+    /**
+     * `onConflict` SUR LA VRAIE CONTRAINTE.
+     *
+     * Sans lui, l'upsert vise la cle primaire `id` -- absente de la charge --
+     * et tente donc un INSERT, qui se heurte a
+     * `notification_settings_boutique_id_key`. Or la ligne existe TOUJOURS :
+     * elle est creee au provisionnement de la boutique.
+     *
+     * L'ecriture echouait donc a chaque fois, et il n'y avait AUCUNE branche
+     * d'erreur : ni succes ni message, le bouton redevenait simplement
+     * « Sauvegarder ». Le marchand cliquait, recliquait, et croyait
+     * l'application morte.
+     */
     const { error } = await supabase
       .from('notification_settings')
-      .upsert({
-        boutique_id: boutiqueId,
-        ...settings,
-        updated_at: new Date().toISOString(),
-      });
+      .upsert(
+        {
+          boutique_id: boutiqueId,
+          ...settings,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'boutique_id' },
+      );
 
-    if (!error) {
+    if (error) {
+      console.error('Notifications — enregistrement impossible :', error.message);
+      setErreur('Vos préférences n’ont pas pu être enregistrées. Réessayez.');
+    } else {
+      setErreur('');
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
     }
@@ -219,7 +240,7 @@ export default function NotificationsPage() {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-nuit-700 mb-2">
-                  Chat ID Telegram
+                  Votre identifiant Telegram
                 </label>
                 <input
                   type="text"
@@ -229,7 +250,7 @@ export default function NotificationsPage() {
                   className="w-full px-4 py-3 border border-chaux-200 focus:ring-2 focus:ring-nuit-200"
                 />
                 <p className="text-xs text-chaux-600 mt-1">
-                  Obtenez votre Chat ID via @userinfobot sur Telegram
+                  Écrivez « ID » à votre propre bot Telegram : il vous répondra votre identifiant.
                 </p>
               </div>
             </div>
@@ -293,6 +314,13 @@ export default function NotificationsPage() {
               <CheckCircle className="w-5 h-5" />
               <span className="font-medium">Paramètres sauvegardés !</span>
             </div>
+          )}
+          {/* Un echec doit se voir. Il ne se voyait pas : ni succes ni message,
+              le bouton redevenait « Sauvegarder » et le marchand recliquait. */}
+          {erreur && (
+            <p role="alert" className="text-sm font-medium text-bissap-700">
+              {erreur}
+            </p>
           )}
           <button
             onClick={saveSettings}
