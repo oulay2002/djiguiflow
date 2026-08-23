@@ -983,15 +983,19 @@ export type Database = {
       vitrine_boutiques: {
         Args: never
         Returns: {
+          apercus: string[]
           articles: number
           avis: number
           categorie: string
           description: string
+          horaires: Json
           id: string
           logo_url: string
           nom: string
           note_moyenne: number
           palier_livraisons: number
+          pause_jusqua: string
+          prix_min: number
           slug: string
           zone: string
         }[]
