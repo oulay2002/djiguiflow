@@ -285,7 +285,7 @@ export default function Page() {
                 ['livree', 'Livrées', cmds.filter(c => /livr/i.test(c.statut_livraison) || c.heure_livraison).length],
               ].map(([k, l, n]) => (
                 <button key={k} onClick={() => setFiltre(String(k))}
-                  className={` px-4 py-2 text-sm font-semibold transition ${
+                  className={` min-h-11 px-4 py-2 text-sm font-semibold transition ${
                     filtre === k ? 'bg-nuit-900 text-chaux-50' : 'bg-chaux-100 text-nuit-700 hover:bg-chaux-200'
                   }`}>
                   {l} · {n}
@@ -388,7 +388,7 @@ export default function Page() {
                     <button
                       onClick={() => relancer(c.order_id)}
                       disabled={busy === c.order_id + 'relance'}
-                      className="flex items-center gap-2 bg-mangue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-mangue-700 disabled:opacity-50"
+                      className="flex items-center gap-2 bg-mangue-600 min-h-11 px-4 py-2 text-sm font-semibold text-white hover:bg-mangue-700 disabled:opacity-50"
                     >
                       {busy === c.order_id + 'relance' ? (
                         <RefreshCw className="h-4 w-4 animate-spin" />
@@ -401,7 +401,7 @@ export default function Page() {
 
                   {/* Refusée : verrouiller les actions de livraison */}
                   {c.confirmation_statut === 'refusee' && (
-                    <span className="flex items-center gap-2 bg-bissap-100 px-4 py-2 text-sm font-semibold text-bissap-700">
+                    <span className="flex items-center gap-2 bg-bissap-100 min-h-11 px-4 py-2 text-sm font-semibold text-bissap-700">
                       <Ban className="h-4 w-4" aria-hidden />
                       Ne pas préparer
                     </span>
@@ -410,24 +410,24 @@ export default function Page() {
                   {/* Actions classiques (uniquement si confirmée ou sans suivi) */}
                   {c.confirmation_statut !== 'refusee' && !c.nom_livreur && !/livr/i.test(c.statut_livraison) && (
                     <button onClick={() => agir(c.order_id, 'acceptee')} disabled={busy === c.order_id + 'acceptee'}
-                      className="flex items-center gap-2 bg-nuit-600 px-4 py-2 text-sm font-semibold text-white hover:bg-nuit-700 disabled:opacity-50">
+                      className="flex items-center gap-2 bg-nuit-600 min-h-11 px-4 py-2 text-sm font-semibold text-white hover:bg-nuit-700 disabled:opacity-50">
                       <Handshake className="h-4 w-4" />Accepter
                     </button>
                   )}
                   {c.confirmation_statut !== 'refusee' && c.nom_livreur && !/route|part|cours|livr/i.test(c.statut_livraison) && (
                     <button onClick={() => agir(c.order_id, 'route')} disabled={busy === c.order_id + 'route'}
-                      className="flex items-center gap-2 bg-nuit-600 px-4 py-2 text-sm font-semibold text-white hover:bg-nuit-700 disabled:opacity-50">
+                      className="flex items-center gap-2 bg-nuit-600 min-h-11 px-4 py-2 text-sm font-semibold text-white hover:bg-nuit-700 disabled:opacity-50">
                       <Bike className="h-4 w-4" />En route
                     </button>
                   )}
                   {c.confirmation_statut !== 'refusee' && !/livr/i.test(c.statut_livraison) && (
                     <button onClick={() => agir(c.order_id, 'livree')} disabled={busy === c.order_id + 'livree'}
-                      className="flex items-center gap-2 bg-accent-600 px-4 py-2 text-sm font-semibold text-white hover:bg-accent-700 disabled:opacity-50">
+                      className="flex items-center gap-2 bg-accent-600 min-h-11 px-4 py-2 text-sm font-semibold text-white hover:bg-accent-700 disabled:opacity-50">
                       <Check className="h-4 w-4" />Livrée
                     </button>
                   )}
                   {/livr/i.test(c.statut_livraison) && (
-                    <span className="flex items-center gap-2 bg-accent-100 px-4 py-2 text-sm font-semibold text-accent-700">
+                    <span className="flex items-center gap-2 bg-accent-100 min-h-11 px-4 py-2 text-sm font-semibold text-accent-700">
                       <CheckCircle2 className="h-4 w-4" />Cycle terminé
                     </span>
                   )}

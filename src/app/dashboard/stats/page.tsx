@@ -75,11 +75,11 @@ export default function Page() {
               <div className="flex flex-wrap items-center gap-2">
                 <Link
                   href="/dashboard/analytics"
-                  className="flex items-center gap-2 border border-white/25 px-4 py-2 text-sm font-semibold transition hover:bg-white/15"
+                  className="flex items-center gap-2 border border-white/25 min-h-11 px-4 py-2 text-sm font-semibold transition hover:bg-white/15"
                 >
                   Détail par période
                 </Link>
-                <button onClick={charger} className="flex items-center gap-2 bg-white/15 px-4 py-2 text-sm font-semibold hover:bg-white/25">
+                <button onClick={charger} className="flex items-center gap-2 bg-white/15 min-h-11 px-4 py-2 text-sm font-semibold hover:bg-white/25">
                   <RefreshCw className="h-4 w-4" /> Actualiser
                 </button>
               </div>

@@ -13,6 +13,7 @@ import { LienRetour, classesBouton } from '@/components/ui/Bouton';
 import { supabase, utilisateurCourant } from '@/lib/supabase';
 import { BUCKET_IMAGES, dossierMarchand, nomFichierSain } from '@/lib/storage';
 import { useBoutique } from '@/lib/boutique';
+import { genererSlug } from '@/lib/slug';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { 
@@ -229,9 +230,27 @@ export default function MaBoutiquePage() {
 
       error = updateError;
     } else {
+      /**
+       * LE SLUG N ETAIT PAS ECRIT, ET RIEN NE LE POSAIT.
+       *
+       * La colonne est nullable et aucun declencheur ne la remplit. Une
+       * deuxieme enseigne creee ici naissait donc sans slug -- et devenait
+       * INVISIBLE PARTOUT : `listerMarchands` ecarte les boutiques sans slug,
+       * elle n apparaissait ni dans la vitrine ni dans le selecteur, et
+       * `/api/onboarding` refusait son jeton Telegram en 409 « Boutique sans
+       * slug ». Le marchand lisait « sauvegardee ! » et elle n existait nulle
+       * part.
+       *
+       * Le suffixe garantit l unicite sans aller-retour : deux enseignes
+       * peuvent legitimement porter le meme nom, et une contrainte violee
+       * ferait echouer la creation au lieu de la nommer.
+       */
+      const base = genererSlug(formData.nom) || 'boutique';
+      const slug = `${base}-${Math.random().toString(36).slice(2, 7)}`;
+
       const { data: creee, error: insertError } = await supabase
         .from('boutiques')
-        .insert({ user_id: userId, ...champs })
+        .insert({ user_id: userId, slug, ...champs })
         .select('id')
         .single();
 
@@ -449,7 +468,7 @@ export default function MaBoutiquePage() {
                     const c = horaires[jour] ?? null;
                     return (
                       <div key={jour} className="flex flex-wrap items-center gap-3 bg-chaux-50 px-3 py-2">
-                        <label className="flex w-40 items-center gap-2 text-sm font-semibold text-nuit-800">
+                        <label className="flex w-full items-center gap-2 text-sm font-semibold text-nuit-800 sm:w-40">
                           <input
                             type="checkbox"
                             checked={c !== null}
@@ -462,7 +481,7 @@ export default function MaBoutiquePage() {
                         </label>
 
                         {c ? (
-                          <div className="flex items-center gap-2 text-sm">
+                          <div className="flex flex-wrap items-center gap-2 text-sm">
                             <input
                               type="time"
                               value={c.ouvre}

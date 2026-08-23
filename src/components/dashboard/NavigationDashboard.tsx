@@ -29,6 +29,11 @@ type Entree = {
  */
 export const ENTREES_NAV: Entree[] = [
   { label: "Vue d'ensemble", court: 'Accueil', href: '/dashboard', icon: Gauge },
+  // LE JOUR 1, C EST LA SEULE CHOSE A FAIRE -- et c etait la ONZIEME entree,
+  // donc hors de la barre du bas, dans le tiroir « Plus ». Le bandeau rouge du
+  // tableau de bord y menait, mais il s eteint des que les trois conditions
+  // sont remplies : avant les livreurs, avant les horaires.
+  { label: 'Branchement', court: 'Brancher', href: '/onboarding', icon: Rocket },
   { label: 'Commandes', court: 'Commandes', href: '/dashboard/commandes', icon: ShoppingCart },
   { label: 'Produits', court: 'Produits', href: '/dashboard/products', icon: Package2 },
   { label: 'Clients', court: 'Clients', href: '/dashboard/customers', icon: Users },
@@ -38,7 +43,6 @@ export const ENTREES_NAV: Entree[] = [
   { label: 'Paiements', href: '/dashboard/paiements', icon: CreditCard },
   { label: 'Notifications', href: '/dashboard/reglages/notifications', icon: Bell },
   { label: 'Réglages', href: '/dashboard/reglages', icon: Settings },
-  { label: 'Branchement', href: '/onboarding', icon: Rocket },
 ];
 
 /** Les quatre que le marchand ouvre plusieurs fois par jour. */
@@ -162,7 +166,7 @@ function Tiroir({ actif, ouvert, fermer }: { actif: string | null; ouvert: boole
         role="dialog"
         aria-modal="true"
         aria-label="Menu de navigation"
-        className="absolute inset-x-0 bottom-0 max-h-[85vh] overflow-y-auto-[2rem] border-t border-[var(--hairline)] bg-white p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] soft-shadow"
+        className="absolute inset-x-0 bottom-0 max-h-[85vh] overflow-y-auto rounded-t-[2rem] border-t border-[var(--hairline)] bg-white p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] soft-shadow"
       >
         <div className="mx-auto mb-5 h-1.5 w-12 bg-chaux-200" />
 

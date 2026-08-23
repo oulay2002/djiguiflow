@@ -199,6 +199,8 @@ export default function Page() {
   const { id } = useParams();
   const slug = String(id);
   const commandeRef = useRef<HTMLDivElement>(null);
+  /** Le haut de la page, ou s affichent « REÇUE » et « REFUSÉE ». */
+  const verdictRef = useRef<HTMLDivElement>(null);
 
   // Résolu côté serveur via /api/boutiques/[id] : le registre Marchands
   // vit dans Supabase et ne doit jamais être lu depuis le navigateur.
@@ -243,6 +245,23 @@ export default function Page() {
   // parce qu'elle se devine.
   const [jetonSuivi, setJetonSuivi] = useState('');
   const [echec, setEchec] = useState('');
+  /**
+   * La voie WhatsApp a-t-elle ete empruntee ?
+   *
+   * Elle n ouvre qu un onglet : aucune commande n est enregistree chez nous, il
+   * n y a donc ni reference ni suivi a montrer. Mais ne RIEN afficher laissait
+   * le client revenir sur la page et se demander si son message etait parti.
+   */
+  const [envoiWhatsapp, setEnvoiWhatsapp] = useState(false);
+  /**
+   * Pourquoi la page est vide, quand elle l est.
+   *
+   * TROIS SITUATIONS SE RESSEMBLAIENT A L ECRAN. Un lien WhatsApp perime, une
+   * panne reseau et un catalogue reellement vide donnaient tous « Les articles
+   * arrivent — ce commercant n a pas encore publie d article ». Le client
+   * repartait en pensant que le commercant est mauvais.
+   */
+  const [pannePage, setPannePage] = useState<'' | 'introuvable' | 'reseau'>('');
   const [telBoutique, setTelBoutique] = useState('');
 
   useEffect(() => {
@@ -288,7 +307,16 @@ export default function Page() {
           appelerVitrine<ProduitRow>('vitrine_produits', slug),
         ]);
         const b = fiche[0];
-        if (annule || !b) return;
+        if (annule) return;
+        if (!b) {
+          // `appelerVitrine` rend `[]` aussi bien pour « aucune ligne » que
+          // pour une erreur qu il a journalisee. On ne peut donc pas trancher
+          // ici entre les deux -- mais on peut au moins cesser de faire passer
+          // les deux pour un catalogue vide.
+          setPannePage('introuvable');
+          return;
+        }
+        setPannePage('');
 
         setHeader({
           nom: b.nom ?? 'Boutique',
@@ -316,8 +344,11 @@ export default function Page() {
           duJour: Boolean(p.menu_du_jour),
         })));
       } catch (e) {
-        // Règle d'or : ne jamais casser l'écran client.
+        // Règle d'or : ne jamais casser l'écran client — mais ne plus se taire
+        // non plus : un ecran vide sans explication se lit comme une boutique
+        // qui ne vend rien.
         console.error('Chargement boutique', slug, e);
+        if (!annule) setPannePage('reseau');
       } finally {
         if (!annule) setChargement(false);
       }
@@ -421,6 +452,7 @@ export default function Page() {
       // Une nouvelle tentative efface le verdict de la precedente : sans cela,
       // un refus resterait affiche sous une commande qui vient de passer.
       setEchec('');
+      setEnvoiWhatsapp(false);
       try {
         const res = await fetch(`/api/boutiques/${slug}/commander`, {
           method: 'POST',
@@ -435,6 +467,16 @@ export default function Page() {
           setConfirmation(d.order_id);
           setJetonSuivi(String(d.jeton_suivi ?? ''));
           setPanier({}); setNom(''); setTel(''); setAdresse(''); setInstructions('');
+          /**
+           * LE CLIENT DOIT VOIR LE VERDICT.
+           *
+           * Les deux bandeaux sont en haut de la page, le bouton tout en bas.
+           * Sur telephone, apres le clic : le panier se vide, le ticket
+           * redevient « Ajoutez un article », la barre du bas disparait -- et
+           * rien ne defile. Le client voyait son formulaire s effacer SANS
+           * verdict, ce que le commentaire du bandeau voulait justement eviter.
+           */
+          verdictRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         } else {
           // Il n'y avait pas de `else` : quand l'API refusait, la page ne
           // disait RIEN. Le bouton se reactivait, et le client repartait sans
@@ -443,19 +485,47 @@ export default function Page() {
           setEchec(
             typeof d.error === 'string' && d.error
               ? d.error
-              : 'Commande non enregistree, merci de reessayer.',
+              : 'Commande non enregistrée, merci de réessayer.',
           );
         }
       } catch {
         // Reseau coupe ou reponse illisible : meme regle, on ne se tait pas.
-        setEchec('Commande non envoyee, verifiez votre connexion et reessayez.');
-      } finally { setEnvoi(false); }
+        setEchec('Commande non envoyée, vérifiez votre connexion et réessayez.');
+      } finally {
+        setEnvoi(false);
+        // Un echec doit se voir autant qu un succes : meme raison qu au-dessus.
+        verdictRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
     } else {
       const lignesTexte = lignes.map(l => `- ${l.q}x ${l.prod.nom} (${fcfa(l.q * l.prod.prix)} FCFA)`).join('\n');
       const msg = `Bonjour ${header.nom}, je souhaite commander :\n${lignesTexte}\nTotal : ${fcfa(total)} FCFA\nNom : ${nom}\nAdresse : ${adresse}${instructions ? `\nInstructions : ${instructions}` : ''}`;
       const digits = telBoutique.replace(/\D/g, '');
+
+      /**
+       * SANS NUMERO, ON N OUVRE RIEN.
+       *
+       * `telephone` est nullable en base et arrive ici en `?? ''` : `digits`
+       * pouvait etre vide, et la ligne construisait `wa.me/225`. WhatsApp
+       * repondait « numero invalide » et le client croyait la boutique fermee.
+       */
+      if (!digits) {
+        setEchec(
+          'Cette boutique n’a pas encore de numéro WhatsApp. Réessayez plus tard.',
+        );
+        verdictRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        return;
+      }
+
       const full = digits.startsWith('225') ? digits : `225${digits}`;
       window.open(`https://wa.me/${full}?text=${encodeURIComponent(msg)}`, '_blank');
+
+      // On ouvrait WhatsApp et plus rien : pas d etat, pas de reference, panier
+      // et champs conserves. Le client revenait sur l onglet sans savoir si son
+      // message etait parti.
+      setEchec('');
+      setConfirmation('');
+      setEnvoiWhatsapp(true);
+      verdictRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   };
 
@@ -568,7 +638,7 @@ export default function Page() {
                     <button
                       onClick={() => retirer(p.id)}
                       aria-label={`Retirer un ${p.nom}`}
-                      className="flex h-9 w-9 items-center justify-center text-nuit-700 transition hover:bg-chaux-100"
+                      className="flex h-11 w-11 items-center justify-center text-nuit-700 transition hover:bg-chaux-100"
                     >
                       <Minus className="h-4 w-4" />
                     </button>
@@ -579,7 +649,7 @@ export default function Page() {
                       onClick={() => ajouter(p.id)}
                       disabled={typeof p.stock === 'number' && panier[p.id] >= p.stock}
                       aria-label={`Ajouter un ${p.nom}`}
-                      className="flex h-9 w-9 items-center justify-center bg-bissap-500 text-white transition hover:bg-bissap-600 disabled:cursor-not-allowed disabled:bg-chaux-300"
+                      className="flex h-11 w-11 items-center justify-center bg-bissap-500 text-white transition hover:bg-bissap-600 disabled:cursor-not-allowed disabled:bg-chaux-300"
                     >
                       <Plus className="h-4 w-4" />
                     </button>
@@ -596,7 +666,7 @@ export default function Page() {
                 ) : (
                   <button
                     onClick={() => ajouter(p.id)}
-                    className={classesBouton('action', 'sm', 'carree')}
+                    className={classesBouton('action', 'md', 'carree')}
                   >
                     <Plus className="h-4 w-4" /> Ajouter
                   </button>
@@ -695,11 +765,35 @@ export default function Page() {
       </header>
 
       <main id="contenu" className="mx-auto max-w-6xl px-5 py-8 sm:px-8">
+        <div ref={verdictRef} />
+
+        {/* La voie WhatsApp : ni reference ni suivi -- mais un accuse, sans
+            lequel le client ne savait pas si son message etait parti. */}
+        {envoiWhatsapp && (
+          <div
+            role="status"
+            className="mb-8 border border-accent-200 bg-accent-50 p-5"
+          >
+            <p className="text-sm text-accent-800">
+              WhatsApp s’est ouvert avec votre commande.{' '}
+              <b>Envoyez le message</b> pour que le commerçant la reçoive — tant
+              qu’il n’est pas envoyé, il ne sait rien de votre demande.
+            </p>
+          </div>
+        )}
+
         {confirmation && (
           <div className="mb-8 flex flex-wrap items-center gap-4 border border-accent-200 bg-accent-50 p-5">
             <span className="stamp font-mono text-xs font-bold text-accent-700">REÇUE</span>
             <p className="text-sm text-accent-800">
-              Commande <b className="font-mono">{confirmation}</b> transmise au commerçant.{' '}
+              Commande <b className="font-mono">{confirmation}</b> transmise au commerçant.
+              {/* CE QU IL FAUT DIRE ICI, ET QUI MANQUAIT.
+                  Un message part sur WhatsApp avec « Je confirme » / « J annule »,
+                  et la commande n est PAS lancee tant qu il n a pas repondu. Le
+                  bandeau s arretait a « transmise » : le client refermait
+                  l onglet en croyant avoir fini. */}{' '}
+              <b>Répondez au message WhatsApp qui va vous être envoyé</b> pour
+              qu’elle soit préparée.{' '}
               <Link
                 href={
                   `/suivi?ref=${encodeURIComponent(confirmation)}`
@@ -756,6 +850,23 @@ export default function Page() {
           <div className="space-y-10">
             {chargement ? (
               <p className="font-mono text-sm text-chaux-600">{mots.chargement}</p>
+            ) : pannePage ? (
+              /* TROIS SITUATIONS, TROIS TEXTES.
+                 Un lien perime, une panne reseau et un catalogue vide se
+                 ressemblaient a l ecran : le client repartait en pensant que
+                 le commercant ne vend rien. */
+              <div className="border border-dashed border-bissap-200 bg-bissap-50/40 p-10 text-center">
+                <p className="font-display text-lg font-bold text-nuit-800">
+                  {pannePage === 'introuvable'
+                    ? 'Cette boutique est introuvable'
+                    : 'Impossible de charger cette boutique'}
+                </p>
+                <p className="mt-1 text-sm text-chaux-600">
+                  {pannePage === 'introuvable'
+                    ? 'Le lien est peut-être périmé, ou la boutique n’est plus en ligne. Vérifiez le lien qu’on vous a envoyé.'
+                    : 'Vérifiez votre connexion et réessayez dans un instant.'}
+                </p>
+              </div>
             ) : visibles.length === 0 ? (
               <div className="border border-dashed border-[var(--hairline)] p-10 text-center">
                 <p className="font-display text-lg font-bold text-nuit-800">{mots.vide}</p>
@@ -838,6 +949,17 @@ export default function Page() {
                     </span>
                   </div>
 
+                  {/* CE QUE LE TOTAL NE DIT PAS.
+                      Les frais de livraison sont annonces par le LIVREUR et se
+                      reglent en plus -- l ecran de suivi le montre bien, la
+                      vitrine se taisait. Le client decouvrait le surcout a sa
+                      porte. NULL ne veut pas dire gratuit : on ne promet donc
+                      pas un montant, on annonce qu il y en aura un. */}
+                  <p className="mt-2 text-xs text-chaux-600">
+                    Les frais de livraison sont annoncés par le livreur et se règlent
+                    en plus, à la réception.
+                  </p>
+
                   <div className="mt-5 space-y-3">
                     <input
                       className="w-full border border-[var(--hairline)] bg-white px-3 py-2.5 text-sm outline-none transition focus:border-nuit-400"
@@ -897,6 +1019,22 @@ export default function Page() {
                             ? 'Envoyer la commande'
                             : 'Commander sur WhatsApp'}
                     </button>
+
+                    {/* CE QUI MANQUE, NOMME.
+                        Ce fichier s'interdit lui-meme le defaut trois cents
+                        lignes plus haut : « un bouton grise sans explication
+                        passe pour une panne ». Seul le telephone avait son
+                        message ; un client qui oubliait l'adresse voyait un
+                        bouton mort et rien d'autre. */}
+                    {ouvert && !envoi && (!nom || !telOk || !adresse) && (
+                      <p className="mt-2 text-xs text-chaux-600">
+                        Il manque&nbsp;:{' '}
+                        {[!nom && 'votre nom', !telOk && 'votre numéro', !adresse && 'votre adresse']
+                          .filter(Boolean)
+                          .join(', ')}
+                        .
+                      </p>
+                    )}
                   </div>
                 </>
               )}

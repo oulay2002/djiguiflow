@@ -156,7 +156,13 @@ export default function RegisterPage() {
           </div>
 
           <p className="mt-3 text-center text-xs text-chaux-600">
-            Vous renseignerez votre boutique juste après, dans Réglages → Boutique.
+            {/* CE QUI SE PASSE VRAIMENT. `/register` ne cree qu un COMPTE :
+                `provisionnerMarchand` est reserve aux administrateurs, et
+                l ecran « Votre compte est cree. Votre boutique, pas encore. »
+                bloque TOUT le tableau de bord -- y compris Reglages → Boutique,
+                ou cette phrase envoyait le marchand se depanner seul. */}
+            Nous ouvrons votre boutique avec vous : écrivez-nous juste après votre
+            inscription, et vous recevrez vos accès.
           </p>
 
           {/* La couture entre les deux façons d'entrer. Le mot reste : une

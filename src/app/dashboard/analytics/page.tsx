@@ -367,6 +367,10 @@ export default function AnalyticsPage() {
                 interval={0}
                 height={60}
                 tick={{ fontSize: 12 }}
+                // Recharts ne tronque pas : a 360 px, cinq noms complets se
+                // superposaient en un pate illisible sous les barres. Le nom
+                // entier reste dans l infobulle.
+                tickFormatter={(v: string) => (v.length > 12 ? `${v.slice(0, 11)}…` : v)}
               />
               <YAxis stroke="#837e70" />
               <Tooltip 

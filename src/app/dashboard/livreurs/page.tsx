@@ -17,7 +17,6 @@ import {
   Plus,
   Search,
   MoreVertical,
-  Edit3,
   Trash2,
   CheckCircle,
   XCircle,
@@ -620,13 +619,6 @@ export default function LivreursPage() {
                       }`}
                     >
                       {livreur.statut === 'disponible' ? 'Rendre indisponible' : 'Rendre disponible'}
-                    </button>
-                    <button
-                      onClick={() => {}}
-                      title="Édition bientôt disponible"
-                      className="p-2 text-nuit-600 hover:bg-nuit-50 transition"
-                    >
-                      <Edit3 className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => deleteLivreur(livreur.id)}

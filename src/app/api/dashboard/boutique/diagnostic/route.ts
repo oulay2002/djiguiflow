@@ -60,8 +60,19 @@ type CleControle =
 
 type Controle = {
   cle: CleControle;
-  /** L'etape de /aide/brancher a reprendre. 0 quand le controle n'en depend d'aucune. */
+  /**
+   * L'etape d'/onboarding a reprendre, celle que citent les messages. 0 quand
+   * le controle n'en depend d'aucune.
+   *
+   * ⚠ CE N'EST PAS LE RANG DU GUIDE, et c'est le defaut qu'on ferme ici. Ce
+   * champ etait passe tel quel a `/aide/brancher#etape-N` : /onboarding compte
+   * CINQ etapes, le guide en compte HUIT, et « Voir l'etape 4 » -- le groupe
+   * des livreurs -- ouvrait « Connectez vos messageries ». Le marchand cliquait
+   * a l unique moment ou il demande de l aide, et l outil se trompait de page.
+   */
   etape: number;
+  /** Le rang correspondant DANS LE GUIDE, pour le renvoi. 0 = pas de renvoi. */
+  guide: number;
   etat: 'ok' | 'echec' | 'avertissement';
   /** Une phrase pour le marchand, en francais, sans jargon ni nom de colonne. */
   message: string;
@@ -116,12 +127,36 @@ const PLAFOND_JOURNALIER = 20;
  */
 const MINUTES_ERREUR_TELEGRAM = 60;
 
+/**
+ * A quel rang du guide mene chaque controle.
+ *
+ * Etabli en lisant les titres des huit etapes de `/aide/brancher`, et non
+ * deduit d'un numero : le numero d'/onboarding ne veut rien dire la-bas.
+ *
+ *   1 Decrivez votre boutique        5 Recuperez votre identifiant Telegram
+ *   2 Mettez vos articles en vente   6 Creez le groupe de vos livreurs
+ *   3 Creez votre bot Telegram       7 Inscrivez vos livreurs
+ *   4 Connectez vos messageries      8 Declarez vos horaires
+ *
+ * Le numero WhatsApp se saisit a l'etape 4 du guide et NON a la 1 -- la
+ * premiere ne porte que le nom, le secteur et le logo.
+ */
+const RANG_DU_GUIDE: Record<CleControle, number> = {
+  numero: 4,
+  whatsapp: 4,
+  telegram_bot: 3,
+  telegram_gerant: 5,
+  groupe: 6,
+  webhook_whatsapp: 4,
+  catalogue: 2,
+};
+
 const controle = (
   cle: CleControle,
   etape: number,
   etat: Controle['etat'],
   message: string,
-): Controle => ({ cle, etape, etat, message });
+): Controle => ({ cle, etape, guide: RANG_DU_GUIDE[cle] ?? 0, etat, message });
 
 /** L'hote d'une URL, ou une chaine vide si elle est illisible. */
 function hote(url: unknown): string {

@@ -223,7 +223,7 @@ export default function AssistantChat() {
             initial={{ opacity: 0, y: 18, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 18, scale: 0.96 }}
-            className="w-[min(92vw,24rem)] overflow-hidden border border-white/80 bg-white soft-shadow"
+            className="flex max-h-[calc(100dvh-8rem)] w-[min(92vw,24rem)] flex-col overflow-hidden border border-white/80 bg-white soft-shadow"
           >
             <div className="flex items-center justify-between border-b border-[var(--hairline)] bg-[linear-gradient(135deg,#fff9ef_0%,#eefaf4_100%)] px-4 py-3">
               <div>
@@ -272,7 +272,7 @@ export default function AssistantChat() {
               </div>
             </div>
 
-            <div className="max-h-[50vh] space-y-3 overflow-y-auto p-4">
+            <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4">
               {messages.map((message) => (
                 <div
                   key={`floating-${message.id}`}
