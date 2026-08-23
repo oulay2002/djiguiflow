@@ -163,31 +163,34 @@ export default function NotificationsPage() {
         <ReglagePush />
 
         {/**
-         * CE QUE CET ECRAN COMMANDE VRAIMENT, DIT AU MARCHAND.
+         * CE QUE CET ECRAN COMMANDE, ET CE QU IL NE COMMANDE PAS.
          *
-         * `notification_settings` n'est lue par AUCUN envoi : ni
-         * `src/lib/canaux.ts`, ni le diagnostic, ni un workflow n8n. Les vrais
-         * canaux se reglent dans « Branchement », et c'est `boutiques`
-         * (`telegram_marchand`, `telephone`) qui decide qui recoit quoi.
+         * Les cinq interrupteurs « Types de notifications » sont HONORES depuis
+         * le 23 aout : `/api/canaux/envoyer` les lit avant tout envoi au gerant.
+         * Voir `src/lib/preferencesNotifications.ts`.
          *
-         * L ecran est CONSERVE -- decision du 23 aout 2026 -- mais il ne doit
-         * pas laisser croire qu il gouverne des envois. Un ecran qui enregistre
-         * des preferences que personne ne lit est la meme famille de defaut que
-         * les compteurs a zero de la page Livreurs : il a l air de marcher.
+         * LES DEUX INTERRUPTEURS DE CANAL, EUX, NE SONT PAS LUS -- et c'est
+         * delibere. `telegram_actif` vaut `false` par defaut en base, et une
+         * boutique reelle sur deux le portait a `false` TOUT EN ETANT prevenue
+         * sur Telegram : les honorer aurait coupe ses alertes le soir meme. Ces
+         * colonnes decrivent un etat que personne n'a jamais tenu.
          *
-         * A RETIRER LE JOUR OU CES PREFERENCES SERONT HONOREES.
+         * Le canal se regle dans « Branchement », qui est la source de verite.
+         * Tant que ces deux interrupteurs restent a l'ecran, ce bandeau doit y
+         * rester aussi.
          */}
         <div className="border border-mangue-300 bg-mangue-50 px-4 py-3">
           <p className="text-sm font-bold text-nuit-900">
-            Les notifications par push, ci-dessus, fonctionnent dès maintenant.
+            Ce que vous choisissez ici est appliqué à vos alertes.
           </p>
           <p className="mt-1 text-sm text-chaux-600">
-            Les préférences ci-dessous sont enregistrées, mais elles ne pilotent pas
-            encore les envois. Aujourd’hui, c’est{' '}
+            Une seule exception : le <b>canal</b> sur lequel vous êtes prévenu ne se
+            règle pas ici, mais dans{' '}
             <Link href="/onboarding" className="font-semibold underline underline-offset-4">
               Branchement
-            </Link>{' '}
-            qui décide sur quel canal vous êtes prévenu.
+            </Link>
+            . Les deux interrupteurs WhatsApp et Telegram ci-dessous ne le changent
+            pas encore.
           </p>
         </div>
 
