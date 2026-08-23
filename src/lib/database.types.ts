@@ -187,6 +187,7 @@ export type Database = {
           instructions: string | null
           jeton_suivi: string
           latitude: number | null
+          livreur_id: string | null
           longitude: number | null
           nom_livreur: string | null
           note_client: number | null
@@ -219,6 +220,7 @@ export type Database = {
           instructions?: string | null
           jeton_suivi?: string
           latitude?: number | null
+          livreur_id?: string | null
           longitude?: number | null
           nom_livreur?: string | null
           note_client?: number | null
@@ -251,6 +253,7 @@ export type Database = {
           instructions?: string | null
           jeton_suivi?: string
           latitude?: number | null
+          livreur_id?: string | null
           longitude?: number | null
           nom_livreur?: string | null
           note_client?: number | null
@@ -270,6 +273,13 @@ export type Database = {
             columns: ["boutique_id"]
             isOneToOne: false
             referencedRelation: "boutiques"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commandes_livreur_id_fkey"
+            columns: ["livreur_id"]
+            isOneToOne: false
+            referencedRelation: "livreurs"
             referencedColumns: ["id"]
           },
         ]
@@ -376,18 +386,15 @@ export type Database = {
           code_invitation: string | null
           created_at: string | null
           email: string | null
-          gain_total: number | null
           id: string
           latitude: number | null
           longitude: number | null
           nom: string
-          note_moyenne: number | null
           rattache_le: string | null
           statut: string | null
           taux_commission: number | null
           telegram_id: string | null
           telephone: string
-          total_livraisons: number | null
           type: string
           user_id: string | null
           vehicule_immatriculation: string | null
@@ -398,18 +405,15 @@ export type Database = {
           code_invitation?: string | null
           created_at?: string | null
           email?: string | null
-          gain_total?: number | null
           id?: string
           latitude?: number | null
           longitude?: number | null
           nom: string
-          note_moyenne?: number | null
           rattache_le?: string | null
           statut?: string | null
           taux_commission?: number | null
           telegram_id?: string | null
           telephone: string
-          total_livraisons?: number | null
           type: string
           user_id?: string | null
           vehicule_immatriculation?: string | null
@@ -420,18 +424,15 @@ export type Database = {
           code_invitation?: string | null
           created_at?: string | null
           email?: string | null
-          gain_total?: number | null
           id?: string
           latitude?: number | null
           longitude?: number | null
           nom?: string
-          note_moyenne?: number | null
           rattache_le?: string | null
           statut?: string | null
           taux_commission?: number | null
           telegram_id?: string | null
           telephone?: string
-          total_livraisons?: number | null
           type?: string
           user_id?: string | null
           vehicule_immatriculation?: string | null
@@ -657,7 +658,15 @@ export type Database = {
           stock?: number | null
           stock_initial?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "produits_boutique_id_fkey"
+            columns: ["boutique_id"]
+            isOneToOne: false
+            referencedRelation: "boutiques"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       push_subscriptions: {
         Row: {

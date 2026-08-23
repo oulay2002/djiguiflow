@@ -103,11 +103,68 @@ export async function POST(req: Request) {
     .from('commandes')
     .update(maj)
     .ilike('reference', motifExact(reference))
-    .select('id');
+    .select('id, boutique_id');
 
   if (error) {
     console.error(`Livraison — ecriture impossible (${reference}) :`, error.message);
     return NextResponse.json({ error: 'Écriture impossible' }, { status: 502 });
+  }
+
+  /**
+   * QUI a livre, et pas seulement sous quel nom.
+   *
+   * `nom_livreur` est un INSTANTANE TEXTE, et c'est le nom d'affichage Telegram
+   * — emojis compris. Il ne designe aucune fiche : jusqu'ici, rien ne reliait
+   * une livraison a l'annuaire du marchand. Consequence mesuree le 23 aout
+   * 2026 : la page « Livreurs » annoncait « 0 Livraisons » a un livreur qui en
+   * avait fait quinze.
+   *
+   * L'identifiant Telegram, lui, est stable et non usurpable — il vient de
+   * Telegram, jamais du texte du message. On le resout ICI plutot que dans
+   * n8n : la regle vaut alors pour tout appelant present ou futur, et un
+   * workflow modifie ne peut plus l'oublier. Meme raisonnement que pour
+   * `statut` et les horodatages ci-dessous.
+   *
+   * FACULTATIF, ET SANS CONSEQUENCE S'IL MANQUE. Tant que le workflow
+   * n'envoie pas le champ, cette route se comporte exactement comme avant.
+   *
+   * LA RECHERCHE EST CLOISONNEE PAR BOUTIQUE. Un identifiant Telegram est
+   * mondial : sans ce filtre, le livreur d'un marchand serait attribue aux
+   * courses d'un autre — le meme defaut que celui ferme le 20 aout sur les
+   * notifications.
+   */
+  const livreurTelegramId = String(corps.livreur_telegram_id ?? '').trim();
+  const boutiqueId = data?.[0]?.boutique_id ?? null;
+  let livreurAttribue = false;
+
+  if (livreurTelegramId && boutiqueId) {
+    const { data: fiche, error: errFiche } = await sb
+      .from('livreurs')
+      .select('id')
+      .eq('boutique_id', boutiqueId)
+      .eq('telegram_id', livreurTelegramId)
+      .maybeSingle();
+
+    // Un livreur absent de l'annuaire est un cas NORMAL : il rejoint le groupe
+    // Telegram sans jamais ouvrir son lien d'invitation. On laisse `livreur_id`
+    // a NULL — « on ne sait pas qui a livre » — plutot que d'inventer un lien.
+    if (errFiche) {
+      console.error(`Livraison — fiche livreur illisible (${reference}) :`, errFiche.message);
+    } else if (fiche) {
+      const { error: errLien } = await sb
+        .from('commandes')
+        .update({ livreur_id: fiche.id })
+        .ilike('reference', motifExact(reference));
+
+      // L'attribution est un CONFORT STATISTIQUE. Elle ne doit jamais faire
+      // echouer une livraison deja enregistree : la mise a jour principale a
+      // abouti, le client est prevenu, le reste peut attendre le prochain appel.
+      if (errLien) {
+        console.error(`Livraison — attribution impossible (${reference}) :`, errLien.message);
+      } else {
+        livreurAttribue = true;
+      }
+    }
   }
 
   /**
@@ -195,5 +252,9 @@ export async function POST(req: Request) {
     maj,
     // Vide quand l'heure existait deja : l'appel est idempotent.
     horodatages_poses: poses,
+    // Dit s'il a ete possible de rattacher cette course a une fiche de
+    // l'annuaire. `false` avec un `livreur_telegram_id` fourni veut dire que ce
+    // livreur n'est dans l'annuaire d'aucune fiche de cette boutique.
+    livreur_attribue: livreurAttribue,
   });
 }

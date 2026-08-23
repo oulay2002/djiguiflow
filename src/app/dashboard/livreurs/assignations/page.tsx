@@ -18,7 +18,6 @@ import {
   X,
   Loader2,
   Phone,
-  Star,
   AlertCircle,
 } from 'lucide-react';
 
@@ -42,7 +41,6 @@ type Livreur = {
   telephone: string;
   statut: 'disponible' | 'en_livraison' | 'indisponible';
   type: 'interne' | 'independant';
-  note_moyenne: number;
   vehicule_type?: string;
 };
 
@@ -121,7 +119,6 @@ export default function AssignationsPage() {
           telephone,
           statut,
           type,
-          note_moyenne,
           vehicule_type
         ),
         commande:commandes!inner (
@@ -427,10 +424,6 @@ export default function AssignationsPage() {
                           {livraison.livreur.type === 'interne' ? 'Interne' : 'Indépendant'}
                         </span>
                       </div>
-                      <div className="flex items-center gap-1 text-mangue-600">
-                        <Star className="w-3.5 h-3.5 fill-current" />
-                        {livraison.livreur.note_moyenne.toFixed(1)}
-                      </div>
                     </div>
                   )}
 
@@ -518,11 +511,6 @@ export default function AssignationsPage() {
                         <div>
                           <p className="font-semibold text-nuit-900">{livreur.nom}</p>
                           <div className="flex items-center gap-2 text-sm text-chaux-600">
-                            <span className="flex items-center gap-1">
-                              <Star className="w-3.5 h-3.5 text-mangue-400 fill-current" />
-                              {livreur.note_moyenne.toFixed(1)}
-                            </span>
-                            <span>•</span>
                             <span>{livreur.vehicule_type || 'Moto'}</span>
                             <span>•</span>
                             <span className={livreur.type === 'interne' ? 'text-nuit-600' : 'text-chaux-600'}>
