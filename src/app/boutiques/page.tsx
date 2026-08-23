@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { ArrowRight, MapPin, Search } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { ligneConfiance } from '@/lib/paliers';
+import { etatBoutique } from '@/lib/horaires';
 
 /**
  * La vitrine des marchands, en bons de commande.
@@ -35,6 +36,10 @@ type VitrineRow = {
   note_moyenne: number | string | null;
   avis: number | null;
   palier_livraisons: number | null;
+  apercus: string[] | null;
+  prix_min: number | string | null;
+  horaires: unknown;
+  pause_jusqua: string | null;
 };
 
 type Boutique = {
@@ -49,6 +54,12 @@ type Boutique = {
   note: number | null;
   avis: number;
   palier: number;
+  /** Jusqu'a quatre photos d'articles : la vitrine, au sens propre. */
+  apercus: string[];
+  /** Plancher de prix, `null` quand rien n'est encore chiffre. */
+  prixMin: number | null;
+  ouvert: boolean;
+  messageHoraire: string | null;
 };
 
 const TRIS = [
@@ -101,6 +112,7 @@ export default function VitrinePage() {
       setBoutiques(
         data.map((f) => {
           const moyenne = f.note_moyenne == null ? null : Number(f.note_moyenne);
+          const prix = f.prix_min == null ? null : Number(f.prix_min);
           return {
             id: f.id,
             // Une vitrine se partage : `/boutiques/zahara` se lit, se dicte au
@@ -119,6 +131,18 @@ export default function VitrinePage() {
             note: moyenne !== null && Number.isFinite(moyenne) ? moyenne : null,
             avis: f.avis ?? 0,
             palier: f.palier_livraisons ?? 0,
+            // La marchandise. Sans elle, la carte est une fiche d'annuaire :
+            // le visiteur lit un nom et une categorie, et n'a toujours aucune
+            // raison d'entrer.
+            apercus: (f.apercus ?? []).filter(u => String(u ?? '').trim()),
+            prixMin: prix !== null && Number.isFinite(prix) && prix > 0 ? prix : null,
+            // L'etat d'ouverture vient de la MEME fonction que la fiche et que
+            // le refus de commande : une carte qui annoncerait « ouvert » quand
+            // le serveur refuse serait pire que pas d'indication du tout.
+            ...(() => {
+              const etat = etatBoutique(f.horaires, new Date(), f.pause_jusqua);
+              return { ouvert: etat.ouvert, messageHoraire: etat.message };
+            })(),
           };
         }),
       );
@@ -313,6 +337,29 @@ export default function VitrinePage() {
                         </p>
                       )}
 
+                      {/* LA MARCHANDISE, ET C'EST LE POINT DE TOUTE LA CARTE.
+                          Un visiteur ne clique pas sur un nom de boutique : il
+                          clique sur quelque chose qu'il a vu. La carte disait
+                          « 5 articles » — un chiffre ne donne envie de rien.
+
+                          La bande n'apparait que s'il y a de vraies photos :
+                          des cadres vides feraient paraitre la boutique plus
+                          pauvre que le silence. */}
+                      {b.apercus.length > 0 && (
+                        <div className="mt-5 grid grid-cols-4 gap-1.5">
+                          {b.apercus.slice(0, 4).map((photo, j) => (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              key={j}
+                              src={photo}
+                              alt=""
+                              loading="lazy"
+                              className="aspect-square w-full border border-[var(--hairline)] object-cover transition duration-500 group-hover:brightness-105"
+                            />
+                          ))}
+                        </div>
+                      )}
+
                       <dl className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 font-mono text-xs uppercase tracking-[0.14em] text-chaux-600">
                         <div className="flex items-center gap-1.5">
                           <dt className="sr-only">Quartier</dt>
@@ -325,7 +372,43 @@ export default function VitrinePage() {
                             {b.produits} article{b.produits > 1 ? 's' : ''}
                           </dd>
                         </div>
+                        {/* UN REPERE DE PRIX. Sans plancher, le visiteur ne
+                            sait pas si la boutique est pour lui et n'ose pas
+                            entrer pour le decouvrir. */}
+                        {b.prixMin !== null && (
+                          <div>
+                            <dt className="sr-only">À partir de</dt>
+                            <dd className="text-nuit-900">
+                              dès {b.prixMin.toLocaleString('fr-FR')} F
+                            </dd>
+                          </div>
+                        )}
                       </dl>
+
+                      {/* OUVERT OU FERME, DES LA CARTE. On l'apprenait apres
+                          avoir clique, et c'est la boutique qu'on jugeait —
+                          pas l'heure. La regle vient de `etatBoutique`, la
+                          meme qui refuse la commande cote serveur : les deux
+                          ne peuvent pas se contredire. */}
+                      {b.messageHoraire && (
+                        <p className="mt-4">
+                          <span
+                            className={`inline-flex items-center gap-1.5 border px-2.5 py-1 font-mono text-xs uppercase tracking-[0.14em] ${
+                              b.ouvert
+                                ? 'border-accent-300 bg-accent-50 text-accent-700'
+                                : 'border-[var(--hairline)] bg-chaux-100 text-chaux-600'
+                            }`}
+                          >
+                            <span
+                              aria-hidden
+                              className={`h-1.5 w-1.5 rounded-full ${
+                                b.ouvert ? 'bg-accent-500' : 'bg-chaux-400'
+                              }`}
+                            />
+                            {b.messageHoraire}
+                          </span>
+                        </p>
+                      )}
 
                       <p className="mt-auto flex items-baseline gap-2 pt-6">
                         {b.note !== null && (
