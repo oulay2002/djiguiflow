@@ -216,9 +216,28 @@ try {
   // on perdait le compte-rendu, et un banc qui s'interrompt se lit comme un
   // banc qu'on n'a pas lance. Le delai est genereux — la prise de commande
   // ecrit trois tables et appelle deux webhooks.
+  /**
+   * LE REGISTRE DES MARCHANDS EST EN CACHE TRENTE SECONDES.
+   *
+   * Ce banc cree sa boutique puis commande dans la seconde : il court apres ce
+   * cache. Et Vercel sert plusieurs instances, chacune avec le sien — l'appel
+   * peut tomber sur une instance tiede, qui ne connait pas encore la boutique
+   * et repond « Marchand introuvable ».
+   *
+   * CONSTATE LE 23 AOUT : trois passages consecutifs, 200, puis 404, puis 200,
+   * sans qu'une ligne de code ait bouge entre eux. Un banc qui echoue au hasard
+   * ne prouve rien et finit par ne plus etre lu — exactement le sort d'une
+   * veille qu'on bruite. Et un banc qui REUSSIT au hasard est pire : il a
+   * manque de peu de faire croire qu'un reglage n8n avait casse la chaine.
+   *
+   * On reessaie donc tant que la boutique n'est pas vue, jusqu'a depasser le
+   * TTL. Ce n'est PAS masquer un defaut : la boutique vient d'etre creee, et le
+   * cache a le droit de ne pas encore la connaitre. Seul le 404 est reessaye —
+   * tout autre code s'arrete immediatement, 409 compris.
+   */
   panne = '';
-  try {
-    r = await fetch(`${BASE}/api/boutiques/${SLUG}/commander`, {
+  const commander = () =>
+    fetch(`${BASE}/api/boutiques/${SLUG}/commander`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -229,7 +248,17 @@ try {
       }),
       signal: AbortSignal.timeout(30000),
     });
-    corps = await r.json().catch(() => null);
+
+  try {
+    for (let essai = 0; essai < 9; essai++) {
+      r = await commander();
+      if (r.status !== 404) break;
+      if (essai === 0) process.stdout.write('  ...  pas encore au registre ');
+      process.stdout.write('.');
+      await new Promise((attendre) => setTimeout(attendre, 5000));
+    }
+    if (r?.status === 404) console.log();
+    corps = await r?.json().catch(() => null);
   } catch (e) {
     panne = e instanceof Error ? e.message : 'erreur reseau';
   }
