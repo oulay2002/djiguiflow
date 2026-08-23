@@ -96,10 +96,22 @@ export async function POST(req: Request) {
   // retrecissement de type ne survit pas a la traversee de l'appel.
   const commandeId = livraison.commande_id;
   if (statutCommande[statut] && commandeId) {
-    await sb
+    // Le commentaire ci-dessus dit que cette ecriture existe pour que le
+    // tableau de bord et le suivi client « ne racontent pas deux histoires
+    // differentes » — et son echec n'etait ni teste ni journalise. Une
+    // livraison passait alors a `livree` sans que la commande suive, et
+    // personne ne pouvait dire pourquoi.
+    const { error: errStatut } = await sb
       .from('commandes')
       .update({ statut: statutCommande[statut] })
       .eq('id', commandeId);
+
+    if (errStatut) {
+      console.error(
+        `Statut livraison ${commande.reference} — commande non mise a jour :`,
+        errStatut.message,
+      );
+    }
   }
 
   // ---- Prevenir le client. Un message perdu n'annule pas l'avancement, mais

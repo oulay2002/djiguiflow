@@ -79,7 +79,10 @@ export async function POST(req: Request) {
   const lignes = enAttente ?? [];
   const resultats: {
     reference: string;
-    etat: IssueEncaissement['etat'];
+    // `statut_non_enregistre` n'est pas rendu par `honorerPaiement` : il est
+    // DERIVE ici, quand l'acces a bien ete ouvert mais que la ligne de compte
+    // n'a pas suivi. Il n'existe que pour que l'alerte le voie.
+    etat: IssueEncaissement['etat'] | 'statut_non_enregistre';
     heures: number;
   }[] = [];
   let honores = 0;
@@ -94,7 +97,23 @@ export async function POST(req: Request) {
       : 0;
 
     const issue = await honorerPaiement({ reference });
-    resultats.push({ reference, etat: issue.etat, heures });
+    // `statutNonEnregistre` veut dire : l'argent est encaisse, l'acces est
+    // ouvert, mais la ligne `paiements` n'a PAS pu passer a `paye`. Le dossier
+    // reviendra a chaque passage sans jamais alerter, puisque le filtre
+    // ci-dessous ecarte les `honore`. On le compte donc comme bloque.
+    const statutPerdu = 'statutNonEnregistre' in issue && issue.statutNonEnregistre === true;
+    resultats.push({
+      reference,
+      etat: statutPerdu ? 'statut_non_enregistre' : issue.etat,
+      heures,
+    });
+
+    if (statutPerdu) {
+      console.error(
+        `Rattrapage — ${reference} encaissé et accès ouvert, mais le statut « payé »`
+        + " n'a pas pu être écrit. Le dossier restera ouvert tant qu'il n'est pas corrigé.",
+      );
+    }
 
     if (issue.etat === 'honore') {
       honores++;

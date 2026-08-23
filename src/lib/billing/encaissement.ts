@@ -1,6 +1,14 @@
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import { verifierPaiement, type ResultatVerification } from '@/lib/billing/geniuspay';
 import { prolongerAcces } from '@/lib/billing/periode';
+import type { Database } from '@/lib/database.types';
+
+/**
+ * Les colonnes de `paiements`, DERIVEES de la table plutot que reecrites : une
+ * colonne renommee en base fait alors echouer la compilation, au lieu de partir
+ * vers une colonne disparue.
+ */
+type MajPaiement = Database['public']['Tables']['paiements']['Update'];
 
 /**
  * Honorer un paiement : du verdict du prestataire a l'acces ouvert.
@@ -41,6 +49,39 @@ export function bacASableAccepte(): boolean {
   return (
     process.env.VERCEL_ENV !== 'production' && process.env.GENIUSPAY_ACCEPTE_SANDBOX === '1'
   );
+}
+
+/**
+ * Ecrit le statut d'un paiement, et DIT si l'ecriture a eu lieu.
+ *
+ * Les trois mises a jour de `honorerPaiement` ne verifiaient pas leur erreur.
+ * C'est le seul endroit de la plateforme qui tient le livre de comptes, et il
+ * est soigneusement garde partout ailleurs — controle du montant, refus du bac
+ * a sable, idempotence — sauf sur ses propres ecritures.
+ *
+ * CE QUE CA CACHAIT. Un echec sur l'ecriture « paye » laissait le paiement en
+ * `en_attente` alors que l'acces etait ouvert. Le rattrapage le reprend a
+ * chaque passage, obtient `honore`... et l'ecarte de son alerte, qui ne compte
+ * que ce qui n'est PAS honore. Le dossier restait donc ouvert indefiniment,
+ * sans une ligne de journal ni une alerte, dans la table de l'argent.
+ *
+ * Rend `true` quand la ligne a bien ete ecrite.
+ */
+async function marquer(
+  sb: ReturnType<typeof getSupabaseAdmin>,
+  reference: string,
+  champs: MajPaiement,
+): Promise<boolean> {
+  if (!sb) return false;
+  const { error } = await sb.from('paiements').update(champs).eq('reference', reference);
+  if (error) {
+    console.error(
+      `Paiement ${reference} — statut « ${champs.statut ?? '?'} » NON enregistre :`,
+      error.message,
+    );
+    return false;
+  }
+  return true;
 }
 
 export async function honorerPaiement(params: {
@@ -99,10 +140,7 @@ export async function honorerPaiement(params: {
   }
 
   if (!verdict.accepte) {
-    await sb
-      .from('paiements')
-      .update({ statut: 'echoue', operateur: verdict.operateur })
-      .eq('reference', paiement.reference);
+    await marquer(sb, paiement.reference, { statut: 'echoue', operateur: verdict.operateur });
     return { etat: 'refuse', motif: 'statut', statutBrut: verdict.statutBrut };
   }
 
@@ -110,10 +148,7 @@ export async function honorerPaiement(params: {
   // transaction de 200 FCFA ouvrirait les droits d'un plan a 25 000 : il
   // suffirait de savoir forger une reference et de payer une piece.
   if (verdict.montant !== null && verdict.montant !== paiement.montant_fcfa) {
-    await sb
-      .from('paiements')
-      .update({ statut: 'echoue', operateur: verdict.operateur })
-      .eq('reference', paiement.reference);
+    await marquer(sb, paiement.reference, { statut: 'echoue', operateur: verdict.operateur });
     return { etat: 'refuse', motif: 'montant', statutBrut: verdict.statutBrut };
   }
 
@@ -158,17 +193,23 @@ export async function honorerPaiement(params: {
     return { etat: 'acces_non_ouvert', erreur: prolongation.erreur ?? 'inconnue' };
   }
 
-  await sb
-    .from('paiements')
-    .update({
-      statut: 'paye',
-      operateur: verdict.operateur,
-      paye_le: new Date().toISOString(),
-      // Conserve la reference du prestataire meme quand elle nous arrive par la
-      // notification : sans elle, plus rien n'est verifiable a posteriori.
-      ...(jeton ? { jeton_prestataire: jeton } : {}),
-    })
-    .eq('reference', paiement.reference);
+  const statutEcrit = await marquer(sb, paiement.reference, {
+    statut: 'paye',
+    operateur: verdict.operateur,
+    paye_le: new Date().toISOString(),
+    // Conserve la reference du prestataire meme quand elle nous arrive par la
+    // notification : sans elle, plus rien n'est verifiable a posteriori.
+    ...(jeton ? { jeton_prestataire: jeton } : {}),
+  });
 
-  return { etat: 'honore', montant: verdict.montant, operateur: verdict.operateur };
+  return {
+    etat: 'honore',
+    montant: verdict.montant,
+    operateur: verdict.operateur,
+    // L'ARGENT EST ENCAISSE ET L'ACCES EST OUVERT -- mais le livre de comptes
+    // ne le dit pas. Le rattrapage reprendra ce paiement indefiniment (il reste
+    // `en_attente`) sans jamais alerter, puisqu'il ecarte les `honore`. Ce
+    // drapeau est le seul moyen pour lui de savoir qu'il doit crier.
+    ...(statutEcrit ? {} : { statutNonEnregistre: true }),
+  };
 }

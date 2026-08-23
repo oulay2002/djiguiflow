@@ -457,8 +457,29 @@ export async function POST(req: Request) {
           destinataire: telClient,
         }),
       });
-    } catch {
-      /* non bloquant : la reponse du client est deja enregistree */
+    } catch (e) {
+      /**
+       * NON BLOQUANT, MAIS PLUS MUET.
+       *
+       * La reponse du client est enregistree : ne pas le renvoyer sur une page
+       * d'erreur est le bon choix, il a fait ce qu'on lui demandait.
+       *
+       * Mais ce `catch` etait VIDE, et c'est exactement le defaut deja corrige
+       * dans `boutiques/[id]/commander/route.ts` — laisse intact ici. Il avale
+       * aussi l'echec de `secretWebhookN8n()`, qui lit le coffre Supabase.
+       *
+       * CE QUE CA CACHE : le client voit « CONFIRMÉE », `confirmation_statut`
+       * passe a `confirmee` en base, et n8n n'apprend RIEN — donc aucun livreur
+       * n'est lance. Sans cette ligne, il n'existait aucune trace de la cause.
+       *
+       * Le filet reste la veille des chaines, qui rattrape le cas sous le nom
+       * `confirmee_sans_livreur`. Un journal ne le remplace pas : il dit
+       * POURQUOI, quand la veille ne dit que QUE.
+       */
+      console.error(
+        `Confirmation ${ligne.reference} — n8n injoignable, aucun livreur ne sera lance :`,
+        e,
+      );
     }
   }
 
