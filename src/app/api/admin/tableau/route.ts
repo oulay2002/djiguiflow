@@ -128,28 +128,6 @@ export async function GET(req: Request) {
     };
   });
 
-  // ---- Les visiteurs : quelle porte ils prennent, jour par jour.
-  const { data: portes } = await sb
-    .from('compteurs_journaliers')
-    .select('cle, jour, valeur')
-    .in('cle', ['porte:acheter', 'porte:vendre'])
-    .order('jour', { ascending: false })
-    .limit(60);
-
-  const parJour = new Map<string, { acheter: number; vendre: number }>();
-  for (const p of portes ?? []) {
-    const j = String(p.jour);
-    const e = parJour.get(j) ?? { acheter: 0, vendre: 0 };
-    if (p.cle === 'porte:acheter') e.acheter = Number(p.valeur ?? 0);
-    else e.vendre = Number(p.valeur ?? 0);
-    parJour.set(j, e);
-  }
-
-  const visiteurs = [...parJour.entries()]
-    .map(([jour, v]) => ({ jour, ...v }))
-    .sort((a, b) => (a.jour < b.jour ? 1 : -1))
-    .slice(0, 30);
-
   // ---- Ce qui est casse en ce moment, tel que la veille l'a vu.
   const { data: anomalies } = await sb
     .from('anomalies_signalees')
@@ -169,7 +147,6 @@ export async function GET(req: Request) {
       vend: marchands.filter((m) => m.etat === 'vend').length,
       'en sommeil': marchands.filter((m) => m.etat === 'en sommeil').length,
     },
-    visiteurs,
     anomalies: anomalies ?? [],
     fenetres: { activiteJours: JOURS_ACTIVITE, sommeilJours: JOURS_SOMMEIL },
   });
