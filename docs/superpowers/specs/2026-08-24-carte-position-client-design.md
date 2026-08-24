@@ -250,13 +250,29 @@ d'existence du bouton : c'est la preuve que l'affichage ne prouve rien.
 1. **Les conditions générales de Geoapify, ligne à ligne.** La FAQ autorise
    l'usage commercial ; les CGU n'ont pas été lues. C'est le genre de détail
    qui se retourne mal une fois en production.
-2. **Vos quartiers sont-ils lisibles ?** Akouédo, la Riviera, Abobo — si la
-   carte ne montre ni rues ni repères, le client ne peut pas placer son épingle
-   et la fonction ne sert à rien. Quelques minutes suffisent à le voir, et cela
-   peut annuler tout le reste.
+2. ~~**Vos quartiers sont-ils lisibles ?**~~ — **VÉRIFIÉ le 24 août, et la
+   réponse est oui.** Voir ci-dessous.
 
-Ces deux points sont bloquants. Le second peut condamner la fonction entière —
-mieux vaut le découvrir avant qu'après.
+Le premier reste bloquant.
+
+### La lisibilité, mesurée sur les tuiles réelles
+
+Tuiles OpenStreetMap récupérées et regardées, aux zooms 16 et 17 :
+
+| Quartier | Ce qu'on y voit |
+|---|---|
+| **Riviera** (5.3534, -3.9584) | rues **nommées** (Rue Serge Grah, Rue Jean-Marie Adiaffi, Rue Dr Seibo Alexise Ikossié), immeubles nommés (« Immeuble Konaté »), et surtout des **numéros de rue** — 1044, 985, 279, 137, 106, 85… Un client peut y retrouver son numéro. |
+| **Akouédo** (5.3523, -3.9407) | bâtiments dessinés **un par un**, le nom du quartier, une pharmacie nommée, une mosquée, et **« Route G11 » nommée**. |
+
+**Le détail qui emporte la décision** : une adresse réelle de la base est
+`Akouedo SYNACASSCI RUE G11`. La rue que ce client a tapée à la main **est
+nommée sur la carte**. Il n'aurait pas eu à chercher.
+
+⚠ **Deux réserves honnêtes.** L'échantillon est de deux quartiers ; Abobo et
+les zones périphériques n'ont pas été regardées. Et ces tuiles sont celles du
+rendu OSM standard : Geoapify sert les mêmes **données**, mais son style peut
+afficher moins d'étiquettes. À confirmer sur une image Geoapify réelle le jour
+où la clé existe — c'est le style qui est en cause, pas la donnée.
 
 ---
 
