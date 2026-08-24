@@ -6,6 +6,7 @@ import {
 } from '@/lib/jetonSuivi';
 import { adresseAppelante, rafaleDepassee } from '@/lib/limiteur';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
+import { positionRecevable } from '@/lib/positionRecevable';
 import { secretWebhookN8n } from '@/lib/secretN8n';
 import { DELAI_WEBHOOK, delai } from '@/lib/reseau';
 
@@ -66,6 +67,9 @@ type Ligne = {
   jeton_suivi: string | null;
   created_at: string | null;
   confirmation_statut: string | null;
+  statut: string | null;
+  /** Non nulle des qu'une position a deja ete donnee : change le libelle du bouton. */
+  latitude: number | null;
   boutique_id: string;
   client_nom: string | null;
   client_telephone: string | null;
@@ -192,15 +196,19 @@ function echapper(valeur: unknown): string {
  * page, et non par une interpolation dans le script : rien de ce qui vient du
  * client ne doit devenir du code.
  */
-function blocPosition(reference: string): string {
+function blocPosition(reference: string, dejaDonnee = false): string {
+  const libelle = dejaDonnee ? 'Corriger ma position' : 'Indiquer ma position exacte';
+  const aide = dejaDonnee
+    ? 'Vous avez déjà indiqué un point. Vous pouvez le corriger si vous avez changé d’endroit.'
+    : 'Le livreur ira droit à votre porte, sans vous appeler.';
   const style =
     `background:${ENCRE.nuit};color:#fff;border:0;border-radius:0;padding:14px 20px;`
     + 'font-size:15px;font-weight:600;cursor:pointer;width:100%';
   return (
     `<div id="pos" data-ref="${echapper(reference)}" style="margin-top:24px">`
-    + `<button id="btn-pos" style="${style}">Indiquer ma position exacte</button>`
+    + `<button id="btn-pos" style="${style}">${libelle}</button>`
     + `<p style="font-size:13px;color:${ENCRE.gris};margin:10px 0 0">`
-    + 'Le livreur ira droit à votre porte, sans vous appeler.</p></div>'
+    + `${aide}</p></div>`
     + '<script>(function(){'
     + "var z=document.getElementById('pos'),b=document.getElementById('btn-pos');"
     + "function dire(t,c){z.innerHTML='<p style=\"margin:24px 0 0;font-size:14px;color:'+c+'\">'+t+'</p>';}"
@@ -318,7 +326,12 @@ async function chargerCommande(ref: string) {
   const { data } = await sb
     .from('commandes')
     .select(
-      'reference, jeton_suivi, created_at, confirmation_statut, boutique_id, client_nom,' +
+      // `statut` et `latitude` sont lus pour la page « deja repondu » : le
+      // premier decide si la position est encore recevable, le second si le
+      // client en a deja donne une — et donc si le bouton dit « indiquer » ou
+      // « corriger ».
+      'reference, jeton_suivi, created_at, confirmation_statut, statut, latitude,' +
+        ' boutique_id, client_nom,' +
         ' client_telephone, chat_id, client_adresse, total, canal,' +
         ' commande_items(nom_produit, quantite)',
     )
@@ -332,8 +345,45 @@ function dejaRepondu(ligne: Ligne): Response | null {
   if (ligne.confirmation_statut !== 'confirmee' && ligne.confirmation_statut !== 'refusee') {
     return null;
   }
-  const quoi = ligne.confirmation_statut === 'confirmee' ? 'confirmée ✅' : 'annulée ❌';
-  return reponseHtml('DÉJÀ RÉPONDU', 'attente', 'Déjà répondu', `Cette commande a déjà été ${quoi}.`);
+  const confirmee = ligne.confirmation_statut === 'confirmee';
+  const quoi = confirmee ? 'confirmée ✅' : 'annulée ❌';
+
+  /**
+   * CE QUE CETTE PAGE NE RENDAIT PAS, ET CE QUE CA COUTAIT.
+   *
+   * Elle rendait une page NUE. Le bouton de position n'existait donc que sur
+   * la reponse au clic « Je confirme » — vue une seule fois, quelques
+   * secondes. Un client qui changeait d'onglet, fermait, ou rouvrait son lien
+   * ne le revoyait JAMAIS, et n'avait aucune seconde chance.
+   *
+   * Mesure du 24 aout 2026 : ZERO position capturee sur soixante commandes,
+   * en trois semaines. Ce n'etait pas un refus des clients — c'etait une
+   * occasion qui ne revenait pas. Le lien de suivi disparaissait de la meme
+   * facon, alors que c'est probablement ce que le client venait rechercher.
+   *
+   * LE BLOC N'EST RENDU QUE SI LA ROUTE L'ACCEPTERAIT, et la regle est
+   * partagee avec elle (`positionRecevable`). Afficher un bouton que la route
+   * refuse donnerait un appui suivi de « Position non enregistree » : un
+   * bouton qui echoue apprend au client a ne plus appuyer, et coute plus que
+   * son absence.
+   *
+   * Rien de tout cela n'est propose sur une commande ANNULEE : demander sa
+   * porte a quelqu'un qui vient d'annuler n'a aucun sens — la meme regle
+   * qu'a la confirmation.
+   */
+  const extra =
+    confirmee && positionRecevable(ligne)
+      ? blocPosition(ligne.reference, ligne.latitude !== null) + blocSuivi(ligne.reference)
+      : '';
+
+  return reponseHtml(
+    'DÉJÀ RÉPONDU',
+    'attente',
+    'Déjà répondu',
+    `Cette commande a déjà été ${quoi}.`,
+    200,
+    extra,
+  );
 }
 
 function articlesDe(ligne: Ligne): string[] {

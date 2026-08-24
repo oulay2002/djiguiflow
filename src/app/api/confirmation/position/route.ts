@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import { pointValide } from '@/lib/position';
+import { positionRecevable } from '@/lib/positionRecevable';
 
 export const dynamic = 'force-dynamic';
 
@@ -26,8 +27,12 @@ export const dynamic = 'force-dynamic';
  * corrige un premier releve imprecis, doit pouvoir recommencer.
  */
 
-const FENETRE_H = 24;
-const TERMINEES = new Set(['livree', 'annulee', 'abandonnee']);
+// La fenetre et les statuts termines vivent desormais dans
+// `positionRecevable.ts` : la PAGE doit decider d'afficher le bouton avec
+// exactement la meme regle que celle-ci applique pour l'accepter. Deux copies
+// finiraient par diverger, et la page proposerait un bouton que cette route
+// refuse — le pire des cas, puisqu'un bouton qui echoue apprend au client a
+// ne plus appuyer.
 
 /** Voir `motifExact` dans la route voisine : « % » ferait correspondre la premiere commande venue. */
 function motifExact(valeur: string): string {
@@ -63,11 +68,8 @@ export async function POST(req: Request) {
   // Meme reponse pour « n'existe pas », « deja livree » et « trop ancienne » :
   // detailler renseignerait un curieux sur les references valides.
   const reference = String(ligne?.reference ?? '');
-  const trop_vieille =
-    !ligne?.created_at
-    || Date.now() - Date.parse(String(ligne.created_at)) > FENETRE_H * 3600 * 1000;
 
-  if (!ligne || !reference || TERMINEES.has(String(ligne.statut ?? '')) || trop_vieille) {
+  if (!ligne || !reference || !positionRecevable(ligne)) {
     return NextResponse.json({ ok: false, raison: 'commande non modifiable' }, { status: 404 });
   }
 
