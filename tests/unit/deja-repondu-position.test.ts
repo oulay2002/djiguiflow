@@ -133,4 +133,34 @@ describe('la page « Déjà répondu »', () => {
     const { html } = await page();
     expect(html).not.toContain('/api/confirmation/position');
   });
+
+  /**
+   * LA POSITION EXPIRE, LE SUIVI NON.
+   *
+   * Les deux avaient d'abord été liés à la même condition, par facilité. C'est
+   * faux : demander sa porte après la livraison n'a aucun sens, mais un client
+   * qui rouvre son lien veut précisément savoir où en est sa commande — et
+   * c'est encore plus vrai une fois livrée.
+   */
+  it('6. garde le lien de suivi sur une commande livrée, sans le bouton', async () => {
+    etats.commande = commande({ statut: 'livree' });
+    const { html } = await page();
+    expect(html).toContain('/suivi?ref=');
+    expect(html).not.toContain('/api/confirmation/position');
+  });
+
+  it('7. garde le lien de suivi hors de la fenêtre de 24 h', async () => {
+    etats.commande = commande({ created_at: new Date(Date.now() - 25 * HEURE).toISOString() });
+    const { html } = await page();
+    expect(html).toContain('/suivi?ref=');
+    expect(html).not.toContain('/api/confirmation/position');
+  });
+
+  it('8. ne propose toujours PAS le suivi sur une commande annulée', async () => {
+    // Une commande annulée n'a rien à suivre — et le lui proposer laisserait
+    // croire qu'elle avance encore.
+    etats.commande = commande({ confirmation_statut: 'refusee', statut: 'annulee' });
+    const { html } = await page();
+    expect(html).not.toContain('/suivi?ref=');
+  });
 });
