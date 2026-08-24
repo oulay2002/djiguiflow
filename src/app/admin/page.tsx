@@ -15,8 +15,12 @@ import { fetchDashboard } from '@/lib/apiClient';
  * l'entonnoir en tete : sa FORME dit ou l'on perd du monde, ce qu'aucun total
  * ne montre.
  *
- * Le goulot de la plateforme n'est pas le trafic mais l'offre marchande. Les
- * visiteurs viennent donc apres, et volontairement en second.
+ * Le goulot de la plateforme n'est pas le trafic mais l'offre marchande.
+ *
+ * IL A PORTE UN COMPTEUR DE VISITEURS, RETIRE AVEC LES DEUX PORTES d'accueil
+ * le 24 aout 2026. Sans la bande qui l'alimentait, le tableau serait reste a
+ * afficher un chiffre fige — pire qu'aucun chiffre, parce qu'on le lit comme
+ * s'il decrivait encore quelque chose.
  */
 
 type Marchand = {
@@ -35,7 +39,6 @@ type Marchand = {
 type Tableau = {
   marchands: Marchand[];
   entonnoir: Record<string, number>;
-  visiteurs: { jour: string; acheter: number; vendre: number }[];
   anomalies: { type: string; reference: string; signale_le: string }[];
   fenetres: { activiteJours: number; sommeilJours: number };
 };
@@ -197,39 +200,6 @@ export default function AdminPage() {
               </tbody>
             </table>
           </div>
-        </section>
-
-        {/* LES VISITEURS EN SECOND, a dessein : le goulot est l'offre
-            marchande, pas le trafic. */}
-        <section>
-          <h2 className="font-display text-sm font-bold uppercase tracking-[0.16em] text-nuit-900">
-            Par quelle porte ils entrent
-          </h2>
-          {t.visiteurs.length === 0 ? (
-            <p className="mt-3 border border-dashed border-chaux-300 p-5 text-sm text-chaux-600">
-              Aucun clic encore. Les deux portes viennent d’être posées — laissez-leur
-              quelques semaines avant d’en conclure quoi que ce soit.
-            </p>
-          ) : (
-            <table className="mt-4 w-full max-w-md border-collapse text-sm">
-              <thead>
-                <tr className="border-b border-nuit-900 text-left font-mono text-xs uppercase tracking-[0.14em] text-chaux-600">
-                  <th className="py-2 pr-4 font-normal">Jour</th>
-                  <th className="py-2 pr-4 text-right font-normal">Acheter</th>
-                  <th className="py-2 text-right font-normal">Vendre</th>
-                </tr>
-              </thead>
-              <tbody>
-                {t.visiteurs.map((v) => (
-                  <tr key={v.jour} className="border-b border-chaux-200">
-                    <td className="py-2 pr-4 font-mono text-xs">{v.jour}</td>
-                    <td className="py-2 pr-4 text-right tabular-nums">{v.acheter}</td>
-                    <td className="py-2 text-right tabular-nums">{v.vendre}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
         </section>
 
         <section>
