@@ -657,9 +657,38 @@ export default function Page() {
          * absence de choix, le defaut que cette plateforme a deja paye
          * plusieurs fois. Le bouton attend.
          */
-        const valeurs = p.attributValeurs ?? [];
-        const doitChoisir = Boolean(p.attributNom) && valeurs.length > 0;
-        const tailleChoisie = choixTaille[article.cle] ?? '';
+        /**
+         * LA CARACTERISTIQUE APPARTIENT A L'ARTICLE, PAS A UN COLORIS.
+         *
+         * Chaque coloris est une ligne de catalogue distincte, et la pointure
+         * y est saisie ligne par ligne. Un marchand qui l'a renseignee sur le
+         * rouge et pas sur le bleu voyait donc sa carte s'ouvrir sur le bleu,
+         * SANS AUCUN SELECTEUR — et « Ajouter » redevenait cliquable sans
+         * taille, exactement le probleme qu'on venait de fermer. Constate en
+         * production sur la premiere boutique qui s'en est servie.
+         *
+         * On prend donc celle du coloris affiche s'il en porte une, et a
+         * defaut celle de n'importe quel coloris de l'article. Une chaussure
+         * existe dans les memes pointures quelle que soit sa couleur ; quand
+         * ce n'est pas le cas, le marchand renseigne chaque coloris et c'est
+         * le sien qui prime.
+         */
+        const porteuse = (p.attributNom && (p.attributValeurs?.length ?? 0) > 0)
+          ? p
+          : article.variantes.find(v => v.attributNom && (v.attributValeurs?.length ?? 0) > 0);
+
+        const attributNom = porteuse?.attributNom ?? '';
+        const valeurs = porteuse?.attributValeurs ?? [];
+        const doitChoisir = Boolean(attributNom) && valeurs.length > 0;
+
+        /**
+         * ON N'HERITE PAS D'UN CHOIX QUI N'EST PLUS PROPOSE. Si le client
+         * retient le 41 sur le rouge puis passe au bleu, qui ne fait que du
+         * 38, garder « 41 » enverrait une commande dans une pointure que le
+         * marchand n'a pas. Le choix retombe a vide et le bouton redemande.
+         */
+        const retenue = choixTaille[article.cle] ?? '';
+        const tailleChoisie = valeurs.includes(retenue) ? retenue : '';
         const enAttenteDeChoix = doitChoisir && !tailleChoisie;
 
         return (
@@ -704,7 +733,7 @@ export default function Page() {
               {doitChoisir && (
                 <div className="mt-3">
                   <p className="font-mono text-xs uppercase tracking-[0.14em] text-chaux-600">
-                    {p.attributNom}
+                    {attributNom}
                   </p>
                   <div className="mt-2 flex flex-wrap gap-1.5">
                     {valeurs.map(v => {
@@ -717,7 +746,7 @@ export default function Page() {
                             setChoixTaille(c => ({ ...c, [article.cle]: actif ? '' : v }))
                           }
                           aria-pressed={actif}
-                          aria-label={`${p.attributNom} ${v}`}
+                          aria-label={`${attributNom} ${v}`}
                           className={`min-h-11 min-w-11 border px-3 text-sm font-semibold transition ${
                             actif
                               ? 'border-nuit-900 bg-nuit-900 text-chaux-50'
@@ -816,7 +845,7 @@ export default function Page() {
                      qu'il attend — un bouton grisé sans explication passe pour
                      une panne, et le client s'en va. */
                   <span className="border border-dashed border-chaux-300 px-3 py-2 text-center font-mono text-xs uppercase tracking-[0.12em] text-chaux-600">
-                    Choisissez {(p.attributNom ?? '').toLowerCase()}
+                    Choisissez votre {attributNom.toLowerCase()}
                   </span>
                 ) : p.stock === 0 ? (
                   /* Epuise : on le DIT plutot que de masquer le plat. Le client

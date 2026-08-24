@@ -25,6 +25,8 @@ type Prod = {
   attribut_nom: string;
   /** Les valeurs disponibles. Vide quand l'article n'a pas de caracteristique. */
   attribut_valeurs: string[];
+  /** Le groupe des coloris. Vide = article seul, sans declinaison. */
+  groupe: string;
 };
 
 export default function Page() {
@@ -88,6 +90,15 @@ export default function Page() {
   const [gFile, setGFile] = useState<File | null>(null);
   const [gAttrNom, setGAttrNom] = useState('');
   const [gAttrValeurs, setGAttrValeurs] = useState('');
+  /**
+   * Appliquer la caracteristique a tous les coloris de l'article.
+   *
+   * COCHEE PAR DEFAUT, parce que c'est le cas courant : une chaussure existe
+   * dans les memes pointures quelle que soit sa couleur. Le marchand qui
+   * saisissait la pointure sur le rouge pensait l'avoir donnee A LA
+   * CHAUSSURE — et sa vitrine s'ouvrait sur le bleu, sans selecteur.
+   */
+  const [gAttrGroupe, setGAttrGroupe] = useState(true);
   const [gMsg, setGMsg] = useState('');
   const [gEnvoi, setGEnvoi] = useState(false);
 
@@ -242,6 +253,7 @@ export default function Page() {
     setGFile(null);
     setGAttrNom(p.attribut_nom ?? '');
     setGAttrValeurs((p.attribut_valeurs ?? []).join(', '));
+    setGAttrGroupe(true);
     setGMsg('');
   };
 
@@ -322,6 +334,7 @@ export default function Page() {
           description: gDesc,
           attribut_nom: gAttrNom.trim(),
           attribut_valeurs: gAttrValeurs,
+          appliquer_au_groupe: Boolean(fiche.groupe) && gAttrGroupe,
           ...(image ? { image } : {}),
         }),
       });
@@ -939,6 +952,26 @@ export default function Page() {
               <p className="mt-1 text-xs text-chaux-600">
                 Videz les deux champs pour retirer cette information.
               </p>
+
+              {/* Elle n'apparait que s'il y a des coloris : proposer
+                  « tous les coloris » sur un article seul poserait une
+                  question sans objet. */}
+              {fiche.groupe && (
+                <label className="mt-2 flex items-start gap-2 text-sm text-nuit-700">
+                  <input
+                    type="checkbox"
+                    checked={gAttrGroupe}
+                    onChange={x => setGAttrGroupe(x.target.checked)}
+                    className="mt-0.5 h-4 w-4 shrink-0"
+                  />
+                  <span>
+                    Appliquer à tous les coloris de «&nbsp;{fiche.groupe}&nbsp;».
+                    <span className="block text-xs text-chaux-600">
+                      Décochez si ce coloris existe dans d’autres tailles que les autres.
+                    </span>
+                  </span>
+                </label>
+              )}
             </div>
 
             <div>
