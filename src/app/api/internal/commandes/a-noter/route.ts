@@ -1,4 +1,5 @@
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
+import { filtreAppariementChat } from '@/lib/appariementChat';
 import { resoudreMarchand } from '@/lib/marchands';
 
 export const dynamic = 'force-dynamic';
@@ -56,7 +57,10 @@ export async function POST(req: Request) {
     .from('commandes')
     .select('reference, statut_livraison, heure_livraison, note_client, created_at')
     .eq('boutique_id', marchand.boutiqueId)
-    .eq('chat_id', chatId)
+    // Egalite stricte OU cle des 8 derniers chiffres : un meme client a
+    // porte jusqu'a TROIS chat_id chez la meme boutique. Voir
+    // appariementChat.ts — la regle y vit seule, pour ne pas diverger.
+    .or(filtreAppariementChat(chatId))
     .is('note_client', null)
     .gt('created_at', depuis)
     .order('created_at', { ascending: false })

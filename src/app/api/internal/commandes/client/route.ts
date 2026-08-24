@@ -1,4 +1,5 @@
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
+import { filtreAppariementChat } from '@/lib/appariementChat';
 import { resoudreMarchand } from '@/lib/marchands';
 
 export const dynamic = 'force-dynamic';
@@ -60,7 +61,10 @@ export async function POST(req: Request) {
     // peut ecrire a deux boutiques : sans ce filtre, l'assistante de l'une
     // lirait l'historique de l'autre.
     .eq('boutique_id', marchand.boutiqueId)
-    .eq('chat_id', chatId);
+    // Egalite stricte OU cle des 8 derniers chiffres : un meme client a
+    // porte jusqu'a TROIS chat_id chez la meme boutique. Voir
+    // appariementChat.ts — la regle y vit seule, pour ne pas diverger.
+    .or(filtreAppariementChat(chatId));
 
   if (validesSeulement) {
     // « Deja validee » du temps de la feuille : tout ce qui n'est plus un
