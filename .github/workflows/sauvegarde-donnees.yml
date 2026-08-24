@@ -50,6 +50,12 @@ env:
   # le premier brouillon de ce fichier lisait `vars.TELEGRAM_ALERTE_CHAT_ID`,
   # qui n'existe pas — l'alerte d'echec ne serait JAMAIS partie.
   CHAT_DEFAUT: '-1003994906478'
+  # LE DEPOT DE SAUVEGARDE, NOMME UNE SEULE FOIS. Il sert a deux endroits qui
+  # ne s'ecrivent pas pareil — le clone en SSH, le message de confirmation en
+  # HTTPS. Deux copies du nom finiraient par diverger le jour d'un
+  # renommage, et c'est le message qui mentirait : il enverrait le lecteur
+  # vers un depot qui ne recoit plus rien, en ayant l'air de fonctionner.
+  DEPOT_SAUVEGARDES: oulay2002/djiguiflow-sauvegardes
 
 jobs:
   sauvegarder:
@@ -154,7 +160,7 @@ jobs:
           chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan -t ed25519 github.com >> ~/.ssh/known_hosts 2>/dev/null
 
-          git clone --depth 1 git@github.com:oulay2002/djiguiflow-sauvegardes.git "$RUNNER_TEMP/prive"
+          git clone --depth 1 "git@github.com:$DEPOT_SAUVEGARDES.git" "$RUNNER_TEMP/prive"
           cd "$RUNNER_TEMP/prive"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -206,6 +212,13 @@ jobs:
       # des six precedentes. C'est le defaut deja rencontre avec la sonde
       # reseau, qui affirmait l'inverifiable — et une alerte qui exagere se fait
       # ignorer exactement comme une alerte qui ment.
+      #
+      # ELLE NOMME LE DEPOT, ET C'EST TOUT L'INTERET DU MESSAGE. Une premiere
+      # redaction disait « l'historique se lit dans le depot prive » sans dire
+      # LEQUEL : le seul lecteur de cette alerte a du aller chercher le nom
+      # dans ce fichier. Un message dont la raison d'etre est d'indiquer un
+      # endroit doit porter cet endroit — c'est la meme regle que l'alerte de
+      # veille, qui finit par le lien vers les executions.
       - name: Confirmer le lundi
         if: success() && github.event_name == 'schedule'
         env:
@@ -214,7 +227,23 @@ jobs:
         run: |
           [ "$(date -u '+%u')" = "1" ] || exit 0
           [ -n "$TOKEN" ] || exit 0
+          # LE TEXTE SE CONSTRUIT AVEC printf, PAS AVEC DE VRAIS RETOURS A LA
+          # LIGNE ECRITS DANS LE YAML. Un message pose sur trois lignes a
+          # l'interieur de ce bloc verrait ses lignes 2 et 3 commencer en
+          # colonne 0 : moins indentees que le bloc, elles le TERMINENT, et le
+          # fichier entier cesse d'etre analysable.
+          #
+          # Ce n'est pas l'alerte qu'on perdrait alors, c'est LA SAUVEGARDE
+          # ELLE-MEME : un workflow qui ne s'analyse plus ne se lance plus, et
+          # aucune alerte ne peut prevenir puisqu'elle vit dans le meme fichier.
+          # Le premier jet de ce correctif l'a fait, et seul un analyseur YAML
+          # l'a montre — a l'oeil, le bloc paraissait juste.
+          TEXTE=$(printf '%s\n%s\n%s' \
+            "Sauvegarde des donnees : la nuit de ce lundi est passee." \
+            "L'historique complet, une sauvegarde par commit :" \
+            "https://github.com/$DEPOT_SAUVEGARDES")
+
           curl -s -X POST "https://api.telegram.org/bot$TOKEN/sendMessage" \
             --data-urlencode "chat_id=$CHAT" \
-            --data-urlencode "text=Sauvegarde des donnees : la nuit de ce lundi est passee. L'historique complet se lit dans le depot prive." \
+            --data-urlencode "text=$TEXTE" \
             > /dev/null
