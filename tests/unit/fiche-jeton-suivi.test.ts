@@ -30,13 +30,15 @@ const SECRET = 'secret-de-banc';
 const hoiste = vi.hoisted(() => ({
   JETON: '265df28afab84cfe8e688919419d11f6',
   colonnes: '' as string,
-  commande: {
+  temoin: {
     id: 'cmd-1',
     reference: 'ZAH-1787573151243-934',
     jeton_suivi: '265df28afab84cfe8e688919419d11f6',
     client_nom: 'Kouassi jean claude',
     client_telephone: '0102918886',
     client_adresse: 'Cocody',
+    latitude: 5.3523,
+    longitude: -3.9407,
     instructions: '',
     total: 3000,
     canal: 'whatsapp',
@@ -46,7 +48,8 @@ const hoiste = vi.hoisted(() => ({
     nom_livreur: 'Jean Paul',
     frais_livraison: 1500,
     created_at: '2026-08-24T12:05:51Z',
-  } as Record<string, unknown> | null,
+  } as Record<string, unknown>,
+  commande: null as Record<string, unknown> | null,
 }));
 
 const etats = hoiste;
@@ -90,6 +93,11 @@ beforeEach(() => {
   vi.resetModules();
   process.env.SYNC_SECRET = SECRET;
   etats.colonnes = '';
+  // Le temoin est RECOPIE, jamais partage : le cas 4 met `commande` a null et
+  // le cas 7 ecrit dedans. Sans cette ligne, l ordre des tests deviendrait
+  // significatif — et un test dont le resultat depend de son voisin ne
+  // prouve rien.
+  etats.commande = { ...etats.temoin };
 });
 
 afterEach(() => {
@@ -123,5 +131,30 @@ describe('le jeton rendu par /api/internal/commandes/fiche', () => {
     const { statut, corps } = await appeler({ order_id: 'INEXISTANTE' });
     expect(statut).toBe(200);
     expect(corps).toEqual([]);
+  });
+});
+
+describe('le point de livraison rendu par /api/internal/commandes/fiche', () => {
+  it('5. rend latitude et longitude — sans quoi le point meurt en base', async () => {
+    // Mesure du 24 aout 2026 : la position enregistree par le client
+    // n'atteignait JAMAIS le livreur. Cette route etait le maillon coupe.
+    const { corps } = await appeler({ order_id: 'ZAH-1787573151243-934' });
+    expect(corps[0].latitude).toBe(5.3523);
+    expect(corps[0].longitude).toBe(-3.9407);
+  });
+
+  it('6. les demande explicitement a la base', async () => {
+    await appeler({ order_id: 'ZAH-1787573151243-934' });
+    expect(etats.colonnes).toContain('latitude');
+    expect(etats.colonnes).toContain('longitude');
+  });
+
+  it('7. rend null quand aucune position n a ete donnee', async () => {
+    // NULL veut dire « on ne sait pas ou est la porte », jamais « (0, 0) ».
+    // Rendre 0 enverrait le livreur au large du golfe de Guinee.
+    etats.commande = { ...etats.temoin, latitude: null, longitude: null };
+    const { corps } = await appeler({ order_id: 'ZAH-1787573151243-934' });
+    expect(corps[0].latitude).toBeNull();
+    expect(corps[0].longitude).toBeNull();
   });
 });
