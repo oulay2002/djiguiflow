@@ -711,6 +711,30 @@
         "id": 230,
         "userId": "81519f6f-0887-498a-ad83-5ffd6d591e9a",
         "workflowId": "Ks6tpQSDYSQ3UG1o"
+      },
+      {
+        "event": "activated",
+        "id": 250,
+        "userId": "81519f6f-0887-498a-ad83-5ffd6d591e9a",
+        "workflowId": "Ks6tpQSDYSQ3UG1o"
+      },
+      {
+        "event": "activated",
+        "id": 256,
+        "userId": "81519f6f-0887-498a-ad83-5ffd6d591e9a",
+        "workflowId": "Ks6tpQSDYSQ3UG1o"
+      },
+      {
+        "event": "deactivated",
+        "id": 249,
+        "userId": "81519f6f-0887-498a-ad83-5ffd6d591e9a",
+        "workflowId": "Ks6tpQSDYSQ3UG1o"
+      },
+      {
+        "event": "deactivated",
+        "id": 255,
+        "userId": "81519f6f-0887-498a-ad83-5ffd6d591e9a",
+        "workflowId": "Ks6tpQSDYSQ3UG1o"
       }
     ]
   },
@@ -1421,9 +1445,10 @@
     "availableInMCP": true,
     "binaryMode": "separate",
     "errorWorkflow": "NfWU666FLz9jR1Zv",
-    "executionOrder": "v1"
+    "executionOrder": "v1",
+    "saveDataSuccessExecution": "none"
   },
   "sourceWorkflowId": null,
   "tags": [],
-  "versionCounter": 11
+  "versionCounter": 12
 }

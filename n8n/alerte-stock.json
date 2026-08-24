@@ -1,7 +1,7 @@
 {
   "active": true,
   "activeVersion": {
-    "authors": "JEAN PAUL OULAI",
+    "authors": "JEAN PAUL OULAI (via MCP)",
     "autosaved": false,
     "connections": {
       "Alerte Telegram marchand": {
@@ -177,6 +177,7 @@
               "destinataire": "={{ $('When Executed by Another Workflow').first().json.telegram_marchand }}",
               "format": "html",
               "message": "={{ $json.message_telegram }}",
+              "notification": "stock_faible",
               "reply_markup": ""
             }
           }
@@ -215,6 +216,7 @@
               "canal": "whatsapp",
               "destinataire": "={{ $('When Executed by Another Workflow').first().json.whatsapp_marchand }}",
               "message": "={{ $json.message_whatsapp }}",
+              "notification": "stock_faible",
               "reply_markup": ""
             }
           }
@@ -262,7 +264,7 @@
     "workflowPublishHistory": [
       {
         "event": "activated",
-        "id": 12,
+        "id": 242,
         "userId": "81519f6f-0887-498a-ad83-5ffd6d591e9a",
         "workflowId": "xZpmf1nE6SrjVfJp"
       }
@@ -444,6 +446,7 @@
             "destinataire": "={{ $('When Executed by Another Workflow').first().json.telegram_marchand }}",
             "format": "html",
             "message": "={{ $json.message_telegram }}",
+            "notification": "stock_faible",
             "reply_markup": ""
           }
         }
@@ -482,6 +485,7 @@
             "canal": "whatsapp",
             "destinataire": "={{ $('When Executed by Another Workflow').first().json.whatsapp_marchand }}",
             "message": "={{ $json.message_whatsapp }}",
+            "notification": "stock_faible",
             "reply_markup": ""
           }
         }
@@ -532,5 +536,5 @@
   },
   "sourceWorkflowId": null,
   "tags": [],
-  "versionCounter": 3
+  "versionCounter": 4
 }
