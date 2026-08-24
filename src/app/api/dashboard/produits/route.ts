@@ -66,7 +66,7 @@ export async function GET(req: Request) {
 
   const { data, error } = await sb
     .from('produits')
-    .select('reference, id, nom, categorie, prix, description, disponible, photo_url, stock, stock_initial, seuil_alerte, menu_du_jour, attribut_nom, attribut_valeurs')
+    .select('reference, id, nom, categorie, prix, description, disponible, photo_url, stock, stock_initial, seuil_alerte, menu_du_jour, attribut_nom, attribut_valeurs, groupe')
     .eq('boutique_id', m.boutiqueId)
     .order('nom', { ascending: true });
 
@@ -93,6 +93,8 @@ export async function GET(req: Request) {
     attribut_valeurs: Array.isArray(p.attribut_valeurs)
       ? p.attribut_valeurs.map((v) => String(v ?? '').trim()).filter(Boolean)
       : [],
+    // Le groupe des coloris. Vide = article seul.
+    groupe: String(p.groupe ?? '').trim(),
   }));
 
   return Response.json({ boutique_id: m.id, produits });
@@ -274,6 +276,49 @@ export async function PATCH(req: Request) {
   if (error) {
     console.error(`Produits — mise a jour impossible (${m.id}) :`, error);
     return Response.json({ error: 'Mise a jour impossible' }, { status: 503 });
+  }
+
+  // ---- LA CARACTERISTIQUE S'APPLIQUE A TOUT L'ARTICLE, SUR DEMANDE.
+  //
+  // Chaque coloris est une ligne distincte. Le marchand qui saisit une
+  // pointure sur le rouge pense l'avoir donnee A LA CHAUSSURE, pas au rouge :
+  // sa vitrine s'ouvrait alors sur le bleu, sans selecteur, et « Ajouter »
+  // redevenait cliquable sans taille. Constate en production sur la premiere
+  // boutique qui s'en est servie.
+  //
+  // On ne le fait PAS d'office : deux coloris peuvent legitimement exister
+  // dans des pointures differentes. C'est une case a cocher, proposee cochee
+  // parce que c'est le cas courant — une chaussure existe dans les memes
+  // pointures quelle que soit sa couleur.
+  if (corps.appliquer_au_groupe && patch.attribut_nom !== undefined) {
+    try {
+      // `limit(1)` et non `maybeSingle()` : ce dernier ECHOUE en silence quand
+      // le filtre n'est pas unique, et rendrait la propagation muette.
+      const { data: lignes } = await sb
+        .from('produits')
+        .select('groupe')
+        .eq('boutique_id', m.boutiqueId)
+        .eq('reference', String(reference))
+        .limit(1);
+
+      const groupe = String(lignes?.[0]?.groupe ?? '').trim();
+
+      if (groupe) {
+        const { error: errGroupe } = await sb
+          .from('produits')
+          .update({ attribut_nom: patch.attribut_nom, attribut_valeurs: patch.attribut_valeurs })
+          .eq('boutique_id', m.boutiqueId)
+          .eq('groupe', groupe);
+
+        // Jamais bloquant : l'article edite est deja corrige. On le journalise
+        // plutot que de rendre une erreur sur une modification qui a reussi.
+        if (errGroupe) {
+          console.error(`Produits — propagation au groupe « ${groupe} » refusee (${m.id}) :`, errGroupe);
+        }
+      }
+    } catch (e) {
+      console.error(`Produits — propagation au groupe impossible (${m.id}) :`, e);
+    }
   }
 
   // ---- Miroir feuille, jamais bloquant.
