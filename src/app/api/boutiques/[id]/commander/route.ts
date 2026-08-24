@@ -34,6 +34,16 @@ import { DELAI_WEBHOOK, delai } from '@/lib/reseau';
 type LigneCommande = {
   produitId: string | null;
   plat: string;
+  /**
+   * Le choix du client sur cette ligne : « 39 », « M ». Vide quand l'article
+   * n'en proposait pas.
+   *
+   * IL NE REJOINT PAS `plat`, et c'est la tout l'enjeu. Le decompte de stock
+   * rattache les lignes de l'assistante A LEUR PRODUIT PAR LE NOM, normalise :
+   * un nom augmente d'une pointure ne correspondrait plus a rien, la ligne
+   * deviendrait « introuvable » et le stock deriverait en silence.
+   */
+  variante: string;
   quantite: number;
   prixUnitaire: number;
   /** `null` = le marchand ne compte pas ce produit. Jamais confondu avec zero. */
@@ -61,10 +71,21 @@ async function tariferPanier(
     .map((l) => ({
       id: String((l as { id?: unknown })?.id ?? '').trim(),
       quantite: Math.max(1, Number((l as { quantite?: unknown })?.quantite) || 1),
+      // On borne : cette valeur part telle quelle dans le message du marchand
+      // et du livreur. Un client ne tape pas trente caracteres de pointure.
+      variante: String((l as { variante?: unknown })?.variante ?? '').trim().slice(0, 40),
     }))
     .filter((l) => l.id);
 
   if (!demandes.length) return [];
+
+  /**
+   * INDEXE PAR ARTICLE **ET** PAR CHOIX. Une clef limitee a l'identifiant
+   * aurait fondu deux pointures du meme modele en une seule ligne : le client
+   * demandait un 39 et un 41, le marchand en recevait deux d'une seule taille.
+   */
+  const clef = (l: { id: string; variante: string }) =>
+    l.variante ? `${l.id}::${l.variante}` : l.id;
 
   const resolues = new Map<string, LigneCommande>();
 
@@ -94,9 +115,10 @@ async function tariferPanier(
       const p = parCle.get(demande.id);
       if (!p) continue;
 
-      resolues.set(demande.id, {
+      resolues.set(clef(demande), {
         produitId: p.id,
         plat: String(p.nom ?? ''),
+        variante: demande.variante,
         quantite: demande.quantite,
         prixUnitaire: Number(p.prix) || 0,
         stock: p.stock === null || p.stock === undefined ? null : Number(p.stock),
@@ -105,16 +127,17 @@ async function tariferPanier(
     }
   }
 
-  const manquants = demandes.filter((d) => !resolues.has(d.id));
+  const manquants = demandes.filter((d) => !resolues.has(clef(d)));
   if (manquants.length) {
     try {
       const menu = await readSheet(`${m.sheetMenu}!A:I`, m.sheetId);
       for (const d of manquants) {
         const p = menu.find((x) => x.id === d.id);
         if (!p) continue;
-        resolues.set(d.id, {
+        resolues.set(clef(d), {
           produitId: null,
           plat: String(p.nom ?? ''),
+          variante: d.variante,
           quantite: d.quantite,
           // La feuille est un repli pour les marchands pas encore migres : on
           // n'y cherche pas de stock, et on ne refuse donc pas leurs commandes
@@ -454,6 +477,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
         commande_id: creee.id,
         produit_id: l.produitId,
         nom_produit: l.plat,
+        variante: l.variante || null,
         quantite: l.quantite,
         prix_unitaire: l.prixUnitaire,
       })),
@@ -574,7 +598,12 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
 
   // ---- 2. Miroir Google Sheets, jamais bloquant.
   const articlesFeuille = lignes.map((l) => ({
-    plat: l.plat,
+    // LE CHOIX REJOINT LE NOM **ICI SEULEMENT**, parce que ce texte n'est pas
+    // apparie : il est LU par un marchand et par un livreur. C'est le seul
+    // endroit ou la pointure doit se voir sans que personne n'ait a la
+    // chercher. En base, elle reste dans sa colonne — voir `LigneCommande`.
+    plat: l.variante ? `${l.plat} (${l.variante})` : l.plat,
+    variante: l.variante,
     quantité: l.quantite,
     prix_unitaire: l.prixUnitaire,
   }));
