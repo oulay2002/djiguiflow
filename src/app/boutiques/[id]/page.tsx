@@ -22,6 +22,12 @@ type Produit = {
   /** Articles de meme `groupe` = un seul article en plusieurs coloris. */
   groupe?: string;
   couleur?: string;
+  /**
+   * La caracteristique, nommee par le marchand : Pointure, Taille, Contenance.
+   * Vide quand l'article n'en a pas — un plat n'a pas de pointure.
+   */
+  attributNom?: string;
+  attributValeurs?: string[];
 };
 
 /**
@@ -99,6 +105,8 @@ type ProduitRow = {
   description: string | null;
   photo_url: string | null;
   menu_du_jour: boolean | null;
+  attribut_nom: string | null;
+  attribut_valeurs: string[] | null;
 };
 
 /**
@@ -342,6 +350,10 @@ export default function Page() {
           description: String(p.description ?? ''),
           image: String(p.photo_url ?? ''),
           duJour: Boolean(p.menu_du_jour),
+          attributNom: String(p.attribut_nom ?? '').trim(),
+          attributValeurs: Array.isArray(p.attribut_valeurs)
+            ? p.attribut_valeurs.map((v) => String(v ?? '').trim()).filter(Boolean)
+            : [],
         })));
       } catch (e) {
         // Règle d'or : ne jamais casser l'écran client — mais ne plus se taire
@@ -575,6 +587,31 @@ export default function Page() {
 
               {p.description && (
                 <p className="mt-1.5 text-sm leading-snug text-chaux-600">{p.description}</p>
+              )}
+
+              {/* LA QUESTION QUE TOUT ACHETEUR DE CHAUSSURES POSE EN PREMIER.
+                  « Vous avez ma pointure ? » — il fallait ecrire pour le
+                  demander, et le marchand repondre a la main, a chaque client
+                  et pour chaque article. La reponse est desormais sur la
+                  carte, avant meme la question.
+
+                  LES VALEURS SONT MONTREES, PAS PROPOSEES A LA SELECTION. Ce
+                  qu'on affiche, c'est CE QUI EXISTE chez le marchand ; le
+                  choix se fait dans la conversation, comme aujourd'hui. Les
+                  transformer en boutons laisserait croire que la pointure
+                  choisie est reservee, alors que rien en base ne tient un
+                  stock par pointure — une promesse qu'on ne pourrait pas
+                  tenir vaudrait moins que l'information brute.
+
+                  Le nom vient du marchand : « Pointure » chez le cordonnier,
+                  « Taille » chez le tailleur. */}
+              {p.attributNom && (p.attributValeurs?.length ?? 0) > 0 && (
+                <p className="mt-2 text-sm text-nuit-800">
+                  <span className="font-mono text-xs uppercase tracking-[0.14em] text-chaux-600">
+                    {p.attributNom}
+                  </span>{' '}
+                  <span className="font-semibold">{p.attributValeurs?.join(' · ')}</span>
+                </p>
               )}
 
               {/* ---- Les coloris, quand il y en a plusieurs. */}
