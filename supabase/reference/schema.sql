@@ -1,8 +1,8 @@
--- INSTANTANE DU 2026-08-23 05:53 UTC
--- DERNIERE MIGRATION APPLIQUEE : 20260822225555
+-- INSTANTANE DU 2026-08-24 06:01 UTC
+-- DERNIERE MIGRATION APPLIQUEE : 20260823200135
 --
 -- Pour restaurer : rejouer ce fichier, PUIS tous les fichiers de
--- supabase/migrations/ dont l'horodatage est superieur a 20260822225555.
+-- supabase/migrations/ dont l'horodatage est superieur a 20260823200135.
 -- Sauter cette etape ramene le schema jusqu'a vingt-quatre heures en
 -- arriere, verrous compris.
 
@@ -740,7 +740,7 @@ $$;
 ALTER FUNCTION "public"."vitrine_boutique"("p_ref" "text") OWNER TO "postgres";
 
 
-CREATE OR REPLACE FUNCTION "public"."vitrine_boutiques"() RETURNS TABLE("id" "uuid", "slug" "text", "nom" "text", "description" "text", "zone" "text", "categorie" "text", "logo_url" "text", "articles" integer, "note_moyenne" numeric, "avis" integer, "palier_livraisons" integer)
+CREATE OR REPLACE FUNCTION "public"."vitrine_boutiques"() RETURNS TABLE("id" "uuid", "slug" "text", "nom" "text", "description" "text", "zone" "text", "categorie" "text", "logo_url" "text", "articles" integer, "note_moyenne" numeric, "avis" integer, "palier_livraisons" integer, "apercus" "text"[], "prix_min" numeric, "horaires" "jsonb", "pause_jusqua" timestamp with time zone, "vedette" "text", "vedette_commandes" integer)
     LANGUAGE "sql" STABLE SECURITY DEFINER
     SET "search_path" TO 'public'
     AS $$
@@ -769,9 +769,52 @@ CREATE OR REPLACE FUNCTION "public"."vitrine_boutiques"() RETURNS TABLE("id" "uu
                  end
             from commandes c
            where c.boutique_id = b.id
-             and c.statut = 'livree')::int
+             and c.statut = 'livree')::int,
+
+         (select coalesce(array_agg(a.photo_url order by a.rang), '{}'::text[])
+            from (select p.photo_url,
+                         row_number() over (
+                           order by (v.nom_produit is not null and p.nom = v.nom_produit) desc,
+                                    p.created_at nulls last, p.nom
+                         ) as rang
+                    from produits p
+                   where p.boutique_id = b.id
+                     and p.disponible is distinct from false
+                     and coalesce(p.photo_url, '') <> ''
+                   limit 4) a),
+
+         (select min(p.prix)
+            from produits p
+           where p.boutique_id = b.id
+             and p.disponible is distinct from false
+             and coalesce(p.prix, 0) > 0),
+
+         b.horaires,
+         b.pause_jusqua,
+
+         v.nom_produit,
+         v.commandes::int
+
     from boutiques b
+
+    left join lateral (
+      select i.nom_produit, count(distinct c.id) as commandes
+        from commande_items i
+        join commandes c on c.id = i.commande_id
+       where c.boutique_id = b.id
+         and c.statut not in ('panier', 'abandonnee', 'annulee')
+         and c.created_at > now() - interval '30 days'
+       group by i.nom_produit
+      having count(distinct c.id) >= 3
+       order by count(distinct c.id) desc, sum(i.quantite) desc, i.nom_produit
+       limit 1
+    ) v on true
+
    where coalesce(b.actif, true)
+     and coalesce(b.essai, false) is not true
+     -- LE BRANCHEMENT, ajoute le 23 aout 2026.
+     and (b.wasender_secret_id is not null or b.telegram_secret_id is not null)
+     and nullif(btrim(coalesce(b.groupe_livreurs, '')), '') is not null
    order by b.nom;
 $$;
 
@@ -946,6 +989,7 @@ CREATE TABLE IF NOT EXISTS "public"."commandes" (
     "stock_decremente_le" timestamp with time zone,
     "client_prevenu_le" timestamp with time zone,
     "jeton_suivi" "text" DEFAULT "replace"(("gen_random_uuid"())::"text", '-'::"text", ''::"text") NOT NULL,
+    "livreur_id" "uuid",
     CONSTRAINT "commandes_statut_check" CHECK (("statut" = ANY (ARRAY['panier'::"text", 'en_attente'::"text", 'en_preparation'::"text", 'en_livraison'::"text", 'livree'::"text", 'annulee'::"text", 'abandonnee'::"text"])))
 );
 
@@ -990,6 +1034,10 @@ COMMENT ON COLUMN "public"."commandes"."client_prevenu_le" IS 'Heure ou la chain
 
 
 COMMENT ON COLUMN "public"."commandes"."jeton_suivi" IS 'Jeton imprevisible porte par les liens de suivi et de confirmation. Ne doit JAMAIS etre renvoye par /api/suivi.';
+
+
+
+COMMENT ON COLUMN "public"."commandes"."livreur_id" IS 'Fiche de l''annuaire du livreur qui a pris cette course, resolue depuis son identifiant Telegram a l''acceptation. NULL = on ne sait pas qui a livre : livreur absent de l''annuaire, ou course anterieure a l''attribution. NULL ne veut jamais dire « personne ».';
 
 
 
@@ -1054,9 +1102,6 @@ CREATE TABLE IF NOT EXISTS "public"."livreurs" (
     "statut" "text" DEFAULT 'disponible'::"text",
     "latitude" numeric,
     "longitude" numeric,
-    "note_moyenne" numeric DEFAULT 0,
-    "total_livraisons" integer DEFAULT 0,
-    "gain_total" numeric DEFAULT 0,
     "taux_commission" numeric DEFAULT 10,
     "created_at" timestamp with time zone DEFAULT "now"(),
     "telegram_id" "text",
@@ -1153,7 +1198,9 @@ CREATE TABLE IF NOT EXISTS "public"."produits" (
     "stock_initial" integer,
     "seuil_alerte" integer,
     "menu_du_jour" boolean DEFAULT false NOT NULL,
-    "quantite_stock" integer DEFAULT 0
+    "quantite_stock" integer DEFAULT 0,
+    "groupe" "text",
+    "couleur" "text"
 );
 
 
@@ -1165,6 +1212,14 @@ COMMENT ON COLUMN "public"."produits"."reference" IS 'Identifiant du produit dan
 
 
 COMMENT ON COLUMN "public"."produits"."menu_du_jour" IS 'Plat mis en avant par l agent dans le menu du jour.';
+
+
+
+COMMENT ON COLUMN "public"."produits"."groupe" IS 'Articles partageant ce libelle DANS UNE MEME BOUTIQUE = un seul article en plusieurs coloris. NULL = article simple, affiche seul comme avant.';
+
+
+
+COMMENT ON COLUMN "public"."produits"."couleur" IS 'Le coloris de cette declinaison, tel que le client le lira : « blanc », « noir ». Sans groupe, il ne sert a rien.';
 
 
 
@@ -1348,6 +1403,10 @@ CREATE UNIQUE INDEX "commandes_jeton_suivi_key" ON "public"."commandes" USING "b
 
 
 
+CREATE INDEX "commandes_livreur_idx" ON "public"."commandes" USING "btree" ("livreur_id") WHERE ("livreur_id" IS NOT NULL);
+
+
+
 CREATE UNIQUE INDEX "commandes_reference_globale_unique" ON "public"."commandes" USING "btree" ("upper"("reference")) WHERE ("reference" IS NOT NULL);
 
 
@@ -1464,6 +1523,10 @@ CREATE INDEX "paniers_abandonnes_idx" ON "public"."paniers" USING "btree" ("bout
 
 
 
+CREATE INDEX "produits_groupe_idx" ON "public"."produits" USING "btree" ("boutique_id", "groupe") WHERE ("groupe" IS NOT NULL);
+
+
+
 CREATE INDEX "push_subscriptions_boutique_id_idx" ON "public"."push_subscriptions" USING "btree" ("boutique_id");
 
 
@@ -1508,6 +1571,11 @@ ALTER TABLE ONLY "public"."commande_items"
 
 ALTER TABLE ONLY "public"."commandes"
     ADD CONSTRAINT "commandes_boutique_id_fkey" FOREIGN KEY ("boutique_id") REFERENCES "public"."boutiques"("id");
+
+
+
+ALTER TABLE ONLY "public"."commandes"
+    ADD CONSTRAINT "commandes_livreur_id_fkey" FOREIGN KEY ("livreur_id") REFERENCES "public"."livreurs"("id") ON DELETE SET NULL;
 
 
 
@@ -2103,7 +2171,6 @@ GRANT ALL ON FUNCTION "public"."vitrine_boutique"("p_ref" "text") TO "service_ro
 
 
 
-REVOKE ALL ON FUNCTION "public"."vitrine_boutiques"() FROM PUBLIC;
 GRANT ALL ON FUNCTION "public"."vitrine_boutiques"() TO "anon";
 GRANT ALL ON FUNCTION "public"."vitrine_boutiques"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."vitrine_boutiques"() TO "service_role";
