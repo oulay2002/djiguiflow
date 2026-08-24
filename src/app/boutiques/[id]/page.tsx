@@ -241,6 +241,16 @@ export default function Page() {
    * disponibles.
    */
   const [coloris, setColoris] = useState<Record<string, string>>({});
+
+  /**
+   * La taille — ou la pointure, ou la contenance — retenue par article.
+   *
+   * VIDE TANT QUE LE CLIENT N'A PAS CHOISI, et c'est voulu. Preselectionner la
+   * premiere valeur ferait partir des commandes en 38 parce que 38 vient avant
+   * 39 dans la liste du marchand. Le client ne verrait rien : la carte
+   * afficherait un choix qu'il n'a pas fait.
+   */
+  const [choixTaille, setChoixTaille] = useState<Record<string, string>>({});
   const [categorie, setCategorie] = useState('tout');
   const [nom, setNom] = useState('');
   const [tel, setTel] = useState('');
@@ -375,18 +385,58 @@ export default function Page() {
   //
   // `stock` absent ou `null` = le marchand ne compte pas ce produit : aucune
   // borne, comme avant.
-  const ajouter = (pid: string) => setPanier(p => {
+  /**
+   * UNE LIGNE DE PANIER, C'EST UN ARTICLE **ET** LE CHOIX DU CLIENT.
+   *
+   * Le panier etait indexe par le seul identifiant de produit. Deux pointures
+   * du meme modele s'y seraient donc ECRASEES : le client demandait un 39 et
+   * un 41, le panier en gardait deux d'une seule taille — sans rien dire, et
+   * le marchand livrait deux fois la meme.
+   *
+   * `::` comme separateur : les identifiants sont des references « P1755… » ou
+   * des uuid, et les valeurs des pointures ou des tailles. Aucun des deux ne
+   * contient ce couple de caracteres.
+   */
+  const clefLigne = (pid: string, variante: string) =>
+    variante ? `${pid}::${variante}` : pid;
+
+  const litClef = (clef: string) => {
+    const i = clef.indexOf('::');
+    return i < 0
+      ? { pid: clef, variante: '' }
+      : { pid: clef.slice(0, i), variante: clef.slice(i + 2) };
+  };
+
+  // On ne laisse pas composer un panier que le serveur refusera. Il le refuse
+  // deja, et avec le motif exact — mais l'apprendre apres avoir saisi son nom,
+  // son telephone et son adresse est la pire facon de l'apprendre.
+  //
+  // `stock` absent ou `null` = le marchand ne compte pas ce produit : aucune
+  // borne, comme avant.
+  const ajouter = (pid: string, variante = '') => setPanier(p => {
     const prod = produits.find(x => x.id === pid);
     const restant = typeof prod?.stock === 'number' ? prod.stock : Infinity;
-    const q = (p[pid] || 0) + 1;
-    if (q > restant) return p;
-    return { ...p, [pid]: q };
+
+    // LE STOCK EST CELUI DE L'ARTICLE, PAS DE LA TAILLE. Rien en base ne tient
+    // un inventaire par pointure : le plafond porte donc sur la SOMME des
+    // tailles deja au panier. Sans cela, un client prenait trois fois le
+    // dernier exemplaire en changeant de taille a chaque fois.
+    const dejaPris = Object.entries(p)
+      .filter(([clef]) => litClef(clef).pid === pid)
+      .reduce((s, [, q]) => s + q, 0);
+
+    if (dejaPris + 1 > restant) return p;
+
+    const clef = clefLigne(pid, variante);
+    return { ...p, [clef]: (p[clef] || 0) + 1 };
   });
-  const retirer = (pid: string) =>
+
+  const retirer = (pid: string, variante = '') =>
     setPanier(p => {
-      const q = (p[pid] || 0) - 1;
+      const clef = clefLigne(pid, variante);
+      const q = (p[clef] || 0) - 1;
       const n = { ...p };
-      if (q <= 0) delete n[pid]; else n[pid] = q;
+      if (q <= 0) delete n[clef]; else n[clef] = q;
       return n;
     });
 
@@ -398,8 +448,12 @@ export default function Page() {
   const erreurTel = tel.trim() && !telNormalise.ok ? telNormalise.erreur : '';
 
   const lignes = Object.entries(panier)
-    .map(([pid, q]) => { const prod = produits.find(x => x.id === pid); return prod ? { prod, q } : null; })
-    .filter(Boolean) as { prod: Produit; q: number }[];
+    .map(([clef, q]) => {
+      const { pid, variante } = litClef(clef);
+      const prod = produits.find(x => x.id === pid);
+      return prod ? { prod, q, variante } : null;
+    })
+    .filter(Boolean) as { prod: Produit; q: number; variante: string }[];
   const total = lignes.reduce((s, l) => s + l.prod.prix * l.q, 0);
   const articles = lignes.reduce((s, l) => s + l.q, 0);
 
@@ -442,7 +496,7 @@ export default function Page() {
           nom,
           lignes: lignes.map(l => ({
             id: l.prod.id,
-            nom: l.prod.nom,
+            nom: l.variante ? `${l.prod.nom} (${l.variante})` : l.prod.nom,
             quantite: l.q,
             prix: l.prod.prix,
           })),
@@ -471,7 +525,13 @@ export default function Page() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             nom, tel, adresse, instructions,
-            panier: Object.entries(panier).map(([pid, quantite]) => ({ id: pid, quantite })),
+            // Le choix du client part avec la ligne : sans lui, le marchand
+            // recevrait « chaussure luminous » et devrait rappeler pour
+            // demander la pointure — ce que ce travail existe pour eviter.
+            panier: Object.entries(panier).map(([clef, quantite]) => {
+              const { pid, variante } = litClef(clef);
+              return { id: pid, quantite, variante };
+            }),
           }),
         });
         const d = await res.json();
@@ -509,7 +569,14 @@ export default function Page() {
         verdictRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
     } else {
-      const lignesTexte = lignes.map(l => `- ${l.q}x ${l.prod.nom} (${fcfa(l.q * l.prod.prix)} FCFA)`).join('\n');
+      // LE CHOIX DOIT FIGURER DANS CE TEXTE. Pour les boutiques hors registre,
+      // ce message EST la commande : le marchand n'a rien d'autre, aucune
+      // ligne en base a consulter. Une pointure absente ici, c'est un appel de
+      // plus et un client qui attend.
+      const lignesTexte = lignes
+        .map(l => `- ${l.q}x ${l.prod.nom}${l.variante ? ` — ${l.variante}` : ''}`
+          + ` (${fcfa(l.q * l.prod.prix)} FCFA)`)
+        .join('\n');
       const msg = `Bonjour ${header.nom}, je souhaite commander :\n${lignesTexte}\nTotal : ${fcfa(total)} FCFA\nNom : ${nom}\nAdresse : ${adresse}${instructions ? `\nInstructions : ${instructions}` : ''}`;
       const digits = telBoutique.replace(/\D/g, '');
 
@@ -560,11 +627,40 @@ export default function Page() {
         const p = choisi;
         const plusieurs = article.variantes.length > 1;
 
+        /**
+         * Combien de cet article, toutes tailles confondues, sont deja au
+         * panier. Le panier est desormais indexe par article ET par choix :
+         * une lecture directe `panier[id]` manquerait toutes les lignes
+         * portant une pointure, et la carte afficherait « ajouter » alors que
+         * le client en a deja trois.
+         */
+        const prisPour = (pid: string) =>
+          Object.entries(panier)
+            .filter(([clef]) => litClef(clef).pid === pid)
+            .reduce((s, [, q]) => s + q, 0);
+
+        /** La quantite de la ligne exacte — cet article, ce choix. */
+        const prisIci = panier[clefLigne(p.id, choixTaille[article.cle] ?? '')] ?? 0;
+
         // Ce que le client a deja pris dans les AUTRES coloris. Sans cette
         // ligne, il ajoute du blanc, passe au noir, et son panier semble vide.
         const ailleurs = article.variantes
-          .filter(v => v.id !== p.id && panier[v.id])
-          .map(v => `${panier[v.id]} ${v.couleur || v.nom}`);
+          .filter(v => v.id !== p.id && prisPour(v.id))
+          .map(v => `${prisPour(v.id)} ${v.couleur || v.nom}`);
+
+        /**
+         * L'ARTICLE PROPOSE UN CHOIX, ET LE CLIENT NE L'A PAS ENCORE FAIT.
+         *
+         * On n'en choisit AUCUN a sa place. Preselectionner la premiere
+         * pointure ferait partir des commandes en 38 parce que 38 vient avant
+         * 39 dans la liste du marchand — une valeur par defaut qui masque une
+         * absence de choix, le defaut que cette plateforme a deja paye
+         * plusieurs fois. Le bouton attend.
+         */
+        const valeurs = p.attributValeurs ?? [];
+        const doitChoisir = Boolean(p.attributNom) && valeurs.length > 0;
+        const tailleChoisie = choixTaille[article.cle] ?? '';
+        const enAttenteDeChoix = doitChoisir && !tailleChoisie;
 
         return (
           <article
@@ -605,13 +701,35 @@ export default function Page() {
 
                   Le nom vient du marchand : « Pointure » chez le cordonnier,
                   « Taille » chez le tailleur. */}
-              {p.attributNom && (p.attributValeurs?.length ?? 0) > 0 && (
-                <p className="mt-2 text-sm text-nuit-800">
-                  <span className="font-mono text-xs uppercase tracking-[0.14em] text-chaux-600">
+              {doitChoisir && (
+                <div className="mt-3">
+                  <p className="font-mono text-xs uppercase tracking-[0.14em] text-chaux-600">
                     {p.attributNom}
-                  </span>{' '}
-                  <span className="font-semibold">{p.attributValeurs?.join(' · ')}</span>
-                </p>
+                  </p>
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {valeurs.map(v => {
+                      const actif = v === tailleChoisie;
+                      return (
+                        <button
+                          key={v}
+                          type="button"
+                          onClick={() =>
+                            setChoixTaille(c => ({ ...c, [article.cle]: actif ? '' : v }))
+                          }
+                          aria-pressed={actif}
+                          aria-label={`${p.attributNom} ${v}`}
+                          className={`min-h-11 min-w-11 border px-3 text-sm font-semibold transition ${
+                            actif
+                              ? 'border-nuit-900 bg-nuit-900 text-chaux-50'
+                              : 'border-[var(--hairline)] bg-white text-nuit-800 hover:border-nuit-900'
+                          }`}
+                        >
+                          {v}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
               )}
 
               {/* ---- Les coloris, quand il y en a plusieurs. */}
@@ -670,27 +788,36 @@ export default function Page() {
                   <span className="ml-1 text-xs font-semibold text-chaux-600">FCFA</span>
                 </p>
 
-                {panier[p.id] ? (
+                {prisIci ? (
                   <div className="flex items-center border border-[var(--hairline)] bg-white">
                     <button
-                      onClick={() => retirer(p.id)}
-                      aria-label={`Retirer un ${p.nom}`}
+                      onClick={() => retirer(p.id, tailleChoisie)}
+                      aria-label={`Retirer un ${p.nom}${tailleChoisie ? ` ${tailleChoisie}` : ''}`}
                       className="flex h-11 w-11 items-center justify-center text-nuit-700 transition hover:bg-chaux-100"
                     >
                       <Minus className="h-4 w-4" />
                     </button>
                     <span className="w-7 text-center font-mono text-sm font-bold text-nuit-900">
-                      {panier[p.id]}
+                      {prisIci}
                     </span>
                     <button
-                      onClick={() => ajouter(p.id)}
-                      disabled={typeof p.stock === 'number' && panier[p.id] >= p.stock}
-                      aria-label={`Ajouter un ${p.nom}`}
+                      onClick={() => ajouter(p.id, tailleChoisie)}
+                      // Le plafond porte sur la SOMME des tailles : rien en
+                      // base ne tient un stock par pointure.
+                      disabled={typeof p.stock === 'number' && prisPour(p.id) >= p.stock}
+                      aria-label={`Ajouter un ${p.nom}${tailleChoisie ? ` ${tailleChoisie}` : ''}`}
                       className="flex h-11 w-11 items-center justify-center bg-bissap-500 text-white transition hover:bg-bissap-600 disabled:cursor-not-allowed disabled:bg-chaux-300"
                     >
                       <Plus className="h-4 w-4" />
                     </button>
                   </div>
+                ) : enAttenteDeChoix ? (
+                  /* ON NE CHOISIT PAS A SA PLACE. Le bouton attend, et dit ce
+                     qu'il attend — un bouton grisé sans explication passe pour
+                     une panne, et le client s'en va. */
+                  <span className="border border-dashed border-chaux-300 px-3 py-2 text-center font-mono text-xs uppercase tracking-[0.12em] text-chaux-600">
+                    Choisissez {(p.attributNom ?? '').toLowerCase()}
+                  </span>
                 ) : p.stock === 0 ? (
                   /* Epuise : on le DIT plutot que de masquer le plat. Le client
                      voit qu'il existe et reviendra le chercher ; un plat disparu
@@ -702,7 +829,7 @@ export default function Page() {
                   </span>
                 ) : (
                   <button
-                    onClick={() => ajouter(p.id)}
+                    onClick={() => ajouter(p.id, tailleChoisie)}
                     className={classesBouton('action', 'md', 'carree')}
                   >
                     <Plus className="h-4 w-4" /> Ajouter
@@ -712,7 +839,7 @@ export default function Page() {
 
               {/* Un bouton grise sans explication passe pour une panne. On dit ce
                   qui reste, et seulement quand le client bute dessus. */}
-              {typeof p.stock === 'number' && p.stock > 0 && panier[p.id] >= p.stock && (
+              {typeof p.stock === 'number' && p.stock > 0 && prisPour(p.id) >= p.stock && (
                 <p className="mt-2 text-right font-mono text-xs font-semibold text-chaux-600">
                   Il n’en reste que {p.stock}
                 </p>
@@ -962,10 +1089,20 @@ export default function Page() {
                 <>
                   <ul className="mt-4 space-y-2">
                     {lignes.map(l => (
-                      <li key={l.prod.id} className="flex items-baseline justify-between gap-3 text-sm">
+                      // La clef porte le CHOIX autant que l'article : deux
+                      // pointures du meme modele partagent le meme
+                      // identifiant, et React aurait vu deux fois la meme
+                      // ligne — il n'en aurait affiche qu'une.
+                      <li
+                        key={clefLigne(l.prod.id, l.variante)}
+                        className="flex items-baseline justify-between gap-3 text-sm"
+                      >
                         <span className="truncate text-nuit-800">
                           <span className="font-mono font-bold text-chaux-600">{l.q}×</span>{' '}
                           {l.prod.nom}
+                          {l.variante && (
+                            <span className="text-chaux-600"> · {l.variante}</span>
+                          )}
                         </span>
                         <span className="shrink-0 font-mono text-nuit-900">
                           {fcfa(l.q * l.prod.prix)}

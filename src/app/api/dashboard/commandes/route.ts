@@ -5,7 +5,7 @@ import { DELAI_WEBHOOK, delai } from '@/lib/reseau';
 
 export const dynamic = 'force-dynamic';
 
-type LigneItem = { nom_produit: string | null; quantite: number | null; prix_unitaire: number | null };
+type LigneItem = { nom_produit: string | null; variante: string | null; quantite: number | null; prix_unitaire: number | null };
 type LigneCommande = {
   reference: string | null;
   client_nom: string | null;
@@ -42,7 +42,7 @@ export async function GET(req: Request) {
         ' frais_livraison,' +
         ' nom_livreur, statut_livraison, heure_prise_en_charge, heure_livraison,' +
         ' confirmation_statut, confirmation_heure,' +
-        ' commande_items(nom_produit, quantite, prix_unitaire)',
+        ' commande_items(nom_produit, variante, quantite, prix_unitaire)',
     )
     .eq('boutique_id', m.boutiqueId)
     .neq('statut', 'panier')
@@ -60,7 +60,15 @@ export async function GET(req: Request) {
     address: c.client_adresse ?? '',
     items: JSON.stringify(
       (c.commande_items ?? []).map(i => ({
-        plat: i.nom_produit ?? '',
+        // LE CHOIX DU CLIENT REJOINT LE NOM POUR L'AFFICHAGE, comme dans le
+        // message envoye au livreur. Le marchand prepare la commande depuis
+        // cette liste : une pointure rangee dans un champ qu'il ne regarde pas
+        // ne vaut pas mieux qu'une pointure jamais demandee.
+        //
+        // En base, elle reste dans sa colonne : les statistiques et le
+        // decompte de stock apparient par le nom, et un nom augmente n'y
+        // correspondrait plus.
+        plat: i.variante ? `${i.nom_produit ?? ''} (${i.variante})` : (i.nom_produit ?? ''),
         quantité: i.quantite ?? 1,
         prix_unitaire: i.prix_unitaire ?? 0,
       })),
