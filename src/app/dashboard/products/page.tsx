@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { useBoutique, avecBoutique } from '@/lib/boutique';
 import {
   AlertTriangle,
+  Eye,
+  EyeOff,
   Pencil,
   Plus,
   RefreshCw,
@@ -89,8 +91,17 @@ export default function Page() {
   const [gMsg, setGMsg] = useState('');
   const [gEnvoi, setGEnvoi] = useState(false);
 
-  /** Ce que la bascule du jour n'a pas pu enregistrer, dit une seule fois. */
+  /** Ce qu'une bascule n'a pas pu enregistrer, dit une seule fois. */
   const [msgJour, setMsgJour] = useState('');
+
+  /**
+   * Le marchand que le test « restauration » a ecarte a tort, et qui demande
+   * la carte du jour quand meme. Volontairement NON PERSISTE : c'est une
+   * heuristique qu'on contredit pour la session, pas un reglage de plus a
+   * comprendre. S'il s'en sert vraiment, ses articles coches suffiront a
+   * garder les boutons visibles la fois suivante.
+   */
+  const [duJourForce, setDuJourForce] = useState(false);
 
   // Modal de gestion de stock
   const [editProd, setEditProd] = useState<Prod | null>(null);
@@ -101,7 +112,10 @@ export default function Page() {
   const [eEnvoi, setEEnvoi] = useState(false);
 
   const { boutiqueId, boutiques, pret } = useBoutique();
-  const nomBoutique = boutiques.find(b => b.id === boutiqueId)?.nom ?? 'Ma boutique';
+  const boutiqueCourante = boutiques.find(b => b.id === boutiqueId);
+  const nomBoutique = boutiqueCourante?.nom ?? 'Ma boutique';
+  /** Le metier declare par le marchand. Sert a proposer les bons gestes. */
+  const secteur = boutiqueCourante?.secteur ?? '';
 
   const charger = async () => {
     setRefreshing(true);
@@ -232,36 +246,42 @@ export default function Page() {
   };
 
   /**
-   * Mettre un article dans la selection du jour, ou l'en retirer.
+   * Basculer un interrupteur d'article — disponibilite, carte du jour.
    *
-   * ON MET A JOUR L'ECRAN D'ABORD. Composer une carte, c'est basculer dix
-   * articles a la suite : attendre le serveur entre chaque clic rendrait le
-   * geste penible au point qu'on ne l'utiliserait pas. En cas d'echec on
-   * REVIENT EN ARRIERE et on le dit — un bouton qui reste allume alors que
-   * rien n'est enregistre est pire que pas de bouton du tout, parce que le
-   * marchand croit sa carte composee.
+   * ON MET A JOUR L'ECRAN D'ABORD. Rouvrir sa boutique le matin, c'est
+   * basculer dix articles a la suite : attendre le serveur entre chaque clic
+   * rendrait le geste penible au point qu'on ne s'en servirait pas.
+   *
+   * ET ON REVIENT EN ARRIERE EN CAS D'ECHEC, en le disant. Un bouton qui
+   * reste allume alors que rien n'est enregistre est pire que pas de bouton :
+   * le marchand croit son article disponible, et c'est un client qui le
+   * detrompe.
    */
-  const basculerDuJour = async (p: Prod) => {
-    const voulu = !p.menu_du_jour;
+  const basculer = async (p: Prod, champ: 'menu_du_jour' | 'disponible', quoi: string) => {
+    const voulu = !p[champ];
     setMsgJour('');
-    setProds(liste => liste.map(x => (x.id === p.id ? { ...x, menu_du_jour: voulu } : x)));
+    setProds(liste => liste.map(x => (x.id === p.id ? { ...x, [champ]: voulu } : x)));
     try {
       const res = await fetchDashboard(avecBoutique('/api/dashboard/produits', boutiqueId), {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reference: p.id, menu_du_jour: voulu }),
+        body: JSON.stringify({ reference: p.id, [champ]: voulu }),
       });
       const d = await res.json();
       if (!res.ok || !d.ok) throw new Error(d?.error || `HTTP ${res.status}`);
     } catch (e) {
-      setProds(liste => liste.map(x => (x.id === p.id ? { ...x, menu_du_jour: !voulu } : x)));
+      setProds(liste => liste.map(x => (x.id === p.id ? { ...x, [champ]: !voulu } : x)));
       setMsgJour(
-        `« ${p.nom} » n’a pas pu être ${voulu ? 'ajouté à' : 'retiré de'} la carte du jour. ${
-          e instanceof Error ? e.message : ''
-        }`.trim(),
+        `« ${p.nom} » n’a pas pu être ${quoi}. ${e instanceof Error ? e.message : ''}`.trim(),
       );
     }
   };
+
+  const basculerDuJour = (p: Prod) =>
+    basculer(p, 'menu_du_jour', p.menu_du_jour ? 'retiré de la carte du jour' : 'ajouté à la carte du jour');
+
+  const basculerDispo = (p: Prod) =>
+    basculer(p, 'disponible', p.disponible ? 'marqué épuisé' : 'remis en vente');
 
   /** Vider la selection : l'assistante repropose alors tout le catalogue. */
   const viderSelection = async () => {
@@ -375,6 +395,44 @@ export default function Page() {
   const duJour = prods.filter(p => p.menu_du_jour);
   const duJourDisponibles = duJour.filter(p => p.disponible);
 
+  /**
+   * « Carte du jour » ne veut rien dire hors restauration.
+   *
+   * Une boutique de vetements n'a pas de selection quotidienne : elle a un
+   * catalogue, et ce qu'elle a besoin de dire chaque matin c'est ce qui est
+   * DISPONIBLE. Proposer « mettre au menu du jour » sur une paire de
+   * chaussures, c'est offrir un geste qui n'a pas de sens dans son metier —
+   * et lui faire manquer celui qui en a un.
+   *
+   * CE TEST EST UN DEFAUT, PAS UN VERROU, et la nuance fait tout. La liste
+   * des categories est SEMI-OUVERTE : le tableau de bord en propose sept,
+   * mais toute valeur deja enregistree est conservee telle quelle — une
+   * boutique porte « Vetements et accessoire », qui n'y figure pas. Aucune
+   * liste de mots ne peut donc reconnaitre a coup sur un restaurant : il y a
+   * les maquis, les garbas, les traiteurs, et le mot que le prochain marchand
+   * inventera.
+   *
+   * D'ou la porte de sortie plus bas : celui que ce test ecarte a tort
+   * affiche les boutons d'un clic. Une heuristique qui se trompe doit pouvoir
+   * etre contredite par celui qu'elle dessert.
+   */
+  const sansAccent = (t: string) =>
+    // U+0300 a U+036F : les diacritiques que `NFD` vient de detacher. Ecrits en
+    // echappements et non en caracteres bruts — ils sont invisibles a
+    // l'affichage, et une edition ulterieure les effacerait sans qu'on le voie.
+    t.normalize('NFD').replace(new RegExp('[\u0300-\u036f]', 'g'), '').toLowerCase();
+
+  const MOTS_RESTAURATION = [
+    'restaurant', 'resto', 'maquis', 'garba', 'fast', 'food', 'cuisine',
+    'traiteur', 'snack', 'grill', 'pizzeria', 'patisserie', 'boulangerie',
+  ];
+
+  const estRestauration = MOTS_RESTAURATION.some(mot => sansAccent(secteur).includes(mot));
+
+  // On montre la carte du jour a la restauration, a celui qui s'en sert deja
+  // — sinon il ne pourrait plus la defaire — et a celui qui la demande.
+  const montrerDuJour = estRestauration || duJour.length > 0 || duJourForce;
+
   const cats = ['toutes', ...Array.from(new Set(prods.map(p => p.categorie).filter(Boolean)))];
   const filtrés = cat === 'toutes' ? prods : prods.filter(p => p.categorie === cat);
 
@@ -424,7 +482,35 @@ export default function Page() {
               yeux de l'assistante ; vide, tout le catalogue est propose. Sans
               cette phrase, un marchand qui coche un plat ferme sa boutique au
               bot sans le savoir. */}
-          {prods.length > 0 && (
+          {/* L'ECHEC D'UNE BASCULE SE DIT ICI, HORS DE TOUT BANDEAU.
+              Ce message a d'abord vecu dans l'encart de la carte du jour —
+              lequel est masque pour les boutiques hors restauration. Une
+              disponibilite qui ne s'enregistrait pas y serait donc devenue
+              MUETTE chez celles-la, precisement celles pour qui ce bouton est
+              le geste quotidien. */}
+          {msgJour && (
+            <p className="border border-bissap-300 bg-bissap-50 p-3 text-sm font-semibold text-bissap-700">
+              {msgJour}
+            </p>
+          )}
+
+          {/* La porte de sortie de l'heuristique : le marchand que le test a
+              ecarte a tort affiche les boutons d'un clic. Une supposition qui
+              se trompe doit pouvoir etre contredite par celui qu'elle
+              dessert. */}
+          {prods.length > 0 && !montrerDuJour && (
+            <p className="text-sm text-chaux-600">
+              Vous proposez une carte du jour&nbsp;?{' '}
+              <button
+                onClick={() => setDuJourForce(true)}
+                className="font-semibold text-nuit-900 underline underline-offset-4 hover:text-bissap-600"
+              >
+                Afficher les boutons
+              </button>
+            </p>
+          )}
+
+          {prods.length > 0 && montrerDuJour && (
             <div
               className={`flex flex-wrap items-start justify-between gap-4 border p-4 ${
                 duJour.length > 0
@@ -461,7 +547,6 @@ export default function Page() {
                     </>
                   )}
                 </p>
-                {msgJour && <p className="mt-2 text-sm font-semibold text-bissap-700">{msgJour}</p>}
               </div>
               {duJour.length > 0 && (
                 <Bouton variante="voile" onClick={viderSelection}>
@@ -519,28 +604,56 @@ export default function Page() {
                       <p className="font-black text-mangue-700">{p.prix.toLocaleString('fr-FR')} F</p>
                     </div>
 
-                    {/* METTRE A LA CARTE DU JOUR, EN UN CLIC.
-                        La colonne existait depuis longtemps et l'assistante la
-                        respectait deja — mais aucun ecran ne permettait de la
-                        remplir. Le travail etait fait partout sauf a l'endroit
-                        ou quelqu'un devait s'en servir.
+                    {/* DISPONIBLE OU NON, EN UN CLIC — POUR TOUS LES METIERS.
+                        C'est le seul geste dont chaque boutique a besoin
+                        chaque matin, et il etait ENFERME DANS LE MODAL
+                        « Stock » : trois clics et un formulaire pour dire
+                        qu'une taille est partie. Un geste quotidien range
+                        derriere un geste rare finit par ne plus etre fait, et
+                        l'assistante continue de proposer ce qui n'existe plus.
+
+                        C'est bien cet interrupteur que lit la vitrine ET
+                        l'assistante — `disponible = false` retire l'article
+                        des deux. */}
+                    <button
+                      onClick={() => basculerDispo(p)}
+                      aria-pressed={p.disponible}
+                      className={`flex min-h-11 w-full items-center justify-center gap-2 px-3 text-sm font-semibold transition ${
+                        p.disponible
+                          ? 'bg-accent-100 text-accent-700 hover:bg-accent-200'
+                          : 'bg-bissap-100 text-bissap-700 hover:bg-bissap-200'
+                      }`}
+                    >
+                      {p.disponible ? (
+                        <><Eye className="h-4 w-4" aria-hidden /> En vente</>
+                      ) : (
+                        <><EyeOff className="h-4 w-4" aria-hidden /> Épuisé · remettre en vente</>
+                      )}
+                    </button>
+
+                    {/* LA CARTE DU JOUR, SEULEMENT LA OU ELLE VEUT DIRE
+                        QUELQUE CHOSE. Une boutique de vetements n'a pas de
+                        selection quotidienne : lui proposer ce geste, c'est
+                        l'eloigner de celui qui compte pour elle.
 
                         Le bouton dit son ETAT, pas son action : « Au menu du
                         jour » allume signifie que l'article y est. Un bouton
-                        qui annonce l'action inverse de ce qu'on voit se lit de
+                        qui annonce l'inverse de ce qu'on voit se lit de
                         travers une fois sur deux. */}
-                    <button
-                      onClick={() => basculerDuJour(p)}
-                      aria-pressed={p.menu_du_jour}
-                      className={`flex min-h-11 w-full items-center justify-center gap-2 px-3 text-sm font-semibold transition ${
-                        p.menu_du_jour
-                          ? 'bg-accent-600 text-white hover:bg-accent-700'
-                          : 'bg-chaux-100 text-nuit-700 hover:bg-chaux-200'
-                      }`}
-                    >
-                      <UtensilsCrossed className="h-4 w-4" aria-hidden />
-                      {p.menu_du_jour ? 'Au menu du jour' : 'Mettre au menu du jour'}
-                    </button>
+                    {montrerDuJour && (
+                      <button
+                        onClick={() => basculerDuJour(p)}
+                        aria-pressed={p.menu_du_jour}
+                        className={`flex min-h-11 w-full items-center justify-center gap-2 px-3 text-sm font-semibold transition ${
+                          p.menu_du_jour
+                            ? 'bg-accent-600 text-white hover:bg-accent-700'
+                            : 'bg-chaux-100 text-nuit-700 hover:bg-chaux-200'
+                        }`}
+                      >
+                        <UtensilsCrossed className="h-4 w-4" aria-hidden />
+                        {p.menu_du_jour ? 'Au menu du jour' : 'Mettre au menu du jour'}
+                      </button>
+                    )}
                     <div className="flex items-center justify-between gap-2 border-t pt-2">
                       <span className={` px-2.5 py-1 text-xs font-semibold ${st.color}`}>
                         {st.label}
