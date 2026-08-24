@@ -308,7 +308,21 @@ export async function POST(req: Request) {
     }
 
     if (Object.keys(payload).length === 0) {
-      return Response.json({ ok: true, reference, maj: 'rien a mettre a jour' });
+      // Ce retour-ci porte le jeton LUI AUSSI. Un champ present sur une
+      // sortie et absent sur une autre est precisement ce qui a produit le
+      // lien mort : l'appelant ne peut pas savoir laquelle il a recue, et il
+      // se rabat en silence sur la chaine vide.
+      const { data: dejaLa } = await sb
+        .from('commandes')
+        .select('jeton_suivi')
+        .eq('reference', reference)
+        .maybeSingle();
+      return Response.json({
+        ok: true,
+        reference,
+        maj: 'rien a mettre a jour',
+        jeton_suivi: dejaLa?.jeton_suivi ?? '',
+      });
     }
     const { error } = await sb
       .from('commandes')
@@ -379,10 +393,25 @@ export async function POST(req: Request) {
     if (error) return Response.json({ error: 'INSERT: ' + error.message }, { status: 500 });
   }
 
-  // ---- id de la commande (pour les articles)
+  // ---- id de la commande (pour les articles) ET son jeton de suivi
+  //
+  // LE JETON EST RENDU A L'APPELANT, et ce n'est pas un confort.
+  //
+  // « Confirmation Client » compose le lien de confirmation a partir de ce
+  // que lui envoie l'assistante. Or la commande N'EXISTE PAS ENCORE a cet
+  // instant : c'est cette route-ci qui l'insere, et le jeton nait de la
+  // valeur par defaut de la colonne, a l'insertion. L'assistante ne pouvait
+  // donc pas le connaitre, et le lien partait sans `&t=`.
+  //
+  // Depuis la phase 4, un lien sans jeton est refuse en 404 « Commande
+  // introuvable ». Mesure du 24 aout 2026 sur une vraie commande : le client
+  // recevait un lien mort, et personne ne pouvait plus confirmer sur tout le
+  // chemin de l'assistante — WhatsApp comme Telegram.
+  //
+  // La seule source possible du jeton est donc la reponse de cette route.
   const { data: cmd } = await sb
     .from('commandes')
-    .select('id')
+    .select('id, jeton_suivi')
     .eq('reference', reference)
     .maybeSingle();
   if (!cmd) return Response.json({ error: 'commande introuvable après upsert' }, { status: 500 });
@@ -484,5 +513,10 @@ export async function POST(req: Request) {
     if (errItems) return Response.json({ error: 'ITEMS: ' + errItems.message }, { status: 500 });
   }
 
-  return Response.json({ ok: true, reference, articles: parsed.length });
+  return Response.json({
+    ok: true,
+    reference,
+    articles: parsed.length,
+    jeton_suivi: cmd.jeton_suivi ?? '',
+  });
 }
