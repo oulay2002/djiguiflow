@@ -47,7 +47,23 @@ jobs:
 
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          # UNE VERSION FIXE, PAS « latest ».
+          #
+          # `latest` fait resoudre la derniere release par l'API GitHub, sans
+          # jeton. Le 24 aout 2026, cet appel a ete refuse — « rate limit
+          # exceeded » — et le garde de schema a echoue sur une PR dont le code
+          # etait parfaitement sain.
+          #
+          # C'EST LE PIRE DEFAUT POSSIBLE POUR UN GARDE. Un controle qui tombe
+          # au hasard, pour une raison etrangere a ce qu'il verifie, apprend a
+          # relancer sans lire. Le jour ou il tombe pour une VRAIE raison, on
+          # relance aussi. Un garde qu'on ignore ne garde rien, et il coute la
+          # confiance qu'on avait dans les autres.
+          #
+          # Une version epinglee supprime l'appel de resolution. Elle se monte
+          # a la main, ce qui est le but : la CLI qui compare le depot a la
+          # base ne doit pas changer sous nos pieds un matin.
+          version: 2.115.0
 
       # Le secret manquant doit se dire en clair, comme pour le garde de schema.
       - name: Verifier que le jeton est pose
