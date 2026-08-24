@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { ArrowUpRight, Plus } from 'lucide-react';
+import { ArrowRight, Plus } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { Enseigne } from '@/components/ui/Enseigne';
 import { etatBoutique } from '@/lib/horaires';
@@ -205,30 +205,62 @@ export default function BoutiquesEnLigne() {
                   </span>
                 </span>
 
-                <ArrowUpRight className="h-5 w-5 shrink-0 text-chaux-300 transition group-hover:translate-x-0.5 group-hover:text-nuit-900" />
               </div>
 
-              {/* Le prix plancher et l'heure : deux raisons d'entrer, ou une
-                  raison de revenir plus tard. On l'apprenait apres avoir
-                  clique, et c'est la boutique qu'on jugeait — pas l'heure. */}
-              {(b.prixMin !== null || b.messageHoraire) && (
-                <p className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-chaux-200/70 px-5 py-3 font-mono text-xs uppercase tracking-[0.14em]">
-                  {b.prixMin !== null && (
-                    <span className="text-nuit-900">dès {b.prixMin.toLocaleString('fr-FR')} F</span>
-                  )}
-                  {b.messageHoraire && (
-                    <span className={b.ouvert ? 'text-accent-700' : 'text-chaux-600'}>
-                      <span
-                        aria-hidden
-                        className={`mr-1.5 inline-block h-1.5 w-1.5 rounded-full align-middle ${
-                          b.ouvert ? 'bg-accent-500' : 'bg-chaux-400'
-                        }`}
-                      />
-                      {b.messageHoraire}
-                    </span>
-                  )}
-                </p>
-              )}
+              {/* Ce qui pend sous la carte reste colle en bas, meme quand une
+                  boutique n'a ni prix ni horaire a montrer : sans cela, les
+                  cartes d'une meme rangee finiraient leur invitation a des
+                  hauteurs differentes. */}
+              <div className="mt-auto">
+                {/* Le prix plancher et l'heure : deux raisons d'entrer, ou une
+                    raison de revenir plus tard. On l'apprenait apres avoir
+                    clique, et c'est la boutique qu'on jugeait — pas l'heure. */}
+                {(b.prixMin !== null || b.messageHoraire) && (
+                  <p className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-chaux-200/70 px-5 py-3 font-mono text-xs uppercase tracking-[0.14em]">
+                    {b.prixMin !== null && (
+                      // « A PARTIR DE » PLUTOT QUE « DES ».
+                      // « Des 1 000 F » se lit vite comme un prix, alors que
+                      // c'est un PLANCHER : le premier reflexe est de croire
+                      // qu'on paiera cette somme. La formule longue dit ce
+                      // qu'elle est, et c'est deja le mot que le lecteur
+                      // d'ecran entendait ici.
+                      <span className="text-nuit-900">
+                        à partir de {b.prixMin.toLocaleString('fr-FR')} F
+                      </span>
+                    )}
+                    {b.messageHoraire && (
+                      <span className={b.ouvert ? 'text-accent-700' : 'text-chaux-600'}>
+                        <span
+                          aria-hidden
+                          className={`mr-1.5 inline-block h-1.5 w-1.5 rounded-full align-middle ${
+                            b.ouvert ? 'bg-accent-500' : 'bg-chaux-400'
+                          }`}
+                        />
+                        {b.messageHoraire}
+                      </span>
+                    )}
+                  </p>
+                )}
+
+                {/* DIRE QU'ON PEUT ENTRER, AU LIEU DE L'ESPERER.
+                    Toute la carte est cliquable depuis toujours, mais rien ne
+                    le disait : une fleche de cinq pixels en gris clair, posee
+                    a cote du nom, ne se voit pas. Un visiteur qui decouvre le
+                    site regardait donc une belle vitrine sans savoir qu'elle
+                    s'ouvre — et la plus jolie carte du monde ne sert a rien
+                    si personne ne clique dessus.
+
+                    C'est le meme talon que sur la page des boutiques, jusqu'a
+                    l'inversion au survol : deux ecrans qui montrent la meme
+                    chose doivent s'ouvrir du meme geste. */}
+                <span className="flex items-center justify-between border-t border-chaux-200/70 px-5 py-3.5 font-mono text-xs uppercase tracking-[0.18em] text-nuit-900 transition-colors group-hover:bg-nuit-900 group-hover:text-chaux-50">
+                  Voir la boutique
+                  <ArrowRight
+                    aria-hidden
+                    className="h-4 w-4 transition-transform group-hover:translate-x-1"
+                  />
+                </span>
+              </div>
             </Link>
           ))}
 
