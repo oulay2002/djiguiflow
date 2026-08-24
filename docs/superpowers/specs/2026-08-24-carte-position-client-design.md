@@ -247,9 +247,43 @@ d'existence du bouton : c'est la preuve que l'affichage ne prouve rien.
 
 ## À vérifier AVANT d'écrire une ligne
 
-1. **Les conditions générales de Geoapify, ligne à ligne.** La FAQ autorise
-   l'usage commercial ; les CGU n'ont pas été lues. C'est le genre de détail
-   qui se retourne mal une fois en production.
+1. **Les conditions générales de Geoapify** — **LUES le 24 août, et elles ne
+   lèvent pas l'ambiguïté : elles la créent.**
+
+   | Source | Ce qu'elle dit |
+   |---|---|
+   | FAQ tarifaire | « Yes, we do not restrict that. However, you must provide an appropriate Geoapify attribution. » |
+   | CGU | « The commercial use of the Free-package is allowed in the development and, **with some limitations**, in the production phase. » — et renvoie à leur service. |
+
+   Les deux ne disent pas la même chose, et **les CGU priment sur une FAQ**.
+
+   **Le cache n'est traité par aucune clause**, ni pour ni contre. Or toute
+   l'économie de cette conception repose sur le partage d'une même image entre
+   clients d'un même quartier. Un silence n'est pas une permission.
+
+   **Pas de SLA sur le palier gratuit** — les 99,5 % ne couvrent que les plans
+   payants. Ce point-là **n'est pas bloquant** : la conception fait retomber la
+   page sur le bouton GPS seul quand l'image manque, donc une panne de
+   fournisseur ne coûte aucune position. Un fournisseur sans garantie est
+   acceptable quand sa défaillance est sans conséquence.
+
+   **Double attribution obligatoire** : OpenStreetMap **et** « Powered by
+   Geoapify ».
+
+   ⚠ **Ce point reste OUVERT et ne se règle pas en lisant.** Trois questions
+   précises sont à poser à Geoapify avant de poser une clé en production :
+
+   1. Une plateforme commerciale de commande et livraison, en production,
+      entre-t-elle dans le palier gratuit — et quelles sont les « limitations »
+      que mentionnent les CGU ?
+   2. Le cache des images côté serveur ou CDN est-il autorisé, et pour combien
+      de temps ?
+   3. L'appel depuis notre serveur, la clé n'étant jamais exposée au
+      navigateur, pose-t-il une difficulté ?
+
+   **Tant que ces réponses ne sont pas écrites, aucune clé ne part en
+   production.** Une dépendance dont on ignore les conditions est une panne à
+   retardement.
 2. ~~**Vos quartiers sont-ils lisibles ?**~~ — **VÉRIFIÉ le 24 août, et la
    réponse est oui.** Voir ci-dessous.
 
