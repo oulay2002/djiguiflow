@@ -433,9 +433,14 @@ export default function VitrinePage() {
                             entrer pour le decouvrir. */}
                         {b.prixMin !== null && (
                           <div>
-                            <dt className="sr-only">À partir de</dt>
+                            {/* LE TERME N'EST PLUS CACHE : il est devenu la
+                                phrase elle-meme. « Des 1 000 F » se lit vite
+                                comme un prix alors que c'est un PLANCHER, et
+                                le lecteur d'ecran entendait deja la bonne
+                                formule — l'oeil, lui, avait la mauvaise. */}
+                            <dt className="sr-only">Prix</dt>
                             <dd className="text-nuit-900">
-                              dès {b.prixMin.toLocaleString('fr-FR')} F
+                              à partir de {b.prixMin.toLocaleString('fr-FR')} F
                             </dd>
                           </div>
                         )}
