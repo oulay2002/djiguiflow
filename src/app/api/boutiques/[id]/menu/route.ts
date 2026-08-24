@@ -14,7 +14,7 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }
     // photo_url et menu_du_jour manquaient : les photos televersees par le
     // marchand n'atteignaient jamais la vitrine, et le menu du jour qu'il
     // compose restait invisible.
-    .select('reference, id, nom, categorie, prix, description, photo_url, menu_du_jour, stock, groupe, couleur')
+    .select('reference, id, nom, categorie, prix, description, photo_url, menu_du_jour, stock, groupe, couleur, attribut_nom, attribut_valeurs')
     .eq('boutique_id', m.boutiqueId)
     .eq('disponible', true)
     .order('categorie', { ascending: true })
@@ -50,6 +50,20 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }
     // carte. Vide, l'article s'affiche seul, exactement comme avant.
     groupe: String(p.groupe ?? '').trim(),
     couleur: String(p.couleur ?? '').trim(),
+    // LA CARACTERISTIQUE : pointure, taille, contenance — le marchand la
+    // nomme lui-meme. Le client la demandait par message, article par
+    // article, et le marchand repondait a la main a chaque fois.
+    //
+    // ELLE PART AUSSI VERS L'ASSISTANTE, qui lit cette route depuis le
+    // 19 aout. Sans elle, le bot aurait continue a ignorer une question
+    // que tout acheteur de chaussures pose en premier.
+    //
+    // Les deux vont ensemble ou pas du tout — la base l'impose. On rend
+    // donc une chaine vide et un tableau vide, jamais l'un sans l'autre.
+    attributNom: String(p.attribut_nom ?? '').trim(),
+    attributValeurs: Array.isArray(p.attribut_valeurs)
+      ? p.attribut_valeurs.map((v) => String(v ?? '').trim()).filter(Boolean)
+      : [],
   }));
 
   return Response.json(produits);

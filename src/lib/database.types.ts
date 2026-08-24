@@ -171,6 +171,7 @@ export type Database = {
         Row: {
           boutique_id: string
           canal: string | null
+          chat_cle: string | null
           chat_id: string | null
           client_adresse: string
           client_nom: string
@@ -204,6 +205,7 @@ export type Database = {
         Insert: {
           boutique_id: string
           canal?: string | null
+          chat_cle?: string | null
           chat_id?: string | null
           client_adresse: string
           client_nom: string
@@ -237,6 +239,7 @@ export type Database = {
         Update: {
           boutique_id?: string
           canal?: string | null
+          chat_cle?: string | null
           chat_id?: string | null
           client_adresse?: string
           client_nom?: string
@@ -602,6 +605,8 @@ export type Database = {
       }
       produits: {
         Row: {
+          attribut_nom: string | null
+          attribut_valeurs: string[] | null
           boutique_id: string
           categorie: string | null
           couleur: string | null
@@ -621,6 +626,8 @@ export type Database = {
           stock_initial: number | null
         }
         Insert: {
+          attribut_nom?: string | null
+          attribut_valeurs?: string[] | null
           boutique_id?: string
           categorie?: string | null
           couleur?: string | null
@@ -640,6 +647,8 @@ export type Database = {
           stock_initial?: number | null
         }
         Update: {
+          attribut_nom?: string | null
+          attribut_valeurs?: string[] | null
           boutique_id?: string
           categorie?: string | null
           couleur?: string | null
@@ -1014,6 +1023,8 @@ export type Database = {
       vitrine_produits: {
         Args: { p_ref: string }
         Returns: {
+          attribut_nom: string
+          attribut_valeurs: string[]
           categorie: string
           description: string
           id: string

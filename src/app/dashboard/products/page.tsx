@@ -17,6 +17,12 @@ type Prod = {
   id: string; nom: string; categorie: string; prix: number;
   description: string; disponible: boolean; image: string;
   stock: number | null; seuil_alerte: number | null;
+  /** Retenu dans la selection du jour. Voir `SelectionDuJour` plus bas. */
+  menu_du_jour: boolean;
+  /** Le nom que le marchand donne a la caracteristique : Pointure, Taille… */
+  attribut_nom: string;
+  /** Les valeurs disponibles. Vide quand l'article n'a pas de caracteristique. */
+  attribut_valeurs: string[];
 };
 
 export default function Page() {
@@ -57,6 +63,17 @@ export default function Page() {
   const [fFile, setFFile] = useState<File | null>(null);
   const [fStock, setFStock] = useState('');
   const [fSeuil, setFSeuil] = useState('5');
+  /**
+   * La caracteristique de l'article : pointure, taille, contenance.
+   *
+   * LE MARCHAND LA NOMME LUI-MEME, et ce n'est pas un detail. On dit POINTURE
+   * pour une chaussure et TAILLE pour un vetement — deux mots pour la meme
+   * idee, dans une meme boutique. Un champ fige aurait force le vendeur de
+   * chaussures a ranger sa pointure sous un mot qui n'est pas le sien, et la
+   * pharmacie sa contenance sous « taille ».
+   */
+  const [fAttrNom, setFAttrNom] = useState('');
+  const [fAttrValeurs, setFAttrValeurs] = useState('');
   const [envoi, setEnvoi] = useState(false);
   const [msg, setMsg] = useState('');
 
@@ -67,8 +84,13 @@ export default function Page() {
   const [gPrix, setGPrix] = useState('');
   const [gDesc, setGDesc] = useState('');
   const [gFile, setGFile] = useState<File | null>(null);
+  const [gAttrNom, setGAttrNom] = useState('');
+  const [gAttrValeurs, setGAttrValeurs] = useState('');
   const [gMsg, setGMsg] = useState('');
   const [gEnvoi, setGEnvoi] = useState(false);
+
+  /** Ce que la bascule du jour n'a pas pu enregistrer, dit une seule fois. */
+  const [msgJour, setMsgJour] = useState('');
 
   // Modal de gestion de stock
   const [editProd, setEditProd] = useState<Prod | null>(null);
@@ -149,6 +171,12 @@ export default function Page() {
         categorie: fCat, prix: Number(fPrix) || 0,
         description: fDesc, disponible: fDispo,
         seuil_alerte: fSeuil === '' ? null : Number(fSeuil),
+        // La caracteristique est COMMUNE aux coloris : le meme modele existe
+        // dans les memes pointures quelle que soit sa couleur. Si ce n'est pas
+        // le cas chez un marchand, il saisit deux articles — c'est deja ce
+        // qu'il fait quand deux coloris n'ont pas le meme prix.
+        attribut_nom: fAttrNom.trim(),
+        attribut_valeurs: fAttrValeurs,
       };
 
       // Les coloris renseignes, ceux dont la couleur est nommee. Une ligne
@@ -184,7 +212,7 @@ export default function Page() {
       setOuvert(false);
       setFNom(''); setFCat(''); setFPrix(''); setFDesc(''); setFUrl('');
       setFFile(null); setFDispo(true); setFStock(''); setFSeuil('5');
-      setFColoris([]);
+      setFColoris([]); setFAttrNom(''); setFAttrValeurs('');
       await charger();
     } catch (e) {
       setMsg(e instanceof Error ? e.message : 'Erreur inconnue');
@@ -198,7 +226,47 @@ export default function Page() {
     setGPrix(String(p.prix ?? ''));
     setGDesc(p.description ?? '');
     setGFile(null);
+    setGAttrNom(p.attribut_nom ?? '');
+    setGAttrValeurs((p.attribut_valeurs ?? []).join(', '));
     setGMsg('');
+  };
+
+  /**
+   * Mettre un article dans la selection du jour, ou l'en retirer.
+   *
+   * ON MET A JOUR L'ECRAN D'ABORD. Composer une carte, c'est basculer dix
+   * articles a la suite : attendre le serveur entre chaque clic rendrait le
+   * geste penible au point qu'on ne l'utiliserait pas. En cas d'echec on
+   * REVIENT EN ARRIERE et on le dit — un bouton qui reste allume alors que
+   * rien n'est enregistre est pire que pas de bouton du tout, parce que le
+   * marchand croit sa carte composee.
+   */
+  const basculerDuJour = async (p: Prod) => {
+    const voulu = !p.menu_du_jour;
+    setMsgJour('');
+    setProds(liste => liste.map(x => (x.id === p.id ? { ...x, menu_du_jour: voulu } : x)));
+    try {
+      const res = await fetchDashboard(avecBoutique('/api/dashboard/produits', boutiqueId), {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reference: p.id, menu_du_jour: voulu }),
+      });
+      const d = await res.json();
+      if (!res.ok || !d.ok) throw new Error(d?.error || `HTTP ${res.status}`);
+    } catch (e) {
+      setProds(liste => liste.map(x => (x.id === p.id ? { ...x, menu_du_jour: !voulu } : x)));
+      setMsgJour(
+        `« ${p.nom} » n’a pas pu être ${voulu ? 'ajouté à' : 'retiré de'} la carte du jour. ${
+          e instanceof Error ? e.message : ''
+        }`.trim(),
+      );
+    }
+  };
+
+  /** Vider la selection : l'assistante repropose alors tout le catalogue. */
+  const viderSelection = async () => {
+    const retenus = prods.filter(p => p.menu_du_jour);
+    for (const p of retenus) await basculerDuJour(p);
   };
 
   const sauvegarderFiche = async () => {
@@ -232,6 +300,8 @@ export default function Page() {
           categorie: gCat,
           prix: Number(gPrix) || 0,
           description: gDesc,
+          attribut_nom: gAttrNom.trim(),
+          attribut_valeurs: gAttrValeurs,
           ...(image ? { image } : {}),
         }),
       });
@@ -285,6 +355,26 @@ export default function Page() {
 
   const alertes = prods.filter(p => p.stock !== null && ((p.seuil_alerte !== null && p.stock <= p.seuil_alerte) || p.stock === 0));
 
+  /**
+   * LA SELECTION DU JOUR EST UN INTERRUPTEUR A UN SEUL CRAN, et c'est le
+   * piege qu'il faut nommer a l'ecran.
+   *
+   * Tant qu'AUCUN article n'est retenu, l'assistante propose tout le catalogue
+   * disponible. Des qu'UN SEUL l'est, elle ne propose plus que celui-la : le
+   * reste de la boutique disparait de sa carte, sans que rien n'ait ete
+   * supprime. Un marchand qui coche un plat par curiosite ferme donc sa
+   * boutique aux yeux du bot, et ne le decouvre que par un client qui ne
+   * trouve plus rien.
+   *
+   * Cette regle vient du 19 aout : filtrer sur la selection rendait une carte
+   * VIDE aux boutiques de vetements et aux pharmacies, qui n'ont pas de
+   * selection quotidienne. Le repli « rien de coche = tout le catalogue » les
+   * a rendues vendeuses sans reglage — mais il rend l'interrupteur d'autant
+   * plus brutal pour celui qui s'en sert.
+   */
+  const duJour = prods.filter(p => p.menu_du_jour);
+  const duJourDisponibles = duJour.filter(p => p.disponible);
+
   const cats = ['toutes', ...Array.from(new Set(prods.map(p => p.categorie).filter(Boolean)))];
   const filtrés = cat === 'toutes' ? prods : prods.filter(p => p.categorie === cat);
 
@@ -328,6 +418,59 @@ export default function Page() {
             </div>
           )}
 
+          {/* LA CARTE DU JOUR, ET CE QU'ELLE FAIT VRAIMENT.
+              Ce bandeau ne decore pas : il dit l'effet de bord que le bouton
+              ne peut pas montrer. Coche, la selection MASQUE tout le reste aux
+              yeux de l'assistante ; vide, tout le catalogue est propose. Sans
+              cette phrase, un marchand qui coche un plat ferme sa boutique au
+              bot sans le savoir. */}
+          {prods.length > 0 && (
+            <div
+              className={`flex flex-wrap items-start justify-between gap-4 border p-4 ${
+                duJour.length > 0
+                  ? 'border-accent-300 bg-accent-50'
+                  : 'border-[var(--hairline)] bg-chaux-50'
+              }`}
+            >
+              <div className="min-w-0 flex-1">
+                <p className={`font-bold ${duJour.length > 0 ? 'text-accent-700' : 'text-nuit-800'}`}>
+                  {duJour.length > 0
+                    ? `Carte du jour · ${duJour.length} article${duJour.length > 1 ? 's' : ''}`
+                    : 'Aucune carte du jour'}
+                </p>
+                <p className="mt-1 text-sm text-nuit-700">
+                  {duJour.length > 0 ? (
+                    <>
+                      L’assistante ne proposera <strong>que ces articles</strong> à vos clients.
+                      Le reste de votre catalogue reste en ligne sur votre vitrine, mais elle
+                      ne le citera pas.
+                      {duJourDisponibles.length === 0 && (
+                        <>
+                          {' '}
+                          <strong className="text-bissap-700">
+                            Aucun n’est disponible : l’assistante n’aura rien à proposer.
+                          </strong>
+                        </>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      L’assistante propose tout votre catalogue disponible. Choisissez des
+                      articles ci-dessous pour composer une carte du jour — elle ne citera
+                      alors plus qu’eux.
+                    </>
+                  )}
+                </p>
+                {msgJour && <p className="mt-2 text-sm font-semibold text-bissap-700">{msgJour}</p>}
+              </div>
+              {duJour.length > 0 && (
+                <Bouton variante="voile" onClick={viderSelection}>
+                  Tout remettre au catalogue
+                </Bouton>
+              )}
+            </div>
+          )}
+
           <div className="flex flex-wrap gap-2">
             {cats.map(c => (
               <button key={c} onClick={() => setCat(c)}
@@ -359,10 +502,45 @@ export default function Page() {
                       </span>
                     </div>
                     <p className="text-xs text-chaux-600">{p.description}</p>
+
+                    {/* La caracteristique, telle que le marchand l'a nommee.
+                        Elle ne s'affiche que si elle existe : un plat n'a pas
+                        de pointure, et lui en inventer une serait pire que de
+                        n'en montrer aucune. */}
+                    {p.attribut_valeurs.length > 0 && (
+                      <p className="text-xs text-nuit-700">
+                        <span className="font-semibold">{p.attribut_nom}</span>{' '}
+                        <span className="text-chaux-600">{p.attribut_valeurs.join(' · ')}</span>
+                      </p>
+                    )}
+
                     <div className="flex items-center justify-between pt-1">
                       <span className=" bg-mangue-100 px-2.5 py-1 text-xs font-semibold text-mangue-700">{p.categorie}</span>
                       <p className="font-black text-mangue-700">{p.prix.toLocaleString('fr-FR')} F</p>
                     </div>
+
+                    {/* METTRE A LA CARTE DU JOUR, EN UN CLIC.
+                        La colonne existait depuis longtemps et l'assistante la
+                        respectait deja — mais aucun ecran ne permettait de la
+                        remplir. Le travail etait fait partout sauf a l'endroit
+                        ou quelqu'un devait s'en servir.
+
+                        Le bouton dit son ETAT, pas son action : « Au menu du
+                        jour » allume signifie que l'article y est. Un bouton
+                        qui annonce l'action inverse de ce qu'on voit se lit de
+                        travers une fois sur deux. */}
+                    <button
+                      onClick={() => basculerDuJour(p)}
+                      aria-pressed={p.menu_du_jour}
+                      className={`flex min-h-11 w-full items-center justify-center gap-2 px-3 text-sm font-semibold transition ${
+                        p.menu_du_jour
+                          ? 'bg-accent-600 text-white hover:bg-accent-700'
+                          : 'bg-chaux-100 text-nuit-700 hover:bg-chaux-200'
+                      }`}
+                    >
+                      <UtensilsCrossed className="h-4 w-4" aria-hidden />
+                      {p.menu_du_jour ? 'Au menu du jour' : 'Mettre au menu du jour'}
+                    </button>
                     <div className="flex items-center justify-between gap-2 border-t pt-2">
                       <span className={` px-2.5 py-1 text-xs font-semibold ${st.color}`}>
                         {st.label}
@@ -416,6 +594,45 @@ export default function Page() {
               <input className=" border p-2" placeholder="Catégorie (ex : Burger)" value={fCat} onChange={e => setFCat(e.target.value)} />
               <input className=" border p-2" placeholder="Prix (FCFA) *" type="number" value={fPrix} onChange={e => setFPrix(e.target.value)} />
               <input className=" border p-2" placeholder="Description" value={fDesc} onChange={e => setFDesc(e.target.value)} />
+            </div>
+
+            {/* LA CARACTERISTIQUE, NOMMEE PAR LE MARCHAND.
+                Un client qui regarde une paire de chaussures veut savoir si
+                elle existe a sa pointure. Il devait ecrire pour le demander,
+                et le marchand repondre a la main — a chaque client, pour
+                chaque article.
+
+                LE NOM EST UN CHAMP, PAS UNE LISTE FIGEE. L'exemple contient
+                deja deux mots pour la meme idee : on dit POINTURE pour une
+                chaussure et TAILLE pour un vetement. Figer le mot forcerait le
+                vendeur de chaussures a ranger sa pointure sous un terme qui
+                n'est pas le sien, et la pharmacie sa contenance sous
+                « taille ». Cette plateforme sert des metiers qu'on ne connait
+                pas d'avance. */}
+            <div className="border border-chaux-200 bg-chaux-50 p-3">
+              <p className="font-semibold text-nuit-900">
+                Cet article se décline en tailles, pointures… ?
+              </p>
+              <p className="mt-0.5 text-sm text-chaux-600">
+                Facultatif. Vos clients le verront sur la vitrine, et l’assistante
+                pourra le dire sans que vous ayez à répondre.
+              </p>
+              <div className="mt-3 grid gap-2 sm:grid-cols-[10rem_1fr]">
+                <input
+                  className="border p-2"
+                  placeholder="Pointure"
+                  value={fAttrNom}
+                  onChange={e => setFAttrNom(e.target.value)}
+                  aria-label="Nom de la caractéristique, par exemple Pointure ou Taille"
+                />
+                <input
+                  className="border p-2"
+                  placeholder="38, 39, 40, 41"
+                  value={fAttrValeurs}
+                  onChange={e => setFAttrValeurs(e.target.value)}
+                  aria-label="Valeurs disponibles, séparées par des virgules"
+                />
+              </div>
             </div>
 
             {/* LES COLORIS, SAISIS EN UNE SEULE FOIS.
@@ -580,6 +797,35 @@ export default function Page() {
             <div>
               <label className="mb-1 block text-sm font-semibold text-nuit-700">Description</label>
               <textarea rows={2} value={gDesc} onChange={x => setGDesc(x.target.value)} className="w-full border p-2" />
+            </div>
+
+            {/* La caracteristique se corrige comme le reste de la fiche : les
+                pointures disponibles changent en cours de saison, et un
+                marchand qui ne peut pas les mettre a jour cesse vite d'y
+                croire. Vider les deux champs la retire. */}
+            <div>
+              <label className="mb-1 block text-sm font-semibold text-nuit-700">
+                Tailles, pointures…
+              </label>
+              <div className="grid gap-2 sm:grid-cols-[10rem_1fr]">
+                <input
+                  value={gAttrNom}
+                  onChange={x => setGAttrNom(x.target.value)}
+                  placeholder="Pointure"
+                  className="border p-2"
+                  aria-label="Nom de la caractéristique"
+                />
+                <input
+                  value={gAttrValeurs}
+                  onChange={x => setGAttrValeurs(x.target.value)}
+                  placeholder="38, 39, 40, 41"
+                  className="border p-2"
+                  aria-label="Valeurs disponibles, séparées par des virgules"
+                />
+              </div>
+              <p className="mt-1 text-xs text-chaux-600">
+                Videz les deux champs pour retirer cette information.
+              </p>
             </div>
 
             <div>

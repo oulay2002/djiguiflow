@@ -4,6 +4,57 @@ import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 
 export const dynamic = 'force-dynamic';
 
+/**
+ * La caracteristique d'un article : pointure, taille, contenance.
+ *
+ * LES DEUX MOITIES VONT ENSEMBLE OU PAS DU TOUT, et la base l'impose par une
+ * contrainte. Un nom sans valeurs afficherait « Pointure : » suivi de rien ;
+ * des valeurs sans nom afficheraient « 38, 39 » sans dire de quoi il s'agit.
+ *
+ * ON REFUSE PLUTOT QUE DE COMPLETER EN SILENCE. Deviner le nom manquant, ou
+ * jeter les valeurs orphelines, ferait croire au marchand que sa saisie est
+ * passee : il ne decouvrirait le contraire que par un client. C'est le defaut
+ * que cette plateforme a deja paye plusieurs fois — une valeur par defaut qui
+ * masque une valeur absente.
+ *
+ * Accepte la liste sous les deux formes : tableau, ou texte separe par des
+ * virgules — c'est ainsi qu'un marchand ecrit « 38, 39, 40 ».
+ */
+function caracteristique(
+  nomBrut: unknown,
+  valeursBrutes: unknown,
+): { ok: true; nom: string | null; valeurs: string[] | null } | { ok: false; message: string } {
+  const nom = String(nomBrut ?? '').trim();
+
+  const valeurs = (Array.isArray(valeursBrutes)
+    ? valeursBrutes
+    : String(valeursBrutes ?? '').split(','))
+    .map((v) => String(v ?? '').trim())
+    .filter(Boolean);
+
+  if (!nom && valeurs.length === 0) return { ok: true, nom: null, valeurs: null };
+
+  if (!nom) {
+    return { ok: false, message: 'Précisez ce que sont ces valeurs (Pointure, Taille…).' };
+  }
+  if (valeurs.length === 0) {
+    return { ok: false, message: `Indiquez les ${nom.toLowerCase()}s disponibles, ou laissez le champ vide.` };
+  }
+
+  // Le meme article ne peut pas exister deux fois dans la meme pointure ; le
+  // doublon vient d'une saisie, pas d'une realite. On garde le premier ordre,
+  // qui est celui voulu par le marchand.
+  const vues = new Set<string>();
+  const uniques = valeurs.filter((v) => {
+    const cle = v.toLowerCase();
+    if (vues.has(cle)) return false;
+    vues.add(cle);
+    return true;
+  });
+
+  return { ok: true, nom, valeurs: uniques };
+}
+
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const acces = await exigerAccesMarchand(req, searchParams.get('boutique_id'));
@@ -15,7 +66,7 @@ export async function GET(req: Request) {
 
   const { data, error } = await sb
     .from('produits')
-    .select('reference, id, nom, categorie, prix, description, disponible, photo_url, stock, stock_initial, seuil_alerte, menu_du_jour')
+    .select('reference, id, nom, categorie, prix, description, disponible, photo_url, stock, stock_initial, seuil_alerte, menu_du_jour, attribut_nom, attribut_valeurs')
     .eq('boutique_id', m.boutiqueId)
     .order('nom', { ascending: true });
 
@@ -36,14 +87,24 @@ export async function GET(req: Request) {
     stock_initial: p.stock_initial ?? null,
     seuil_alerte: p.seuil_alerte ?? null,
     menu_du_jour: p.menu_du_jour === true,
+    // La caracteristique, telle que le marchand l'a nommee. Les deux moities
+    // vont ensemble ou pas du tout — la base l'impose.
+    attribut_nom: String(p.attribut_nom ?? '').trim(),
+    attribut_valeurs: Array.isArray(p.attribut_valeurs)
+      ? p.attribut_valeurs.map((v) => String(v ?? '').trim()).filter(Boolean)
+      : [],
   }));
 
   return Response.json({ boutique_id: m.id, produits });
 }
 
 export async function POST(req: Request) {
-  const { nom, categorie, prix, description, disponible, image, stock, seuil_alerte, groupe, couleur } = await req.json();
+  const corps = await req.json();
+  const { nom, categorie, prix, description, disponible, image, stock, seuil_alerte, groupe, couleur } = corps;
   if (!nom) return Response.json({ error: 'Nom requis' }, { status: 400 });
+
+  const carac = caracteristique(corps.attribut_nom, corps.attribut_valeurs);
+  if (!carac.ok) return Response.json({ error: carac.message }, { status: 400 });
 
   const { searchParams } = new URL(req.url);
   const acces = await exigerAccesMarchand(req, searchParams.get('boutique_id'));
@@ -89,6 +150,11 @@ export async function POST(req: Request) {
       // carte. Vides, ils ne changent rien — l'article s'affiche seul.
       groupe: String(groupe ?? '').trim() || null,
       couleur: String(couleur ?? '').trim() || null,
+      // LA CARACTERISTIQUE. Elle se saisit a la creation parce que c'est le
+      // moment ou le marchand a l'article sous les yeux ; la lui faire ajouter
+      // apres coup, article par article, garantirait qu'elle reste vide.
+      attribut_nom: carac.nom,
+      attribut_valeurs: carac.valeurs,
     },
     { onConflict: 'boutique_id,reference' },
   );
@@ -167,7 +233,24 @@ export async function PATCH(req: Request) {
     photo_url?: string | null;
     groupe?: string | null;
     couleur?: string | null;
+    menu_du_jour?: boolean;
+    attribut_nom?: string | null;
+    attribut_valeurs?: string[] | null;
   } = {};
+
+  // LA CARTE DU JOUR — la colonne existait, l'assistante la respectait deja,
+  // et le marchand n'avait AUCUN moyen de la remplir. Le travail etait fait
+  // partout sauf a l'endroit ou quelqu'un devait s'en servir.
+  if (corps.menu_du_jour !== undefined) patch.menu_du_jour = Boolean(corps.menu_du_jour);
+
+  // La caracteristique ne se touche que si elle est envoyee : un formulaire qui
+  // ne corrige qu'un prix ne doit pas effacer les pointures.
+  if (corps.attribut_nom !== undefined || corps.attribut_valeurs !== undefined) {
+    const carac = caracteristique(corps.attribut_nom, corps.attribut_valeurs);
+    if (!carac.ok) return Response.json({ error: carac.message }, { status: 400 });
+    patch.attribut_nom = carac.nom;
+    patch.attribut_valeurs = carac.valeurs;
+  }
 
   if (stock !== undefined) patch.stock = stock === null || stock === '' ? null : Number(stock);
   if (seuil_alerte !== undefined) patch.seuil_alerte = seuil_alerte === null || seuil_alerte === '' ? null : Number(seuil_alerte);
@@ -224,6 +307,11 @@ export async function PATCH(req: Request) {
           case 'disponible': return valeur('disponible', disponible, (v) => (v ? 'TRUE' : 'FALSE'));
           case 'stock': return valeur('stock', patch.stock, (v) => (v === null ? '' : String(v)));
           case 'seuil_alerte': return valeur('seuil_alerte', patch.seuil_alerte, (v) => (v === null ? '' : String(v)));
+          // La feuille n'est plus lue par l'assistante depuis le 19 aout, mais
+          // tant qu'elle porte cette colonne elle ne doit pas dire l'inverse de
+          // la base : un marchand qui rouvrirait son onglet y lirait une carte
+          // du jour qu'il a defaite la veille.
+          case 'menu_du_jour': return valeur('menu_du_jour', patch.menu_du_jour, (v) => (v ? 'TRUE' : 'FALSE'));
           default: return String(ancienne[h] ?? '');
         }
       });
