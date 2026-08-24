@@ -369,12 +369,19 @@ function dejaRepondu(ligne: Ligne): Response | null {
    *
    * Rien de tout cela n'est propose sur une commande ANNULEE : demander sa
    * porte a quelqu'un qui vient d'annuler n'a aucun sens — la meme regle
-   * qu'a la confirmation.
+   * qu'a la confirmation — et une commande annulee n'a rien a suivre.
+   *
+   * LES DEUX BLOCS N'ONT PAS LA MEME DUREE DE VIE, et les lier serait une
+   * facilite trompeuse. La POSITION expire : passe la livraison ou les 24 h,
+   * la route la refuse et le bouton echouerait. Le SUIVI, lui, ne se perime
+   * pas — un client qui rouvre son lien veut precisement savoir ou en est sa
+   * commande, et c'est encore plus vrai une fois livree.
    */
   const extra =
-    confirmee && positionRecevable(ligne)
-      ? blocPosition(ligne.reference, ligne.latitude !== null) + blocSuivi(ligne.reference)
-      : '';
+    (confirmee && positionRecevable(ligne)
+      ? blocPosition(ligne.reference, ligne.latitude !== null)
+      : '')
+    + (confirmee ? blocSuivi(ligne.reference) : '');
 
   return reponseHtml(
     'DÉJÀ RÉPONDU',
