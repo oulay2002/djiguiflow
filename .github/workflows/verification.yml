@@ -79,6 +79,29 @@ jobs:
       - name: Langage visuel
         run: npm run verifier:palette
 
+      # LE VERROU DES FONCTIONS SECURITY DEFINER.
+      #
+      # Le 24 aout 2026, sur les 24 fonctions SECURITY DEFINER de la
+      # production, UNE SEULE etait executable par PUBLIC — et personne ne
+      # l'avait decide. La migration de la veille avait fait `drop function`
+      # puis `create function` : le drop remet les droits a la valeur PAR
+      # DEFAUT de Postgres, qui est EXECUTE a PUBLIC, et le `grant` pose
+      # ensuite n'en retire rien.
+      #
+      # Ce cas-la n'ouvrait rien — c'etait l'annuaire public, deja ouvert a
+      # anon. La meme migration ecrite pour `prolonger_acces` ou
+      # `secret_webhook_n8n` aurait ouvert a tout visiteur de la vitrine une
+      # fonction qui contourne RLS par construction. SECURITY DEFINER ne
+      # restreint RIEN : le seul verrou est l'ACL.
+      #
+      # IL VIT ICI, ET PAS DANS LE JOB `schema`, DELIBEREMENT. Il lit un
+      # fichier du depot et n'a besoin d'AUCUN secret. Le placer dans un job
+      # qui exige SUPABASE_ACCESS_TOKEN lui donnerait une facon de tomber
+      # etrangere a ce qu'il verifie — le defaut que la version epinglee du
+      # CLI vient justement de fermer, deux commits plus haut.
+      - name: Fonctions SECURITY DEFINER
+        run: npm run verifier:definer
+
       - name: Build
         run: npm run build
 

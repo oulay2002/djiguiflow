@@ -17,6 +17,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "verifier:migrations": "node scripts/verifier-migrations.mjs",
+    "verifier:definer": "node scripts/verifier-fonctions-definer.mjs",
     "verifier:palette": "node scripts/palette-maison.mjs"
   },
   "dependencies": {

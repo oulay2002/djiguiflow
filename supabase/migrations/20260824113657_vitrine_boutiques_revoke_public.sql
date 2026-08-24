@@ -1,0 +1,32 @@
+-- LA SEULE FONCTION SECURITY DEFINER EXECUTABLE PAR PUBLIC.
+--
+-- Mesure du 24 aout 2026 sur la production : sur 24 fonctions SECURITY
+-- DEFINER du schema public, UNE SEULE repond vrai a
+-- has_function_privilege('public', ..., 'EXECUTE') -- vitrine_boutiques.
+-- Les 23 autres sont propres, vitrine_boutique et vitrine_produits compris
+-- (ouvertes a `anon` seul, ce qui est voulu : ce sont les pages publiques).
+--
+-- LA CAUSE, et c'est elle qu'il faut retenir. 20260823200135 a fait :
+--
+--     drop function if exists public.vitrine_boutiques();
+--     create function public.vitrine_boutiques() ...
+--     grant execute ... to anon, authenticated, service_role;
+--
+-- Le `drop` etait necessaire -- la signature de retour changeait -- mais il
+-- remet les droits a la valeur PAR DEFAUT de Postgres, qui est EXECUTE a
+-- PUBLIC. Le `grant` pose par-dessus n'en retire rien. Un `create or replace`
+-- aurait conserve l'ACL ; un `drop` la reinitialise en silence.
+--
+-- CE QUE CELA N'OUVRE PAS. Rien aujourd'hui : c'est l'annuaire public,
+-- delibrement ouvert a `anon`, et PUBLIC designe exactement le meme monde.
+-- On ne ferme pas une fuite, on retire une exception.
+--
+-- POURQUOI LE FAIRE QUAND MEME. C'est la seule exception d'un jeu de 24, et
+-- elle a l'air d'une decision alors que personne n'a decide. La prochaine
+-- fonction refaite par drop+create n'aura pas forcement la chance d'etre
+-- publique -- prolonger_acces, definir_jeton_canal ou secret_webhook_n8n
+-- passeraient par le meme trou sans que rien ne le dise.
+--
+-- La regle a garder : APRES TOUT `drop function`, reposer le revoke, pas
+-- seulement les grants.
+revoke all on function public.vitrine_boutiques() from public;
