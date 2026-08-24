@@ -1,4 +1,5 @@
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
+import { filtreAppariementChat } from '@/lib/appariementChat';
 import type { Database } from '@/lib/database.types';
 import { normaliserTelephone } from '@/lib/telephone';
 import { prefixeReference } from '@/lib/marchands';
@@ -104,7 +105,10 @@ export async function POST(req: Request) {
           .from('commandes')
           .select('reference')
           .eq('boutique_id', boutique_id)
-          .eq('chat_id', chatId)
+          // Egalite stricte OU cle des 8 derniers chiffres : un meme client a
+          // porte jusqu'a TROIS chat_id chez la meme boutique. Voir
+          // appariementChat.ts — la regle y vit seule, pour ne pas diverger.
+          .or(filtreAppariementChat(chatId))
           .eq('statut', 'panier')
           .order('created_at', { ascending: false })
           .limit(1)

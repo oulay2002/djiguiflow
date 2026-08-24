@@ -46,6 +46,47 @@ export function normaliserTelephone(saisie: unknown): TelephoneResultat {
   return { ok: true, national: d, international: INDICATIF + d };
 }
 
+/**
+ * La cle d'appariement d'un `chat_id` — les HUIT derniers chiffres.
+ *
+ * POURQUOI ELLE EXISTE. Mesure du 24 aout 2026 : le meme client portait
+ * TROIS `chat_id` differents chez la meme boutique — `2250102918886`
+ * (11 commandes), `22502918886` (10) et `0102918886` (6). Les routes
+ * appariaient par egalite stricte : la note qu'il envoyait apres livraison ne
+ * retrouvait aucune commande, partait a l'assistante, et lui revenait sous la
+ * forme d'un nouveau menu. Sa note etait perdue sans le moindre signal.
+ *
+ * POURQUOI ON N'UNIFORMISE PAS LA COLONNE. `chat_id` est une ADRESSE D'ENVOI,
+ * pas un numero : sur Telegram, c'est par lui qu'on ecrit au client
+ * (`canaux.ts` le dit — « pas de normalisation telephonique ici, c'est un
+ * chat_id »). Le reecrire casserait les envois. On tolere donc a la LECTURE,
+ * ce qui est de toute facon obligatoire : WhatsApp continuera d'annoncer le
+ * numero sous la forme ou il a ete enregistre, et rien ici ne peut l'en
+ * empecher.
+ *
+ * POURQUOI HUIT. Avant 2021 un numero ivoirien en comptait huit ; la reforme
+ * a prefixe un couple d'operateur (01, 05, 07). Les huit derniers chiffres
+ * sont donc la part STABLE de part et d'autre de la reforme, et les trois
+ * formes ci-dessus s'y rejoignent toutes sur `02918886`.
+ *
+ * ⚠ CE QU'ELLE COUTE, ET IL FAUT LE SAVOIR. Deux numeros qui ne different que
+ * par le prefixe d'operateur — `0102918886` et `0702918886` — partagent cette
+ * cle. Dans une meme boutique, ils seraient confondus. C'est le prix assume
+ * de l'option retenue ; le filtre par boutique le borne, et le desordre vient
+ * d'une source qu'on ne controle pas.
+ *
+ * ELLE NE REND RIEN pour ce qui n'a pas la FORME d'un telephone ivoirien —
+ * un identifiant Telegram, par exemple, qui est un entier arbitraire et
+ * parfaitement stable. Ceux-la restent apparies a l'identique, et ne peuvent
+ * donc pas etre elargis par erreur.
+ */
+export function cleAppariement(saisie: unknown): string {
+  const d = String(saisie ?? '').replace(/\D/g, '');
+  if (d.length < 8) return '';
+  if (!d.startsWith('0') && !d.startsWith(INDICATIF)) return '';
+  return d.slice(-8);
+}
+
 /** Formatage lisible pendant la saisie : 01 02 03 04 05. */
 export function formaterTelephone(saisie: string): string {
   const d = String(saisie ?? '').replace(/\D/g, '').slice(0, LONGUEUR_NATIONALE);
