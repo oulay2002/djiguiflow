@@ -39,7 +39,7 @@ export async function POST(req: Request) {
 
   const { data, error } = await sb
     .from('commandes')
-    .select('id, reference, jeton_suivi, client_nom, client_telephone, client_adresse, instructions, total, canal, chat_id, statut, statut_livraison, nom_livreur, frais_livraison, created_at')
+    .select('id, reference, jeton_suivi, client_nom, client_telephone, client_adresse, latitude, longitude, instructions, total, canal, chat_id, statut, statut_livraison, nom_livreur, frais_livraison, created_at')
     .eq('reference', reference)
     .maybeSingle();
 
@@ -69,6 +69,19 @@ export async function POST(req: Request) {
       customer_name: data.client_nom ?? '',
       phone: data.client_telephone ?? '',
       address: data.client_adresse ?? '',
+      // LE POINT, ET POURQUOI IL EST ICI.
+      //
+      // Le client peut donner sa position depuis la page de confirmation
+      // depuis le 17 aout. Mesure du 24 aout : zero position capturee, et
+      // surtout — meme capturee, elle n'allait NULLE PART. Cette route est
+      // celle que lit « Acceptation Livraison » pour composer le message du
+      // livreur, et elle ne rendait pas le point. Il mourait en base.
+      //
+      // NULL est rendu tel quel, jamais 0 : « on ne sait pas ou est la
+      // porte » ne doit pas se confondre avec un point au large du golfe de
+      // Guinee. C'est l'appelant qui decide quoi faire de l'absence.
+      latitude: data.latitude ?? null,
+      longitude: data.longitude ?? null,
       instructions: data.instructions ?? '',
       total_price: Number(data.total ?? 0),
       canal: data.canal ?? '',
