@@ -1,7 +1,7 @@
 {
   "active": true,
   "activeVersion": {
-    "authors": "JEAN PAUL OULAI",
+    "authors": "JEAN PAUL OULAI (via MCP)",
     "autosaved": false,
     "connections": {
       "Boutique fournie ?": {
@@ -245,6 +245,9 @@
               },
               {
                 "name": "sheet_document_id"
+              },
+              {
+                "name": "notification"
               }
             ]
           }
@@ -690,7 +693,7 @@
         "parameters": {
           "authentication": "genericCredentialType",
           "genericAuthType": "httpHeaderAuth",
-          "jsonBody": "={\n  \"boutique\": \"{{ $json.boutique }}\",\n  \"canal\": \"{{ $json.canal }}\",\n  \"destinataire\": \"{{ $json.destinataire }}\",\n  \"message\": {{ JSON.stringify($json.message) }},\n  \"reply_markup\": {{ JSON.stringify($json.reply_markup || '') }},\n  \"format\": {{ JSON.stringify($json.format || 'texte') }}\n}",
+          "jsonBody": "={\n  \"boutique\": \"{{ $json.boutique }}\",\n  \"canal\": \"{{ $json.canal }}\",\n  \"destinataire\": \"{{ $json.destinataire }}\",\n  \"message\": {{ JSON.stringify($json.message) }},\n  \"reply_markup\": {{ JSON.stringify($json.reply_markup || '') }},\n  \"format\": {{ JSON.stringify($json.format || 'texte') }},\n  \"notification\": {{ JSON.stringify($json.notification || '') }}\n}",
           "method": "POST",
           "options": {},
           "sendBody": true,
@@ -790,25 +793,7 @@
     "workflowPublishHistory": [
       {
         "event": "activated",
-        "id": 186,
-        "userId": "81519f6f-0887-498a-ad83-5ffd6d591e9a",
-        "workflowId": "JkNvcqsZaY22dfk5"
-      },
-      {
-        "event": "activated",
-        "id": 188,
-        "userId": "81519f6f-0887-498a-ad83-5ffd6d591e9a",
-        "workflowId": "JkNvcqsZaY22dfk5"
-      },
-      {
-        "event": "deactivated",
-        "id": 185,
-        "userId": "81519f6f-0887-498a-ad83-5ffd6d591e9a",
-        "workflowId": "JkNvcqsZaY22dfk5"
-      },
-      {
-        "event": "deactivated",
-        "id": 187,
+        "id": 240,
         "userId": "81519f6f-0887-498a-ad83-5ffd6d591e9a",
         "workflowId": "JkNvcqsZaY22dfk5"
       }
@@ -1058,6 +1043,9 @@
             },
             {
               "name": "sheet_document_id"
+            },
+            {
+              "name": "notification"
             }
           ]
         }
@@ -1503,7 +1491,7 @@
       "parameters": {
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
-        "jsonBody": "={\n  \"boutique\": \"{{ $json.boutique }}\",\n  \"canal\": \"{{ $json.canal }}\",\n  \"destinataire\": \"{{ $json.destinataire }}\",\n  \"message\": {{ JSON.stringify($json.message) }},\n  \"reply_markup\": {{ JSON.stringify($json.reply_markup || '') }},\n  \"format\": {{ JSON.stringify($json.format || 'texte') }}\n}",
+        "jsonBody": "={\n  \"boutique\": \"{{ $json.boutique }}\",\n  \"canal\": \"{{ $json.canal }}\",\n  \"destinataire\": \"{{ $json.destinataire }}\",\n  \"message\": {{ JSON.stringify($json.message) }},\n  \"reply_markup\": {{ JSON.stringify($json.reply_markup || '') }},\n  \"format\": {{ JSON.stringify($json.format || 'texte') }},\n  \"notification\": {{ JSON.stringify($json.notification || '') }}\n}",
         "method": "POST",
         "options": {},
         "sendBody": true,
@@ -1607,5 +1595,5 @@
   },
   "sourceWorkflowId": null,
   "tags": [],
-  "versionCounter": 12
+  "versionCounter": 13
 }

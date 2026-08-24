@@ -141,6 +141,7 @@
               "canal": "whatsapp",
               "destinataire": "={{ $json.telephone }}",
               "message": "=🔔 *Nouvelle commande — {{ $json.nom }}*\n\n📦 Commande #{{ String($('Webhook').first().json.body.id || 'N/A').slice(0,6).toUpperCase() }}\n👤 Client : {{ $('Webhook').first().json.body.client_nom || 'Non renseigne' }}\n📞 Tél : {{ $('Webhook').first().json.body.client_telephone || 'Non renseigne' }}\n📍 Adresse : {{ $('Webhook').first().json.body.client_adresse || 'Non renseignee' }}\n💰 Total : {{ $('Webhook').first().json.body.total || 0 }} FCFA\n\n👉 https://www.djiguiflow.com/dashboard/commandes",
+              "notification": "nouvelle_commande",
               "reply_markup": ""
             }
           }
@@ -248,6 +249,7 @@
               "canal": "telegram",
               "destinataire": "={{ $json.telegram_marchand }}",
               "message": "=🔔 Nouvelle commande — {{ $json.nom }}\n\n📦 Commande #{{ String($('Webhook').first().json.body.id || 'N/A').slice(0,6).toUpperCase() }}\n👤 Client : {{ $('Webhook').first().json.body.client_nom || 'Non renseigne' }}\n📞 Tél : {{ $('Webhook').first().json.body.client_telephone || 'Non renseigne' }}\n📍 Adresse : {{ $('Webhook').first().json.body.client_adresse || 'Non renseignee' }}\n💰 Total : {{ $('Webhook').first().json.body.total || 0 }} FCFA\n\n👉 https://www.djiguiflow.com/dashboard/commandes",
+              "notification": "nouvelle_commande",
               "reply_markup": ""
             }
           }
@@ -315,7 +317,31 @@
     "workflowPublishHistory": [
       {
         "event": "activated",
-        "id": 174,
+        "id": 244,
+        "userId": "81519f6f-0887-498a-ad83-5ffd6d591e9a",
+        "workflowId": "22NzoGizdPGkMLRr"
+      },
+      {
+        "event": "activated",
+        "id": 248,
+        "userId": "81519f6f-0887-498a-ad83-5ffd6d591e9a",
+        "workflowId": "22NzoGizdPGkMLRr"
+      },
+      {
+        "event": "activated",
+        "id": 254,
+        "userId": "81519f6f-0887-498a-ad83-5ffd6d591e9a",
+        "workflowId": "22NzoGizdPGkMLRr"
+      },
+      {
+        "event": "deactivated",
+        "id": 247,
+        "userId": "81519f6f-0887-498a-ad83-5ffd6d591e9a",
+        "workflowId": "22NzoGizdPGkMLRr"
+      },
+      {
+        "event": "deactivated",
+        "id": 253,
         "userId": "81519f6f-0887-498a-ad83-5ffd6d591e9a",
         "workflowId": "22NzoGizdPGkMLRr"
       }
@@ -461,6 +487,7 @@
             "canal": "whatsapp",
             "destinataire": "={{ $json.telephone }}",
             "message": "=🔔 *Nouvelle commande — {{ $json.nom }}*\n\n📦 Commande #{{ String($('Webhook').first().json.body.id || 'N/A').slice(0,6).toUpperCase() }}\n👤 Client : {{ $('Webhook').first().json.body.client_nom || 'Non renseigne' }}\n📞 Tél : {{ $('Webhook').first().json.body.client_telephone || 'Non renseigne' }}\n📍 Adresse : {{ $('Webhook').first().json.body.client_adresse || 'Non renseignee' }}\n💰 Total : {{ $('Webhook').first().json.body.total || 0 }} FCFA\n\n👉 https://www.djiguiflow.com/dashboard/commandes",
+            "notification": "nouvelle_commande",
             "reply_markup": ""
           }
         }
@@ -568,6 +595,7 @@
             "canal": "telegram",
             "destinataire": "={{ $json.telegram_marchand }}",
             "message": "=🔔 Nouvelle commande — {{ $json.nom }}\n\n📦 Commande #{{ String($('Webhook').first().json.body.id || 'N/A').slice(0,6).toUpperCase() }}\n👤 Client : {{ $('Webhook').first().json.body.client_nom || 'Non renseigne' }}\n📞 Tél : {{ $('Webhook').first().json.body.client_telephone || 'Non renseigne' }}\n📍 Adresse : {{ $('Webhook').first().json.body.client_adresse || 'Non renseignee' }}\n💰 Total : {{ $('Webhook').first().json.body.total || 0 }} FCFA\n\n👉 https://www.djiguiflow.com/dashboard/commandes",
+            "notification": "nouvelle_commande",
             "reply_markup": ""
           }
         }
@@ -634,9 +662,10 @@
   "settings": {
     "availableInMCP": true,
     "errorWorkflow": "NfWU666FLz9jR1Zv",
-    "executionOrder": "v1"
+    "executionOrder": "v1",
+    "saveDataSuccessExecution": "none"
   },
   "sourceWorkflowId": null,
   "tags": [],
-  "versionCounter": 4
+  "versionCounter": 6
 }

@@ -1,8 +1,8 @@
 {
   "active": true,
   "activeVersion": {
-    "authors": "JEAN PAUL OULAI",
-    "autosaved": true,
+    "authors": "JEAN PAUL OULAI (via MCP)",
+    "autosaved": false,
     "connections": {
       "Call 'Envoyer réponse client'": {
         "main": [
@@ -303,8 +303,8 @@
         ]
       }
     },
-    "description": "",
-    "name": "Version 4242f17f",
+    "description": null,
+    "name": null,
     "nodeGroups": [],
     "nodes": [
       {
@@ -1640,7 +1640,7 @@
         "parameters": {
           "authentication": "genericCredentialType",
           "genericAuthType": "httpHeaderAuth",
-          "jsonBody": "={\n  \"reference\": {{ JSON.stringify($json.order_id) }},\n  \"statut_livraison\": {{ JSON.stringify($json.statut_livraison || '') }},\n  \"position_livreur\": {{ JSON.stringify($json.position_livreur || '') }},\n  \"nom_livreur\": {{ JSON.stringify(($json.livreur_name && $json.livreur_name !== 'Inconnu') ? $json.livreur_name : '') }},\n  \"heure_prise_en_charge\": {{ JSON.stringify($json.heure_prise_en_charge || '') }},\n  \"heure_livraison\": {{ JSON.stringify($json.heure_livraison || '') }}\n}",
+          "jsonBody": "={\n  \"reference\": {{ JSON.stringify($json.order_id) }},\n  \"statut_livraison\": {{ JSON.stringify($json.statut_livraison || '') }},\n  \"position_livreur\": {{ JSON.stringify($json.position_livreur || '') }},\n  \"nom_livreur\": {{ JSON.stringify(($json.livreur_name && $json.livreur_name !== 'Inconnu') ? $json.livreur_name : '') }},\n  \"livreur_telegram_id\": {{ JSON.stringify(String($('Code in JavaScript').first().json.livreur_id ?? '')) }},\n  \"heure_prise_en_charge\": {{ JSON.stringify($json.heure_prise_en_charge || '') }},\n  \"heure_livraison\": {{ JSON.stringify($json.heure_livraison || '') }}\n}",
           "method": "POST",
           "options": {},
           "sendBody": true,
@@ -1822,7 +1822,7 @@
     "workflowPublishHistory": [
       {
         "event": "activated",
-        "id": 236,
+        "id": 238,
         "userId": "81519f6f-0887-498a-ad83-5ffd6d591e9a",
         "workflowId": "LqBgRvLeeKUwZhB5"
       }
@@ -3467,7 +3467,7 @@
       "parameters": {
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
-        "jsonBody": "={\n  \"reference\": {{ JSON.stringify($json.order_id) }},\n  \"statut_livraison\": {{ JSON.stringify($json.statut_livraison || '') }},\n  \"position_livreur\": {{ JSON.stringify($json.position_livreur || '') }},\n  \"nom_livreur\": {{ JSON.stringify(($json.livreur_name && $json.livreur_name !== 'Inconnu') ? $json.livreur_name : '') }},\n  \"heure_prise_en_charge\": {{ JSON.stringify($json.heure_prise_en_charge || '') }},\n  \"heure_livraison\": {{ JSON.stringify($json.heure_livraison || '') }}\n}",
+        "jsonBody": "={\n  \"reference\": {{ JSON.stringify($json.order_id) }},\n  \"statut_livraison\": {{ JSON.stringify($json.statut_livraison || '') }},\n  \"position_livreur\": {{ JSON.stringify($json.position_livreur || '') }},\n  \"nom_livreur\": {{ JSON.stringify(($json.livreur_name && $json.livreur_name !== 'Inconnu') ? $json.livreur_name : '') }},\n  \"livreur_telegram_id\": {{ JSON.stringify(String($('Code in JavaScript').first().json.livreur_id ?? '')) }},\n  \"heure_prise_en_charge\": {{ JSON.stringify($json.heure_prise_en_charge || '') }},\n  \"heure_livraison\": {{ JSON.stringify($json.heure_livraison || '') }}\n}",
         "method": "POST",
         "options": {},
         "sendBody": true,
@@ -3653,5 +3653,5 @@
   },
   "sourceWorkflowId": null,
   "tags": [],
-  "versionCounter": 26
+  "versionCounter": 27
 }

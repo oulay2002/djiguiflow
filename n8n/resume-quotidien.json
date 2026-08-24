@@ -1,7 +1,7 @@
 {
   "active": true,
   "activeVersion": {
-    "authors": "JEAN PAUL OULAI",
+    "authors": "JEAN PAUL OULAI (via MCP)",
     "autosaved": false,
     "connections": {
       "Activite du jour": {
@@ -186,6 +186,7 @@
               "destinataire": "={{ $json.telegram }}",
               "format": "html",
               "message": "={{ $json.message_telegram }}",
+              "notification": "rapport_quotidien",
               "reply_markup": ""
             }
           }
@@ -224,6 +225,7 @@
               "canal": "whatsapp",
               "destinataire": "={{ $json.whatsapp }}",
               "message": "={{ $json.message_whatsapp }}",
+              "notification": "rapport_quotidien",
               "reply_markup": ""
             }
           }
@@ -256,7 +258,7 @@
     "workflowPublishHistory": [
       {
         "event": "activated",
-        "id": 13,
+        "id": 246,
         "userId": "81519f6f-0887-498a-ad83-5ffd6d591e9a",
         "workflowId": "5SKcCxTGxVg1Huvf"
       }
@@ -447,6 +449,7 @@
             "destinataire": "={{ $json.telegram }}",
             "format": "html",
             "message": "={{ $json.message_telegram }}",
+            "notification": "rapport_quotidien",
             "reply_markup": ""
           }
         }
@@ -485,6 +488,7 @@
             "canal": "whatsapp",
             "destinataire": "={{ $json.whatsapp }}",
             "message": "={{ $json.message_whatsapp }}",
+            "notification": "rapport_quotidien",
             "reply_markup": ""
           }
         }
@@ -521,5 +525,5 @@
   },
   "sourceWorkflowId": null,
   "tags": [],
-  "versionCounter": 4
+  "versionCounter": 5
 }
