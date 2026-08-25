@@ -64,7 +64,7 @@ export async function POST(req: Request) {
   // sont donc naturellement hors de ce balayage.
   const { data: enAttente, error } = await sb
     .from('paiements')
-    .select('reference, created_at')
+    .select('reference, created_at, jeton_prestataire')
     .eq('statut', 'en_attente')
     .not('jeton_prestataire', 'is', null)
     .gte('created_at', depuis)
@@ -84,12 +84,32 @@ export async function POST(req: Request) {
     // n'a pas suivi. Il n'existe que pour que l'alerte le voie.
     etat: IssueEncaissement['etat'] | 'statut_non_enregistre';
     heures: number;
+    /** Jeton de bac a sable : aucun franc reel n'est en jeu. */
+    bacASable: boolean;
   }[] = [];
   let honores = 0;
 
   for (const ligne of lignes) {
     const reference = String(ligne.reference ?? '');
     if (!reference) continue;
+
+    // LE BAC A SABLE N'EST PAS DE L'ARGENT.
+    //
+    // Le prestataire prefixe ses jetons d'essai par `SANDBOX_`. Un paiement
+    // d'essai bloque, c'est un test qu'on a laisse ouvert — pas un marchand
+    // qui attend son acces. Les confondre coute cher dans un seul sens : le
+    // 25 aout 2026, un unique jeton d'essai laisse en attente la veille a fait
+    // ECHOUER CE WORKFLOW TOUTES LES QUINZE MINUTES, quarante-deux fois dans
+    // la journee. Une liste d'executions rouge en permanence ne se lit plus,
+    // et la vraie panne du lendemain s'y serait perdue.
+    //
+    // Il n'est pas ecarte du RATTRAPAGE — on tente de l'honorer comme les
+    // autres, et un bac a sable qui se debloque est une information utile.
+    // Il est ecarte de l'ALERTE, qui ne parle que d'argent reel.
+    const bacASable = String(ligne.jeton_prestataire ?? '')
+      .trim()
+      .toUpperCase()
+      .startsWith('SANDBOX_');
 
     const naissance = Date.parse(String(ligne.created_at ?? ''));
     const heures = Number.isFinite(naissance)
@@ -106,6 +126,7 @@ export async function POST(req: Request) {
       reference,
       etat: statutPerdu ? 'statut_non_enregistre' : issue.etat,
       heures,
+      bacASable,
     });
 
     if (statutPerdu) {
@@ -132,7 +153,7 @@ export async function POST(req: Request) {
   // paye et qui n'a pas son acces. `deja` et `honore` sont des succes ; tout le
   // reste, passe ce delai, est un dossier ouvert que personne ne regarde.
   const bloques = resultats.filter(
-    (r) => r.etat !== 'honore' && r.etat !== 'deja' && r.heures >= SEUIL_ALERTE_H,
+    (r) => !r.bacASable && r.etat !== 'honore' && r.etat !== 'deja' && r.heures >= SEUIL_ALERTE_H,
   );
 
   if (bloques.length > 0) {
@@ -146,11 +167,30 @@ export async function POST(req: Request) {
   // `pending` chez le prestataire n'est pas une panne, et repondre en erreur
   // ferait rougir une execution n8n parfaitement normale. L'alerte se declenche
   // sur `bloques`, que l'appelant n8n teste — pas sur le code HTTP.
+  // CE QUI EST ECARTE DE L'ALERTE EST COMPTE ICI, ET C'EST LA CONDITION POUR
+  // POUVOIR L'ECARTER. Un dossier retire d'une alerte sans laisser de trace
+  // devient un dossier oublie : le bac a sable disparaitrait du bruit et
+  // disparaitrait aussi de la vue. Il figure donc dans la reponse, lisible
+  // dans l'execution n8n et par tout appelant.
+  const bacASable = resultats.filter(
+    (r) => r.bacASable && r.etat !== 'honore' && r.etat !== 'deja',
+  );
+
+  if (bacASable.length > 0) {
+    console.log(
+      `Rattrapage — ${bacASable.length} paiement(s) de bac à sable en attente, `
+      + 'hors alerte (aucun franc réel) : '
+      + bacASable.map((b) => `${b.reference} (${b.etat}, ${b.heures}h)`).join(', '),
+    );
+  }
+
   return NextResponse.json({
     examines: lignes.length,
     honores,
     bloques: bloques.length,
     detailBloques: bloques,
+    bacASable: bacASable.length,
+    detailBacASable: bacASable,
     seuilAlerteH: SEUIL_ALERTE_H,
     fenetreJours: FENETRE_JOURS,
     resultats,
