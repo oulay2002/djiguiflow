@@ -64,7 +64,7 @@ export async function POST(req: Request) {
   // sont donc naturellement hors de ce balayage.
   const { data: enAttente, error } = await sb
     .from('paiements')
-    .select('reference, created_at, jeton_prestataire')
+    .select('reference, created_at, jeton_prestataire, alerte_envoyee_le')
     .eq('statut', 'en_attente')
     .not('jeton_prestataire', 'is', null)
     .gte('created_at', depuis)
@@ -86,6 +86,8 @@ export async function POST(req: Request) {
     heures: number;
     /** Jeton de bac a sable : aucun franc reel n'est en jeu. */
     bacASable: boolean;
+    /** Deja signale une fois. On ne le redit pas. */
+    dejaSignale: boolean;
   }[] = [];
   let honores = 0;
 
@@ -111,6 +113,14 @@ export async function POST(req: Request) {
       .toUpperCase()
       .startsWith('SANDBOX_');
 
+    // ON ALERTE UNE FOIS, PUIS ON SE TAIT.
+    //
+    // Le seuil de deux heures OUVRAIT l'alerte, rien ne la refermait : un
+    // paiement bloque qui ne se resout jamais la relancait a chaque passage.
+    // Un dossier ouvert reste ouvert — le redire tous les quarts d'heure
+    // n'ajoute rien et finit par rendre la liste d'executions illisible.
+    const dejaSignale = Boolean(String(ligne.alerte_envoyee_le ?? '').trim());
+
     const naissance = Date.parse(String(ligne.created_at ?? ''));
     const heures = Number.isFinite(naissance)
       ? Math.round((Date.now() - naissance) / 3600_000)
@@ -127,6 +137,7 @@ export async function POST(req: Request) {
       etat: statutPerdu ? 'statut_non_enregistre' : issue.etat,
       heures,
       bacASable,
+      dejaSignale,
     });
 
     if (statutPerdu) {
@@ -153,7 +164,11 @@ export async function POST(req: Request) {
   // paye et qui n'a pas son acces. `deja` et `honore` sont des succes ; tout le
   // reste, passe ce delai, est un dossier ouvert que personne ne regarde.
   const bloques = resultats.filter(
-    (r) => !r.bacASable && r.etat !== 'honore' && r.etat !== 'deja' && r.heures >= SEUIL_ALERTE_H,
+    (r) => !r.bacASable
+      && !r.dejaSignale
+      && r.etat !== 'honore'
+      && r.etat !== 'deja'
+      && r.heures >= SEUIL_ALERTE_H,
   );
 
   if (bloques.length > 0) {
@@ -184,6 +199,55 @@ export async function POST(req: Request) {
     );
   }
 
+  /**
+   * LES DOSSIERS DEJA OUVERTS — SILENCIEUX DANS L'ALERTE, VISIBLES DANS LE
+   * RAPPORT.
+   *
+   * C'est la contrepartie indispensable du « une fois puis silence ». Se taire
+   * ET disparaitre, ce serait remplacer un dossier bruyant par un dossier
+   * oublie — et un marchand qui a paye sans recevoir son acces ne doit jamais
+   * sortir du champ de vision.
+   *
+   * Ils figurent donc dans chaque reponse, lisibles dans l'execution n8n, et
+   * comptes. Ils ne font simplement plus lever le workflow.
+   */
+  const dossiersOuverts = resultats.filter(
+    (r) => r.dejaSignale && !r.bacASable && r.etat !== 'honore' && r.etat !== 'deja',
+  );
+
+  if (dossiersOuverts.length > 0) {
+    console.warn(
+      `Rattrapage — ${dossiersOuverts.length} dossier(s) toujours bloqué(s), déjà signalé(s) `
+      + 'une fois et donc hors alerte : '
+      + dossiersOuverts.map((b) => `${b.reference} (${b.etat}, ${b.heures}h)`).join(', '),
+    );
+  }
+
+  /**
+   * ON MARQUE CE QU'ON VIENT DE SIGNALER, et seulement cela.
+   *
+   * Sans cette ecriture, le filtre ne s'enclenche jamais et l'alerte se repete
+   * comme avant. Elle vit EN BASE et non dans la memoire du workflow n8n :
+   * celle-ci est perdue quand l'execution echoue — or elle echoue precisement
+   * quand il y a quelque chose a retenir.
+   *
+   * Elle n'est PAS bloquante. Si elle rate, le dossier sera resignale au
+   * prochain passage : une alerte de trop vaut mieux qu'une alerte perdue.
+   */
+  if (bloques.length > 0) {
+    const { error: errMarque } = await sb
+      .from('paiements')
+      .update({ alerte_envoyee_le: new Date().toISOString() })
+      .in('reference', bloques.map((b) => b.reference));
+
+    if (errMarque) {
+      console.error(
+        'Rattrapage — impossible de marquer les paiements signalés, '
+        + `ils le seront à nouveau au prochain passage : ${errMarque.message}`,
+      );
+    }
+  }
+
   return NextResponse.json({
     examines: lignes.length,
     honores,
@@ -191,6 +255,8 @@ export async function POST(req: Request) {
     detailBloques: bloques,
     bacASable: bacASable.length,
     detailBacASable: bacASable,
+    dossiersOuverts: dossiersOuverts.length,
+    detailDossiersOuverts: dossiersOuverts,
     seuilAlerteH: SEUIL_ALERTE_H,
     fenetreJours: FENETRE_JOURS,
     resultats,

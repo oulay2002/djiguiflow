@@ -524,6 +524,7 @@ export type Database = {
       }
       paiements: {
         Row: {
+          alerte_envoyee_le: string | null
           created_at: string
           jeton_prestataire: string | null
           mois: number
@@ -536,6 +537,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          alerte_envoyee_le?: string | null
           created_at?: string
           jeton_prestataire?: string | null
           mois: number
@@ -548,6 +550,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          alerte_envoyee_le?: string | null
           created_at?: string
           jeton_prestataire?: string | null
           mois?: number
