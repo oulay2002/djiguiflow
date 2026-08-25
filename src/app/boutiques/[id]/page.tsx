@@ -95,6 +95,10 @@ type FicheRow = {
   zone: string | null;
   emoji: string | null;
   logo_url: string | null;
+  delai_livraison: string | null;
+  zones_livrees: string | null;
+  paiements_acceptes: string[] | null;
+  commande_minimum: number | null;
 };
 
 type ProduitRow = {
@@ -282,6 +286,24 @@ export default function Page() {
   const [pannePage, setPannePage] = useState<'' | 'introuvable' | 'reseau'>('');
   const [telBoutique, setTelBoutique] = useState('');
 
+  /**
+   * CE QUE LE CLIENT DEVAIT DEMANDER AU MARCHAND.
+   *
+   * Quatre questions avant de commander : combien de temps, chez moi est-ce
+   * livre, comment je paie, y a-t-il un minimum. Il fallait ecrire — et
+   * beaucoup n'ecrivent pas, ils partent.
+   *
+   * TOUT EST FACULTATIF ET RIEN N'EST INVENTE. Un champ non renseigne ne
+   * s'affiche pas : mieux vaut le silence qu'une promesse approximative, que
+   * le marchand devra tenir a chaque livraison.
+   */
+  const [infos, setInfos] = useState<{
+    delai: string;
+    zones: string;
+    paiements: string[];
+    minimum: number | null;
+  }>({ delai: '', zones: '', paiements: [], minimum: null });
+
   useEffect(() => {
     if (!slug) return;
     let annule = false;
@@ -346,6 +368,20 @@ export default function Page() {
         });
         setZone(String(b.zone ?? ''));
         setTelBoutique(String(b.telephone ?? ''));
+
+        setInfos({
+          delai: String(b.delai_livraison ?? '').trim(),
+          zones: String(b.zones_livrees ?? '').trim(),
+          paiements: Array.isArray(b.paiements_acceptes)
+            ? b.paiements_acceptes.map(v => String(v ?? '').trim()).filter(Boolean)
+            : [],
+          // `null` reste `null` : un minimum a zero se lirait comme un vrai
+          // minimum de zero franc, ce qui ne veut rien dire.
+          minimum:
+            typeof b.commande_minimum === 'number' && b.commande_minimum > 0
+              ? b.commande_minimum
+              : null,
+        });
 
         setProduits(catalogue.map((p) => ({
           id: String(p.id),
@@ -1014,6 +1050,89 @@ export default function Page() {
               {echec} Votre panier est conservé.
             </p>
           </div>
+        )}
+
+        {/* ────────────────────────────────────────────────────────────────
+            CE QU'IL FAUT SAVOIR AVANT DE COMMANDER.
+
+            Un client qui decouvre une boutique se pose quatre questions :
+            combien de temps, chez moi est-ce livre, comment je paie, y a-t-il
+            un minimum. Aucune ne trouvait de reponse ici. Il fallait ECRIRE AU
+            MARCHAND — et beaucoup n'ecrivent pas : ils ferment la page.
+
+            PLACE AVANT LE CATALOGUE, parce que c'est avant de composer un
+            panier qu'on veut ces reponses. Les frais de livraison etaient bien
+            annonces, mais tout en bas du formulaire : le client l'apprenait
+            apres avoir choisi, ce qui est la plus mauvaise place pour une
+            information qui peut le faire renoncer.
+
+            CHAQUE LIGNE NE PARAIT QUE SI LE MARCHAND L'A RENSEIGNEE. On
+            n'invente aucune valeur par defaut : « livraison rapide » ou
+            « paiement a la livraison » ecrits d'office seraient des promesses
+            que personne n'a faites, et que le marchand devrait tenir a chaque
+            course.
+
+            LA LIGNE DES FRAIS EST DANS CE BLOC, DONC CONDITIONNELLE ELLE
+            AUSSI — et ce n'est pas un oubli. Elle reste affichee pour tout le
+            monde dans le panneau de commande, la ou l'on saisit son adresse.
+            La sortir d'ici pour l'afficher seule, au-dessus du catalogue d'une
+            boutique qui n'a rien renseigne, donnerait un encadre solitaire
+            portant une seule phrase : le client y lirait un avertissement
+            plutot qu'un renseignement. Elle est ici en RAPPEL, quand le bloc
+            existe deja pour autre chose. */}
+        {(infos.delai || infos.zones || infos.paiements.length > 0 || infos.minimum !== null) && (
+          <section
+            aria-label="Ce qu’il faut savoir avant de commander"
+            className="mb-6 border border-[var(--hairline)] bg-white"
+          >
+            <div className="grid gap-px bg-[var(--hairline)] sm:grid-cols-2">
+              {infos.delai && (
+                <div className="bg-white p-4">
+                  <p className="font-mono text-xs uppercase tracking-[0.16em] text-chaux-600">
+                    Délai habituel
+                  </p>
+                  <p className="mt-1 font-display text-lg font-bold text-nuit-900">{infos.delai}</p>
+                </div>
+              )}
+
+              {infos.zones && (
+                <div className="bg-white p-4">
+                  <p className="font-mono text-xs uppercase tracking-[0.16em] text-chaux-600">
+                    Quartiers livrés
+                  </p>
+                  <p className="mt-1 text-sm leading-relaxed text-nuit-800">{infos.zones}</p>
+                </div>
+              )}
+
+              {infos.paiements.length > 0 && (
+                <div className="bg-white p-4">
+                  <p className="font-mono text-xs uppercase tracking-[0.16em] text-chaux-600">
+                    Paiement accepté
+                  </p>
+                  <p className="mt-1 text-sm leading-relaxed text-nuit-800">
+                    {infos.paiements.join(' · ')}
+                  </p>
+                </div>
+              )}
+
+              {infos.minimum !== null && (
+                <div className="bg-white p-4">
+                  <p className="font-mono text-xs uppercase tracking-[0.16em] text-chaux-600">
+                    Commande minimum
+                  </p>
+                  <p className="mt-1 font-display text-lg font-bold text-nuit-900">
+                    {fcfa(infos.minimum)}
+                    <span className="ml-1 text-xs font-semibold text-chaux-600">FCFA</span>
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <p className="border-t border-[var(--hairline)] px-4 py-3 text-xs leading-relaxed text-chaux-600">
+              Les frais de livraison sont annoncés par le livreur et se règlent en plus,
+              à la réception.
+            </p>
+          </section>
         )}
 
         {categories.length > 1 && (
