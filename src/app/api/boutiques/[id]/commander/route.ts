@@ -320,16 +320,27 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
   // servira plus bas a taire le dispatch.
   let boutiqueEssai = false;
 
+  /**
+   * Le minimum annonce, remonte HORS du bloc de lecture.
+   *
+   * Il est verifie plus bas, quand le total du panier est connu — la fiche,
+   * elle, est lue ici et une seule fois. `0` veut dire « pas de minimum » : la
+   * contrainte en base interdit d'enregistrer zero, qui ne serait ni un
+   * minimum reel ni son absence.
+   */
+  let minimumBoutique = 0;
+
   if (sb && boutiqueUuid) {
     const { data: fiche } = await sb
       .from('boutiques')
       // En UNE seule chaine litterale : concatenee, elle perd son inference et
       // le type retombe sur `GenericStringError`.
-      .select('horaires, pause_jusqua, essai, banc_telegram_id, wasender_secret_id, telegram_secret_id, groupe_livreurs')
+      .select('horaires, pause_jusqua, essai, banc_telegram_id, wasender_secret_id, telegram_secret_id, groupe_livreurs, commande_minimum')
       .eq('id', boutiqueUuid)
       .maybeSingle();
 
     boutiqueEssai = fiche?.essai === true;
+    minimumBoutique = Number(fiche?.commande_minimum ?? 0);
 
     /**
      * UNE BOUTIQUE NON BRANCHEE NE PREND PAS DE COMMANDE.
@@ -409,6 +420,36 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
   }
 
   const total = lignes.reduce((s, l) => s + l.quantite * l.prixUnitaire, 0);
+
+  /**
+   * LE MINIMUM ANNONCE DOIT ETRE TENU PAR LE SERVEUR.
+   *
+   * Il n'etait qu'AFFICHE. Une boutique annoncait « minimum 5 000 F » sur sa
+   * vitrine, un client composait 1 000 F, et le serveur acceptait : le
+   * marchand ne le decouvrait qu'au moment de preparer. C'est la meme regle
+   * que le stock et que les horaires — LA VITRINE AFFICHE, LE SERVEUR DECIDE.
+   * Une regle que seul l'ecran applique n'est pas une regle, c'est une
+   * suggestion.
+   *
+   * `null` veut dire « pas de minimum », jamais zero : la contrainte en base
+   * interdit d'ailleurs zero, qui ne serait ni l'un ni l'autre.
+   *
+   * Le refus NOMME le montant manquant. « Commande trop petite » obligerait le
+   * client a deviner combien ajouter, et beaucoup partiraient plutot que de
+   * chercher.
+   */
+  if (Number.isFinite(minimumBoutique) && minimumBoutique > 0 && total < minimumBoutique) {
+    const minimum = minimumBoutique;
+    const manque = minimum - total;
+    return Response.json(
+      {
+        error:
+          `${m.nom} accepte les commandes à partir de ${minimum.toLocaleString('fr-FR')} F.`
+          + ` Il vous manque ${manque.toLocaleString('fr-FR')} F.`,
+      },
+      { status: 409 },
+    );
+  }
 
   let phone = String(tel || '').replace(/\D/g, '');
   if (!phone.startsWith('225')) phone = '225' + phone;

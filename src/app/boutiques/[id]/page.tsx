@@ -1172,7 +1172,21 @@ export default function Page() {
                   <p className="font-mono text-xs uppercase tracking-[0.16em] text-chaux-600">
                     Délai habituel
                   </p>
-                  <p className="mt-1 font-display text-lg font-bold text-nuit-900">{infos.delai}</p>
+                  {/* UN NOMBRE SEUL NE DIT RIEN AU CLIENT.
+                      Le champ est libre — « 30 à 45 min », « 1 à 2 jours » —
+                      parce qu'un traiteur et une boutique de vetements ne
+                      comptent pas dans la meme unite. Mais le premier marchand
+                      qui l'a rempli a tape « 30 », et la carte aurait affiche
+                      « Delai habituel — 30 ». Trente quoi ?
+
+                      On ne complete QUE le cas sans ambiguite : une valeur
+                      faite uniquement de chiffres, dans un champ de delai de
+                      livraison, se compte en minutes — c'est d'ailleurs ce que
+                      propose le champ. Tout le reste passe intact : on ne
+                      reecrit pas ce que le marchand a formule lui-meme. */}
+                  <p className="mt-1 font-display text-lg font-bold text-nuit-900">
+                    {/^\d+$/.test(infos.delai) ? `${infos.delai} min` : infos.delai}
+                  </p>
                 </div>
               )}
 
