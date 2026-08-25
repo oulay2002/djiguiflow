@@ -28,6 +28,10 @@ type Produit = {
    */
   attributNom?: string;
   attributValeurs?: string[];
+  /** La marque, telle que le client la cherche. Vide = non renseignee. */
+  marque?: string;
+  /** Pour qui : Bebe, Enfant, Femme, Homme, Mixte. Vide = non renseigne. */
+  publicVise?: string;
 };
 
 /**
@@ -111,6 +115,10 @@ type ProduitRow = {
   menu_du_jour: boolean | null;
   attribut_nom: string | null;
   attribut_valeurs: string[] | null;
+  groupe: string | null;
+  couleur: string | null;
+  marque: string | null;
+  public_vise: string | null;
 };
 
 /**
@@ -255,6 +263,10 @@ export default function Page() {
    * afficherait un choix qu'il n'a pas fait.
    */
   const [choixTaille, setChoixTaille] = useState<Record<string, string>>({});
+
+  /** Filtres de mode. « toutes » / « tous » = aucun filtre, comme « tout ». */
+  const [marqueFiltre, setMarqueFiltre] = useState('toutes');
+  const [publicFiltre, setPublicFiltre] = useState('tous');
   const [categorie, setCategorie] = useState('tout');
   const [nom, setNom] = useState('');
   const [tel, setTel] = useState('');
@@ -396,6 +408,14 @@ export default function Page() {
           description: String(p.description ?? ''),
           image: String(p.photo_url ?? ''),
           duJour: Boolean(p.menu_du_jour),
+          // LES COLORIS ARRIVENT ENFIN PAR CE CHEMIN AUSSI. Sans eux, chaque
+          // couleur formait une carte distincte et le client croyait voir
+          // trois articles la ou il y en a un. Rien ne le montrait : les deux
+          // boutiques d'aujourd'hui passent par le registre.
+          groupe: String(p.groupe ?? '').trim(),
+          couleur: String(p.couleur ?? '').trim(),
+          marque: String(p.marque ?? '').trim(),
+          publicVise: String(p.public_vise ?? '').trim(),
           attributNom: String(p.attribut_nom ?? '').trim(),
           attributValeurs: Array.isArray(p.attribut_valeurs)
             ? p.attribut_valeurs.map((v) => String(v ?? '').trim()).filter(Boolean)
@@ -500,7 +520,35 @@ export default function Page() {
     [produits],
   );
 
-  const visibles = categorie === 'tout' ? produits : produits.filter(p => p.categorie === categorie);
+  /**
+   * LES DEUX FILTRES D'UNE VITRINE DE MODE.
+   *
+   * Un client de vetements n'entre pas par la categorie du marchand — il entre
+   * par UNE MARQUE ou par UN RAYON. « Montrez-moi le rayon enfant », « vous
+   * avez du Nike ». La categorie repond a « ou est-ce range », question de
+   * marchand ; ces deux-la repondent a « qu'est-ce que je cherche », question
+   * de client.
+   *
+   * ILS NE PARAISSENT QUE S'ILS SERVENT. Un filtre qui n'offre qu'une seule
+   * valeur ne filtre rien : il occupe l'ecran et donne l'illusion d'un choix.
+   * Une boutique dont tous les articles sont de la meme marque n'affiche donc
+   * pas de filtre de marque, et un restaurant n'en voit aucun des deux.
+   */
+  const marques = useMemo(
+    () => Array.from(new Set(produits.map(p => (p.marque ?? '').trim()).filter(Boolean))).sort(),
+    [produits],
+  );
+
+  const publics = useMemo(
+    () => Array.from(new Set(produits.map(p => (p.publicVise ?? '').trim()).filter(Boolean))).sort(),
+    [produits],
+  );
+
+  const visibles = produits.filter(p =>
+    (categorie === 'tout' || p.categorie === categorie)
+    && (marqueFiltre === 'toutes' || (p.marque ?? '').trim() === marqueFiltre)
+    && (publicFiltre === 'tous' || (p.publicVise ?? '').trim() === publicFiltre),
+  );
   const duJour = visibles.filter(p => p.duJour);
   const carte = visibles.filter(p => !p.duJour);
   // Deux sections n'ont de sens que si les deux existent : sinon le titre
@@ -727,6 +775,23 @@ export default function Page() {
         const tailleChoisie = valeurs.includes(retenue) ? retenue : '';
         const enAttenteDeChoix = doitChoisir && !tailleChoisie;
 
+        /**
+         * LA MARQUE ET LE RAYON APPARTIENNENT A L'ARTICLE, comme la pointure.
+         *
+         * Chaque coloris est une ligne de catalogue distincte : un marchand
+         * qui saisit la marque sur le rouge et l'oublie sur le bleu verrait sa
+         * carte l'afficher ou non selon le coloris ouvert. On prend donc celle
+         * du coloris affiche s'il en porte une, a defaut celle de n'importe
+         * quel coloris du meme article — une chaussure ne change pas de marque
+         * en changeant de couleur.
+         */
+        const premiereValeur = (lire: (v: Produit) => string | undefined) =>
+          String(lire(p) ?? '').trim()
+          || String(article.variantes.map(lire).find(v => String(v ?? '').trim()) ?? '').trim();
+
+        const marque = premiereValeur(v => v.marque);
+        const publicVise = premiereValeur(v => v.publicVise);
+
         return (
           <article
             key={article.cle}
@@ -735,14 +800,30 @@ export default function Page() {
             <Visuel p={p} />
 
             <div className="flex flex-1 flex-col p-4">
-              <h3 className="font-display text-lg font-bold leading-tight text-nuit-900">
+              {/* LA MARQUE PASSE AVANT LE NOM.
+                  C'est la convention de toutes les vitrines de mode, et ce
+                  n'est pas une mode : « Nike » dit plus au client que
+                  « chaussure luminous ». Il cherche une marque, puis regarde
+                  ce qu'elle propose — pas l'inverse.
+
+                  Comme partout ici, elle ne parait que si le marchand l'a
+                  donnee : un restaurant n'a pas de marque, et sa carte ne doit
+                  pas se couvrir de mentions vides. */}
+              {marque && (
+                <p className="font-mono text-xs font-bold uppercase tracking-[0.18em] text-nuit-900">
+                  {marque}
+                </p>
+              )}
+
+              <h3 className={`font-display text-lg font-bold leading-tight text-nuit-900 ${marque ? 'mt-0.5' : ''}`}>
                 {article.titre}
               </h3>
 
-              {/* Le coloris se lit sous le titre, comme sur une etiquette. */}
-              {p.couleur && (
+              {/* Le coloris et le rayon se lisent sous le titre, comme sur une
+                  etiquette coutue au col. */}
+              {(p.couleur || publicVise) && (
                 <p className="mt-0.5 font-mono text-xs uppercase tracking-[0.14em] text-chaux-600">
-                  {p.couleur}
+                  {[p.couleur, publicVise].filter(Boolean).join(' · ')}
                 </p>
               )}
 
@@ -1133,6 +1214,44 @@ export default function Page() {
               à la réception.
             </p>
           </section>
+        )}
+
+        {/* LES FILTRES DU CLIENT, AVANT CEUX DU MARCHAND.
+            Un acheteur de vetements cherche une marque ou un rayon ; la
+            categorie, elle, dit comment le marchand a range sa boutique. On
+            met donc ces deux-la EN PREMIER, et seulement quand ils offrent un
+            vrai choix — un filtre a une seule valeur ne filtre rien. */}
+        {(marques.length > 1 || publics.length > 1) && (
+          <div className="mb-4 flex flex-col gap-3">
+            {[
+              { titre: 'Marque', tout: 'toutes', valeurs: marques, choisi: marqueFiltre, poser: setMarqueFiltre },
+              { titre: 'Pour qui', tout: 'tous', valeurs: publics, choisi: publicFiltre, poser: setPublicFiltre },
+            ]
+              .filter(f => f.valeurs.length > 1)
+              .map(f => (
+                <div key={f.titre}>
+                  <p className="mb-1.5 font-mono text-xs uppercase tracking-[0.16em] text-chaux-600">
+                    {f.titre}
+                  </p>
+                  <div className="-mx-5 flex gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:px-0 [&::-webkit-scrollbar]:hidden">
+                    {[f.tout, ...f.valeurs].map(v => (
+                      <button
+                        key={v}
+                        onClick={() => f.poser(v)}
+                        aria-pressed={f.choisi === v}
+                        className={`min-h-9 shrink-0 border px-3.5 text-sm font-semibold transition ${
+                          f.choisi === v
+                            ? 'border-nuit-900 bg-nuit-900 text-chaux-50'
+                            : 'border-[var(--hairline)] bg-white text-nuit-800 hover:border-nuit-900'
+                        }`}
+                      >
+                        {v === f.tout ? (f.titre === 'Marque' ? 'Toutes' : 'Tous') : v}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+          </div>
         )}
 
         {categories.length > 1 && (
