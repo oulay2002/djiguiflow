@@ -38,6 +38,29 @@ export async function POST(req: Request) {
     return Response.json({ error: 'Corps JSON invalide' }, { status: 400 });
   }
 
+  /**
+   * UNE REPONSE VIDE FAIT BOUCLER L'ASSISTANTE. Constate en production.
+   *
+   * Le 25 aout 2026 a 11h02, un client ecrit a une boutique. Cet outil rend
+   * `[]`, que n8n transmet au modele comme une chaine VIDE. Le modele ne peut
+   * pas distinguer « ce client n'a jamais commande » — une reponse parfaitement
+   * utile — de « ton appel a echoue ». Il conclut qu'il s'est trompe de
+   * parametre, INVENTE un identifiant au hasard, rappelle l'outil… vingt-cinq
+   * fois, jusqu'a `Max iterations`. La chaine s'arrete, et le client ne recoit
+   * RIEN.
+   *
+   * C'est le motif du defaut silencieux dans sa forme la plus pure : UNE VALEUR
+   * VIDE QUI PORTE UN SENS. Le vide ne dit pas ce qu'il veut dire, alors on le
+   * dit en toutes lettres.
+   *
+   * ET ON DISTINGUE LES DEUX SILENCES. « Ce client n'a jamais commande » et
+   * « je n'ai pas pu regarder » se ressemblaient tous deux a `[]`. Les
+   * confondre ferait affirmer a l'assistante qu'un habitue est un inconnu — au
+   * moment precis ou elle devait lui proposer de reprendre sa commande.
+   */
+  const repondre = (resume: string, commandes: unknown[] = []) =>
+    Response.json({ resume, commandes, nombre: commandes.length });
+
   const chatId = String(corps.chat_id ?? corps.phone ?? corps.destinataire ?? '').trim();
   const boutiqueRef = String(corps.boutique ?? corps.slug ?? corps.boutique_id ?? '').trim();
   const validesSeulement = corps.valides_seulement === true
@@ -45,7 +68,12 @@ export async function POST(req: Request) {
 
   // Pas de client, pas d'historique — et surtout pas une erreur : l'assistante
   // interroge cet outil des le premier message, y compris pour un inconnu.
-  if (!chatId) return Response.json([]);
+  if (!chatId) {
+    return repondre(
+      'Client non identifie, aucun historique consultable. Poursuivez normalement,'
+      + ' et ne dites pas au client qu il n a jamais commande.',
+    );
+  }
   if (!boutiqueRef) return Response.json({ error: 'boutique requise' }, { status: 400 });
 
   const marchand = await resoudreMarchand(boutiqueRef);
@@ -78,11 +106,19 @@ export async function POST(req: Request) {
 
   if (error) {
     console.error(`Commandes client — lecture impossible (${marchand.id}) :`, error.message);
-    return Response.json([]);
+    return repondre(
+      'Historique indisponible pour le moment. N affirmez PAS au client qu il n a'
+      + ' jamais commande, et ne rappelez pas cet outil : poursuivez la conversation.',
+    );
   }
 
   const lignes = data ?? [];
-  if (!lignes.length) return Response.json([]);
+  if (!lignes.length) {
+    return repondre(
+      'Aucune commande precedente pour ce client. C est un nouveau client :'
+      + ' presentez-lui ce que la boutique propose. Ne rappelez pas cet outil.',
+    );
+  }
 
   // Les articles de toutes les commandes en une seule lecture : dix requetes
   // separees pour dix commandes rendraient l'assistante lente a chaque message.
@@ -102,7 +138,8 @@ export async function POST(req: Request) {
     parCommande.set(a.commande_id, liste);
   }
 
-  return Response.json(
+  return repondre(
+    `${lignes.length} commande(s) precedente(s) pour ce client.`,
     lignes.map((c) => ({
       order_id: c.reference ?? '',
       customer_name: c.client_nom ?? '',
