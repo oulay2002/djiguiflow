@@ -27,6 +27,10 @@ type Prod = {
   attribut_valeurs: string[];
   /** Le groupe des coloris. Vide = article seul, sans declinaison. */
   groupe: string;
+  /** La marque, telle que le client la cherche. Vide = non renseignee. */
+  marque: string;
+  /** Pour qui : Bebe, Enfant, Femme, Homme, Mixte. Vide = non renseigne. */
+  public_vise: string;
 };
 
 export default function Page() {
@@ -76,6 +80,17 @@ export default function Page() {
    * chaussures a ranger sa pointure sous un mot qui n'est pas le sien, et la
    * pharmacie sa contenance sous « taille ».
    */
+  /**
+   * La marque et le rayon.
+   *
+   * CE QU'UN CLIENT CHERCHE DANS UNE BOUTIQUE DE VETEMENTS. Il ne cherche pas
+   * « un article » : il cherche une MARQUE, une couleur, une pointure, et il
+   * sait pour QUI — bebe, enfant, adulte. La plateforme tenait deja la couleur
+   * et la pointure ; ces deux-la manquaient, et le client devait ecrire au
+   * marchand pour les obtenir.
+   */
+  const [fMarque, setFMarque] = useState('');
+  const [fPublic, setFPublic] = useState('');
   const [fAttrNom, setFAttrNom] = useState('');
   const [fAttrValeurs, setFAttrValeurs] = useState('');
   const [envoi, setEnvoi] = useState(false);
@@ -88,6 +103,8 @@ export default function Page() {
   const [gPrix, setGPrix] = useState('');
   const [gDesc, setGDesc] = useState('');
   const [gFile, setGFile] = useState<File | null>(null);
+  const [gMarque, setGMarque] = useState('');
+  const [gPublic, setGPublic] = useState('');
   const [gAttrNom, setGAttrNom] = useState('');
   const [gAttrValeurs, setGAttrValeurs] = useState('');
   /**
@@ -200,6 +217,8 @@ export default function Page() {
         // dans les memes pointures quelle que soit sa couleur. Si ce n'est pas
         // le cas chez un marchand, il saisit deux articles — c'est deja ce
         // qu'il fait quand deux coloris n'ont pas le meme prix.
+        marque: fMarque.trim(),
+        public_vise: fPublic.trim(),
         attribut_nom: fAttrNom.trim(),
         attribut_valeurs: fAttrValeurs,
       };
@@ -252,6 +271,8 @@ export default function Page() {
     setGDesc(p.description ?? '');
     setGFile(null);
     setGAttrNom(p.attribut_nom ?? '');
+    setGMarque(p.marque ?? '');
+    setGPublic(p.public_vise ?? '');
     setGAttrValeurs((p.attribut_valeurs ?? []).join(', '));
     setGAttrGroupe(true);
     setGMsg('');
@@ -332,6 +353,8 @@ export default function Page() {
           categorie: gCat,
           prix: Number(gPrix) || 0,
           description: gDesc,
+          marque: gMarque.trim(),
+          public_vise: gPublic.trim(),
           attribut_nom: gAttrNom.trim(),
           attribut_valeurs: gAttrValeurs,
           appliquer_au_groupe: Boolean(fiche.groupe) && gAttrGroupe,
@@ -735,6 +758,48 @@ export default function Page() {
                 n'est pas le sien, et la pharmacie sa contenance sous
                 « taille ». Cette plateforme sert des metiers qu'on ne connait
                 pas d'avance. */}
+            {/* CE QU'UN CLIENT CHERCHE, AVANT MEME LE NOM DE L'ARTICLE.
+                Dans une boutique de vetements ou de chaussures, il cherche une
+                MARQUE et un RAYON — « du Nike », « le rayon enfant ». La
+                categorie dit ou VOUS rangez ; ces deux champs disent ce que
+                LUI cherche.
+
+                Facultatifs, et vides ils ne s'affichent pas du tout : un
+                restaurant n'a ni marque ni rayon, et sa carte ne doit pas se
+                couvrir de mentions vides. */}
+            <div className="grid gap-2 sm:grid-cols-2">
+              <div>
+                <label className="mb-1 block text-sm font-semibold text-nuit-700">
+                  Marque
+                </label>
+                <input
+                  className="w-full border p-2"
+                  placeholder="Ex : Nike"
+                  value={fMarque}
+                  onChange={e => setFMarque(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-semibold text-nuit-700">
+                  Pour qui
+                </label>
+                <input
+                  className="w-full border p-2"
+                  placeholder="Ex : Enfant"
+                  list="publics-vises"
+                  value={fPublic}
+                  onChange={e => setFPublic(e.target.value)}
+                />
+                {/* Des SUGGESTIONS, pas une liste fermee : un marchand qui vend
+                    « Fille 2-6 ans » doit pouvoir l'ecrire. */}
+                <datalist id="publics-vises">
+                  {['Bébé', 'Enfant', 'Femme', 'Homme', 'Mixte'].map(v => (
+                    <option key={v} value={v} />
+                  ))}
+                </datalist>
+              </div>
+            </div>
+
             <div className="border border-chaux-200 bg-chaux-50 p-3">
               <p className="font-semibold text-nuit-900">
                 Cet article se décline en tailles, pointures… ?
@@ -929,6 +994,37 @@ export default function Page() {
                 pointures disponibles changent en cours de saison, et un
                 marchand qui ne peut pas les mettre a jour cesse vite d'y
                 croire. Vider les deux champs la retire. */}
+            <div className="grid gap-2 sm:grid-cols-2">
+              <div>
+                <label className="mb-1 block text-sm font-semibold text-nuit-700">
+                  Marque
+                </label>
+                <input
+                  value={gMarque}
+                  onChange={x => setGMarque(x.target.value)}
+                  placeholder="Ex : Nike"
+                  className="w-full border p-2"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-semibold text-nuit-700">
+                  Pour qui
+                </label>
+                <input
+                  value={gPublic}
+                  onChange={x => setGPublic(x.target.value)}
+                  placeholder="Ex : Enfant"
+                  list="publics-vises-edition"
+                  className="w-full border p-2"
+                />
+                <datalist id="publics-vises-edition">
+                  {['Bébé', 'Enfant', 'Femme', 'Homme', 'Mixte'].map(v => (
+                    <option key={v} value={v} />
+                  ))}
+                </datalist>
+              </div>
+            </div>
+
             <div>
               <label className="mb-1 block text-sm font-semibold text-nuit-700">
                 Tailles, pointures…

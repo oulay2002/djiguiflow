@@ -14,7 +14,7 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }
     // photo_url et menu_du_jour manquaient : les photos televersees par le
     // marchand n'atteignaient jamais la vitrine, et le menu du jour qu'il
     // compose restait invisible.
-    .select('reference, id, nom, categorie, prix, description, photo_url, menu_du_jour, stock, groupe, couleur, attribut_nom, attribut_valeurs')
+    .select('reference, id, nom, categorie, prix, description, photo_url, menu_du_jour, stock, groupe, couleur, attribut_nom, attribut_valeurs, marque, public_vise')
     .eq('boutique_id', m.boutiqueId)
     .eq('disponible', true)
     .order('categorie', { ascending: true })
@@ -60,6 +60,11 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }
     //
     // Les deux vont ensemble ou pas du tout — la base l'impose. On rend
     // donc une chaine vide et un tableau vide, jamais l'un sans l'autre.
+    // CE QU'UN CLIENT CHERCHE DANS UNE BOUTIQUE DE VETEMENTS : la marque
+    // d'abord, puis pour qui c'est. Vide = le marchand ne l'a pas donne, et la
+    // vitrine se tait — jamais « sans marque », jamais « pour tous ».
+    marque: String(p.marque ?? '').trim(),
+    publicVise: String(p.public_vise ?? '').trim(),
     attributNom: String(p.attribut_nom ?? '').trim(),
     attributValeurs: Array.isArray(p.attribut_valeurs)
       ? p.attribut_valeurs.map((v) => String(v ?? '').trim()).filter(Boolean)

@@ -633,10 +633,12 @@ export type Database = {
           disponible: boolean | null
           groupe: string | null
           id: string
+          marque: string | null
           menu_du_jour: boolean
           nom: string | null
           photo_url: string | null
           prix: number | null
+          public_vise: string | null
           quantite_stock: number | null
           reference: string | null
           seuil_alerte: number | null
@@ -654,10 +656,12 @@ export type Database = {
           disponible?: boolean | null
           groupe?: string | null
           id?: string
+          marque?: string | null
           menu_du_jour?: boolean
           nom?: string | null
           photo_url?: string | null
           prix?: number | null
+          public_vise?: string | null
           quantite_stock?: number | null
           reference?: string | null
           seuil_alerte?: number | null
@@ -675,10 +679,12 @@ export type Database = {
           disponible?: boolean | null
           groupe?: string | null
           id?: string
+          marque?: string | null
           menu_du_jour?: boolean
           nom?: string | null
           photo_url?: string | null
           prix?: number | null
+          public_vise?: string | null
           quantite_stock?: number | null
           reference?: string | null
           seuil_alerte?: number | null
@@ -1048,12 +1054,16 @@ export type Database = {
           attribut_nom: string
           attribut_valeurs: string[]
           categorie: string
+          couleur: string
           description: string
+          groupe: string
           id: string
+          marque: string
           menu_du_jour: boolean
           nom: string
           photo_url: string
           prix: number
+          public_vise: string
         }[]
       }
     }

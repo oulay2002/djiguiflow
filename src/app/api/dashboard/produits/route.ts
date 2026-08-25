@@ -66,7 +66,7 @@ export async function GET(req: Request) {
 
   const { data, error } = await sb
     .from('produits')
-    .select('reference, id, nom, categorie, prix, description, disponible, photo_url, stock, stock_initial, seuil_alerte, menu_du_jour, attribut_nom, attribut_valeurs, groupe')
+    .select('reference, id, nom, categorie, prix, description, disponible, photo_url, stock, stock_initial, seuil_alerte, menu_du_jour, attribut_nom, attribut_valeurs, groupe, marque, public_vise')
     .eq('boutique_id', m.boutiqueId)
     .order('nom', { ascending: true });
 
@@ -89,6 +89,8 @@ export async function GET(req: Request) {
     menu_du_jour: p.menu_du_jour === true,
     // La caracteristique, telle que le marchand l'a nommee. Les deux moities
     // vont ensemble ou pas du tout — la base l'impose.
+    marque: String(p.marque ?? '').trim(),
+    public_vise: String(p.public_vise ?? '').trim(),
     attribut_nom: String(p.attribut_nom ?? '').trim(),
     attribut_valeurs: Array.isArray(p.attribut_valeurs)
       ? p.attribut_valeurs.map((v) => String(v ?? '').trim()).filter(Boolean)
@@ -155,6 +157,10 @@ export async function POST(req: Request) {
       // LA CARACTERISTIQUE. Elle se saisit a la creation parce que c'est le
       // moment ou le marchand a l'article sous les yeux ; la lui faire ajouter
       // apres coup, article par article, garantirait qu'elle reste vide.
+      // Vide s'enregistre en `null` : une chaine vide passerait le test de
+      // presence de la vitrine et afficherait une etiquette muette.
+      marque: String(corps.marque ?? '').trim() || null,
+      public_vise: String(corps.public_vise ?? '').trim() || null,
       attribut_nom: carac.nom,
       attribut_valeurs: carac.valeurs,
     },
@@ -236,6 +242,8 @@ export async function PATCH(req: Request) {
     groupe?: string | null;
     couleur?: string | null;
     menu_du_jour?: boolean;
+    marque?: string | null;
+    public_vise?: string | null;
     attribut_nom?: string | null;
     attribut_valeurs?: string[] | null;
   } = {};
@@ -247,6 +255,13 @@ export async function PATCH(req: Request) {
 
   // La caracteristique ne se touche que si elle est envoyee : un formulaire qui
   // ne corrige qu'un prix ne doit pas effacer les pointures.
+  for (const champ of ['marque', 'public_vise'] as const) {
+    if (corps[champ] === undefined) continue;
+    // `null` quand le marchand vide le champ : c'est ainsi qu'il RETIRE la
+    // mention, et la vitrine se tait a nouveau.
+    patch[champ] = String(corps[champ] ?? '').trim() || null;
+  }
+
   if (corps.attribut_nom !== undefined || corps.attribut_valeurs !== undefined) {
     const carac = caracteristique(corps.attribut_nom, corps.attribut_valeurs);
     if (!carac.ok) return Response.json({ error: carac.message }, { status: 400 });
@@ -306,7 +321,16 @@ export async function PATCH(req: Request) {
       if (groupe) {
         const { error: errGroupe } = await sb
           .from('produits')
-          .update({ attribut_nom: patch.attribut_nom, attribut_valeurs: patch.attribut_valeurs })
+          .update({
+            attribut_nom: patch.attribut_nom,
+            attribut_valeurs: patch.attribut_valeurs,
+            // La marque et le rayon suivent la meme regle que la pointure :
+            // une chaussure ne change ni de marque ni de rayon en changeant de
+            // couleur. On ne les propage que si le marchand vient de les
+            // toucher — sinon on ecraserait un coloris legitimement different.
+            ...(patch.marque !== undefined ? { marque: patch.marque } : {}),
+            ...(patch.public_vise !== undefined ? { public_vise: patch.public_vise } : {}),
+          })
           .eq('boutique_id', m.boutiqueId)
           .eq('groupe', groupe);
 
