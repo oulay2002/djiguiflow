@@ -32,6 +32,7 @@ import {
   X
 } from 'lucide-react';
 import Link from 'next/link';
+import { VALEURS_LIVREE } from '@/lib/livraison';
 
 const TYPE_CONFIG = {
   interne: { label: 'Interne', color: 'bg-nuit-100 text-nuit-700 border-nuit-200' },
@@ -186,7 +187,7 @@ export default function LivreursPage() {
       .from('commandes')
       .select('livreur_id, frais_livraison')
       .eq('boutique_id', uuid)
-      .eq('statut_livraison', 'livre');
+      .in('statut_livraison', [...VALEURS_LIVREE]);
 
     if (errCourses) {
       console.error('Livreurs — courses illisibles :', errCourses.message);
