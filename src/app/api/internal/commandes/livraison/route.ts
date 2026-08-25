@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import type { Database } from '@/lib/database.types';
+import { canoniserStatutLivraison, estLivree } from '@/lib/livraison';
 
 export const dynamic = 'force-dynamic';
 
@@ -81,6 +82,28 @@ export async function POST(req: Request) {
   }
 
   /**
+   * UNE SEULE ORTHOGRAPHE ENTRE EN BASE.
+   *
+   * n8n transmet la valeur telle que le workflow l'a produite. La production
+   * en portait donc trois pour un seul etat — « livre », « livree »,
+   * « livrée » — et trois lectures comparaient a l'egalite stricte : six
+   * commandes leur etaient invisibles, dont pour la veille qui repere les
+   * livraisons sans frais annonces.
+   *
+   * C'est ICI qu'on ferme, et non dans n8n : cette route est la porte unique
+   * par laquelle une livraison se met a jour. Corriger cote workflow aurait
+   * demande de recommencer a chaque nouveau chemin.
+   *
+   * Voir `src/lib/livraison.ts` : seule la famille « livree » est ramenee a sa
+   * forme retenue. Les autres valeurs sont relues par des workflows que ce
+   * depot ne controle pas, et les reecrire casserait peut-etre une
+   * comparaison invisible d'ici.
+   */
+  if (maj.statut_livraison !== undefined) {
+    maj.statut_livraison = canoniserStatutLivraison(maj.statut_livraison);
+  }
+
+  /**
    * Une livraison terminee cloture aussi la commande.
    *
    * `rapport_retards` et `rapport_activite` raisonnent sur `statut`, jamais sur
@@ -88,11 +111,12 @@ export async function POST(req: Request) {
    * attente » pour la base — elle figure indefiniment dans l'alerte retard du
    * gerant, et n'est jamais comptee parmi les livrees du jour.
    *
-   * Le test est volontairement large : selon la source, la valeur s'ecrit
-   * « livre », « livree » ou « livrée ». Une comparaison stricte laisserait la
-   * commande ouverte sans que rien ne le signale, derriere un 200 ok.
+   * Le test reste LARGE meme apres la canonisation : celle-ci vient d'etre
+   * posee, et une ligne ecrite par un autre chemin — import, correction a la
+   * main — ne doit pas rouvrir le defaut. Une comparaison stricte laisserait
+   * la commande ouverte sans que rien ne le signale, derriere un 200 ok.
    */
-  if (/^livr/i.test(maj.statut_livraison ?? '')) {
+  if (estLivree(maj.statut_livraison)) {
     maj.statut = 'livree';
   }
 

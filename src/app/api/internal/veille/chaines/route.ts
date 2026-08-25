@@ -1,4 +1,5 @@
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
+import { VALEURS_LIVREE } from '@/lib/livraison';
 
 export const dynamic = 'force-dynamic';
 
@@ -136,7 +137,7 @@ export async function POST(req: Request) {
       () => 'livrée sans que les frais aient été annoncés au client',
       (r) => r
         .select('reference, boutique_id, created_at')
-        .eq('statut_livraison', 'livre')
+        .in('statut_livraison', [...VALEURS_LIVREE])
         .is('frais_livraison', null)
         .gt('created_at', fenetre)
         .limit(50),
@@ -173,7 +174,7 @@ export async function POST(req: Request) {
       () => 'livrée sans qu’on sache qui l’a livrée',
       (r) => r
         .select('reference, boutique_id, created_at')
-        .eq('statut_livraison', 'livre')
+        .in('statut_livraison', [...VALEURS_LIVREE])
         .is('nom_livreur', null)
         .gt('created_at', fenetre)
         .limit(50),
