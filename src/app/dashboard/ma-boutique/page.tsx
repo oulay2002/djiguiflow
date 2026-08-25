@@ -44,6 +44,18 @@ import {
  * La liste n'est pas fermee pour autant : une categorie deja enregistree et
  * absente d'ici est conservee telle quelle (voir le selecteur).
  */
+/**
+ * Les moyens de paiement proposes.
+ *
+ * Ceux qui circulent reellement a Abidjan. La liste n'est qu'une COMMODITE de
+ * saisie : la colonne est un tableau de texte libre, et rien en base ne s'y
+ * adosse. Une liste fermee posee sur une donnee ouverte est un piege que ce
+ * depot connait — la categorie de boutique l'a deja montre.
+ */
+const MOYENS_PAIEMENT = [
+  'Espèces à la livraison', 'Wave', 'Orange Money', 'MTN Money', 'Moov Money',
+];
+
 const CATEGORIES = [
   'Commerce', 'Restaurant', 'Maquis', 'Électronique', 'Santé', 'Épicerie', 'Mode',
 ];
@@ -73,8 +85,23 @@ export default function MaBoutiquePage() {
     zone: '',
     categorie: 'Commerce',
     telephone: '',
-    logo_url: ''
+    logo_url: '',
+    // CE QUE LE CLIENT DEVAIT DEMANDER. Quatre questions qu'il se pose avant
+    // de commander et auxquelles la page ne repondait pas : combien de temps,
+    // chez moi est-ce livre, comment je paie, y a-t-il un minimum. Beaucoup
+    // n'ecrivent pas pour les poser — ils partent.
+    delai_livraison: '',
+    zones_livrees: '',
+    commande_minimum: '',
   });
+
+  /**
+   * Les moyens de paiement acceptes.
+   *
+   * VIDE VEUT DIRE « NON RENSEIGNE », JAMAIS « aucun ». La vitrine se tait
+   * alors, au lieu d'annoncer au client qu'il ne peut pas payer.
+   */
+  const [paiements, setPaiements] = useState<string[]>([]);
   /**
    * Horaires en cours d'edition. `null` signifie TOUJOURS OUVERT, et c'est
    * l'etat de toutes les boutiques deja en service : la case reste decochee
@@ -128,18 +155,41 @@ export default function MaBoutiquePage() {
           nom: data.nom || '',
           description: data.description || '',
           zone: data.zone || '',
+          delai_livraison: data.delai_livraison || '',
+          zones_livrees: data.zones_livrees || '',
+          // `null` devient une chaine vide a l'ecran, et redeviendra `null` a
+          // l'enregistrement : un minimum a zero se lirait comme un minimum
+          // reel de zero franc.
+          commande_minimum:
+            data.commande_minimum === null || data.commande_minimum === undefined
+              ? ''
+              : String(data.commande_minimum),
           // Neutre par defaut : la plateforme sert aussi des pharmacies et
           // des boutiques de vetements.
           categorie: data.categorie || 'Commerce',
           telephone: data.telephone || '',
           logo_url: data.logo_url || ''
         });
+        // SANS CETTE LIGNE, ROUVRIR LA PAGE EFFACAIT LES PAIEMENTS.
+        // `paiements` vit hors de `formData` ; il serait reste a vide, et le
+        // premier enregistrement suivant aurait ecrit `null` par-dessus le
+        // choix du marchand — sans qu'il touche a ce champ, et sans rien dire.
+        setPaiements(
+          Array.isArray(data.paiements_acceptes)
+            ? data.paiements_acceptes.map((v: unknown) => String(v ?? '').trim()).filter(Boolean)
+            : [],
+        );
         setLogoPreview(data.logo_url || '');
         setHoraires(lireHoraires(data.horaires));
       } else {
         // Aucune boutique : formulaire vierge de creation.
         setBoutiqueEditee(null);
-        setFormData({ nom: '', description: '', zone: '', categorie: 'Commerce', telephone: '', logo_url: '' });
+        setFormData({
+          nom: '', description: '', zone: '', categorie: 'Commerce',
+          telephone: '', logo_url: '',
+          delai_livraison: '', zones_livrees: '', commande_minimum: '',
+        });
+        setPaiements([]);
         setLogoPreview('');
         setHoraires(null);
       }
@@ -216,6 +266,21 @@ export default function MaBoutiquePage() {
       // `null` est enregistre tel quel : c'est ainsi que se dit « toujours
       // ouvert », et non par un objet vide qui se lirait « ferme partout ».
       horaires,
+
+      // VIDE S'ENREGISTRE EN `null`, JAMAIS EN CHAINE VIDE NI EN ZERO.
+      //
+      // La vitrine ne montre une information que si elle existe. Une chaine
+      // vide y passerait le test de presence et afficherait une ligne muette ;
+      // un minimum a zero se lirait comme un vrai minimum de zero franc. C'est
+      // le motif que cette plateforme a paye plusieurs fois : une valeur par
+      // defaut qui masque une donnee manquante.
+      delai_livraison: formData.delai_livraison.trim() || null,
+      zones_livrees: formData.zones_livrees.trim() || null,
+      paiements_acceptes: paiements.length ? paiements : null,
+      commande_minimum: (() => {
+        const n = Number(formData.commande_minimum);
+        return Number.isFinite(n) && n > 0 ? Math.round(n) : null;
+      })(),
     };
 
     let error;
@@ -374,6 +439,114 @@ export default function MaBoutiquePage() {
                     className="w-full px-4 py-2.5 border border-chaux-200 focus:ring-2 focus:ring-nuit-200 focus:border-nuit-300"
                     placeholder="Décrivez votre boutique..."
                   />
+                </div>
+
+                {/* CE QUE LE CLIENT DEVAIT VOUS DEMANDER.
+
+                    Quatre questions qu'un client se pose AVANT de commander :
+                    combien de temps, chez moi est-ce livre, comment je paie,
+                    y a-t-il un minimum. Aucune ne trouvait de reponse sur la
+                    page — il fallait ecrire au marchand, et beaucoup n'ecrivent
+                    pas : ils partent.
+
+                    RIEN N'EST OBLIGATOIRE, ET RIEN N'EST INVENTE. Un champ
+                    laisse vide ne s'affiche pas du tout chez le client. Mieux
+                    vaut le silence qu'une promesse approximative, qu'il faudra
+                    tenir a chaque livraison. */}
+                <div className="border border-[var(--hairline)] bg-chaux-50 p-5">
+                  <h3 className="font-display text-lg font-bold text-nuit-900">
+                    Ce que le client doit savoir
+                  </h3>
+                  <p className="mt-1 text-sm text-chaux-600">
+                    Ces informations s’affichent sur votre boutique, avant le catalogue.
+                    Laissez vide ce que vous ne voulez pas annoncer.
+                  </p>
+
+                  <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div>
+                      <label className="mb-1 block text-sm font-medium text-nuit-700">
+                        Délai habituel de livraison
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.delai_livraison}
+                        onChange={(e) => setFormData({ ...formData, delai_livraison: e.target.value })}
+                        className="w-full border border-chaux-200 px-4 py-2.5 focus:border-nuit-300 focus:ring-2 focus:ring-nuit-200"
+                        placeholder="Ex : 30 à 45 min"
+                      />
+                      <p className="mt-1 text-xs text-chaux-600">
+                        Annoncez large plutôt que juste : un client servi plus vite
+                        que promis revient.
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="mb-1 block text-sm font-medium text-nuit-700">
+                        Commande minimum
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        inputMode="numeric"
+                        value={formData.commande_minimum}
+                        onChange={(e) => setFormData({ ...formData, commande_minimum: e.target.value })}
+                        className="w-full border border-chaux-200 px-4 py-2.5 focus:border-nuit-300 focus:ring-2 focus:ring-nuit-200"
+                        placeholder="Aucun minimum"
+                      />
+                      <p className="mt-1 text-xs text-chaux-600">En FCFA. Vide = pas de minimum.</p>
+                    </div>
+                  </div>
+
+                  <div className="mt-4">
+                    <label className="mb-1 block text-sm font-medium text-nuit-700">
+                      Quartiers que vous livrez
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.zones_livrees}
+                      onChange={(e) => setFormData({ ...formData, zones_livrees: e.target.value })}
+                      className="w-full border border-chaux-200 px-4 py-2.5 focus:border-nuit-300 focus:ring-2 focus:ring-nuit-200"
+                      placeholder="Ex : Yopougon, Adjamé, Plateau"
+                    />
+                    <p className="mt-1 text-xs text-chaux-600">
+                      Le client saura tout de suite s’il est concerné, au lieu de
+                      composer un panier pour rien.
+                    </p>
+                  </div>
+
+                  <div className="mt-4">
+                    <span className="mb-2 block text-sm font-medium text-nuit-700">
+                      Moyens de paiement acceptés
+                    </span>
+                    <div className="flex flex-wrap gap-2">
+                      {MOYENS_PAIEMENT.map((moyen) => {
+                        const actif = paiements.includes(moyen);
+                        return (
+                          <button
+                            key={moyen}
+                            type="button"
+                            aria-pressed={actif}
+                            onClick={() =>
+                              setPaiements((liste) =>
+                                actif ? liste.filter((x) => x !== moyen) : [...liste, moyen],
+                              )
+                            }
+                            className={`min-h-11 border px-3 text-sm font-semibold transition ${
+                              actif
+                                ? 'border-nuit-900 bg-nuit-900 text-chaux-50'
+                                : 'border-chaux-200 bg-white text-nuit-700 hover:border-nuit-900'
+                            }`}
+                          >
+                            {moyen}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <p className="mt-1 text-xs text-chaux-600">
+                      Rien de coché = rien d’annoncé. Le client ne lira jamais que
+                      vous refusez un moyen de paiement.
+                    </p>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

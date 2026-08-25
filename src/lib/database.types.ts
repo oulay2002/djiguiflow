@@ -40,6 +40,8 @@ export type Database = {
           actif: boolean
           banc_telegram_id: string | null
           categorie: string | null
+          commande_minimum: number | null
+          delai_livraison: string | null
           description: string | null
           emoji: string | null
           essai: boolean
@@ -48,6 +50,7 @@ export type Database = {
           id: string
           logo_url: string | null
           nom: string | null
+          paiements_acceptes: string[] | null
           pause_jusqua: string | null
           sheet_commandes: string | null
           sheet_document_id: string | null
@@ -64,11 +67,14 @@ export type Database = {
           wasender_session_hash: string | null
           webhook_secret_hash: string | null
           zone: string | null
+          zones_livrees: string | null
         }
         Insert: {
           actif?: boolean
           banc_telegram_id?: string | null
           categorie?: string | null
+          commande_minimum?: number | null
+          delai_livraison?: string | null
           description?: string | null
           emoji?: string | null
           essai?: boolean
@@ -77,6 +83,7 @@ export type Database = {
           id?: string
           logo_url?: string | null
           nom?: string | null
+          paiements_acceptes?: string[] | null
           pause_jusqua?: string | null
           sheet_commandes?: string | null
           sheet_document_id?: string | null
@@ -93,11 +100,14 @@ export type Database = {
           wasender_session_hash?: string | null
           webhook_secret_hash?: string | null
           zone?: string | null
+          zones_livrees?: string | null
         }
         Update: {
           actif?: boolean
           banc_telegram_id?: string | null
           categorie?: string | null
+          commande_minimum?: number | null
+          delai_livraison?: string | null
           description?: string | null
           emoji?: string | null
           essai?: boolean
@@ -106,6 +116,7 @@ export type Database = {
           id?: string
           logo_url?: string | null
           nom?: string | null
+          paiements_acceptes?: string[] | null
           pause_jusqua?: string | null
           sheet_commandes?: string | null
           sheet_document_id?: string | null
@@ -122,6 +133,7 @@ export type Database = {
           wasender_session_hash?: string | null
           webhook_secret_hash?: string | null
           zone?: string | null
+          zones_livrees?: string | null
         }
         Relationships: []
       }
@@ -991,14 +1003,18 @@ export type Database = {
         Args: { p_ref: string }
         Returns: {
           categorie: string
+          commande_minimum: number
+          delai_livraison: string
           description: string
           emoji: string
           id: string
           logo_url: string
           nom: string
+          paiements_acceptes: string[]
           slug: string
           telephone: string
           zone: string
+          zones_livrees: string
         }[]
       }
       vitrine_boutiques: {
