@@ -27,13 +27,28 @@ import { describe, expect, it } from 'vitest';
 /** Le tri, tel que la route l'applique. Voir /api/internal/billing/rattrapage. */
 const SEUIL_ALERTE_H = 2;
 
-type Ligne = { reference: string; jeton: string | null; etat: string; heures: number };
+type Ligne = {
+  reference: string;
+  jeton: string | null;
+  etat: string;
+  heures: number;
+  /** Deja signale une fois. Voir « une fois puis silence » plus bas. */
+  dejaSignale?: boolean;
+};
 
 const estBacASable = (jeton: string | null) =>
   String(jeton ?? '').trim().toUpperCase().startsWith('SANDBOX_');
 
 const aAlerter = (l: Ligne) =>
-  !estBacASable(l.jeton) && l.etat !== 'honore' && l.etat !== 'deja' && l.heures >= SEUIL_ALERTE_H;
+  !estBacASable(l.jeton)
+  && !l.dejaSignale
+  && l.etat !== 'honore'
+  && l.etat !== 'deja'
+  && l.heures >= SEUIL_ALERTE_H;
+
+/** Toujours bloque, deja signale : silencieux dans l'alerte, VISIBLE au rapport. */
+const auRapport = (l: Ligne) =>
+  Boolean(l.dejaSignale) && !estBacASable(l.jeton) && l.etat !== 'honore' && l.etat !== 'deja';
 
 describe('rattrapage des paiements — ce qui merite une alerte', () => {
   describe('le bac a sable ne reveille personne', () => {
@@ -90,6 +105,41 @@ describe('rattrapage des paiements — ce qui merite une alerte', () => {
       expect(
         aAlerter({ reference: 'DJF-reel', jeton: 'GP_LIVE_XYZ', etat: 'indetermine', heures: 1 }),
       ).toBe(false);
+    });
+  });
+
+  describe('une fois puis silence', () => {
+    const bloque: Ligne = {
+      reference: 'DJF-reel',
+      jeton: 'GP_LIVE_XYZ',
+      etat: 'indetermine',
+      heures: 5,
+    };
+
+    it('la premiere fois, on alerte', () => {
+      expect(aAlerter(bloque)).toBe(true);
+    });
+
+    it('les fois suivantes, on se tait', () => {
+      expect(aAlerter({ ...bloque, dejaSignale: true })).toBe(false);
+    });
+
+    // LA CONTREPARTIE INDISPENSABLE DU SILENCE. Se taire ET disparaitre, ce
+    // serait remplacer un dossier bruyant par un dossier oublie — et un
+    // marchand qui a paye sans recevoir son acces ne doit jamais sortir du
+    // champ de vision.
+    it('mais il reste au rapport, indefiniment', () => {
+      expect(auRapport({ ...bloque, dejaSignale: true })).toBe(true);
+      expect(auRapport({ ...bloque, dejaSignale: true, heures: 500 })).toBe(true);
+    });
+
+    it('un dossier resolu quitte le rapport', () => {
+      expect(auRapport({ ...bloque, dejaSignale: true, etat: 'honore' })).toBe(false);
+      expect(auRapport({ ...bloque, dejaSignale: true, etat: 'deja' })).toBe(false);
+    });
+
+    it('un bac a sable deja signale n encombre pas le rapport', () => {
+      expect(auRapport({ ...bloque, jeton: 'SANDBOX_X', dejaSignale: true })).toBe(false);
     });
   });
 });
