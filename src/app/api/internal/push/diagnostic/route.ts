@@ -60,6 +60,19 @@ export async function GET(req: Request) {
       // fausse alerte permanente, et une invitation a la reposer avec une
       // valeur perimee. Se verifie en SQL, jamais par une variable.
       ADMIN_EMAILS: Boolean(process.env.ADMIN_EMAILS),
+      /**
+       * CELLE-CI DECIDE DE QUI EST ADMIN, et son absence ne se voit pas.
+       *
+       * Quand elle est posee, `estAdmin` ignore l'adresse et ne regarde que
+       * l'identifiant ; quand elle manque, il retombe sur `ADMIN_EMAILS` — une
+       * adresse, donc une chose qui se reclame. Le repli journalise a chaque
+       * appel, mais il a fallu fouiller les journaux d'execution de Vercel pour
+       * repondre a « la variable est-elle bien lue ? », le 26 aout au soir.
+       *
+       * Une question qui demande de l'archeologie ne se pose pas deux fois : on
+       * la rend lisible en un appel. Presence seulement, jamais la valeur.
+       */
+      ADMIN_USER_IDS: Boolean(process.env.ADMIN_USER_IDS),
       STRIPE_SECRET_KEY: Boolean(process.env.STRIPE_SECRET_KEY),
     },
     variablesVapidVues: nomsVapid,
