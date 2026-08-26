@@ -79,6 +79,21 @@ jobs:
       - name: Langage visuel
         run: npm run verifier:palette
 
+      # DEUX ETATS QUI SE RESSEMBLENT SONT UN ETAT DE MOINS.
+      #
+      # La traduction de palette a fait passer dix familles a six : deux etats
+      # jusque-la distincts pouvaient atterrir sur la meme couleur. C'est
+      # arrive a « en preparation » et « en livraison » — le marchand lisait
+      # deux fois la meme chose sans savoir laquelle.
+      #
+      # CE CONTROLE N'ETAIT PAS BRANCHE ICI, et c'est pour cela qu'il avait
+      # accumule vingt signalements dont AUCUN n'etait reel. Personne ne le
+      # lancait, donc personne ne voyait qu'il criait au loup. Il a ete
+      # resserre le 26 aout 2026 : il n'accuse plus que deux entrees d'une
+      # meme table portant EXACTEMENT les memes couleurs.
+      - name: Etats discernables
+        run: npm run verifier:etats
+
       # LE VERROU DES FONCTIONS SECURITY DEFINER.
       #
       # Le 24 aout 2026, sur les 24 fonctions SECURITY DEFINER de la
