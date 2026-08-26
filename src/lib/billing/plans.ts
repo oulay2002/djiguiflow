@@ -44,6 +44,27 @@ export type BillingPlan = {
   popular: boolean;
 };
 
+/**
+ * « PRETS A PUBLIER », ET NON « PUBLIES ». LA NUANCE EST LA PROMESSE.
+ *
+ * La grille annoncait « Posts hebdomadaires Facebook et Instagram ». Un
+ * marchand le lit comme « la plateforme publie pour moi ». Elle ne publie pas :
+ * elle compose le contenu chaque lundi et le lui envoie sur son canal, il le
+ * poste lui-meme.
+ *
+ * Ce n'est pas un manque, c'est une impossibilite documentee dans
+ * `/api/internal/contenus/hebdo` : ni Facebook ni Instagram n'autorisent la
+ * publication au nom d'un tiers sans une App Review et une connexion OAuth par
+ * marchand, et TikTok encore moins.
+ *
+ * LE CODE ETAIT HONNETE, LA GRILLE NE L'ETAIT PAS. Le contraste sautait aux
+ * yeux : la ligne Premium disait deja correctement « contenus prets a publier
+ * TikTok et WhatsApp » pendant que les autres promettaient des « posts ». Un
+ * marchand qui paie en attendant qu'on publie pour lui se sent trompe au
+ * PREMIER LUNDI — au moment precis ou il devrait etre content.
+ *
+ * Corrige le 26 aout 2026, avant le premier marchand reel.
+ */
 export const BILLING_PLANS: BillingPlan[] = [
   {
     key: 'essai',
@@ -62,7 +83,7 @@ export const BILLING_PLANS: BillingPlan[] = [
       'Bot WhatsApp + IA — 30 commandes',
       'Suivi client et livreurs',
       'Photos retravaillées pour la vitrine',
-      'Posts hebdomadaires Facebook et Instagram',
+      'Contenus hebdomadaires prêts à publier — Facebook et Instagram',
     ],
     popular: false,
   },
@@ -80,7 +101,7 @@ export const BILLING_PLANS: BillingPlan[] = [
       'Bot WhatsApp + IA — 300 commandes par mois',
       'Suivi client et livreurs',
       'Photos retravaillées pour la vitrine',
-      'Posts hebdomadaires Facebook et Instagram',
+      'Contenus hebdomadaires prêts à publier — Facebook et Instagram',
       'Support par e-mail',
     ],
     popular: true,
@@ -99,8 +120,11 @@ export const BILLING_PLANS: BillingPlan[] = [
       'Bot WhatsApp + IA — 1 000 commandes par mois',
       'Suivi client et livreurs',
       'Photos retravaillées pour la vitrine',
-      'Posts hebdomadaires Facebook et Instagram',
-      'Contenus prêts à publier TikTok et WhatsApp',
+      // Premium ajoute DEUX canaux a ce que Pro recoit deja : la ligne
+      // precedente couvre Facebook et Instagram, celle-ci s'y ajoute. Les
+      // repeter en entier ferait lire deux fois la meme promesse.
+      'Contenus hebdomadaires prêts à publier — Facebook et Instagram',
+      '…et aussi TikTok et WhatsApp',
       'Plusieurs boutiques sur un même compte',
       'Support prioritaire',
     ],

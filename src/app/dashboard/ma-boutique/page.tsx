@@ -328,7 +328,28 @@ export default function MaBoutiquePage() {
     }
 
     if (error) {
-      setMessage({ type: 'error', text: 'Erreur sauvegarde' });
+      /**
+       * UN REFUS DE REGLE N'EST PAS UNE PANNE, ET NE DOIT PAS SE LIRE COMME
+       * TELLE.
+       *
+       * « Erreur sauvegarde » envoie le marchand chercher un probleme
+       * technique, recommencer, puis nous ecrire. Or il n'y a rien de casse :
+       * il a atteint une limite de son forfait, et il existe un geste pour en
+       * sortir. Le dire coute une ligne et lui epargne un appel.
+       *
+       * Le verrou reste EN BASE — un declencheur sur `boutiques` — parce que
+       * la creation part du navigateur : une garde posee ici seule se
+       * contournerait en appelant l'API directement. Ceci n'est que la
+       * traduction du refus, pas le refus lui-meme.
+       */
+      const limiteAtteinte = /Premium/i.test(error.message ?? '');
+
+      setMessage({
+        type: 'error',
+        text: limiteAtteinte
+          ? 'Votre forfait ne couvre qu’une seule boutique. Passez en Premium pour en ouvrir plusieurs sur ce compte.'
+          : 'Erreur sauvegarde',
+      });
     } else {
       setMessage({ type: 'success', text: 'Boutique sauvegardée !' });
     }
