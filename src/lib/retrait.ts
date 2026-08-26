@@ -115,6 +115,39 @@ export function mentionFrais(a: {
     + ' en plus, à la réception.';
 }
 
+/**
+ * CE QUE LE SUIVI DOIT DIRE DES FRAIS DE LIVRAISON.
+ *
+ * Trois etats, et l'ecran s'est deja trompe sur deux d'entre eux :
+ *
+ *     null    le livreur ne s'est pas prononce   → on se tait
+ *     0       il n'y a rien a encaisser          → « Livraison offerte »
+ *     N > 0   le livreur annoncera N             → « N FCFA, a regler au livreur »
+ *
+ * LE ZERO EST ARRIVE AVEC LE RETRAIT, ET L'ECRAN NE LE CONNAISSAIT PAS. Il ne
+ * testait que `!== null`, parce qu'avant lui zero n'existait pas : une
+ * commande a emporter, comme une livraison offerte, affichait
+ * « 0 FCFA — a regler au livreur ». Le client lisait qu'il devait quelque
+ * chose au livreur, sur une commande qu'il vient chercher lui-meme.
+ *
+ * En retrait, il n'y a pas de ligne du tout : ce n'est pas une livraison a
+ * zero franc, c'est l'absence de livraison.
+ */
+export type LigneFrais =
+  | { montrer: false }
+  | { montrer: true; offerte: true }
+  | { montrer: true; offerte: false; montant: number };
+
+export function ligneFraisSuivi(mode: unknown, frais: unknown): LigneFrais {
+  if (String(mode ?? '').trim() === 'retrait') return { montrer: false };
+  if (frais === null || frais === undefined || frais === '') return { montrer: false };
+
+  const n = Number(frais);
+  if (!Number.isFinite(n) || n < 0) return { montrer: false };
+
+  return n === 0 ? { montrer: true, offerte: true } : { montrer: true, offerte: false, montant: n };
+}
+
 /** « HH:MM » a Abidjan. UTC+0 toute l'annee : l'heure UTC EST l'heure locale. */
 export function heureAbidjan(d: Date): string {
   return `${String(d.getUTCHours()).padStart(2, '0')}:${String(d.getUTCMinutes()).padStart(2, '0')}`;
@@ -135,6 +168,26 @@ function preparation(min: unknown): number {
  */
 export function heureRetraitMinimale(maintenant: Date, preparationMin: unknown): string {
   return heureAbidjan(new Date(maintenant.getTime() + preparation(preparationMin) * 60_000));
+}
+
+/**
+ * L'heure de retrait telle qu'on la dit a quelqu'un : « 12:30 », ou vide.
+ *
+ * VIDE VEUT DIRE « DES QUE PRET », et c'est a l'appelant de le formuler : les
+ * mots ne sont pas les memes selon qu'on parle au client (« dès que c'est
+ * prêt ») ou au marchand (« dès que prêt »). Rendre une phrase toute faite ici
+ * obligerait chaque ecran a defaire celle des autres.
+ *
+ * L'heure est rendue EN HEURE D'ABIDJAN. La colonne est un `timestamptz` : la
+ * lire brute afficherait UTC a quelqu'un qui n'a que faire d'UTC — et pendant
+ * six mois de l'annee, ce n'est meme pas la meme heure pour un client en
+ * Europe qui suit la commande de sa famille.
+ */
+export function heureRetraitLisible(iso: unknown): string {
+  const brut = String(iso ?? '').trim();
+  if (!brut) return '';
+  const d = new Date(brut);
+  return Number.isNaN(d.getTime()) ? '' : heureAbidjan(d);
 }
 
 export type VerdictHeure =

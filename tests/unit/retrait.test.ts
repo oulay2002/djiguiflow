@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
+  heureRetraitLisible,
   heureRetraitMinimale,
   horodaterRetrait,
+  ligneFraisSuivi,
   livraisonOfferte,
   mentionFrais,
   modeAccepte,
@@ -123,8 +125,63 @@ describe('la phrase que lit le client', () => {
   });
 });
 
+/**
+ * LA LIGNE DES FRAIS SUR L'ECRAN DE SUIVI.
+ *
+ * Ce sont les tests d'une REGRESSION, pas d'une fonctionnalite. L'ecran ne
+ * testait que `frais !== null`, parce qu'avant le retrait, zero n'existait
+ * pas. Des que la route s'est mise a ecrire `0` — en retrait, et pour une
+ * livraison offerte — le client a lu « 0 FCFA — a regler au livreur » : on lui
+ * annoncait une dette envers un livreur qui, dans un cas, n'existe meme pas.
+ */
+describe('la ligne des frais, sur le suivi', () => {
+  it('en retrait, il n y a pas de ligne du tout', () => {
+    // Ce n'est pas une livraison a zero franc : c'est l'absence de livraison.
+    expect(ligneFraisSuivi('retrait', 0)).toEqual({ montrer: false });
+    expect(ligneFraisSuivi('retrait', 1_500)).toEqual({ montrer: false });
+  });
+
+  it('zero se dit « offerte », jamais « 0 FCFA a regler »', () => {
+    expect(ligneFraisSuivi('livraison', 0)).toEqual({ montrer: true, offerte: true });
+  });
+
+  it('NULL se tait : le livreur ne s est pas prononce', () => {
+    expect(ligneFraisSuivi('livraison', null)).toEqual({ montrer: false });
+    expect(ligneFraisSuivi('livraison', undefined)).toEqual({ montrer: false });
+  });
+
+  it('un montant s affiche tel quel', () => {
+    expect(ligneFraisSuivi('livraison', 1_500)).toEqual({
+      montrer: true, offerte: false, montant: 1_500,
+    });
+  });
+
+  it('une valeur illisible se tait plutot que d annoncer un chiffre faux', () => {
+    expect(ligneFraisSuivi('livraison', 'offerte')).toEqual({ montrer: false });
+    expect(ligneFraisSuivi('livraison', -100)).toEqual({ montrer: false });
+  });
+});
+
 // Abidjan est a UTC+0 toute l'annee : l'heure UTC EST l'heure locale.
 const a = (iso: string) => new Date(iso);
+
+describe('l heure de retrait, telle qu on la dit', () => {
+  it('un timestamptz devient une heure d Abidjan', () => {
+    expect(heureRetraitLisible('2026-08-26T12:30:00.000Z')).toBe('12:30');
+  });
+
+  it('un client en Europe lit la meme heure que le marchand', () => {
+    // Le meme instant, ecrit avec un decalage : c'est l'heure d'Abidjan qui
+    // doit sortir, pas celle de l'horloge qui a compose la chaine.
+    expect(heureRetraitLisible('2026-08-26T14:30:00+02:00')).toBe('12:30');
+  });
+
+  it('vide reste vide — c est a l ecran de dire « des que pret »', () => {
+    expect(heureRetraitLisible(null)).toBe('');
+    expect(heureRetraitLisible('')).toBe('');
+    expect(heureRetraitLisible('bientot')).toBe('');
+  });
+});
 
 describe('l heure de retrait', () => {
   it('vide veut dire « des que pret », et vaut null', () => {

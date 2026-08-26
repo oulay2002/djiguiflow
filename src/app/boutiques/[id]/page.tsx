@@ -372,6 +372,16 @@ export default function Page() {
    */
   const [heureRetrait, setHeureRetrait] = useState('');
 
+  /**
+   * CE QUI A ETE COMMANDE, fige au moment de l'envoi.
+   *
+   * Le bandeau « REÇUE » vit apres le formulaire, qui se vide et redevient
+   * modifiable : lire `modeChoisi` en direct ferait changer le bandeau d'une
+   * commande DEJA PARTIE si le client rebasculait le selecteur en la relisant.
+   * Il lirait alors « vous viendrez la chercher » sur une livraison.
+   */
+  const [recupConfirmee, setRecupConfirmee] = useState<{ mode: ModeCommande; heure: string } | null>(null);
+
   useEffect(() => {
     if (!slug) return;
     let annule = false;
@@ -737,6 +747,7 @@ export default function Page() {
         if (d.ok) {
           setConfirmation(d.order_id);
           setJetonSuivi(String(d.jeton_suivi ?? ''));
+          setRecupConfirmee({ mode: modeChoisi, heure: heureRetrait });
           setPanier({}); setNom(''); setTel(''); setAdresse(''); setInstructions('');
           // L'heure demandee appartenait a la commande qui vient de partir :
           // la garder ferait proposer la meme a la suivante, sans un mot.
@@ -1229,6 +1240,20 @@ export default function Page() {
                   l onglet en croyant avoir fini. */}{' '}
               <b>Répondez au message WhatsApp qui va vous être envoyé</b> pour
               qu’elle soit préparée.{' '}
+              {/* CE QU'IL DOIT SAVOIR AVANT DE FERMER L'ONGLET : doit-il
+                  attendre chez lui, ou se deplacer ? On ne le lui dit qu'en
+                  retrait — en livraison, la page n'a jamais eu a le preciser
+                  et l'ajouter alourdirait le seul moment ou il lit
+                  vraiment. */}
+              {recupConfirmee?.mode === 'retrait' && (
+                <>
+                  <b>
+                    Vous viendrez la chercher sur place
+                    {recupConfirmee.heure ? ` vers ${recupConfirmee.heure}` : ''}.
+                  </b>{' '}
+                  Le commerçant vous prévient dès qu’elle est prête.{' '}
+                </>
+              )}
               <Link
                 href={
                   `/suivi?ref=${encodeURIComponent(confirmation)}`
