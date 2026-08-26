@@ -101,6 +101,7 @@ export async function GET(req: Request) {
         ' nom_livreur, statut_livraison, confirmation_statut,' +
         ' frais_livraison,' +
         ' heure_prise_en_charge, heure_livraison, boutique_id,' +
+        ' mode_recuperation, heure_retrait,' +
         ' commande_items(nom_produit, quantite, prix_unitaire)',
     )
     .ilike('reference', motifExact(ref));
@@ -123,6 +124,7 @@ export async function GET(req: Request) {
     statut_livraison: string | null; confirmation_statut: string | null;
     heure_prise_en_charge: string | null;
     heure_livraison: string | null; boutique_id: string;
+    mode_recuperation: string | null; heure_retrait: string | null;
     commande_items: LigneItem[] | null;
   };
 
@@ -235,5 +237,18 @@ export async function GET(req: Request) {
     confirmation_statut: c.confirmation_statut ?? '',
     heure_prise_en_charge: c.heure_prise_en_charge ?? '',
     heure_livraison: c.heure_livraison ?? '',
+    /**
+     * CE QUE L'ECRAN NE POUVAIT PAS DEVINER.
+     *
+     * Sans le mode, le suivi affichait a un client venu chercher sa commande
+     * trois etapes qui n'arriveront JAMAIS — « Prise par un livreur »,
+     * « En route », « Livrée ». Il regardait une barre de progression figee a
+     * l'etape deux, sans savoir si quelque chose etait casse.
+     *
+     * `heure_retrait` part en ISO : c'est l'ecran qui la met en heure
+     * d'Abidjan, comme partout, plutot que deux formatages a tenir d'accord.
+     */
+    mode_recuperation: c.mode_recuperation || 'livraison',
+    heure_retrait: c.heure_retrait ?? '',
   });
 }

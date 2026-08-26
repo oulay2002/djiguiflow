@@ -5,6 +5,13 @@ import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import { etatBoutique } from '@/lib/horaires';
 import { boutiquePeutVendre } from '@/lib/boutiquePrete';
 import {
+  horodaterRetrait,
+  livraisonOfferte,
+  modeAccepte,
+  modeParDefaut,
+  type ModeCommande,
+} from '@/lib/retrait';
+import {
   adresseAppelante,
   fenetreDepassee,
   plafondJournalierDepasse,
@@ -297,9 +304,14 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
   // c'est un client qui a mal envoye, pas le serveur qui a casse.
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
   if (!body) return Response.json({ error: 'Requête illisible' }, { status: 400 });
-  const { nom, tel, adresse, instructions, panier } = body as {
+  const {
+    nom, tel, adresse, instructions, panier,
+    mode_recuperation: modeDemande,
+    heure_retrait: heureDemandee,
+  } = body as {
     nom?: unknown; tel?: unknown; adresse?: unknown;
     instructions?: unknown; panier?: unknown;
+    mode_recuperation?: unknown; heure_retrait?: unknown;
   };
 
   const sb = getSupabaseAdmin();
@@ -330,17 +342,90 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
    */
   let minimumBoutique = 0;
 
+  /**
+   * COMMENT LE CLIENT RECUPERE SA COMMANDE, arrete ICI et une seule fois.
+   *
+   * `mode` est fige sur la commande : sans lui, un marchand qui passerait plus
+   * tard de « les deux » a « livraison » ferait basculer tout son historique,
+   * et les gardes de veille se mettraient a crier sur des commandes closes
+   * depuis des semaines.
+   *
+   * Les valeurs de depart sont celles d'une boutique qui livre — c'est le cas
+   * de toutes celles en service, et d'une fiche qu'on n'a pas su lire.
+   */
+  let modeRetenu: ModeCommande = 'livraison';
+  let heureRetraitIso: string | null = null;
+  let offerteDes: number | null = null;
+  let preparationMin: number | null = null;
+
   if (sb && boutiqueUuid) {
     const { data: fiche } = await sb
       .from('boutiques')
       // En UNE seule chaine litterale : concatenee, elle perd son inference et
       // le type retombe sur `GenericStringError`.
-      .select('horaires, pause_jusqua, essai, banc_telegram_id, wasender_secret_id, telegram_secret_id, groupe_livreurs, commande_minimum')
+      .select('horaires, pause_jusqua, essai, banc_telegram_id, wasender_secret_id, telegram_secret_id, groupe_livreurs, commande_minimum, mode_recuperation, delai_preparation_min, livraison_offerte_des')
       .eq('id', boutiqueUuid)
       .maybeSingle();
 
     boutiqueEssai = fiche?.essai === true;
     minimumBoutique = Number(fiche?.commande_minimum ?? 0);
+    // ZERO GARDE SA VALEUR. Un `?? null` sur un `|| null` ferait de « toujours
+    // offerte » un « le livreur annonce ses frais » — l'exact contraire.
+    offerteDes =
+      typeof fiche?.livraison_offerte_des === 'number' ? fiche.livraison_offerte_des : null;
+    preparationMin =
+      typeof fiche?.delai_preparation_min === 'number' ? fiche.delai_preparation_min : null;
+
+    /**
+     * LE MODE SE VERIFIE ICI, PAS DANS LE NAVIGATEUR.
+     *
+     * Le selecteur de la vitrine n'empeche rien : un onglet reste ouvert apres
+     * que le marchand a change d'avis, un lien se rejoue, un appel se forge.
+     * Sans ce controle, une commande « retrait » arriverait chez un marchand
+     * qui ne fait que livrer — et un client se deplacerait vers une porte ou
+     * personne ne l'attend. Meme regle que pour les horaires et le stock.
+     *
+     * Un corps sans mode retombe sur le mode par defaut de la boutique : les
+     * anciens clients, dont l'onglet ne connait pas ce champ, continuent
+     * exactement comme avant.
+     */
+    const demande = String(modeDemande ?? '').trim();
+    if (!demande) {
+      modeRetenu = modeParDefaut(fiche?.mode_recuperation);
+    } else if (modeAccepte(fiche?.mode_recuperation, demande)) {
+      modeRetenu = demande as ModeCommande;
+    } else {
+      console.error(
+        `Commande refusee — « ${m.id} » ne propose pas « ${demande} »`
+          + ` (mode boutique : ${String(fiche?.mode_recuperation ?? 'inconnu')}).`,
+      );
+      return Response.json(
+        {
+          error:
+            demande === 'retrait'
+              ? `${m.nom} ne propose pas le retrait sur place. Rechargez la page.`
+              : `${m.nom} ne propose pas la livraison. Rechargez la page.`,
+        },
+        { status: 409 },
+      );
+    }
+
+    /**
+     * L'HEURE DEMANDEE, DATEE PAR LE SERVEUR.
+     *
+     * Le navigateur n'envoie qu'un « HH:MM » : un client qui commande depuis
+     * un autre fuseau pour sa famille a Abidjan ferait sinon arriver la
+     * commande deux heures trop tot, sans que rien ne le signale.
+     *
+     * Une heure hors d'atteinte se REFUSE — elle ne bascule pas au lendemain.
+     * Reporter en silence donnerait au client et au marchand deux lectures de
+     * la meme commande, et c'est le client qui se deplacerait pour rien.
+     */
+    if (modeRetenu === 'retrait') {
+      const verdict = horodaterRetrait(heureDemandee, new Date(), preparationMin);
+      if (!verdict.ok) return Response.json({ error: verdict.message }, { status: 400 });
+      heureRetraitIso = verdict.iso;
+    }
 
     /**
      * UNE BOUTIQUE NON BRANCHEE NE PREND PAS DE COMMANDE.
@@ -365,6 +450,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
       wasenderSecretId: fiche?.wasender_secret_id,
       telegramSecretId: fiche?.telegram_secret_id,
       groupeLivreurs: fiche?.groupe_livreurs,
+      modeRecuperation: fiche?.mode_recuperation,
     });
 
     if (!verdict.peutVendre) {
@@ -468,6 +554,17 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
    */
   let jetonSuivi = '';
 
+  /**
+   * CE QUE LE CLIENT DEVRA — OU NON — AU LIVREUR, calcule UNE FOIS.
+   *
+   * Il est ecrit en base ET transmis au dispatch. Le recalculer a chaque
+   * endroit ferait exactement ce que ce chantier evite depuis le debut : deux
+   * lectures de la meme regle qui finissent par diverger, et un livreur qui
+   * reclame au client une somme que la base dit offerte.
+   */
+  const fraisEnregistres: number | null =
+    modeRetenu === 'retrait' || livraisonOfferte(offerteDes, total) ? 0 : null;
+
   // ---- 1. Supabase : c'est ici que la commande existe ou n'existe pas.
   if (sb) {
     if (!boutiqueUuid) {
@@ -485,8 +582,29 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
         reference: order_id,
         client_nom: String(nom || 'Client'),
         client_telephone: phone,
-        client_adresse: String(adresse || ''),
+        // EN RETRAIT, ON N'ECRIT AUCUNE ADRESSE. Le champ est cache dans la
+        // vitrine, mais un client qui a saisi la sienne puis bascule en
+        // retrait la garde en memoire : elle serait partie au livreur et au
+        // marchand comme une adresse de livraison a honorer.
+        client_adresse: modeRetenu === 'retrait' ? '' : String(adresse || ''),
         instructions: String(instructions || ''),
+        mode_recuperation: modeRetenu,
+        // NULL veut dire « des que pret », jamais « on ne sait pas ».
+        heure_retrait: heureRetraitIso,
+        /**
+         * ZERO EXPLICITE, JAMAIS NULL, QUAND IL N'Y A RIEN A PAYER.
+         *
+         * `frais_livraison` a deux absences qu'il ne faut pas confondre :
+         * NULL veut dire « le livreur ne les a pas encore annonces », zero veut
+         * dire « il n'y a rien a encaisser ». Les melanger est precisement le
+         * defaut que ce depot poursuit — et ici il a un cout immediat : le
+         * garde `livree_sans_frais` crierait sur chaque commande offerte, et
+         * une veille qu'on bruite est une veille qu'on cesse de lire.
+         *
+         * On laisse NULL dans le seul cas ou c'est vrai : une livraison dont le
+         * livreur annoncera le prix.
+         */
+        frais_livraison: fraisEnregistres,
         chat_id: phone,
         total,
         // `canal` dit COMMENT JOINDRE le client, pas d'ou vient la commande.
@@ -653,8 +771,15 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     chat_id: phone,
     customer_name: String(nom || 'Client'),
     phone,
-    address: String(adresse || ''),
+    // Vide en retrait, comme en base : une adresse dans la colonne que relit
+    // « Acceptation Livraison » ferait croire a une course a faire.
+    address: modeRetenu === 'retrait' ? '' : String(adresse || ''),
     instruction: String(instructions || ''),
+    // Ces deux colonnes n'existent pas encore dans les feuilles des marchands.
+    // `payload[h] ?? ''` n'ecrit que les en-tetes presentes : les ajouter ici
+    // ne casse rien et les remplira le jour ou un marchand cree la colonne.
+    mode_recuperation: modeRetenu,
+    heure_retrait: heureRetraitIso ?? '',
     items: JSON.stringify(articlesFeuille),
     total_price: String(total),
     status: 'validee',
@@ -708,8 +833,37 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
           order_id,
           customer_name: String(nom || 'Client'),
           phone,
-          address: String(adresse || ''),
+          address: modeRetenu === 'retrait' ? '' : String(adresse || ''),
           items: JSON.stringify(articlesFeuille),
+          /**
+           * CE QUI EMPECHE D'ENVOYER UN LIVREUR CHERCHER UNE COMMANDE A
+           * EMPORTER.
+           *
+           * « Commande App » fait DEUX choses : prevenir le client, et alerter
+           * les livreurs. Taire l'appel entier pour un retrait priverait donc
+           * le client de sa confirmation. C'est n8n qui branche, sur ce champ.
+           *
+           * Il est envoye pour TOUTE commande, livraison comprise : un champ
+           * qui n'apparait que dans un cas oblige le workflow a traiter son
+           * absence comme une valeur, et c'est ainsi qu'on se retrouve a
+           * comparer `undefined` a une chaine.
+           */
+          mode_recuperation: modeRetenu,
+          heure_retrait: heureRetraitIso ?? '',
+          /**
+           * CE QUE LE LIVREUR DOIT SAVOIR AVANT D'ACCEPTER.
+           *
+           * `0` veut dire « il n'y a rien a encaisser », et c'est LUI que ca
+           * regarde en premier : une livraison offerte se regle entre le
+           * marchand et lui, jamais a la porte du client. Sans cette valeur, il
+           * reclamerait au client une somme que personne ne lui doit — c'est la
+           * dispute que cette fonctionnalite peut creer, et elle se joue sur le
+           * pas de la porte, la ou plus personne ne rattrape rien.
+           *
+           * Chaine vide quand le livreur annoncera ses frais : « rien a dire »
+           * ne doit pas se confondre avec « zero franc ».
+           */
+          frais_livraison: fraisEnregistres === null ? '' : String(fraisEnregistres),
           total_price: String(total),
           sheetCommandes: m.sheetCommandes,
           // Sans ce champ, le workflow n8n retombait sur le groupe de

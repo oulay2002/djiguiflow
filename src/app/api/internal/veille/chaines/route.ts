@@ -116,6 +116,12 @@ export async function POST(req: Request) {
     // C'est la rupture la plus couteuse : le client attend une commande que
     // personne ne prepare. Elle s'est produite le 21 aout, quand la recherche
     // de commande lisait encore une feuille devenue vide.
+    // UN RETRAIT N'EST PAS UNE CHAINE ROMPUE. Le client vient chercher : il
+    // n'y a ni livreur a lancer, ni frais a annoncer, ni personne dont on
+    // devrait savoir qui a livre. Sans ce filtre, ce controle crierait sur
+    // CHAQUE commande a emporter — et une veille qu'on bruite est une veille
+    // qu'on cesse de lire.
+    //
     // ELLE NE VOYAIT QUE LES COMMANDES CONFIRMEES, ET C'ETAIT LE TROU.
     //
     // Le filtre exigeait `confirmation_statut = 'confirmee'`. Or une commande
@@ -149,6 +155,7 @@ export async function POST(req: Request) {
       (r) => r
         .select('reference, boutique_id, created_at')
         .eq('statut', 'en_attente')
+        .eq('mode_recuperation', 'livraison')
         .or('confirmation_statut.is.null,confirmation_statut.eq.confirmee')
         .is('nom_livreur', null)
         .lt('created_at', seuilDispatch)
@@ -166,6 +173,7 @@ export async function POST(req: Request) {
       (r) => r
         .select('reference, boutique_id, created_at')
         .in('statut_livraison', [...VALEURS_LIVREE])
+        .eq('mode_recuperation', 'livraison')
         .is('frais_livraison', null)
         .gt('created_at', fenetre)
         .limit(50),
@@ -203,6 +211,7 @@ export async function POST(req: Request) {
       (r) => r
         .select('reference, boutique_id, created_at')
         .in('statut_livraison', [...VALEURS_LIVREE])
+        .eq('mode_recuperation', 'livraison')
         .is('nom_livreur', null)
         .gt('created_at', fenetre)
         .limit(50),

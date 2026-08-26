@@ -28,6 +28,8 @@ type Stats = {
   configuration?: {
     canalClient: boolean;
     groupeLivreurs: boolean;
+    /** La boutique livre-t-elle ? Faux = retrait seul, aucun livreur attendu. */
+    livre: boolean;
     catalogue: boolean;
     /** Faux = aucun horaire declare, donc ouverte nuit comprise. */
     horaires: boolean;
@@ -117,7 +119,10 @@ export default function Page() {
           titre: 'Aucun canal connecté',
           detail: 'Vos clients ne recevront ni confirmation, ni suivi de livraison, ni demande d’avis.',
         },
-        !s.configuration.groupeLivreurs && {
+        // ON NE RECLAME UN LIVREUR QU'A QUI LIVRE. Une boutique de retrait
+        // n'aura jamais de groupe : ce bandeau rouge lui aurait annonce une
+        // panne permanente, pour un champ qui n'a aucun sens chez elle.
+        s.configuration.livre && !s.configuration.groupeLivreurs && {
           titre: 'Aucun groupe de livreurs',
           detail: 'Les commandes ne seront proposées à personne pour la livraison.',
         },

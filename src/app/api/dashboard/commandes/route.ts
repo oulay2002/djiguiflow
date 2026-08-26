@@ -23,6 +23,8 @@ type LigneCommande = {
   heure_livraison: string | null;
   confirmation_statut: string | null;
   confirmation_heure: string | null;
+  mode_recuperation: string | null;
+  heure_retrait: string | null;
   commande_items: LigneItem[] | null;
 };
 
@@ -42,6 +44,7 @@ export async function GET(req: Request) {
         ' frais_livraison,' +
         ' nom_livreur, statut_livraison, heure_prise_en_charge, heure_livraison,' +
         ' confirmation_statut, confirmation_heure,' +
+        ' mode_recuperation, heure_retrait,' +
         ' commande_items(nom_produit, variante, quantite, prix_unitaire)',
     )
     .eq('boutique_id', m.boutiqueId)
@@ -86,6 +89,12 @@ export async function GET(req: Request) {
     heure_livraison: c.heure_livraison ?? '',
     confirmation_statut: c.confirmation_statut ?? null,
     confirmation_heure: c.confirmation_heure ?? null,
+    // CE QUE LE MARCHAND DOIT LIRE AVANT LE RESTE : faut-il porter cette
+    // commande, ou l'emballer et attendre ? L'ecran ne le distinguait pas, et
+    // proposait « En route » sur une commande que personne ne transporte.
+    mode_recuperation: c.mode_recuperation || 'livraison',
+    // Vide veut dire « des que pret », jamais « on ne sait pas ».
+    heure_retrait: c.heure_retrait ?? '',
   }));
 
   return Response.json({ boutique_id: m.id, commandes });

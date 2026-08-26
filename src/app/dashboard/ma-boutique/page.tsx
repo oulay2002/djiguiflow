@@ -93,7 +93,32 @@ export default function MaBoutiquePage() {
     delai_livraison: '',
     zones_livrees: '',
     commande_minimum: '',
+    /**
+     * COMMENT LE CLIENT RECUPERE SA COMMANDE.
+     *
+     * `livraison` par defaut, comme en base : ce champ decide si la plateforme
+     * exige un groupe de livreurs, et une boutique deja en service ne doit rien
+     * changer en ouvrant cette page.
+     */
+    mode_recuperation: 'livraison',
+    /** Minutes de preparation, pour annoncer une heure de retrait credible. */
+    delai_preparation_min: '',
   });
+
+  /**
+   * LA GRATUITE DE LA LIVRAISON TIENT DANS UNE SEULE COLONNE, ET TROIS ETATS.
+   *
+   *     NULL   le livreur annonce ses frais et les encaisse  (comportement actuel)
+   *     0      toujours offerte
+   *     N > 0  offerte a partir de N FCFA
+   *
+   * A l'ecran, ces trois etats deviennent un choix explicite plus un montant.
+   * Un simple champ nombre ne saurait pas les distinguer : vide voudrait dire
+   * a la fois « le livreur annonce » et « toujours offerte », et zero ne se
+   * lirait plus comme un seuil.
+   */
+  const [gratuite, setGratuite] = useState<'livreur' | 'toujours' | 'seuil'>('livreur');
+  const [gratuiteSeuil, setGratuiteSeuil] = useState('');
 
   /**
    * Les moyens de paiement acceptes.
@@ -168,8 +193,26 @@ export default function MaBoutiquePage() {
           // des boutiques de vetements.
           categorie: data.categorie || 'Commerce',
           telephone: data.telephone || '',
-          logo_url: data.logo_url || ''
+          logo_url: data.logo_url || '',
+          // Une valeur absente se lit « livraison » : c'est le defaut de la
+          // colonne, et le comportement de toutes les boutiques en service.
+          mode_recuperation: data.mode_recuperation || 'livraison',
+          delai_preparation_min:
+            data.delai_preparation_min === null || data.delai_preparation_min === undefined
+              ? ''
+              : String(data.delai_preparation_min),
         });
+        // LES TROIS ETATS SE RELISENT ICI, ET ZERO N'EST PAS UN TROU. Sans ce
+        // test explicite sur `null`, « toujours offerte » (0) serait retombe
+        // sur « le livreur annonce » a chaque ouverture de la page, puis
+        // reenregistre tel quel : le marchand aurait perdu son reglage sans
+        // toucher a ce champ.
+        {
+          const offerte = data.livraison_offerte_des;
+          const absent = offerte === null || offerte === undefined;
+          setGratuite(absent ? 'livreur' : offerte === 0 ? 'toujours' : 'seuil');
+          setGratuiteSeuil(!absent && offerte > 0 ? String(offerte) : '');
+        }
         // SANS CETTE LIGNE, ROUVRIR LA PAGE EFFACAIT LES PAIEMENTS.
         // `paiements` vit hors de `formData` ; il serait reste a vide, et le
         // premier enregistrement suivant aurait ecrit `null` par-dessus le
@@ -188,7 +231,10 @@ export default function MaBoutiquePage() {
           nom: '', description: '', zone: '', categorie: 'Commerce',
           telephone: '', logo_url: '',
           delai_livraison: '', zones_livrees: '', commande_minimum: '',
+          mode_recuperation: 'livraison', delai_preparation_min: '',
         });
+        setGratuite('livreur');
+        setGratuiteSeuil('');
         setPaiements([]);
         setLogoPreview('');
         setHoraires(null);
@@ -216,6 +262,27 @@ export default function MaBoutiquePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!userId) return;
+
+    /**
+     * UN SEUIL ANNONCE ET LAISSE VIDE SE REFUSE, IL NE SE DEVINE PAS.
+     *
+     * Sans ce refus, un champ vide serait retombe sur `null` — c'est-a-dire
+     * « le livreur annonce ses frais », l'exact CONTRAIRE de ce que le marchand
+     * venait de cocher. Il aurait lu « enregistrée ! » et ses clients auraient
+     * paye la livraison qu'il croyait offerte.
+     */
+    const seuilSaisi = Number(gratuiteSeuil);
+    if (
+      formData.mode_recuperation !== 'retrait'
+      && gratuite === 'seuil'
+      && !(Number.isFinite(seuilSaisi) && seuilSaisi > 0)
+    ) {
+      setMessage({
+        type: 'error',
+        text: 'Indiquez à partir de quel montant la livraison devient offerte.',
+      });
+      return;
+    }
 
     setSaving(true);
     setMessage(null);
@@ -281,6 +348,29 @@ export default function MaBoutiquePage() {
         const n = Number(formData.commande_minimum);
         return Number.isFinite(n) && n > 0 ? Math.round(n) : null;
       })(),
+
+      // ---- COMMENT LE CLIENT RECUPERE SA COMMANDE ------------------------
+      mode_recuperation: formData.mode_recuperation,
+      delai_preparation_min: (() => {
+        const n = Number(formData.delai_preparation_min);
+        return Number.isFinite(n) && n > 0 ? Math.round(n) : null;
+      })(),
+      /**
+       * ZERO EST UN VRAI SEUIL ICI, PAS UN TROU : « offerte a partir de 0 F »
+       * se lit exactement comme « toujours offerte ». C'est la seule place de
+       * ce depot ou zero et `null` cohabitent sans ambiguite.
+       *
+       * Le reglage est CONSERVE quand la boutique passe au retrait seul, au
+       * lieu d'etre efface : un marchand qui remet la livraison retrouve son
+       * choix, et rien ne s'en sert entre-temps.
+       */
+      livraison_offerte_des:
+        gratuite === 'toujours' ? 0
+        : gratuite === 'seuil' && Number.isFinite(seuilSaisi) && seuilSaisi > 0
+          ? Math.round(seuilSaisi)
+          // Le seuil vide n'est refuse que si la boutique livre : en retrait
+          // seul, il ne s'applique a rien et ne doit pas bloquer la page.
+          : null,
     };
 
     let error;
@@ -462,6 +552,162 @@ export default function MaBoutiquePage() {
                   />
                 </div>
 
+                {/* COMMENT LE CLIENT RECUPERE SA COMMANDE.
+
+                    CE QUE CE BLOC OUVRE. La plateforme exigeait un groupe de
+                    livreurs pour vendre : un maquis qui ne fait que de
+                    l'a-emporter n'etait pas mal servi, il etait EXCLU. Le
+                    premier bouton ci-dessous est donc une porte d'entree, pas
+                    un confort. */}
+                <div className="border border-[var(--hairline)] bg-chaux-50 p-5">
+                  <h3 className="font-display text-lg font-bold text-nuit-900">
+                    Comment vos clients récupèrent leurs commandes
+                  </h3>
+                  <p className="mt-1 text-sm text-chaux-600">
+                    Si vos clients viennent chercher eux-mêmes, vous n’avez besoin
+                    d’aucun livreur pour vendre.
+                  </p>
+
+                  <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-3">
+                    {([
+                      { valeur: 'livraison', titre: 'Je livre', detail: 'Un livreur porte la commande.' },
+                      { valeur: 'retrait', titre: 'Retrait sur place', detail: 'Le client vient chercher.' },
+                      { valeur: 'les_deux', titre: 'Les deux', detail: 'Le client choisit.' },
+                    ] as const).map((choix) => {
+                      const actif = formData.mode_recuperation === choix.valeur;
+                      return (
+                        <button
+                          key={choix.valeur}
+                          type="button"
+                          aria-pressed={actif}
+                          onClick={() =>
+                            setFormData({ ...formData, mode_recuperation: choix.valeur })
+                          }
+                          className={`border p-3 text-left transition ${
+                            actif
+                              ? 'border-nuit-900 bg-nuit-900 text-chaux-50'
+                              : 'border-chaux-200 bg-white text-nuit-800 hover:border-nuit-300'
+                          }`}
+                        >
+                          <span className="block text-sm font-semibold">{choix.titre}</span>
+                          <span
+                            className={`mt-0.5 block text-xs ${actif ? 'text-chaux-200' : 'text-chaux-600'}`}
+                          >
+                            {choix.detail}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {formData.mode_recuperation !== 'livraison' && (
+                    <div className="mt-4">
+                      <label className="mb-1 block text-sm font-medium text-nuit-700">
+                        Temps de préparation
+                      </label>
+                      <input
+                        type="number"
+                        min="1"
+                        inputMode="numeric"
+                        value={formData.delai_preparation_min}
+                        onChange={(e) =>
+                          setFormData({ ...formData, delai_preparation_min: e.target.value })
+                        }
+                        className="w-full border border-chaux-200 px-4 py-2.5 focus:border-nuit-300 focus:ring-2 focus:ring-nuit-200 sm:w-48"
+                        placeholder="Ex : 20"
+                      />
+                      <p className="mt-1 text-xs text-chaux-600">
+                        En minutes. Sert à proposer une heure de retrait tenable.
+                        Vide = aucune heure n’est annoncée.
+                      </p>
+                    </div>
+                  )}
+
+                  {/* LA GRATUITE NE CONCERNE QUE QUI LIVRE. En retrait seul,
+                      il n'y a ni course ni frais : poser la question ferait
+                      reglee une chose qui n'existe pas. */}
+                  {formData.mode_recuperation !== 'retrait' && (
+                    <div className="mt-5 border-t border-[var(--hairline)] pt-4">
+                      <span className="mb-2 block text-sm font-medium text-nuit-700">
+                        Frais de livraison
+                      </span>
+                      <div className="space-y-2">
+                        {([
+                          {
+                            valeur: 'livreur',
+                            titre: 'Le livreur annonce ses frais',
+                            detail: 'Il les encaisse auprès du client. C’est le fonctionnement actuel.',
+                          },
+                          {
+                            valeur: 'toujours',
+                            titre: 'Livraison toujours offerte',
+                            detail: 'Le client ne paie rien, c’est vous qui réglez le livreur.',
+                          },
+                          {
+                            valeur: 'seuil',
+                            titre: 'Offerte à partir d’un montant',
+                            detail: 'En dessous, le livreur annonce ses frais comme d’habitude.',
+                          },
+                        ] as const).map((choix) => (
+                          <label
+                            key={choix.valeur}
+                            className={`flex cursor-pointer items-start gap-3 border p-3 transition ${
+                              gratuite === choix.valeur
+                                ? 'border-nuit-900 bg-white'
+                                : 'border-chaux-200 bg-white hover:border-nuit-300'
+                            }`}
+                          >
+                            <input
+                              type="radio"
+                              name="gratuite"
+                              className="mt-1"
+                              checked={gratuite === choix.valeur}
+                              onChange={() => setGratuite(choix.valeur)}
+                            />
+                            <span>
+                              <span className="block text-sm font-semibold text-nuit-800">
+                                {choix.titre}
+                              </span>
+                              <span className="mt-0.5 block text-xs text-chaux-600">
+                                {choix.detail}
+                              </span>
+                            </span>
+                          </label>
+                        ))}
+                      </div>
+
+                      {gratuite === 'seuil' && (
+                        <div className="mt-3">
+                          <input
+                            type="number"
+                            min="1"
+                            inputMode="numeric"
+                            value={gratuiteSeuil}
+                            onChange={(e) => setGratuiteSeuil(e.target.value)}
+                            className="w-full border border-chaux-200 px-4 py-2.5 focus:border-nuit-300 focus:ring-2 focus:ring-nuit-200 sm:w-56"
+                            placeholder="Ex : 10000"
+                          />
+                          <p className="mt-1 text-xs text-chaux-600">
+                            En FCFA. À partir de ce total, la livraison est offerte.
+                          </p>
+                        </div>
+                      )}
+
+                      {/* LA PHRASE QUI EVITE UNE DISPUTE SUR LE PAS DE LA PORTE.
+                          Une livraison offerte veut dire que le livreur n'a rien
+                          a encaisser : si le marchand ne sait pas qu'il le regle
+                          lui-meme, c'est le client qui essuiera la demande. */}
+                      {gratuite !== 'livreur' && (
+                        <p className="mt-3 border-l-2 border-nuit-900 bg-white px-3 py-2 text-xs text-nuit-800">
+                          Quand la livraison est offerte, le livreur n’encaisse rien
+                          auprès du client : c’est vous qui le réglez. Il en sera
+                          prévenu noir sur blanc à chaque course.
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+
                 {/* CE QUE LE CLIENT DEVAIT VOUS DEMANDER.
 
                     Quatre questions qu'un client se pose AVANT de commander :
@@ -482,6 +728,18 @@ export default function MaBoutiquePage() {
                     Ces informations s’affichent sur votre boutique, avant le catalogue.
                     Laissez vide ce que vous ne voulez pas annoncer.
                   </p>
+
+                  {/* ON NE VIDE RIEN A LA PLACE DU MARCHAND, ON LE LUI DIT.
+                      Effacer ces deux champs au changement de mode lui ferait
+                      perdre sa saisie sans un mot ; les cacher les laisserait
+                      s'afficher chez le client sans qu'il puisse les corriger. */}
+                  {formData.mode_recuperation === 'retrait' && (
+                    <p className="mt-3 border-l-2 border-nuit-900 bg-white px-3 py-2 text-xs text-nuit-800">
+                      Vous avez choisi le retrait seul. Les deux champs ci-dessous
+                      parlent de livraison : videz-les s’ils ne s’appliquent plus,
+                      sinon ils resteront affichés sur votre boutique.
+                    </p>
+                  )}
 
                   <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
                     <div>

@@ -96,12 +96,82 @@
           ]
         ]
       },
+      "Call 'Acceptation Livraison'": {
+        "main": [
+          null,
+          [
+            {
+              "index": 0,
+              "node": "Doute sur l acceptation",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Call 'Cerveau Zahara'": {
+        "main": [
+          null,
+          [
+            {
+              "index": 0,
+              "node": "Repondre panne assistante",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Call 'Dashboard Gérant'": {
+        "main": [
+          null,
+          [
+            {
+              "index": 0,
+              "node": "Chiffres indisponibles",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Call Notes Clients": {
+        "main": [
+          null,
+          [
+            {
+              "index": 0,
+              "node": "Note non enregistree",
+              "type": "main"
+            }
+          ]
+        ]
+      },
       "Charger fiche": {
         "main": [
           [
             {
               "index": 0,
               "node": "Aiguilleur Telegram",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Chiffres indisponibles": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Signaler les branches muettes",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Doute sur l acceptation": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Prevenir le gerant du doute",
               "type": "main"
             }
           ]
@@ -208,6 +278,17 @@
           ]
         ]
       },
+      "Note non enregistree": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Signaler les branches muettes",
+              "type": "main"
+            }
+          ]
+        ]
+      },
       "Position trouvee ?": {
         "main": [
           [
@@ -219,12 +300,34 @@
           ]
         ]
       },
+      "Prevenir le gerant du doute": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Signaler l acceptation en echec",
+              "type": "main"
+            }
+          ]
+        ]
+      },
       "Rattacher le livreur": {
         "main": [
           [
             {
               "index": 0,
               "node": "Repondre au livreur",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Repondre panne assistante": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Signaler la panne",
               "type": "main"
             }
           ]
@@ -261,6 +364,7 @@
         "disabled": false,
         "id": "8937af1c-50da-4ca2-9589-983237c3ab59",
         "name": "Call Notes Clients",
+        "onError": "continueErrorOutput",
         "parameters": {
           "mode": "once",
           "options": {},
@@ -371,6 +475,7 @@
         "disabled": false,
         "id": "f77feca5-744a-4e25-98bf-9e37cdfadc9f",
         "name": "Call 'Cerveau Zahara'",
+        "onError": "continueErrorOutput",
         "parameters": {
           "mode": "once",
           "options": {},
@@ -860,6 +965,7 @@
         "disabled": false,
         "id": "17d45f9f-b05b-4c1e-8cd5-144761961f50",
         "name": "Call 'Acceptation Livraison'",
+        "onError": "continueErrorOutput",
         "parameters": {
           "mode": "once",
           "options": {},
@@ -968,6 +1074,7 @@
         "disabled": false,
         "id": "bba007de-8617-4ad1-8240-279d134390fc",
         "name": "Call 'Dashboard Gérant'",
+        "onError": "continueErrorOutput",
         "parameters": {
           "mode": "once",
           "options": {},
@@ -1762,13 +1869,238 @@
         ],
         "type": "n8n-nodes-base.code",
         "typeVersion": 2
+      },
+      {
+        "id": "ee2760f7-0b34-4576-999e-e74b6ccd0b46",
+        "name": "Repondre panne assistante",
+        "notes": "MEME FILET QUE SUR LE ROUTEUR WHATSAPP, pose le 25 aout 2026. L appel au Cerveau n avait aucun onError des deux cotes : quand l assistante echoue - 25 iterations atteintes, modele injoignable - la chaine s arretait et le client ne recevait RIEN. On ne promet pas que le marchand rappellera, on donne son numero.",
+        "onError": "continueRegularOutput",
+        "parameters": {
+          "mode": "once",
+          "options": {},
+          "workflowId": {
+            "__rl": true,
+            "cachedResultName": "Envoyer réponse client",
+            "mode": "list",
+            "value": "JkNvcqsZaY22dfk5"
+          },
+          "workflowInputs": {
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": true,
+            "mappingMode": "defineBelow",
+            "matchingColumns": [],
+            "schema": [],
+            "value": {
+              "boutique": "={{ $('Charger fiche').first().json.slug }}",
+              "canal": "telegram",
+              "destinataire": "={{ String($('Webhook').first().json.body.message.chat.id) }}",
+              "message": "=Désolé, je n’ai pas réussi à traiter votre message.\n\nPouvez-vous le reformuler en une phrase ? Vous pouvez aussi appeler {{ $('Charger fiche').first().json.nom }} au {{ $('Charger fiche').first().json.telephone }}.",
+              "reply_markup": "",
+              "sheet_document_id": "={{ $('Charger fiche').first().json.sheet_document_id }}"
+            }
+          }
+        },
+        "position": [
+          700,
+          620
+        ],
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.3
+      },
+      {
+        "id": "d88100d8-7273-4d28-a660-305d0f2b4f31",
+        "name": "Signaler la panne",
+        "notes": "Il LEVE, et c est voulu. Sans cette levee, continueErrorOutput sur le Cerveau rendrait la panne MUETTE cote exploitant - on echangerait un silence contre un autre. Le client est deja repondu quand on arrive ici.",
+        "parameters": {
+          "jsCode": "// LE MESSAGE TIENT SUR UNE LIGNE, SANS DEUX-POINTS. n8n scinde le texte\n// d'une Error sur ces caracteres, et l'alerte n'en recevrait qu'un fragment.\nconst f = $('Charger fiche').first().json;\nthrow new Error(\n  `Assistante Telegram en echec pour ${f.slug} — le client a recu le message de repli`,\n);"
+        },
+        "position": [
+          940,
+          620
+        ],
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2
+      },
+      {
+        "id": "0b2aa634-79f8-4b37-a63a-cfec631d56b6",
+        "name": "Doute sur l acceptation",
+        "notes": "ON N INVITE JAMAIS A RETAPER. Un echec peut etre PARTIEL - la course attribuee en base sans que la notification ait suivi. Un second appui rattacherait une deuxieme fois, ou enverrait un second livreur. Dans le doute on immobilise, et on nomme celui qui peut trancher : le gerant, seul a voir l etat de la commande. Le message part dans LE GROUPE, la ou le bouton a ete tape : les autres livreurs doivent savoir qu ils ne doivent pas s en saisir non plus.",
+        "onError": "continueRegularOutput",
+        "parameters": {
+          "mode": "once",
+          "options": {},
+          "workflowId": {
+            "__rl": true,
+            "cachedResultName": "Envoyer réponse client",
+            "mode": "list",
+            "value": "JkNvcqsZaY22dfk5"
+          },
+          "workflowInputs": {
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": true,
+            "mappingMode": "defineBelow",
+            "matchingColumns": [],
+            "schema": [],
+            "value": {
+              "boutique": "={{ $('Charger fiche').first().json.slug }}",
+              "canal": "telegram",
+              "destinataire": "={{ String($('Webhook').first().json.body.callback_query.message.chat.id) }}",
+              "message": "=⚠️ {{ $('Webhook').first().json.body.callback_query.from.first_name || 'Livreur' }}, votre acceptation n’a pas pu être confirmée.\n\nNe retapez pas le bouton. {{ $('Charger fiche').first().json.nom }} vérifie si la course est bien à vous et revient vers vous.",
+              "reply_markup": "",
+              "sheet_document_id": "={{ $('Charger fiche').first().json.sheet_document_id }}"
+            }
+          }
+        },
+        "position": [
+          700,
+          860
+        ],
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.3
+      },
+      {
+        "id": "9ca92b85-1f94-4378-a114-bfe962ede153",
+        "name": "Prevenir le gerant du doute",
+        "notes": "LE GERANT EST LE SEUL QUI PUISSE TRANCHER : il voit l etat de la commande. Sans ce message, il attendrait un livreur qui croit peut-etre etre parti, ou en lancerait un second sur une course deja prise.",
+        "onError": "continueRegularOutput",
+        "parameters": {
+          "mode": "once",
+          "options": {},
+          "workflowId": {
+            "__rl": true,
+            "cachedResultName": "Envoyer réponse client",
+            "mode": "list",
+            "value": "JkNvcqsZaY22dfk5"
+          },
+          "workflowInputs": {
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": true,
+            "mappingMode": "defineBelow",
+            "matchingColumns": [],
+            "schema": [],
+            "value": {
+              "boutique": "={{ $('Charger fiche').first().json.slug }}",
+              "canal": "telegram",
+              "destinataire": "={{ String($('Charger fiche').first().json.telegram_marchand) }}",
+              "message": "=⚠️ Un livreur a tenté d’accepter une course sans que nous puissions le confirmer.\n\nVérifiez dans votre tableau de bord si elle est attribuée AVANT d’en relancer un autre. Elle peut l’être sans que le livreur l’ait su.\n\nRéférence reçue : {{ $('Webhook').first().json.body.callback_query.data || 'inconnue' }}",
+              "reply_markup": "",
+              "sheet_document_id": "={{ $('Charger fiche').first().json.sheet_document_id }}"
+            }
+          }
+        },
+        "position": [
+          940,
+          860
+        ],
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.3
+      },
+      {
+        "id": "b4db7a8d-479d-428b-bcb2-6790a63b781f",
+        "name": "Signaler l acceptation en echec",
+        "parameters": {
+          "jsCode": "// Une ligne, sans deux-points : n8n scinde le texte d'une Error dessus.\nconst f = $('Charger fiche').first().json;\nthrow new Error(\n  `Acceptation de livraison en echec pour ${f.slug} — livreur et gerant ont ete prevenus du doute`,\n);"
+        },
+        "position": [
+          1180,
+          860
+        ],
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2
+      },
+      {
+        "id": "b048aa86-15b7-40c8-84f1-bf85e5dc6114",
+        "name": "Chiffres indisponibles",
+        "notes": "ICI, INVITER A REESSAYER EST SANS RISQUE : demander ses chiffres ne modifie rien. C est l inverse de l acceptation de livraison, ou un second appui pouvait dedoubler une attribution. La reponse change donc avec ce que l action ferait, pas avec la gravite de la panne.",
+        "onError": "continueRegularOutput",
+        "parameters": {
+          "mode": "once",
+          "options": {},
+          "workflowId": {
+            "__rl": true,
+            "cachedResultName": "Envoyer réponse client",
+            "mode": "list",
+            "value": "JkNvcqsZaY22dfk5"
+          },
+          "workflowInputs": {
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": true,
+            "mappingMode": "defineBelow",
+            "matchingColumns": [],
+            "schema": [],
+            "value": {
+              "boutique": "={{ $('Charger fiche').first().json.slug }}",
+              "canal": "telegram",
+              "destinataire": "={{ String($('Webhook').first().json.body.message.chat.id) }}",
+              "message": "⏳ Vos chiffres sont indisponibles pour le moment. Réessayez dans un instant — rien n’est perdu, c’est l’affichage qui a échoué.",
+              "reply_markup": "",
+              "sheet_document_id": "={{ $('Charger fiche').first().json.sheet_document_id }}"
+            }
+          }
+        },
+        "position": [
+          700,
+          1080
+        ],
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.3
+      },
+      {
+        "id": "da4c321c-2eff-44eb-802d-a0279cfc5c7a",
+        "name": "Note non enregistree",
+        "notes": "UNE NOTE PERDUE EN SILENCE EST PIRE QU UNE NOTE REFUSEE : le client croit avoir donne son avis, le marchand ne le voit jamais, et la moyenne affichee ne repose sur rien. Renvoyer une note ne dedouble rien - elle est rattachee a la commande.",
+        "onError": "continueRegularOutput",
+        "parameters": {
+          "mode": "once",
+          "options": {},
+          "workflowId": {
+            "__rl": true,
+            "cachedResultName": "Envoyer réponse client",
+            "mode": "list",
+            "value": "JkNvcqsZaY22dfk5"
+          },
+          "workflowInputs": {
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": true,
+            "mappingMode": "defineBelow",
+            "matchingColumns": [],
+            "schema": [],
+            "value": {
+              "boutique": "={{ $('Charger fiche').first().json.slug }}",
+              "canal": "telegram",
+              "destinataire": "={{ String($('Webhook').first().json.body.message.chat.id) }}",
+              "message": "⚠️ Nous n’avons pas pu enregistrer votre note. Merci de la renvoyer — elle compte vraiment pour le commerçant.",
+              "reply_markup": "",
+              "sheet_document_id": "={{ $('Charger fiche').first().json.sheet_document_id }}"
+            }
+          }
+        },
+        "position": [
+          700,
+          1240
+        ],
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.3
+      },
+      {
+        "id": "743c33ea-683e-4b4b-8310-7d902143513c",
+        "name": "Signaler les branches muettes",
+        "parameters": {
+          "jsCode": "// Une ligne, sans deux-points : n8n scinde le texte d'une Error dessus.\n// Sans cette levee, poser continueErrorOutput rendrait la panne muette cote\n// exploitant - on echangerait un silence contre un autre.\nconst f = $('Charger fiche').first().json;\nthrow new Error(\n  `Branche Telegram en echec pour ${f.slug} — l utilisateur a recu un message de repli`,\n);"
+        },
+        "position": [
+          940,
+          1160
+        ],
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2
       }
     ],
     "workflowId": "VT0rUAeViDNHrr2Y",
     "workflowPublishHistory": [
       {
         "event": "activated",
-        "id": 103,
+        "id": 274,
         "userId": "81519f6f-0887-498a-ad83-5ffd6d591e9a",
         "workflowId": "VT0rUAeViDNHrr2Y"
       }
@@ -1867,12 +2199,82 @@
         ]
       ]
     },
+    "Call 'Acceptation Livraison'": {
+      "main": [
+        null,
+        [
+          {
+            "index": 0,
+            "node": "Doute sur l acceptation",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Call 'Cerveau Zahara'": {
+      "main": [
+        null,
+        [
+          {
+            "index": 0,
+            "node": "Repondre panne assistante",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Call 'Dashboard Gérant'": {
+      "main": [
+        null,
+        [
+          {
+            "index": 0,
+            "node": "Chiffres indisponibles",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Call Notes Clients": {
+      "main": [
+        null,
+        [
+          {
+            "index": 0,
+            "node": "Note non enregistree",
+            "type": "main"
+          }
+        ]
+      ]
+    },
     "Charger fiche": {
       "main": [
         [
           {
             "index": 0,
             "node": "Aiguilleur Telegram",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Chiffres indisponibles": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Signaler les branches muettes",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Doute sur l acceptation": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Prevenir le gerant du doute",
             "type": "main"
           }
         ]
@@ -1979,6 +2381,17 @@
         ]
       ]
     },
+    "Note non enregistree": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Signaler les branches muettes",
+            "type": "main"
+          }
+        ]
+      ]
+    },
     "Position trouvee ?": {
       "main": [
         [
@@ -1990,12 +2403,34 @@
         ]
       ]
     },
+    "Prevenir le gerant du doute": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Signaler l acceptation en echec",
+            "type": "main"
+          }
+        ]
+      ]
+    },
     "Rattacher le livreur": {
       "main": [
         [
           {
             "index": 0,
             "node": "Repondre au livreur",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Repondre panne assistante": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Signaler la panne",
             "type": "main"
           }
         ]
@@ -2034,6 +2469,7 @@
       "disabled": false,
       "id": "8937af1c-50da-4ca2-9589-983237c3ab59",
       "name": "Call Notes Clients",
+      "onError": "continueErrorOutput",
       "parameters": {
         "mode": "once",
         "options": {},
@@ -2144,6 +2580,7 @@
       "disabled": false,
       "id": "f77feca5-744a-4e25-98bf-9e37cdfadc9f",
       "name": "Call 'Cerveau Zahara'",
+      "onError": "continueErrorOutput",
       "parameters": {
         "mode": "once",
         "options": {},
@@ -2633,6 +3070,7 @@
       "disabled": false,
       "id": "17d45f9f-b05b-4c1e-8cd5-144761961f50",
       "name": "Call 'Acceptation Livraison'",
+      "onError": "continueErrorOutput",
       "parameters": {
         "mode": "once",
         "options": {},
@@ -2741,6 +3179,7 @@
       "disabled": false,
       "id": "bba007de-8617-4ad1-8240-279d134390fc",
       "name": "Call 'Dashboard Gérant'",
+      "onError": "continueErrorOutput",
       "parameters": {
         "mode": "once",
         "options": {},
@@ -3535,6 +3974,231 @@
       ],
       "type": "n8n-nodes-base.code",
       "typeVersion": 2
+    },
+    {
+      "id": "ee2760f7-0b34-4576-999e-e74b6ccd0b46",
+      "name": "Repondre panne assistante",
+      "notes": "MEME FILET QUE SUR LE ROUTEUR WHATSAPP, pose le 25 aout 2026. L appel au Cerveau n avait aucun onError des deux cotes : quand l assistante echoue - 25 iterations atteintes, modele injoignable - la chaine s arretait et le client ne recevait RIEN. On ne promet pas que le marchand rappellera, on donne son numero.",
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "mode": "once",
+        "options": {},
+        "workflowId": {
+          "__rl": true,
+          "cachedResultName": "Envoyer réponse client",
+          "mode": "list",
+          "value": "JkNvcqsZaY22dfk5"
+        },
+        "workflowInputs": {
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true,
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "schema": [],
+          "value": {
+            "boutique": "={{ $('Charger fiche').first().json.slug }}",
+            "canal": "telegram",
+            "destinataire": "={{ String($('Webhook').first().json.body.message.chat.id) }}",
+            "message": "=Désolé, je n’ai pas réussi à traiter votre message.\n\nPouvez-vous le reformuler en une phrase ? Vous pouvez aussi appeler {{ $('Charger fiche').first().json.nom }} au {{ $('Charger fiche').first().json.telephone }}.",
+            "reply_markup": "",
+            "sheet_document_id": "={{ $('Charger fiche').first().json.sheet_document_id }}"
+          }
+        }
+      },
+      "position": [
+        700,
+        620
+      ],
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3
+    },
+    {
+      "id": "d88100d8-7273-4d28-a660-305d0f2b4f31",
+      "name": "Signaler la panne",
+      "notes": "Il LEVE, et c est voulu. Sans cette levee, continueErrorOutput sur le Cerveau rendrait la panne MUETTE cote exploitant - on echangerait un silence contre un autre. Le client est deja repondu quand on arrive ici.",
+      "parameters": {
+        "jsCode": "// LE MESSAGE TIENT SUR UNE LIGNE, SANS DEUX-POINTS. n8n scinde le texte\n// d'une Error sur ces caracteres, et l'alerte n'en recevrait qu'un fragment.\nconst f = $('Charger fiche').first().json;\nthrow new Error(\n  `Assistante Telegram en echec pour ${f.slug} — le client a recu le message de repli`,\n);"
+      },
+      "position": [
+        940,
+        620
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "id": "0b2aa634-79f8-4b37-a63a-cfec631d56b6",
+      "name": "Doute sur l acceptation",
+      "notes": "ON N INVITE JAMAIS A RETAPER. Un echec peut etre PARTIEL - la course attribuee en base sans que la notification ait suivi. Un second appui rattacherait une deuxieme fois, ou enverrait un second livreur. Dans le doute on immobilise, et on nomme celui qui peut trancher : le gerant, seul a voir l etat de la commande. Le message part dans LE GROUPE, la ou le bouton a ete tape : les autres livreurs doivent savoir qu ils ne doivent pas s en saisir non plus.",
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "mode": "once",
+        "options": {},
+        "workflowId": {
+          "__rl": true,
+          "cachedResultName": "Envoyer réponse client",
+          "mode": "list",
+          "value": "JkNvcqsZaY22dfk5"
+        },
+        "workflowInputs": {
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true,
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "schema": [],
+          "value": {
+            "boutique": "={{ $('Charger fiche').first().json.slug }}",
+            "canal": "telegram",
+            "destinataire": "={{ String($('Webhook').first().json.body.callback_query.message.chat.id) }}",
+            "message": "=⚠️ {{ $('Webhook').first().json.body.callback_query.from.first_name || 'Livreur' }}, votre acceptation n’a pas pu être confirmée.\n\nNe retapez pas le bouton. {{ $('Charger fiche').first().json.nom }} vérifie si la course est bien à vous et revient vers vous.",
+            "reply_markup": "",
+            "sheet_document_id": "={{ $('Charger fiche').first().json.sheet_document_id }}"
+          }
+        }
+      },
+      "position": [
+        700,
+        860
+      ],
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3
+    },
+    {
+      "id": "9ca92b85-1f94-4378-a114-bfe962ede153",
+      "name": "Prevenir le gerant du doute",
+      "notes": "LE GERANT EST LE SEUL QUI PUISSE TRANCHER : il voit l etat de la commande. Sans ce message, il attendrait un livreur qui croit peut-etre etre parti, ou en lancerait un second sur une course deja prise.",
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "mode": "once",
+        "options": {},
+        "workflowId": {
+          "__rl": true,
+          "cachedResultName": "Envoyer réponse client",
+          "mode": "list",
+          "value": "JkNvcqsZaY22dfk5"
+        },
+        "workflowInputs": {
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true,
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "schema": [],
+          "value": {
+            "boutique": "={{ $('Charger fiche').first().json.slug }}",
+            "canal": "telegram",
+            "destinataire": "={{ String($('Charger fiche').first().json.telegram_marchand) }}",
+            "message": "=⚠️ Un livreur a tenté d’accepter une course sans que nous puissions le confirmer.\n\nVérifiez dans votre tableau de bord si elle est attribuée AVANT d’en relancer un autre. Elle peut l’être sans que le livreur l’ait su.\n\nRéférence reçue : {{ $('Webhook').first().json.body.callback_query.data || 'inconnue' }}",
+            "reply_markup": "",
+            "sheet_document_id": "={{ $('Charger fiche').first().json.sheet_document_id }}"
+          }
+        }
+      },
+      "position": [
+        940,
+        860
+      ],
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3
+    },
+    {
+      "id": "b4db7a8d-479d-428b-bcb2-6790a63b781f",
+      "name": "Signaler l acceptation en echec",
+      "parameters": {
+        "jsCode": "// Une ligne, sans deux-points : n8n scinde le texte d'une Error dessus.\nconst f = $('Charger fiche').first().json;\nthrow new Error(\n  `Acceptation de livraison en echec pour ${f.slug} — livreur et gerant ont ete prevenus du doute`,\n);"
+      },
+      "position": [
+        1180,
+        860
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "id": "b048aa86-15b7-40c8-84f1-bf85e5dc6114",
+      "name": "Chiffres indisponibles",
+      "notes": "ICI, INVITER A REESSAYER EST SANS RISQUE : demander ses chiffres ne modifie rien. C est l inverse de l acceptation de livraison, ou un second appui pouvait dedoubler une attribution. La reponse change donc avec ce que l action ferait, pas avec la gravite de la panne.",
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "mode": "once",
+        "options": {},
+        "workflowId": {
+          "__rl": true,
+          "cachedResultName": "Envoyer réponse client",
+          "mode": "list",
+          "value": "JkNvcqsZaY22dfk5"
+        },
+        "workflowInputs": {
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true,
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "schema": [],
+          "value": {
+            "boutique": "={{ $('Charger fiche').first().json.slug }}",
+            "canal": "telegram",
+            "destinataire": "={{ String($('Webhook').first().json.body.message.chat.id) }}",
+            "message": "⏳ Vos chiffres sont indisponibles pour le moment. Réessayez dans un instant — rien n’est perdu, c’est l’affichage qui a échoué.",
+            "reply_markup": "",
+            "sheet_document_id": "={{ $('Charger fiche').first().json.sheet_document_id }}"
+          }
+        }
+      },
+      "position": [
+        700,
+        1080
+      ],
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3
+    },
+    {
+      "id": "da4c321c-2eff-44eb-802d-a0279cfc5c7a",
+      "name": "Note non enregistree",
+      "notes": "UNE NOTE PERDUE EN SILENCE EST PIRE QU UNE NOTE REFUSEE : le client croit avoir donne son avis, le marchand ne le voit jamais, et la moyenne affichee ne repose sur rien. Renvoyer une note ne dedouble rien - elle est rattachee a la commande.",
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "mode": "once",
+        "options": {},
+        "workflowId": {
+          "__rl": true,
+          "cachedResultName": "Envoyer réponse client",
+          "mode": "list",
+          "value": "JkNvcqsZaY22dfk5"
+        },
+        "workflowInputs": {
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true,
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "schema": [],
+          "value": {
+            "boutique": "={{ $('Charger fiche').first().json.slug }}",
+            "canal": "telegram",
+            "destinataire": "={{ String($('Webhook').first().json.body.message.chat.id) }}",
+            "message": "⚠️ Nous n’avons pas pu enregistrer votre note. Merci de la renvoyer — elle compte vraiment pour le commerçant.",
+            "reply_markup": "",
+            "sheet_document_id": "={{ $('Charger fiche').first().json.sheet_document_id }}"
+          }
+        }
+      },
+      "position": [
+        700,
+        1240
+      ],
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3
+    },
+    {
+      "id": "743c33ea-683e-4b4b-8310-7d902143513c",
+      "name": "Signaler les branches muettes",
+      "parameters": {
+        "jsCode": "// Une ligne, sans deux-points : n8n scinde le texte d'une Error dessus.\n// Sans cette levee, poser continueErrorOutput rendrait la panne muette cote\n// exploitant - on echangerait un silence contre un autre.\nconst f = $('Charger fiche').first().json;\nthrow new Error(\n  `Branche Telegram en echec pour ${f.slug} — l utilisateur a recu un message de repli`,\n);"
+      },
+      "position": [
+        940,
+        1160
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
     }
   ],
   "settings": {
@@ -3544,5 +4208,5 @@
   },
   "sourceWorkflowId": null,
   "tags": [],
-  "versionCounter": 14
+  "versionCounter": 17
 }

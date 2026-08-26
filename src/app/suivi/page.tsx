@@ -4,6 +4,8 @@ import { Suspense, useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { classesBouton } from '@/components/ui/Bouton';
+import { boutiqueLivre } from '@/lib/boutiquePrete';
+import { heureRetraitLisible, ligneFraisSuivi } from '@/lib/retrait';
 
 /**
  * Le suivi d'une commande : le double du bon, cote client.
@@ -35,8 +37,15 @@ type Suivi = {
    */
   confirmation_statut?: string;
   heure_livraison: string;
-  /** `null` tant que le livreur n'a rien annonce. Jamais 0 par defaut. */
+  /**
+   * `null` tant que le livreur n'a rien annonce. Jamais 0 par defaut — et
+   * depuis le retrait, ZERO EXISTE : il veut dire « rien a encaisser ».
+   */
   frais_livraison?: number | null;
+  /** `livraison` | `retrait`. Decide des etapes et du vocabulaire. */
+  mode_recuperation?: string | null;
+  /** ISO. Vide veut dire « des que pret », jamais « on ne sait pas ». */
+  heure_retrait?: string | null;
 };
 
 const FOND_PAGE = '#eeece5';
@@ -203,17 +212,52 @@ function Suivre() {
     && /demand/i.test(suivi.confirmation_statut ?? '')
     && !acceptee && !enRoute && !livree;
 
-  const etapes = [
-    { label: 'Commande reçue', ok: !!suivi, detail: horodatage(suivi?.timestamp ?? '') },
-    {
-      label: 'En préparation',
-      ok: preparation || confirmee || acceptee || enRoute || livree,
-      detail: '',
-    },
-    { label: 'Prise par un livreur', ok: acceptee || enRoute || livree, detail: suivi?.nom_livreur || '' },
-    { label: 'En route', ok: enRoute || livree, detail: '' },
-    { label: 'Livrée', ok: livree, detail: horodatage(suivi?.heure_livraison ?? '') },
-  ];
+  /**
+   * TROIS ETAPES QUI N'ARRIVERONT JAMAIS.
+   *
+   * Un client venu chercher sa commande voyait « Prise par un livreur »,
+   * « En route » et « Livrée » — un parcours qui n'aura pas lieu chez lui. Sa
+   * barre de progression restait figee a l'etape deux, et rien ne lui disait
+   * si c'etait normal ou casse. C'est le pire etat pour quelqu'un qui doit
+   * decider s'il sort de chez lui.
+   *
+   * `prete` est la SEULE etape que le retrait ajoute, et c'est la seule qui
+   * compte pour lui : elle dit qu'il peut partir. Elle vient du marchand, qui
+   * la declare depuis son ecran — rien ici ne la devine.
+   */
+  const livre = boutiqueLivre(suivi?.mode_recuperation);
+  const prete = !!suivi && /prête|prete/i.test(suivi.statut_livraison);
+  const heureRetrait = heureRetraitLisible(suivi?.heure_retrait);
+
+  const etapes = livre
+    ? [
+      { label: 'Commande reçue', ok: !!suivi, detail: horodatage(suivi?.timestamp ?? '') },
+      {
+        label: 'En préparation',
+        ok: preparation || confirmee || acceptee || enRoute || livree,
+        detail: '',
+      },
+      { label: 'Prise par un livreur', ok: acceptee || enRoute || livree, detail: suivi?.nom_livreur || '' },
+      { label: 'En route', ok: enRoute || livree, detail: '' },
+      { label: 'Livrée', ok: livree, detail: horodatage(suivi?.heure_livraison ?? '') },
+    ]
+    : [
+      { label: 'Commande reçue', ok: !!suivi, detail: horodatage(suivi?.timestamp ?? '') },
+      {
+        label: 'En préparation',
+        ok: preparation || confirmee || prete || livree,
+        // L'heure demandee se rappelle ICI, tant que la commande se prepare.
+        // Elle disparait des qu'elle est prete : a cet instant, c'est PRET qui
+        // est vrai, et repeter une heure prevue le contredirait.
+        detail: prete || livree ? '' : heureRetrait ? `Prévue vers ${heureRetrait}` : '',
+      },
+      {
+        label: 'Prête à retirer',
+        ok: prete || livree,
+        detail: prete && !livree ? 'Vous pouvez venir la chercher' : '',
+      },
+      { label: 'Récupérée', ok: livree, detail: horodatage(suivi?.heure_livraison ?? '') },
+    ];
   const idxActif = etapes.map((e) => e.ok).lastIndexOf(true);
 
   return (
@@ -362,7 +406,7 @@ function Suivre() {
               )}
             </div>
 
-            {(suivi.customer_name || suivi.address) && (
+            {(suivi.customer_name || suivi.address || !livre) && (
               <dl className="mt-5 space-y-1 text-sm text-chaux-600">
                 {suivi.customer_name && (
                   <div className="flex gap-2">
@@ -370,10 +414,23 @@ function Suivre() {
                     <dd>{suivi.customer_name}</dd>
                   </div>
                 )}
-                {suivi.address && (
+                {livre && suivi.address && (
                   <div className="flex gap-2">
                     <dt className="sr-only">Adresse de livraison</dt>
                     <dd>{suivi.address}</dd>
+                  </div>
+                )}
+                {/* Un retrait n'a pas d'adresse, et n'en affiche donc aucune :
+                    il dit OU EN EST le client, c'est-a-dire s'il doit sortir
+                    de chez lui. Vide veut dire « des que pret », une reponse
+                    et non une absence de reponse. */}
+                {!livre && (
+                  <div className="flex gap-2">
+                    <dt className="sr-only">Mode de récupération</dt>
+                    <dd className="font-semibold text-nuit-800">
+                      À emporter
+                      {heureRetrait ? ` — vers ${heureRetrait}` : ' — dès que c’est prêt'}
+                    </dd>
                   </div>
                 )}
               </dl>
@@ -430,19 +487,38 @@ function Suivre() {
                 tant qu'il ne s'est pas prononce, la valeur est nulle et un
                 « 0 FCFA » ferait croire a une livraison offerte que personne
                 n'a promise. */}
-            {suivi.frais_livraison !== null && suivi.frais_livraison !== undefined && (
-              <div className="mt-3 flex items-baseline justify-between">
-                <span className="font-mono text-xs uppercase tracking-[0.2em] text-chaux-600">
-                  Livraison
-                </span>
-                <span className="font-mono text-sm font-bold text-nuit-800">
-                  {Number(suivi.frais_livraison).toLocaleString('fr-FR')}
-                  <span className="ml-1 text-xs font-semibold text-chaux-600">
-                    FCFA — à régler au livreur
+            {(() => {
+              /* ZERO EXISTE DEPUIS LE RETRAIT, ET CET ECRAN NE LE CONNAISSAIT PAS.
+                 Le test ne portait que sur `!== null`, parce qu'avant lui zero
+                 n'etait jamais ecrit. Des que la route s'est mise a poser `0`
+                 — en retrait, et pour une livraison offerte — le client a lu
+                 « 0 FCFA — a regler au livreur » : une dette envers un livreur
+                 qui, dans un cas, n'existe meme pas.
+
+                 La regle vit dans `@/lib/retrait`, avec ses tests. */
+              const ligne = ligneFraisSuivi(suivi.mode_recuperation, suivi.frais_livraison);
+              if (!ligne.montrer) return null;
+
+              return (
+                <div className="mt-3 flex items-baseline justify-between">
+                  <span className="font-mono text-xs uppercase tracking-[0.2em] text-chaux-600">
+                    Livraison
                   </span>
-                </span>
-              </div>
-            )}
+                  <span className="font-mono text-sm font-bold text-nuit-800">
+                    {ligne.offerte ? (
+                      <span className="text-accent-700">Offerte</span>
+                    ) : (
+                      <>
+                        {ligne.montant.toLocaleString('fr-FR')}
+                        <span className="ml-1 text-xs font-semibold text-chaux-600">
+                          FCFA — à régler au livreur
+                        </span>
+                      </>
+                    )}
+                  </span>
+                </div>
+              );
+            })()}
           </article>
         )}
 

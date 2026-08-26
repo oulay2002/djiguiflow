@@ -104,6 +104,9 @@
               },
               {
                 "name": "boutique_nom"
+              },
+              {
+                "name": "frais_livraison"
               }
             ]
           }
@@ -201,7 +204,7 @@
               "canal": "telegram",
               "destinataire": "={{ $json.groupe }}",
               "format": "html",
-              "message": "={{ $('Edit Fields').first().json.priorite === 'EXPRESS' ? '⚡ <b>EXPRESS</b> — ' : '' }}🚨 <b>Nouvelle commande a livrer !</b>{{ $json.nom ? ' — ' + String($json.nom).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') : '' }}\n\n📦 Commande : <code>{{ String($('Edit Fields').first().json.order_id || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') }}</code>\n👤 Client : {{ String($('Edit Fields').first().json.customer_name || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') }}\n📞 Telephone : {{ String($('Edit Fields').first().json.phone || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') }}\n📍 Adresse : {{ String($('Edit Fields').first().json.address || '').trim() ? '<a href=\"https://www.google.com/maps/search/' + encodeURIComponent(String($('Edit Fields').first().json.address).trim()) + '\">' + String($('Edit Fields').first().json.address).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</a>' : 'non precisee' }}\n🍔 Articles :{{ $json.articles_lisibles }}\n💰 Total : {{ Number($('Edit Fields').first().json.total_price || 0).toLocaleString('fr-FR') }} FCFA\n\nQui prend cette livraison ?",
+              "message": "={{ $('Edit Fields').first().json.priorite === 'EXPRESS' ? '⚡ <b>EXPRESS</b> — ' : '' }}🚨 <b>Nouvelle commande a livrer !</b>{{ $json.nom ? ' — ' + String($json.nom).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') : '' }}\n\n📦 Commande : <code>{{ String($('Edit Fields').first().json.order_id || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') }}</code>\n👤 Client : {{ String($('Edit Fields').first().json.customer_name || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') }}\n📞 Telephone : {{ String($('Edit Fields').first().json.phone || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') }}\n📍 Adresse : {{ String($('Edit Fields').first().json.address || '').trim() ? '<a href=\"https://www.google.com/maps/search/' + encodeURIComponent(String($('Edit Fields').first().json.address).trim()) + '\">' + String($('Edit Fields').first().json.address).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</a>' : 'non precisee' }}\n🍔 Articles :{{ $json.articles_lisibles }}\n💰 Total : {{ Number($('Edit Fields').first().json.total_price || 0).toLocaleString('fr-FR') }} FCFA{{ String($('Edit Fields').first().json.frais_livraison ?? '').trim() === '0' ? '\\n\\n🎁 <b>LIVRAISON OFFERTE</b> — c est le commercant qui vous regle. <b>Ne demandez rien au client.</b>' : '' }}\n\nQui prend cette livraison ?",
               "reply_markup": "={{ JSON.stringify({ inline_keyboard: [[ { text: \"✅ J'accepte\", callback_data: 'accept_' + $('Edit Fields').first().json.chat_id + '_' + String($('Edit Fields').first().json.order_id).trim() }, { text: '❌ Je refuse', callback_data: 'refuse_' + $('Edit Fields').first().json.chat_id + '_' + String($('Edit Fields').first().json.order_id).trim() } ]] }) }}"
             }
           }
@@ -242,13 +245,28 @@
         ],
         "type": "n8n-nodes-base.code",
         "typeVersion": 2
+      },
+      {
+        "id": "475306ee-1371-4e81-86e6-39713863e2e9",
+        "name": "Pourquoi cette phrase existe",
+        "parameters": {
+          "content": "## « Ne demandez rien au client »\n\nQuand le marchand offre la livraison, LE LIVREUR N'A RIEN A ENCAISSER : c'est\nle commercant qui le regle. Sans cette phrase, il reclame au client une somme\nque personne ne lui doit — et la dispute se joue sur le pas de la porte, la ou\nplus personne ne rattrape rien.\n\nC'est le vrai risque de la livraison offerte, bien plus que le code.\n\n`frais_livraison` vient de l'application, qui l'ecrit en base et le transmet\nici : la valeur est calculee UNE fois. `'0'` veut dire « rien a encaisser » ;\nune chaine VIDE veut dire « le livreur annoncera ses frais ». Les confondre\nferait taire cette phrase, ou la ferait mentir.",
+          "height": 240,
+          "width": 560
+        },
+        "position": [
+          420,
+          -300
+        ],
+        "type": "n8n-nodes-base.stickyNote",
+        "typeVersion": 1
       }
     ],
     "workflowId": "whr4BFlseHHQURZl",
     "workflowPublishHistory": [
       {
         "event": "activated",
-        "id": 113,
+        "id": 300,
         "userId": "81519f6f-0887-498a-ad83-5ffd6d591e9a",
         "workflowId": "whr4BFlseHHQURZl"
       }
@@ -357,6 +375,9 @@
             },
             {
               "name": "boutique_nom"
+            },
+            {
+              "name": "frais_livraison"
             }
           ]
         }
@@ -454,7 +475,7 @@
             "canal": "telegram",
             "destinataire": "={{ $json.groupe }}",
             "format": "html",
-            "message": "={{ $('Edit Fields').first().json.priorite === 'EXPRESS' ? '⚡ <b>EXPRESS</b> — ' : '' }}🚨 <b>Nouvelle commande a livrer !</b>{{ $json.nom ? ' — ' + String($json.nom).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') : '' }}\n\n📦 Commande : <code>{{ String($('Edit Fields').first().json.order_id || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') }}</code>\n👤 Client : {{ String($('Edit Fields').first().json.customer_name || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') }}\n📞 Telephone : {{ String($('Edit Fields').first().json.phone || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') }}\n📍 Adresse : {{ String($('Edit Fields').first().json.address || '').trim() ? '<a href=\"https://www.google.com/maps/search/' + encodeURIComponent(String($('Edit Fields').first().json.address).trim()) + '\">' + String($('Edit Fields').first().json.address).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</a>' : 'non precisee' }}\n🍔 Articles :{{ $json.articles_lisibles }}\n💰 Total : {{ Number($('Edit Fields').first().json.total_price || 0).toLocaleString('fr-FR') }} FCFA\n\nQui prend cette livraison ?",
+            "message": "={{ $('Edit Fields').first().json.priorite === 'EXPRESS' ? '⚡ <b>EXPRESS</b> — ' : '' }}🚨 <b>Nouvelle commande a livrer !</b>{{ $json.nom ? ' — ' + String($json.nom).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') : '' }}\n\n📦 Commande : <code>{{ String($('Edit Fields').first().json.order_id || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') }}</code>\n👤 Client : {{ String($('Edit Fields').first().json.customer_name || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') }}\n📞 Telephone : {{ String($('Edit Fields').first().json.phone || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') }}\n📍 Adresse : {{ String($('Edit Fields').first().json.address || '').trim() ? '<a href=\"https://www.google.com/maps/search/' + encodeURIComponent(String($('Edit Fields').first().json.address).trim()) + '\">' + String($('Edit Fields').first().json.address).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</a>' : 'non precisee' }}\n🍔 Articles :{{ $json.articles_lisibles }}\n💰 Total : {{ Number($('Edit Fields').first().json.total_price || 0).toLocaleString('fr-FR') }} FCFA{{ String($('Edit Fields').first().json.frais_livraison ?? '').trim() === '0' ? '\\n\\n🎁 <b>LIVRAISON OFFERTE</b> — c est le commercant qui vous regle. <b>Ne demandez rien au client.</b>' : '' }}\n\nQui prend cette livraison ?",
             "reply_markup": "={{ JSON.stringify({ inline_keyboard: [[ { text: \"✅ J'accepte\", callback_data: 'accept_' + $('Edit Fields').first().json.chat_id + '_' + String($('Edit Fields').first().json.order_id).trim() }, { text: '❌ Je refuse', callback_data: 'refuse_' + $('Edit Fields').first().json.chat_id + '_' + String($('Edit Fields').first().json.order_id).trim() } ]] }) }}"
           }
         }
@@ -495,6 +516,21 @@
       ],
       "type": "n8n-nodes-base.code",
       "typeVersion": 2
+    },
+    {
+      "id": "475306ee-1371-4e81-86e6-39713863e2e9",
+      "name": "Pourquoi cette phrase existe",
+      "parameters": {
+        "content": "## « Ne demandez rien au client »\n\nQuand le marchand offre la livraison, LE LIVREUR N'A RIEN A ENCAISSER : c'est\nle commercant qui le regle. Sans cette phrase, il reclame au client une somme\nque personne ne lui doit — et la dispute se joue sur le pas de la porte, la ou\nplus personne ne rattrape rien.\n\nC'est le vrai risque de la livraison offerte, bien plus que le code.\n\n`frais_livraison` vient de l'application, qui l'ecrit en base et le transmet\nici : la valeur est calculee UNE fois. `'0'` veut dire « rien a encaisser » ;\nune chaine VIDE veut dire « le livreur annoncera ses frais ». Les confondre\nferait taire cette phrase, ou la ferait mentir.",
+        "height": 240,
+        "width": 560
+      },
+      "position": [
+        420,
+        -300
+      ],
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1
     }
   ],
   "settings": {
@@ -504,5 +540,5 @@
   },
   "sourceWorkflowId": null,
   "tags": [],
-  "versionCounter": 5
+  "versionCounter": 7
 }

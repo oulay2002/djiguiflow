@@ -3,6 +3,8 @@ import { exigerAccesMarchand } from '@/lib/dashboardAuth';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import type { Marchand } from '@/lib/marchands';
 import { canalDeReponse, envoyerMessage } from '@/lib/canaux';
+import { boutiqueLivre } from '@/lib/boutiquePrete';
+import { heureRetraitLisible } from '@/lib/retrait';
 
 /**
  * Avancement d'une commande par le marchand.
@@ -20,12 +22,29 @@ type Admin = NonNullable<ReturnType<typeof getSupabaseAdmin>>;
 const STATUTS_LIVRAISON: Record<string, string> = {
   acceptee: 'acceptée',
   route: 'en route',
+  /**
+   * LA SEULE ETAPE QU'UNE COMMANDE A EMPORTER AJOUTE.
+   *
+   * Elle ne remplace pas « en route », elle la remplace DANS LE TEMPS : entre
+   * « acceptée » et la fin, un retrait a un moment ou la commande est prete et
+   * ou le client peut se deplacer. C'est le seul instant qui compte pour lui,
+   * et rien ne le lui disait.
+   *
+   * Le libelle evite « livr » : les ecrans de suivi et du marchand testent
+   * `/livr/i` pour savoir si le cycle est termine, et « prête à livrer »
+   * aurait clos la commande a l'instant ou elle commence a attendre.
+   */
+  prete: 'prête',
   livree: 'livrée',
 };
 
 const STATUTS_METIER: Record<string, string> = {
   acceptee: 'en_preparation',
   route: 'en_livraison',
+  // `prete` ne change PAS le statut metier : la commande reste en preparation
+  // jusqu'a ce que le client vienne. Inventer un statut de plus obligerait
+  // chaque lecture — analyses, veille, quotas — a le connaitre pour ne pas
+  // perdre ces commandes en route.
   livree: 'livree',
 };
 
@@ -105,7 +124,7 @@ export async function POST(req: Request) {
   // ---- 1. Supabase : la commande avance ici, ou nulle part.
   const { data: commande, error: errLecture } = await sb
     .from('commandes')
-    .select('id, client_nom, client_telephone, client_adresse, chat_id, canal')
+    .select('id, client_nom, client_telephone, client_adresse, chat_id, canal, mode_recuperation, heure_retrait')
     .eq('boutique_id', m.boutiqueId)
     .eq('reference', reference)
     .maybeSingle();
@@ -115,6 +134,29 @@ export async function POST(req: Request) {
     return Response.json({ error: 'Base temporairement indisponible' }, { status: 503 });
   }
   if (!commande) return Response.json({ error: 'Commande introuvable' }, { status: 404 });
+
+  /**
+   * UNE ACTION QUI N'A PAS DE SENS POUR CETTE COMMANDE SE REFUSE.
+   *
+   * Le tableau de bord n'affiche deja que les boutons possibles — mais un
+   * onglet reste ouvert, et surtout les deux jeux d'etapes ne se recouvrent
+   * pas : « en route » n'existe pas pour un retrait, « prête » n'existe pas
+   * pour une livraison. Sans ce refus, l'action passait quand meme et le
+   * client recevait « Votre commande avance bien », le repli generique —
+   * c'est-a-dire un message qui ne dit rien, la ou il attendait de savoir s'il
+   * devait se deplacer.
+   */
+  const livre = boutiqueLivre(commande.mode_recuperation);
+  if ((livre && action === 'prete') || (!livre && action === 'route')) {
+    return Response.json(
+      {
+        error: livre
+          ? 'Cette commande est une livraison : elle n’a pas d’étape « prête ».'
+          : 'Cette commande est à emporter : aucun livreur ne prend la route.',
+      },
+      { status: 409 },
+    );
+  }
 
   const { error: errEcriture } = await sb
     .from('commandes')
@@ -157,11 +199,35 @@ export async function POST(req: Request) {
   if (destinataire) {
     const nom = commande.client_nom || 'cher client';
     const adresse = commande.client_adresse || 'votre adresse';
-    const messages: Record<string, string> = {
-      acceptee: `✅ ${nom}, votre commande ${reference} est acceptée. Nous cherchons un livreur pour vous.`,
-      route: `🛵 ${nom}, bonne nouvelle : votre commande ${reference} est en route vers ${adresse}.`,
-      livree: `🎉 ${nom}, votre commande ${reference} a été livrée ! Merci pour votre confiance. Répondez par un chiffre de 1 à 5 pour noter le service. ⭐`,
-    };
+
+    /**
+     * LES TROIS MESSAGES ETAIENT FAUX POUR UNE COMMANDE A EMPORTER.
+     *
+     * « Nous cherchons un livreur pour vous » a quelqu'un qui vient chercher,
+     * « en route vers votre adresse » — le repli, puisque le retrait n'en
+     * enregistre aucune — et « a ete livree » pour une commande qu'il est venu
+     * prendre au comptoir. Trois phrases qui decrivent un parcours qui n'a pas
+     * eu lieu, et qui font douter le client de ce qu'il a compris.
+     *
+     * L'heure est rappelee A L'ACCEPTATION et nulle part ailleurs : c'est le
+     * moment ou le marchand s'engage. La repeter a « prête » serait la
+     * contredire, puisqu'a cet instant c'est PRET qui est vrai, pas l'heure
+     * prevue.
+     */
+    const heure = heureRetraitLisible(commande.heure_retrait);
+    const quand = heure ? ` Elle sera prête vers ${heure}.` : ' Nous vous prévenons dès que c’est prêt.';
+
+    const messages: Record<string, string> = boutiqueLivre(commande.mode_recuperation)
+      ? {
+        acceptee: `✅ ${nom}, votre commande ${reference} est acceptée. Nous cherchons un livreur pour vous.`,
+        route: `🛵 ${nom}, bonne nouvelle : votre commande ${reference} est en route vers ${adresse}.`,
+        livree: `🎉 ${nom}, votre commande ${reference} a été livrée ! Merci pour votre confiance. Répondez par un chiffre de 1 à 5 pour noter le service. ⭐`,
+      }
+      : {
+        acceptee: `✅ ${nom}, votre commande ${reference} est acceptée.${quand}`,
+        prete: `🛍️ ${nom}, votre commande ${reference} est prête : vous pouvez venir la chercher.`,
+        livree: `🎉 ${nom}, merci d’être passé ! Répondez par un chiffre de 1 à 5 pour noter le service. ⭐`,
+      };
 
     const envoi = await envoyerMessage({
       boutique: m.id,

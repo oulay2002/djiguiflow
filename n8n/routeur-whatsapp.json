@@ -1,7 +1,7 @@
 {
   "active": true,
   "activeVersion": {
-    "authors": "JEAN PAUL OULAI",
+    "authors": "JEAN PAUL OULAI (via MCP)",
     "autosaved": false,
     "connections": {
       "Aiguilleur note": {
@@ -57,6 +57,30 @@
             {
               "index": 0,
               "node": "Repondre ferme",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Call 'Cerveau Zahara'": {
+        "main": [
+          null,
+          [
+            {
+              "index": 0,
+              "node": "Repondre panne assistante",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Call 'Cerveau Zahara'1": {
+        "main": [
+          null,
+          [
+            {
+              "index": 0,
+              "node": "Repondre panne assistante",
               "type": "main"
             }
           ]
@@ -215,6 +239,17 @@
           ]
         ]
       },
+      "Repondre panne assistante": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Signaler la panne",
+              "type": "main"
+            }
+          ]
+        ]
+      },
       "Signature présente ?": {
         "main": [
           [
@@ -286,6 +321,7 @@
       {
         "id": "33cb3629-35b0-496d-9013-841542282041",
         "name": "Call 'Cerveau Zahara'",
+        "onError": "continueErrorOutput",
         "parameters": {
           "options": {},
           "workflowId": {
@@ -737,6 +773,7 @@
       {
         "id": "20768781-61e9-46fe-8fb0-d25fa4d5bd37",
         "name": "Call 'Cerveau Zahara'1",
+        "onError": "continueErrorOutput",
         "parameters": {
           "options": {},
           "workflowId": {
@@ -1498,31 +1535,63 @@
         ],
         "type": "n8n-nodes-base.if",
         "typeVersion": 2.2
+      },
+      {
+        "id": "1605a3a4-f382-4741-9a61-1ca4bf36d1a0",
+        "name": "Repondre panne assistante",
+        "notes": "LE CLIENT NE DOIT JAMAIS RECEVOIR LE SILENCE. Le 25 aout 2026 a 11h02 un client a ecrit, l assistante a atteint ses 25 iterations, la chaine s est arretee la et il n a rien recu. Une reponse maladroite vaut mieux que pas de reponse. On ne promet PAS que le marchand rappellera, on donne son numero.",
+        "onError": "continueRegularOutput",
+        "parameters": {
+          "mode": "once",
+          "options": {},
+          "workflowId": {
+            "__rl": true,
+            "cachedResultName": "Envoyer réponse client",
+            "mode": "list",
+            "value": "JkNvcqsZaY22dfk5"
+          },
+          "workflowInputs": {
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": true,
+            "mappingMode": "defineBelow",
+            "matchingColumns": [],
+            "schema": [],
+            "value": {
+              "boutique": "={{ $('Normalisateur WA').first().json.slug }}",
+              "canal": "whatsapp",
+              "destinataire": "={{ $('Normalisateur WA').first().json.phone }}",
+              "message": "=Désolé, je n’ai pas réussi à traiter votre message.\n\nPouvez-vous le reformuler en une phrase ? Vous pouvez aussi appeler {{ $('Charger fiche').first().json.nom }} au {{ $('Charger fiche').first().json.telephone }}.",
+              "sheet_document_id": "={{ $('Normalisateur WA').first().json.sheet_document_id }}"
+            }
+          }
+        },
+        "position": [
+          700,
+          380
+        ],
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.3
+      },
+      {
+        "id": "caedf768-04b5-43f4-9eb2-80a352b29477",
+        "name": "Signaler la panne",
+        "notes": "Il LEVE, et c est voulu. Sans cette levee, poser continueErrorOutput sur le Cerveau aurait rendu la panne MUETTE cote exploitant. Le client est deja repondu quand on arrive ici, et le webhook a repondu des reception - aucun reessai, donc aucun doublon.",
+        "parameters": {
+          "jsCode": "// LE MESSAGE TIENT SUR UNE LIGNE, SANS DEUX-POINTS. n8n scinde le texte\n// d'une Error sur ces caracteres, et l'alerte n'en recevrait qu'un fragment.\nconst n = $('Normalisateur WA').first().json;\nthrow new Error(\n  `Assistante en echec pour ${n.slug} — le client ${n.phone} a recu le message de repli`,\n);"
+        },
+        "position": [
+          940,
+          380
+        ],
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2
       }
     ],
     "workflowId": "xGw9MbvqvN3XAPpQ",
     "workflowPublishHistory": [
       {
         "event": "activated",
-        "id": 208,
-        "userId": "81519f6f-0887-498a-ad83-5ffd6d591e9a",
-        "workflowId": "xGw9MbvqvN3XAPpQ"
-      },
-      {
-        "event": "activated",
-        "id": 210,
-        "userId": "81519f6f-0887-498a-ad83-5ffd6d591e9a",
-        "workflowId": "xGw9MbvqvN3XAPpQ"
-      },
-      {
-        "event": "deactivated",
-        "id": 207,
-        "userId": "81519f6f-0887-498a-ad83-5ffd6d591e9a",
-        "workflowId": "xGw9MbvqvN3XAPpQ"
-      },
-      {
-        "event": "deactivated",
-        "id": 209,
+        "id": 268,
         "userId": "81519f6f-0887-498a-ad83-5ffd6d591e9a",
         "workflowId": "xGw9MbvqvN3XAPpQ"
       }
@@ -1582,6 +1651,30 @@
           {
             "index": 0,
             "node": "Repondre ferme",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Call 'Cerveau Zahara'": {
+      "main": [
+        null,
+        [
+          {
+            "index": 0,
+            "node": "Repondre panne assistante",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Call 'Cerveau Zahara'1": {
+      "main": [
+        null,
+        [
+          {
+            "index": 0,
+            "node": "Repondre panne assistante",
             "type": "main"
           }
         ]
@@ -1740,6 +1833,17 @@
         ]
       ]
     },
+    "Repondre panne assistante": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Signaler la panne",
+            "type": "main"
+          }
+        ]
+      ]
+    },
     "Signature présente ?": {
       "main": [
         [
@@ -1813,6 +1917,7 @@
     {
       "id": "33cb3629-35b0-496d-9013-841542282041",
       "name": "Call 'Cerveau Zahara'",
+      "onError": "continueErrorOutput",
       "parameters": {
         "options": {},
         "workflowId": {
@@ -2264,6 +2369,7 @@
     {
       "id": "20768781-61e9-46fe-8fb0-d25fa4d5bd37",
       "name": "Call 'Cerveau Zahara'1",
+      "onError": "continueErrorOutput",
       "parameters": {
         "options": {},
         "workflowId": {
@@ -3025,6 +3131,56 @@
       ],
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2
+    },
+    {
+      "id": "1605a3a4-f382-4741-9a61-1ca4bf36d1a0",
+      "name": "Repondre panne assistante",
+      "notes": "LE CLIENT NE DOIT JAMAIS RECEVOIR LE SILENCE. Le 25 aout 2026 a 11h02 un client a ecrit, l assistante a atteint ses 25 iterations, la chaine s est arretee la et il n a rien recu. Une reponse maladroite vaut mieux que pas de reponse. On ne promet PAS que le marchand rappellera, on donne son numero.",
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "mode": "once",
+        "options": {},
+        "workflowId": {
+          "__rl": true,
+          "cachedResultName": "Envoyer réponse client",
+          "mode": "list",
+          "value": "JkNvcqsZaY22dfk5"
+        },
+        "workflowInputs": {
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true,
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "schema": [],
+          "value": {
+            "boutique": "={{ $('Normalisateur WA').first().json.slug }}",
+            "canal": "whatsapp",
+            "destinataire": "={{ $('Normalisateur WA').first().json.phone }}",
+            "message": "=Désolé, je n’ai pas réussi à traiter votre message.\n\nPouvez-vous le reformuler en une phrase ? Vous pouvez aussi appeler {{ $('Charger fiche').first().json.nom }} au {{ $('Charger fiche').first().json.telephone }}.",
+            "sheet_document_id": "={{ $('Normalisateur WA').first().json.sheet_document_id }}"
+          }
+        }
+      },
+      "position": [
+        700,
+        380
+      ],
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3
+    },
+    {
+      "id": "caedf768-04b5-43f4-9eb2-80a352b29477",
+      "name": "Signaler la panne",
+      "notes": "Il LEVE, et c est voulu. Sans cette levee, poser continueErrorOutput sur le Cerveau aurait rendu la panne MUETTE cote exploitant. Le client est deja repondu quand on arrive ici, et le webhook a repondu des reception - aucun reessai, donc aucun doublon.",
+      "parameters": {
+        "jsCode": "// LE MESSAGE TIENT SUR UNE LIGNE, SANS DEUX-POINTS. n8n scinde le texte\n// d'une Error sur ces caracteres, et l'alerte n'en recevrait qu'un fragment.\nconst n = $('Normalisateur WA').first().json;\nthrow new Error(\n  `Assistante en echec pour ${n.slug} — le client ${n.phone} a recu le message de repli`,\n);"
+      },
+      "position": [
+        940,
+        380
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
     }
   ],
   "settings": {
@@ -3034,5 +3190,5 @@
   },
   "sourceWorkflowId": null,
   "tags": [],
-  "versionCounter": 13
+  "versionCounter": 15
 }

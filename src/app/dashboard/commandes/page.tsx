@@ -21,7 +21,10 @@ import {
   Check,
   RefreshCw,
   Search,
+  ShoppingBag,
 } from 'lucide-react';
+import { boutiqueLivre } from '@/lib/boutiquePrete';
+import { heureRetraitLisible } from '@/lib/retrait';
 
 /**
  * L'ecran des commandes du marchand — le seul.
@@ -50,6 +53,10 @@ type Cmd = {
   heure_prise_en_charge: string; heure_livraison: string;
   confirmation_statut: string | null;
   confirmation_heure: string | null;
+  /** `livraison` | `retrait`. Decide des etapes proposees et du vocabulaire. */
+  mode_recuperation?: string | null;
+  /** Vide veut dire « des que pret », jamais « on ne sait pas ». */
+  heure_retrait?: string | null;
 };
 
 /**
@@ -164,7 +171,7 @@ export default function Page() {
     };
   }, [pret, boutiqueId]);
 
-  const agir = async (order_id: string, action: 'acceptee' | 'route' | 'livree') => {
+  const agir = async (order_id: string, action: 'acceptee' | 'route' | 'prete' | 'livree') => {
     setBusy(order_id + action);
     try {
       await fetchDashboard(avecBoutique('/api/dashboard/commandes/statut', boutiqueId), {
@@ -219,14 +226,25 @@ export default function Page() {
   const badgeColor = (c: Cmd) =>
     /livr/i.test(c.statut_livraison) ? 'bg-accent-100 text-accent-700' :
     /route|part|cours/i.test(c.statut_livraison) ? 'bg-nuit-100 text-nuit-700' :
+    // « Prête » est encore chez le commercant : elle garde la teinte mangue,
+    // et se distingue de « en attente » par l'intensite, comme « prise par ».
+    /prête|prete/i.test(c.statut_livraison) ? 'bg-mangue-200 text-mangue-700' :
     c.nom_livreur ? 'bg-mangue-200 text-mangue-700' :
     'bg-mangue-50 text-mangue-700';
 
-  const statutLabel = (c: Cmd) =>
-    /livr/i.test(c.statut_livraison) ? 'Livrée' :
-    /route|part|cours/i.test(c.statut_livraison) ? 'En route' :
-    c.nom_livreur ? `Prise par ${c.nom_livreur}` :
-    'En attente';
+  const statutLabel = (c: Cmd) => {
+    // Un retrait ne passe ni par un livreur ni par la rue : ses etapes sont
+    // « en attente », « prête », « récupérée », et rien d'autre.
+    if (!boutiqueLivre(c.mode_recuperation)) {
+      return /livr/i.test(c.statut_livraison) ? 'Récupérée'
+        : /prête|prete/i.test(c.statut_livraison) ? 'Prête'
+        : 'En attente';
+    }
+    return /livr/i.test(c.statut_livraison) ? 'Livrée'
+      : /route|part|cours/i.test(c.statut_livraison) ? 'En route'
+      : c.nom_livreur ? `Prise par ${c.nom_livreur}`
+      : 'En attente';
+  };
 
   // Badge de confirmation client
   const badgeConfirmation = (c: Cmd) => {
@@ -350,7 +368,24 @@ export default function Page() {
                     </div>
                     <p className="text-base font-bold text-nuit-900">{c.customer_name}</p>
                     <p className="flex items-center gap-1 text-sm text-chaux-600"><Phone className="h-3 w-3" />{c.phone}</p>
-                    <p className="flex items-center gap-1 text-sm text-chaux-600"><MapPin className="h-3 w-3" />{c.address}</p>
+                    {/* UNE ADRESSE VIDE SE LISAIT COMME UNE ADRESSE OUBLIEE.
+                        Pour une commande a emporter, le marchand voyait la
+                        meme ligne muette que pour une livraison dont le client
+                        n'a rien saisi — et rappelait un client qui n'avait
+                        rien oublie. On dit l'un OU l'autre. */}
+                    {boutiqueLivre(c.mode_recuperation) ? (
+                      <p className="flex items-center gap-1 text-sm text-chaux-600"><MapPin className="h-3 w-3" />{c.address}</p>
+                    ) : (
+                      <p className="flex items-center gap-1 text-sm font-semibold text-mangue-700">
+                        <ShoppingBag className="h-3 w-3" />
+                        À emporter
+                        {/* Vide veut dire « des que pret » : c'est une reponse
+                            du client, pas une absence de reponse. */}
+                        {heureRetraitLisible(c.heure_retrait)
+                          ? ` — retrait vers ${heureRetraitLisible(c.heure_retrait)}`
+                          : ' — dès que prêt'}
+                      </p>
+                    )}
                     <div className="flex flex-wrap gap-2">
                       {parseItems(c.items).length === 0 ? (
                         <p className="text-sm text-chaux-600">Aucun article</p>
@@ -414,16 +449,41 @@ export default function Page() {
                       <Handshake className="h-4 w-4" />Accepter
                     </button>
                   )}
-                  {c.confirmation_statut !== 'refusee' && c.nom_livreur && !/route|part|cours|livr/i.test(c.statut_livraison) && (
+                  {/* « EN ROUTE » N'EXISTE PAS POUR UNE COMMANDE A EMPORTER.
+                      Le bouton n'apparaissait deja qu'avec un livreur nomme —
+                      qu'un retrait n'a jamais — mais le dire explicitement
+                      evite qu'un changement de la regle du livreur le fasse
+                      reapparaitre la ou il n'a aucun sens. */}
+                  {boutiqueLivre(c.mode_recuperation)
+                    && c.confirmation_statut !== 'refusee' && c.nom_livreur
+                    && !/route|part|cours|livr/i.test(c.statut_livraison) && (
                     <button onClick={() => agir(c.order_id, 'route')} disabled={busy === c.order_id + 'route'}
                       className="flex items-center gap-2 bg-nuit-600 min-h-11 px-4 py-2 text-sm font-semibold text-white hover:bg-nuit-700 disabled:opacity-50">
                       <Bike className="h-4 w-4" />En route
                     </button>
                   )}
+                  {/* LE SEUL INSTANT QUI COMPTE POUR UN CLIENT QUI SE DEPLACE.
+                      Rien ne le lui disait : entre « acceptée » et la fin, il
+                      n'avait aucun moyen de savoir s'il pouvait partir. Ce
+                      bouton EST le message. */}
+                  {!boutiqueLivre(c.mode_recuperation)
+                    && c.confirmation_statut !== 'refusee'
+                    && !/prête|prete|livr/i.test(c.statut_livraison) && (
+                    <button onClick={() => agir(c.order_id, 'prete')} disabled={busy === c.order_id + 'prete'}
+                      className="flex items-center gap-2 bg-mangue-600 min-h-11 px-4 py-2 text-sm font-semibold text-white hover:bg-mangue-700 disabled:opacity-50">
+                      <ShoppingBag className="h-4 w-4" />Prête à retirer
+                    </button>
+                  )}
                   {c.confirmation_statut !== 'refusee' && !/livr/i.test(c.statut_livraison) && (
                     <button onClick={() => agir(c.order_id, 'livree')} disabled={busy === c.order_id + 'livree'}
                       className="flex items-center gap-2 bg-accent-600 min-h-11 px-4 py-2 text-sm font-semibold text-white hover:bg-accent-700 disabled:opacity-50">
-                      <Check className="h-4 w-4" />Livrée
+                      {/* « Livrée » sur une commande que le client est venu
+                          prendre au comptoir decrit un parcours qui n'a pas eu
+                          lieu. Le statut en base reste `livree` : c'est le mot
+                          « cycle termine », et le renommer obligerait chaque
+                          lecture a connaitre les deux. */}
+                      <Check className="h-4 w-4" />
+                      {boutiqueLivre(c.mode_recuperation) ? 'Livrée' : 'Récupérée'}
                     </button>
                   )}
                   {/livr/i.test(c.statut_livraison) && (

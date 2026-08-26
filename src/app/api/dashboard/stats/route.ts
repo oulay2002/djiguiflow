@@ -1,3 +1,4 @@
+import { boutiqueLivre } from '@/lib/boutiquePrete';
 import { exigerAccesMarchand } from '@/lib/dashboardAuth';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 
@@ -52,7 +53,7 @@ export async function GET(req: Request) {
   const lectureFiche = Promise.resolve(
     sb
       .from('boutiques')
-      .select('wasender_secret_id, telegram_secret_id, groupe_livreurs, horaires')
+      .select('wasender_secret_id, telegram_secret_id, groupe_livreurs, horaires, mode_recuperation')
       .eq('id', m.boutiqueId)
       .maybeSingle(),
   );
@@ -196,6 +197,16 @@ export async function GET(req: Request) {
       canalClient: Boolean(fiche?.wasender_secret_id || fiche?.telegram_secret_id),
       // Sans groupe, la course n'est proposee a personne.
       groupeLivreurs: Boolean(String(fiche?.groupe_livreurs ?? '').trim()),
+      /**
+       * CETTE BOUTIQUE LIVRE-T-ELLE ?
+       *
+       * DEUX CHAMPS PLUTOT QU'UN. On aurait pu faire repondre `vrai` a
+       * `groupeLivreurs` quand la boutique ne livre pas -- mais le champ aurait
+       * alors dit deux choses : « il y a un groupe » et « il n'en faut pas ».
+       * C'est exactement le defaut que ce depot poursuit, une valeur qui masque
+       * une donnee manquante. L'ecran croise les deux lui-meme.
+       */
+      livre: boutiqueLivre(fiche?.mode_recuperation),
       // Sans article disponible, la vitrine est vide.
       catalogue: (nbProduits ?? 0) > 0,
       // NULL veut dire « ouverte a toute heure » -- un choix assume cote

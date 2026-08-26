@@ -635,6 +635,11 @@
     "actif": true
   },
   {
+    "id": "DmfcYovksJwYSqas",
+    "nom": "SONDE JETABLE — diagnostic facturation",
+    "actif": false
+  },
+  {
     "id": "tMY4BmGffV4mJQU9",
     "nom": "Statut Livraison",
     "actif": false
