@@ -121,6 +121,15 @@ export async function POST(req: Request) {
    */
   let conversationEnCours = false;
 
+  /**
+   * ON A LAISSE PASSER SANS SAVOIR. C'est un etat distinct des deux autres, et
+   * le confondre avec « conversation en cours » serait mentir dans la trace.
+   *
+   * Le champ existe deja plus haut avec exactement ce sens — base injoignable,
+   * quota illisible — et il vaut ici pour la meme raison.
+   */
+  let indetermine = false;
+
   if (etat.bloque && !etat.exempt) {
     const client = String(corps.client ?? '').trim();
 
@@ -134,11 +143,26 @@ export async function POST(req: Request) {
         .limit(50);
 
       if (errPanier) {
-        // DANS LE DOUTE, ON LAISSE PARLER. Ne pas savoir s'il y a une
-        // conversation en cours ne doit pas la couper : une vente de trop
-        // coute moins cher qu'un client plante au milieu de sa commande.
-        console.error('Quota — paniers illisibles, on laisse la conversation :', errPanier.message);
-        conversationEnCours = true;
+        /**
+         * DANS LE DOUTE, ON LAISSE PARLER — les deux erreurs ne coutent pas la
+         * meme chose.
+         *
+         * Laisser passer a tort : une commande au-dela du forfait, qui se
+         * regle commercialement avec le marchand. Recuperable, et elle lui
+         * profite.
+         *
+         * Bloquer a tort : un client reel coupe au milieu de sa commande. Il
+         * part, et c'est le client du marchand. Rien ne le rattrape.
+         *
+         * MAIS ON NE DIT PAS « CONVERSATION EN COURS ». On n'en sait rien. Le
+         * marquer comme tel rendrait la trace indiscernable d'un vrai cas, et
+         * une panne durable de la base ouvrirait le plafond a tout le monde
+         * sans que la trace ne montre jamais pourquoi. C'est le defaut de la
+         * journee — un repli que personne ne regarde — et il n'a pas sa place
+         * dans le correctif qui le denonce.
+         */
+        console.error('Quota — paniers illisibles, on laisse passer sans savoir :', errPanier.message);
+        indetermine = true;
       } else {
         conversationEnCours = (paniers ?? []).some(
           (c) => memeClient(c.chat_id, client) || memeClient(c.client_telephone, client),
@@ -147,14 +171,16 @@ export async function POST(req: Request) {
     }
   }
 
-  const bloque = etat.bloque && !conversationEnCours;
+  const bloque = etat.bloque && !conversationEnCours && !indetermine;
 
   return NextResponse.json({
     autorise: !bloque,
-    // Rendu pour que l'execution n8n montre POURQUOI on a laisse passer un
-    // compte au plafond : sans cela, la trace se lirait comme un quota qui ne
-    // marche pas.
+    // Rendus pour que l'execution n8n montre POURQUOI un compte au plafond a
+    // laisse passer : sans cela, la trace se lirait comme un quota qui ne
+    // marche pas. Et les deux raisons ne se valent pas — l'une est une regle,
+    // l'autre est une ignorance.
     conversationEnCours,
+    indetermine,
     exempt: etat.exempt,
     plan: etat.plan.key,
     inclus: etat.quota,
