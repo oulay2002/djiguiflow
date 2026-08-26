@@ -57,7 +57,7 @@ export async function exigerAccesMarchand(
 
   if (!marchand) return { ok: false, statut: 404, message: 'Marchand introuvable.' };
 
-  const admin = estAdmin(utilisateur.email);
+  const admin = estAdmin(utilisateur.email, utilisateur.id);
   if (admin) {
     // LE PASSE-DROIT LAISSE UNE TRACE.
     //

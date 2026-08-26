@@ -83,7 +83,7 @@ export async function GET(request: Request) {
   // d'emails en dur : elle partait donc dans le bundle JavaScript public.
   // Ici, la liste reste sur le serveur (ADMIN_EMAILS) et le navigateur ne
   // recoit qu'un statut.
-  if (estAdmin(user.email)) {
+  if (estAdmin(user.email, user.id)) {
     return NextResponse.json({
       subscription: { user_id: user.id, plan_key: 'interne', status: 'active' },
       actif: true,

@@ -94,7 +94,7 @@ export async function etatQuota(userId: string): Promise<EtatQuota | null> {
   // quel. Un compte interne qui verrait « 0 commande » lirait un chiffre faux,
   // et c'est precisement sur ce tableau qu'on juge la consommation reelle.
   const { data: utilisateur } = await sb.auth.admin.getUserById(userId);
-  const exempt = estAdmin(utilisateur?.user?.email);
+  const exempt = estAdmin(utilisateur?.user?.email, utilisateur?.user?.id);
 
   const { data: abonnement } = await sb
     .from('subscriptions')

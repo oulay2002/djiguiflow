@@ -27,7 +27,7 @@ export async function GET(req: Request) {
   const registre = await listerMarchands();
 
   // Admin : tout le registre
-  if (estAdmin(user.email)) {
+  if (estAdmin(user.email, user.id)) {
     return NextResponse.json({ marchands: registre });
   }
 
