@@ -115,7 +115,7 @@ export async function POST(req: Request) {
 
   const { data: existante } = await sb
     .from('commandes')
-    .select('statut, nom_livreur, boutique_id')
+    .select('statut, nom_livreur, boutique_id, mode_recuperation')
     .eq('reference', referenceDemandee)
     .maybeSingle();
 
@@ -288,7 +288,32 @@ export async function POST(req: Request) {
   let modeRetenu: ModeCommande;
 
   if (!demande) {
-    modeRetenu = modeParDefaut(reglages?.mode_recuperation);
+    /**
+     * UN APPEL MUET NE CHANGE PAS LE MODE. C'EST LE BANC QUI L'A TROUVE.
+     *
+     * Cette route retombait ici sur le mode par defaut de la BOUTIQUE. Or elle
+     * est rappelee, pour chaque commande de la vitrine, par « Confirmation
+     * Client » : son noeud `Sync Supabase` poste la reference, le nom, le
+     * telephone et l'adresse — jamais `mode_recuperation`.
+     *
+     * Une commande a emporter passee chez un marchand en « les deux » etait
+     * donc REECRITE en « livraison » quelques secondes apres sa creation.
+     * Mesure du 26 aout au banc de chaine : adresse vide, frais a zero, aucun
+     * livreur lance — et pourtant `mode_recuperation = 'livraison'` en base.
+     * L'ecran du marchand aurait annonce une livraison, le suivi du client
+     * aurait montre trois etapes qui n'arrivent jamais, et les gardes de veille
+     * se seraient remis a crier sur chaque retrait.
+     *
+     * C'est exactement la regle que ce fichier enonce quarante lignes plus
+     * haut, et qu'il s'appliquait a tous les champs SAUF a celui-ci : un champ
+     * absent veut dire « je n'en sais rien », pas « efface-le ».
+     *
+     * On garde donc ce qui est deja enregistre, et on ne retombe sur le defaut
+     * de la boutique qu'a la CREATION, ou il n'y a rien a garder.
+     */
+    modeRetenu = existante?.mode_recuperation
+      ? (String(existante.mode_recuperation) as ModeCommande)
+      : modeParDefaut(reglages?.mode_recuperation);
   } else if (modeAccepte(reglages?.mode_recuperation, demande)) {
     modeRetenu = demande as ModeCommande;
   } else {
@@ -307,7 +332,10 @@ export async function POST(req: Request) {
     }, { status: 422 });
   }
 
-  poser('mode_recuperation', modeRetenu);
+  // ON N'ECRIT LE MODE QUE SI L'APPELANT L'A DIT. Voir ci-dessus : l'ecrire a
+  // chaque appel effacait le choix du client au premier rappel muet. A la
+  // creation, l'INSERT le pose lui-meme a partir de `modeRetenu`.
+  if (demande) poser('mode_recuperation', modeRetenu);
   // En retrait, aucune adresse n'est enregistree. Le modele en fournit parfois
   // une malgre tout — « a emporter », « sur place » — et l'ecrire ferait partir
   // au marchand une consigne de livraison qui n'en est pas une.
@@ -534,6 +562,16 @@ export async function POST(req: Request) {
       ...payload,
       reference,
       boutique_id,
+      /**
+       * LE MODE EST POSE ICI, ET SEULEMENT ICI QUAND L'APPELANT S'EST TU.
+       *
+       * `poser` ne l'ecrit plus qu'en cas de demande explicite — sinon un
+       * rappel muet effacerait le choix du client. Mais a la CREATION il n'y a
+       * rien a preserver, et la valeur par defaut de la colonne vaut
+       * « livraison » : chez un marchand qui ne fait QUE du retrait, elle
+       * mentirait des la premiere commande.
+       */
+      mode_recuperation: payload.mode_recuperation ?? modeRetenu,
       // L'etat de depart n'est connu qu'a la creation. `panier` quand
       // l'assistante est encore en train de collecter : la commande existe,
       // mais elle reste invisible au marchand jusqu'a la confirmation.

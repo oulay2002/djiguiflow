@@ -165,6 +165,32 @@ async function nettoyer() {
   verifier('la boutique de banc a disparu', !data);
 }
 
+/**
+ * Le dernier identifiant d'execution de « Dispatch livreurs », ou null.
+ *
+ * SERT A PROUVER UN SILENCE, ce qui est plus difficile que de prouver un
+ * evenement : compter TOUTES les executions ne dit rien, puisque le client est
+ * prevenu dans les deux cas. Il faut regarder CE workflow-la.
+ */
+const DISPATCH = 'whr4BFlseHHQURZl';
+
+async function derniereExecutionDispatch() {
+  const api = env('N8N_API_URL') || 'https://n8n.djiguiflow.com/api/v1';
+  const clef = env('N8N_VPS_KEY') || env('N8N_API_KEY');
+  if (!clef) return null;
+  try {
+    const r = await fetch(`${api}/executions?limit=1&workflowId=${DISPATCH}`, {
+      headers: { 'X-N8N-API-KEY': clef },
+      signal: AbortSignal.timeout(15000),
+    });
+    if (!r.ok) return null;
+    const j = await r.json();
+    return j?.data?.[0]?.id ?? 'aucune';
+  } catch {
+    return null;
+  }
+}
+
 /** Combien d'executions n8n existent, tous workflows confondus. */
 async function executionsN8n() {
   // L'URL a un defaut : seule la CLE doit etre secrete. Exiger les deux rendait
@@ -381,6 +407,131 @@ try {
       apresInconnu?.livreur_id ?? '(vide)',
     );
   }
+  /**
+   * ---- LA SECONDE PASSE : UNE COMMANDE A EMPORTER.
+   *
+   * Ce banc n'eprouvait qu'une LIVRAISON. Le retrait est arrive le 26 aout, et
+   * il repose sur une promesse qu'aucun controle ne tenait : « une commande a
+   * emporter ne reveille aucun livreur ».
+   *
+   * PROUVER UN SILENCE DEMANDE PLUS QUE PROUVER UN EVENEMENT. Compter les
+   * executions n8n ne suffit pas : le client est prevenu dans les deux cas, et
+   * le compteur bouge donc de toute facon. On regarde « Dispatch livreurs »
+   * NOMMEMENT, avant et apres — s'il n'a pas bouge, personne n'est parti.
+   *
+   * La boutique passe en `les_deux` : c'est le reglage le plus exigeant, celui
+   * ou la route doit choisir d'apres ce que le client demande et non d'apres ce
+   * que la boutique impose.
+   */
+  console.log('\n--- a emporter : personne ne doit partir ---');
+
+  await sb.from('boutiques').update({
+    mode_recuperation: 'les_deux',
+    delai_preparation_min: 20,
+  }).eq('id', UUID);
+
+  const dispatchAvant = await derniereExecutionDispatch();
+
+  let rRetrait = null;
+  let corpsRetrait = null;
+  try {
+    rRetrait = await fetch(`${BASE}/api/boutiques/${SLUG}/commander`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        nom: 'Client qui vient chercher',
+        tel: '0102030405',
+        // AUCUNE ADRESSE : c'est tout l'objet du retrait, et c'est ce que la
+        // route refusait avant le 26 aout.
+        adresse: '',
+        mode_recuperation: 'retrait',
+        heure_retrait: '',
+        panier: [{ id: article?.id, quantite: 1 }],
+      }),
+      signal: AbortSignal.timeout(30000),
+    });
+    corpsRetrait = await rRetrait.json().catch(() => null);
+  } catch (e) {
+    panne = e instanceof Error ? e.message : 'erreur reseau';
+  }
+
+  verifier(
+    'une commande a emporter est acceptee SANS adresse',
+    rRetrait?.status === 200,
+    panne || `HTTP ${rRetrait?.status}`,
+  );
+  verifier(
+    'elle rend une reference',
+    Boolean(corpsRetrait?.order_id),
+    corpsRetrait?.order_id ?? '(aucune)',
+  );
+
+  if (corpsRetrait?.order_id) {
+    const { data: enBase } = await sb
+      .from('commandes')
+      .select('mode_recuperation, client_adresse, frais_livraison')
+      .eq('reference', corpsRetrait.order_id)
+      .maybeSingle();
+
+    verifier('elle est enregistree en retrait', enBase?.mode_recuperation === 'retrait',
+      String(enBase?.mode_recuperation));
+    verifier("elle n'a AUCUNE adresse", enBase?.client_adresse === '',
+      JSON.stringify(enBase?.client_adresse));
+    // Zero EXPLICITE, jamais NULL : « rien a encaisser » ne se confond pas avec
+    // « le livreur ne s'est pas encore prononce ».
+    verifier('ses frais valent zero explicite', enBase?.frais_livraison === 0,
+      String(enBase?.frais_livraison));
+  }
+
+  if (dispatchAvant !== null) {
+    // On laisse a la chaine le temps de se tromper : conclure trop vite au
+    // silence, c'est se feliciter d'une lenteur.
+    process.stdout.write('  ...  on laisse le temps de se tromper ');
+    for (let i = 0; i < 6; i++) {
+      await new Promise((r2) => setTimeout(r2, 5000));
+      process.stdout.write('.');
+    }
+    console.log();
+    const dispatchApres = await derniereExecutionDispatch();
+    verifier(
+      'AUCUN LIVREUR N A ETE LANCE',
+      dispatchApres === dispatchAvant,
+      dispatchApres === dispatchAvant
+        ? `Dispatch livreurs inchange (${dispatchAvant})`
+        : `Dispatch livreurs a tourne : ${dispatchAvant} -> ${dispatchApres}`,
+    );
+  }
+
+  /**
+   * ET LE MODE QUE LA BOUTIQUE NE PROPOSE PAS SE REFUSE.
+   *
+   * Le selecteur de la vitrine n'empeche rien : un onglet reste ouvert apres
+   * que le marchand a change d'avis, un appel se forge.
+   */
+  await sb.from('boutiques').update({ mode_recuperation: 'livraison' }).eq('id', UUID);
+
+  let rRefus = null;
+  try {
+    rRefus = await fetch(`${BASE}/api/boutiques/${SLUG}/commander`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        nom: 'Client insistant',
+        tel: '0102030405',
+        adresse: '',
+        mode_recuperation: 'retrait',
+        panier: [{ id: article?.id, quantite: 1 }],
+      }),
+      signal: AbortSignal.timeout(30000),
+    });
+  } catch {
+    rRefus = null;
+  }
+  verifier(
+    'une boutique qui ne fait que livrer refuse le retrait',
+    rRefus?.status === 409,
+    `HTTP ${rRefus?.status}`,
+  );
 } finally {
   /**
    * `--garder` laisse la boutique de banc en place.
