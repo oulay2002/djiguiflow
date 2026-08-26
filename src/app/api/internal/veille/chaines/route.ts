@@ -1,4 +1,5 @@
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
+import { etatQuota } from '@/lib/billing/quota';
 import { VALEURS_LIVREE } from '@/lib/livraison';
 
 export const dynamic = 'force-dynamic';
@@ -68,7 +69,7 @@ export async function POST(req: Request) {
 
   // Le nom lisible de chaque boutique, pour que l'alerte nomme le marchand
   // plutot que de rendre un uuid que personne ne reconnait.
-  const { data: boutiques } = await sb.from('boutiques').select('id, slug, nom, essai');
+  const { data: boutiques } = await sb.from('boutiques').select('id, slug, nom, essai, user_id');
   const nomDe = new Map((boutiques ?? []).map((b) => [String(b.id), String(b.nom || b.slug || '?')]));
 
   // LES BOUTIQUES DE BANC NE SONT PAS DES PANNES. Depuis que le banc de chaine
@@ -222,6 +223,66 @@ export async function POST(req: Request) {
         .gt('created_at', fenetre)
         .limit(50),
     );
+
+    // ---- 6. LE FORFAIT EST DEPASSE, ET PERSONNE NE LE DIT.
+    //
+    // Le quota compte DEJA toutes les commandes, quel que soit le canal : la
+    // mesure n'a jamais ete asymetrique. Ce qui l'etait, c'est la reaction —
+    // l'assistante declinait, la vitrine laissait passer.
+    //
+    // La regle retenue est de LAISSER PASSER ET DE PREVENIR : on ne fait jamais
+    // perdre une vente a un marchand pour une question de facturation. Le
+    // depassement se regle entre lui et nous, pas au detriment de son client.
+    //
+    // Mais « laisser passer » sans rien dire, c'est un marchand qui decouvre
+    // son depassement sur sa facture. Il ne le voyait jusqu'ici que s'il
+    // ouvrait son tableau de bord — le compteur y est, personne ne le pousse.
+    //
+    // LE QUOTA EST CELUI DU COMPTE, PAS DE LA BOUTIQUE. Un compte peut en
+    // posseder plusieurs, et `etatQuota` additionne leurs commandes. On
+    // dedoublonne donc par `user_id` : sans cela, un marchand a deux enseignes
+    // recevrait deux fois la meme alerte pour un seul depassement.
+    //
+    // LA REFERENCE PORTE LE MOIS. La cle primaire de `anomalies_signalees`
+    // fait le reste : une fois par fenetre de facturation, puis silence. Le
+    // mois suivant ouvre une nouvelle reference, donc une nouvelle alerte —
+    // c'est bien un nouveau depassement.
+    const parCompte = new Map<string, { slug: string; nom: string }>();
+    for (const b of boutiques ?? []) {
+      if (b.essai === true) continue;
+      const compte = String(b.user_id ?? '').trim();
+      if (!compte) continue;
+      const connue = parCompte.get(compte);
+      const slug = String(b.slug ?? '');
+      // Le slug le plus petit, pour que la reference ne bouge pas quand la
+      // base rend les boutiques dans un autre ordre.
+      if (!connue || slug < connue.slug) {
+        parCompte.set(compte, { slug, nom: String(b.nom || slug || '?') });
+      }
+    }
+
+    for (const [compte, ident] of parCompte) {
+      // Une panne du quota ne doit pas emporter toute la veille : les cinq
+      // controles precedents valent d'etre rendus meme si celui-ci echoue.
+      let etat = null;
+      try {
+        etat = await etatQuota(compte);
+      } catch (e) {
+        console.error('Veille — quota illisible pour un compte :', e);
+        continue;
+      }
+
+      if (!etat || etat.exempt || !etat.bloque) continue;
+
+      trouvees.push({
+        type: 'forfait_depasse',
+        reference: `${ident.slug || compte}-${String(etat.fenetreDebut).slice(0, 7)}`,
+        boutique: ident.nom,
+        detail:
+          `${etat.utilise} commandes sur les ${etat.quota} du forfait ${etat.plan}`
+          + ' — les commandes continuent de passer, le depassement se regle avec lui',
+      });
+    }
   } catch (e) {
     const raison = e instanceof Error ? e.message : 'erreur inconnue';
     console.error('Veille des chaines —', raison);
