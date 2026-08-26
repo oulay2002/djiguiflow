@@ -25,6 +25,27 @@ const JOURS_SOMMEIL = 14;
 /** La fenetre de reference pour « vend en ce moment ». */
 const JOURS_ACTIVITE = 30;
 
+/**
+ * CE QU'UNE SESSION WHATSAPP OUVERTE COUTE, PAR MOIS.
+ *
+ * wasenderapi facture 6 USD par mois et par session active. Le compte est
+ * detenu par la plateforme, une session par marchand : ce montant sort donc de
+ * VOTRE poche, pas de celle du marchand.
+ *
+ * ON N'OUVRE RIEN AUTOMATIQUEMENT — le marchand doit ecrire pour recevoir son
+ * QR, et c'est un geste manuel. Le risque n'est donc PAS l'ouverture, c'est LA
+ * FERMETURE : une session ouverte pour quelqu'un qui n'a jamais vendu continue
+ * d'etre facturee, tous les mois, et rien ne le dit. Elle ne fait de bruit
+ * nulle part — ni alerte, ni journal, ni ecran.
+ *
+ * D'ou cette ligne : nommer ce qui coute sans rien produire.
+ *
+ * 600 F pour 1 USD. LE FCFA EST ARRIME A L'EURO, PAS AU DOLLAR : ce taux
+ * bouge, et il n'est ici qu'un ordre de grandeur destine a decider s'il faut
+ * fermer une session. Il ne sert a facturer personne.
+ */
+const COUT_SESSION_MOIS_FCFA = 3_600;
+
 type EtatMarchand = 'non branche' | 'branche sans vente' | 'vend' | 'en sommeil';
 
 export async function GET(req: Request) {
@@ -109,6 +130,8 @@ export async function GET(req: Request) {
       nom: b.nom,
       categorie: b.categorie,
       actif: b.actif !== false,
+      // Une session WhatsApp ouverte se facture, qu'elle serve ou non.
+      whatsappOuvert: Boolean(b.wasender_secret_id),
       articles: nbArticles,
       commandes: stats.commandes,
       commandesRecentes: stats.recentes,
@@ -136,9 +159,31 @@ export async function GET(req: Request) {
     .order('signale_le', { ascending: false })
     .limit(50);
 
+  /**
+   * LES SESSIONS QU'ON PAIE POUR RIEN.
+   *
+   * « Sans vente » se lit sur la fenetre d'activite : ni vente recente, ni
+   * vente du tout. Une boutique qui vendait et s'est arretee y figure aussi —
+   * c'est voulu : sa session coute exactement autant que celle d'un marchand
+   * qui n'a jamais commence.
+   *
+   * Ce n'est PAS une invitation a fermer. C'est une invitation a APPELER : un
+   * marchand en sommeil qu'on rappelle vaut mieux qu'une session fermee.
+   */
+  const sessionsOuvertes = marchands.filter((m) => m.whatsappOuvert);
+  const sessionsSansVente = sessionsOuvertes.filter((m) => m.commandesRecentes === 0);
+
   return Response.json({
     ok: true,
     marchands,
+    whatsapp: {
+      ouvertes: sessionsOuvertes.length,
+      sansVente: sessionsSansVente.length,
+      coutMensuelFcfa: sessionsOuvertes.length * COUT_SESSION_MOIS_FCFA,
+      gaspilleMensuelFcfa: sessionsSansVente.length * COUT_SESSION_MOIS_FCFA,
+      coutParSessionFcfa: COUT_SESSION_MOIS_FCFA,
+      noms: sessionsSansVente.map((m) => m.nom),
+    },
     // L'entonnoir, dans l'ordre ou un marchand le traverse : c'est la forme
     // qui dit ou l'on perd du monde.
     entonnoir: {
