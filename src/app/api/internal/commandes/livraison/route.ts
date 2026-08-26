@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import type { Database } from '@/lib/database.types';
 import { canoniserStatutLivraison, estLivree } from '@/lib/livraison';
+import { motifExact, referenceRecevable } from '@/lib/reference';
 
 export const dynamic = 'force-dynamic';
 
@@ -33,15 +34,18 @@ type Champs = Pick<
 >;
 
 /**
- * Neutralise les jokers d'un motif LIKE.
+ * LA ROUTE LA PLUS EXPOSEE PAR LES JOKERS, ET CELLE QUI ECRIT.
  *
- * `ilike` interprete % et _ : une reference valant « % » mettrait a jour
- * TOUTES les commandes de la plateforme, livrees comprises. La reference
- * arrive d'une feuille que l'agent remplit — elle n'est pas de confiance.
+ * `ilike` interprete % et _ : une reference valant « % » mettrait a jour TOUTES
+ * les commandes de la plateforme, livrees comprises. La reference arrive d'une
+ * feuille que l'agent remplit — elle n'est pas de confiance.
+ *
+ * CE QUE L'ANCIENNE VERSION LAISSAIT PASSER. Elle echappait `%` et `_` et
+ * ignorait `*`, alias du `%` chez PostgREST. Une seule requete portant
+ * `reference: "*"` basculait donc toutes les commandes de tous les marchands en
+ * « livree » — et `estLivree` forcait `statut` avec. La regle et sa liste
+ * blanche vivent maintenant dans `@/lib/reference`.
  */
-function motifExact(valeur: string): string {
-  return valeur.replace(/[\\%_]/g, (c) => `\\${c}`);
-}
 
 const CHAMPS: (keyof Champs)[] = [
   'statut_livraison',
@@ -67,6 +71,13 @@ export async function POST(req: Request) {
   const reference = String(corps.reference ?? corps.order_id ?? '').trim();
   if (!reference) {
     return NextResponse.json({ error: 'reference requise' }, { status: 400 });
+  }
+
+  // CETTE ROUTE ECRIT. Un motif au lieu d'une reference y touchait plusieurs
+  // lignes d'un coup ; on refuse donc la forme avant d'approcher la base.
+  if (!referenceRecevable(reference)) {
+    console.error(`Livraison — reference de forme invalide refusee : ${reference}`);
+    return NextResponse.json({ error: 'reference invalide' }, { status: 400 });
   }
 
   // Une chaine vide vaut « pas de changement » : la feuille en envoie pour les

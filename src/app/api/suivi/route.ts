@@ -7,6 +7,7 @@ import {
   verdictTelephone,
 } from '@/lib/jetonSuivi';
 import { adresseAppelante, plafondJournalierDepasse, rafaleDepassee } from '@/lib/limiteur';
+import { motifExact, referenceRecevable } from '@/lib/reference';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import { resoudreMarchand } from '@/lib/marchands';
 
@@ -42,10 +43,13 @@ type LigneItem = { nom_produit: string | null; quantite: number | null; prix_uni
  * dernier caractere et terminee par « _ » rendait la commande complete d'un
  * client — son nom et son adresse de livraison — sur une route publique et sans
  * authentification. Un « % » bien place aurait balaye le reste.
+ *
+ * LA REGLE A QUITTE CE FICHIER. Elle etait recopiee dans QUATRE routes, et les
+ * quatre oubliaient `*` — que PostgREST traite comme un alias du `%`, et
+ * substitue avant que Postgres ne voie l'echappement. Elle vit desormais dans
+ * `@/lib/reference`, avec ses tests, et s'accompagne d'une liste blanche :
+ * echapper ne protege que des jokers qu'on connait deja.
  */
-function motifExact(valeur: string): string {
-  return valeur.replace(/[\\%_]/g, (c) => `\\${c}`);
-}
 
 /**
  * LE FREIN CONTRE L'ENUMERATION.
@@ -82,6 +86,13 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const ref = (searchParams.get('ref') || '').trim();
   if (!ref) return Response.json({ error: 'Référence requise' }, { status: 400 });
+
+  // UNE REFERENCE QUI N'EN EST PAS UNE SE REFUSE AVANT TOUTE LECTURE, et avec
+  // le MEME message que « introuvable » : distinguer les deux renseignerait un
+  // curieux sur ce qui a la bonne forme.
+  if (!referenceRecevable(ref)) {
+    return Response.json({ error: 'Commande introuvable' }, { status: 404 });
+  }
 
   const sb = getSupabaseAdmin();
   if (!sb) return Response.json({ error: 'Suivi temporairement indisponible' }, { status: 503 });

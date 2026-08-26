@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { getMarchand } from '@/lib/marchands';
 import { SITE_LOCALE, SITE_NOM, SITE_URL } from '@/lib/site';
+import { jsonLdSur } from '@/lib/jsonLd';
 
 type Props = {
   children: React.ReactNode;
@@ -151,7 +152,7 @@ export default async function BoutiqueLayout({ children, params }: Props) {
       {donneesStructurees && (
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(donneesStructurees) }}
+          dangerouslySetInnerHTML={{ __html: jsonLdSur(donneesStructurees) }}
         />
       )}
       {children}

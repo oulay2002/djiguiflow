@@ -125,7 +125,18 @@ export async function provisionnerMarchand(d: DemandeProvisioning): Promise<Resu
   const sb = getSupabaseAdmin();
   if (!sb) throw new ErreurProvisioning('Configuration Supabase absente.', 500);
 
-  const slug = await slugDisponible(sb, d.slug?.trim() || genererSlug(nom));
+  /**
+   * UN SLUG FOURNI PASSE PAR LA MEME REDUCTION QU'UN SLUG DEDUIT.
+   *
+   * `genererSlug` ramene la valeur a `[a-z0-9-]` ; il n'etait applique qu'au
+   * repli, et un slug explicite entrait tel quel. Or il ressort ensuite dans
+   * l'URL et l'`@id` du balisage schema.org de la vitrine, et dans les chemins
+   * de la page — un slug portant `<` ou `"` n'a rien a y faire.
+   *
+   * `jsonLdSur` echappe deja la sortie : c'est le second rideau. Celui-ci est
+   * le premier, et il vaut mieux ne pas stocker ce qu'on devra echapper.
+   */
+  const slug = await slugDisponible(sb, genererSlug(d.slug?.trim() || nom));
   if (!slug) throw new ErreurProvisioning('Nom de boutique inexploitable comme slug.', 400);
 
   const parDefaut = nomsOngletsParDefaut(slug);

@@ -6,6 +6,7 @@ import {
 } from '@/lib/jetonSuivi';
 import { adresseAppelante, rafaleDepassee } from '@/lib/limiteur';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
+import { motifExact, referenceRecevable } from '@/lib/reference';
 import { positionRecevable } from '@/lib/positionRecevable';
 import { secretWebhookN8n } from '@/lib/secretN8n';
 import { DELAI_WEBHOOK, delai } from '@/lib/reseau';
@@ -200,9 +201,20 @@ function echapper(valeur: unknown): string {
  *
  * La reference passe par un attribut `data-`, echappe comme le reste de la
  * page, et non par une interpolation dans le script : rien de ce qui vient du
- * client ne doit devenir du code.
+ * client ne doit devenir du code. LE JETON SUIT LE MEME CHEMIN.
+ *
+ * ── POURQUOI LE JETON EST ICI ─────────────────────────────────────────────
+ *
+ * La route qui recoit ce clic n'exigeait aucune preuve : la reference lui
+ * tenait lieu de cle, alors que les boutons « Je confirme » et « J'annule » de
+ * cette meme page exigent le jeton depuis le 22 aout. Un tiers ecrasait donc la
+ * position GPS d'une commande dont il avait devine — ou obtenu par prefixe — la
+ * reference, et le livreur partait a l'adresse de son choix.
+ *
+ * Les deux appelants de cette fonction tiennent deja le jeton : il n'y avait
+ * rien a aller chercher, seulement a le transmettre.
  */
-function blocPosition(reference: string, dejaDonnee = false): string {
+function blocPosition(reference: string, jeton: string, dejaDonnee = false): string {
   const libelle = dejaDonnee ? 'Corriger ma position' : 'Indiquer ma position exacte';
   const aide = dejaDonnee
     ? 'Vous avez déjà indiqué un point. Vous pouvez le corriger si vous avez changé d’endroit.'
@@ -211,23 +223,35 @@ function blocPosition(reference: string, dejaDonnee = false): string {
     `background:${ENCRE.nuit};color:#fff;border:0;border-radius:0;padding:14px 20px;`
     + 'font-size:15px;font-weight:600;cursor:pointer;width:100%';
   return (
-    `<div id="pos" data-ref="${echapper(reference)}" style="margin-top:24px">`
+    `<div id="pos" data-ref="${echapper(reference)}" data-jeton="${echapper(jeton)}" style="margin-top:24px">`
     + `<button id="btn-pos" style="${style}">${libelle}</button>`
     + `<p style="font-size:13px;color:${ENCRE.gris};margin:10px 0 0">`
     + `${aide}</p></div>`
+    /* `ENCRE` N'EXISTE QUE COTE SERVEUR, ET CE SCRIPT PART AU NAVIGATEUR.
+       Les couleurs etaient ecrites `ENCRE.mangue` a l'interieur de chaines
+       SIMPLES — donc non interpolees, expediees telles quelles. Dans le
+       navigateur, `ENCRE` est indefini : chaque appel a `dire()` levait un
+       ReferenceError, et le `catch` levait a son tour. La position etait bien
+       enregistree, mais le client ne voyait JAMAIS « Merci » — exactement le
+       « bouton qui echoue » que `positionRecevable.ts` existe pour eviter.
+       Les valeurs sont donc interpolees, comme partout ailleurs dans ce
+       fichier. */
     + '<script>(function(){'
+    + `var OK=${JSON.stringify(ENCRE.feuille)},KO=${JSON.stringify(ENCRE.mangue)};`
     + "var z=document.getElementById('pos'),b=document.getElementById('btn-pos');"
     + "function dire(t,c){z.innerHTML='<p style=\"margin:24px 0 0;font-size:14px;color:'+c+'\">'+t+'</p>';}"
     + 'b.onclick=function(){'
-    + "if(!navigator.geolocation){dire('Votre téléphone ne partage pas sa position.',ENCRE.mangue);return;}"
+    + "if(!navigator.geolocation){dire('Votre téléphone ne partage pas sa position.',KO);return;}"
     + "b.disabled=true;b.textContent='Localisation…';"
     + 'navigator.geolocation.getCurrentPosition(function(p){'
     + "fetch('/api/confirmation/position',{method:'POST',headers:{'Content-Type':'application/json'},"
-    + "body:JSON.stringify({ref:z.getAttribute('data-ref'),latitude:p.coords.latitude,longitude:p.coords.longitude})})"
+    // Le jeton accompagne la reference : sans lui, la route refuse desormais.
+    + "body:JSON.stringify({ref:z.getAttribute('data-ref'),t:z.getAttribute('data-jeton'),"
+    + 'latitude:p.coords.latitude,longitude:p.coords.longitude})})'
     + '.then(function(r){return r.json();}).then(function(j){'
-    + "dire(j&&j.ok?'✅ Merci, votre position est enregistrée.':'⚠️ Position non enregistrée.',j&&j.ok?ENCRE.feuille:ENCRE.mangue);})"
-    + "['catch'](function(){dire('⚠️ Position non enregistrée.',ENCRE.mangue);});"
-    + "},function(){dire('Position refusée. Vous pouvez l’autoriser dans les réglages de votre navigateur.',ENCRE.mangue);},"
+    + "dire(j&&j.ok?'✅ Merci, votre position est enregistrée.':'⚠️ Position non enregistrée.',j&&j.ok?OK:KO);})"
+    + "['catch'](function(){dire('⚠️ Position non enregistrée.',KO);});"
+    + "},function(){dire('Position refusée. Vous pouvez l’autoriser dans les réglages de votre navigateur.',KO);},"
     + '{enableHighAccuracy:true,timeout:10000});};})();</script>'
   );
 }
@@ -262,10 +286,13 @@ function blocSuivi(reference: string): string {
  * La reference vient de la query string : « ? ref=% » ferait correspondre la
  * premiere commande venue, et permettrait de confirmer ou d'annuler celle d'un
  * autre client.
+ *
+ * LA REGLE A QUITTE CE FICHIER. Elle etait recopiee ici, dans `/api/suivi`,
+ * dans `/api/confirmation/position` et dans `/api/internal/commandes/livraison`
+ * — et les QUATRE copies oubliaient `*`, alias du `%` chez PostgREST. Voir
+ * `@/lib/reference`, qui y ajoute une liste blanche : echapper ne protege que
+ * des jokers deja connus.
  */
-function motifExact(valeur: string): string {
-  return valeur.replace(/[\\%_]/g, (c) => `\\${c}`);
-}
 
 function reponseHtml(
   tampon: string,
@@ -389,7 +416,7 @@ function dejaRepondu(ligne: Ligne): Response | null {
    */
   const extra =
     (confirmee && positionRecevable(ligne)
-      ? blocPosition(ligne.reference, ligne.latitude !== null)
+      ? blocPosition(ligne.reference, ligne.jeton_suivi ?? '', ligne.latitude !== null)
       : '')
     + (confirmee ? blocSuivi(ligne.reference) : '');
 
@@ -416,7 +443,11 @@ export async function GET(req: Request) {
 
   const { searchParams } = new URL(req.url);
   const ref = (searchParams.get('ref') || '').trim();
-  if (!ref) return reponseHtml('LIEN INVALIDE', 'refus', 'Lien invalide', 'Ce lien de confirmation est incomplet.', 400);
+  // Une reference qui n'a pas la forme d'une reference est un MOTIF : refusee
+  // avant toute lecture, et avec le meme ecran qu'un lien tronque.
+  if (!ref || !referenceRecevable(ref)) {
+    return reponseHtml('LIEN INVALIDE', 'refus', 'Lien invalide', 'Ce lien de confirmation est incomplet.', 400);
+  }
 
   const { sb, ligne } = await chargerCommande(ref);
   if (!sb) return reponseHtml('INDISPONIBLE', 'attente', 'Service indisponible', 'Réessayez dans quelques secondes.', 503);
@@ -473,7 +504,7 @@ export async function POST(req: Request) {
     jetonFourni = String(form?.get('t') ?? '').trim();
   }
 
-  if (!ref || (r !== 'oui' && r !== 'non')) {
+  if (!ref || !referenceRecevable(ref) || (r !== 'oui' && r !== 'non')) {
     return reponseHtml('LIEN INVALIDE', 'refus', 'Lien invalide', 'Ce lien de confirmation est incomplet.', 400);
   }
 
@@ -589,7 +620,7 @@ export async function POST(req: Request) {
         'Commande confirmée',
         'Le commerçant prépare votre commande.',
         200,
-        blocPosition(ligne.reference) + blocSuivi(ligne.reference),
+        blocPosition(ligne.reference, ligne.jeton_suivi ?? '') + blocSuivi(ligne.reference),
       )
     : reponseHtml('ANNULÉE', 'refus', 'Commande annulée', 'Le commerçant a été prévenu. Aucune somme ne sera due.');
 }

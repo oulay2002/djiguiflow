@@ -9,6 +9,7 @@ import {
   SITE_TITRE,
   SITE_URL,
 } from "@/lib/site";
+import { jsonLdSur } from '@/lib/jsonLd';
 
 const bricolage = Bricolage_Grotesque({
   variable: "--font-bricolage",
@@ -153,7 +154,7 @@ export default function RootLayout({
         </a>
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(donneesStructurees) }}
+          dangerouslySetInnerHTML={{ __html: jsonLdSur(donneesStructurees) }}
         />
         <EnregistrementServiceWorker />
         {children}
