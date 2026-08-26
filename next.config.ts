@@ -33,8 +33,13 @@ const csp = [
   "style-src 'self' 'unsafe-inline'",
   `img-src 'self' data: blob: ${origineSupabase}`.trim(),
   "font-src 'self' data:",
-  `connect-src 'self' ${origineSupabase} ${origineSupabaseWs} https://api.stripe.com`.trim(),
-  "frame-src 'self' https://js.stripe.com https://hooks.stripe.com",
+  // STRIPE A ETE RETIRE DE CES DEUX DIRECTIVES. Il ne subsiste qu'une route
+  // de webhook heritee, jamais appelee depuis le navigateur : verifie en
+  // listant tous les domaines externes du code cote client, ou ne figurent que
+  // notre propre origine et Supabase. Une autorisation qui ne sert plus est
+  // une porte qu'on laisse ouverte pour personne.
+  `connect-src 'self' ${origineSupabase} ${origineSupabaseWs}`.trim(),
+  "frame-src 'self'",
   "form-action 'self'",
   // Le service worker est un script, mais il ne releve pas de `script-src` :
   // sans `worker-src`, la CSP le refuse une fois passee en mode bloquant.
@@ -46,10 +51,32 @@ const csp = [
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "object-src 'none'",
+  // OU LES VIOLATIONS SONT COLLECTEES.
+  //
+  // Elles n'allaient NULLE PART. La politique etait posee en `Report-Only`
+  // avec l'intention ecrite de « collecter les violations reelles avant de
+  // basculer » — mais sans `report-uri` ni `report-to`, elles partaient dans
+  // la console de chaque visiteur, que personne ne lit.
+  //
+  // Une politique en mode rapport sans destinataire ne bloque rien ET
+  // n'apprend rien : un interrupteur eteint avec un commentaire dessus. Elle
+  // ne pouvait donc jamais etre basculee sur preuve.
+  //
+  // Les deux directives coexistent a dessein : `report-uri` est obsolete mais
+  // reste la seule comprise par une partie des navigateurs, `report-to` est la
+  // moderne. En omettre une, c'est perdre les rapports d'un parc entier.
+  'report-uri /api/securite/csp',
+  "report-to csp",
 ].join('; ');
 
 const enTetesSecurite = [
   { key: 'Content-Security-Policy-Report-Only', value: csp },
+  // Declare le groupe que `report-to` designe plus haut. Sans lui, la
+  // directive moderne ne pointe vers rien.
+  {
+    key: 'Reporting-Endpoints',
+    value: 'csp="/api/securite/csp"',
+  },
   { key: 'X-Frame-Options', value: 'DENY' },
   // Empeche le navigateur de « deviner » un type MIME : un fichier televerse
   // par un marchand ne doit pas pouvoir etre reinterprete en HTML executable.
