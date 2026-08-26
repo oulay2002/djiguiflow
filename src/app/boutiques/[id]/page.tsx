@@ -6,6 +6,12 @@ import Link from 'next/link';
 import { MapPin, Minus, Plus, ShoppingBag } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { normaliserTelephone, formaterTelephone } from '@/lib/telephone';
+import {
+  mentionFrais,
+  modesProposes,
+  modeParDefaut,
+  type ModeCommande,
+} from '@/lib/retrait';
 import { LienRetour, classesBouton } from '@/components/ui/Bouton';
 import { EMOJI_DEFAUT, Enseigne, initiale } from '@/components/ui/Enseigne';
 
@@ -103,6 +109,26 @@ type FicheRow = {
   zones_livrees: string | null;
   paiements_acceptes: string[] | null;
   commande_minimum: number | null;
+  mode_recuperation: string | null;
+  delai_preparation_min: number | null;
+  livraison_offerte_des: number | null;
+};
+
+/**
+ * La part publique de la fiche, telle que la rend `/api/boutiques/[id]`.
+ *
+ * Les memes colonnes que `vitrine_boutique` accorde deja a `anon` : rien de
+ * neuf n'est expose, on cesse seulement de le perdre en route.
+ */
+type FicheVitrine = {
+  zone: string | null;
+  delai_livraison: string | null;
+  zones_livrees: string | null;
+  paiements_acceptes: string[] | null;
+  commande_minimum: number | null;
+  mode_recuperation: string | null;
+  delai_preparation_min: number | null;
+  livraison_offerte_des: number | null;
 };
 
 type ProduitRow = {
@@ -316,6 +342,36 @@ export default function Page() {
     minimum: number | null;
   }>({ delai: '', zones: '', paiements: [], minimum: null });
 
+  /**
+   * COMMENT LE CLIENT RECUPERE SA COMMANDE.
+   *
+   * `mode` est ce que la BOUTIQUE propose ; `modeChoisi` est ce que le CLIENT a
+   * retenu. Les deux existent parce qu'ils repondent a deux questions
+   * differentes : « les_deux » ne peut pas s'ecrire sur une commande, et une
+   * commande ne peut pas decider a la place de la boutique.
+   *
+   * Les valeurs de depart sont celles de toutes les boutiques en service :
+   * livraison, aucun temps de preparation, aucune gratuite. Une fiche illisible
+   * laisse donc la page exactement comme elle etait avant ce travail.
+   */
+  const [recuperation, setRecuperation] = useState<{
+    mode: string;
+    preparationMin: number | null;
+    offerteDes: number | null;
+  }>({ mode: 'livraison', preparationMin: null, offerteDes: null });
+
+  const [modeChoisi, setModeChoisi] = useState<ModeCommande>('livraison');
+
+  /**
+   * L'heure demandee, en « HH:MM », ou vide pour « des que pret ».
+   *
+   * ON N'ENVOIE QU'UN TEXTE, ET C'EST LE SERVEUR QUI DATE. Le navigateur d'un
+   * client qui commande depuis Paris pour sa famille a Abidjan est a un autre
+   * fuseau : le laisser fabriquer l'instant ferait arriver la commande deux
+   * heures trop tot, sans que rien ne le signale.
+   */
+  const [heureRetrait, setHeureRetrait] = useState('');
+
   useEffect(() => {
     if (!slug) return;
     let annule = false;
@@ -338,6 +394,37 @@ export default function Page() {
           });
           setOuvert(m.ouvert !== false);
           setMessageHoraire(String(m.messageHoraire ?? ''));
+
+          /**
+           * CE QUE LE MARCHAND AVAIT RENSEIGNE, ET QUE PERSONNE NE VOYAIT.
+           *
+           * Cette voie repond pour TOUTE boutique ayant un slug — donc toutes.
+           * La voie Supabase ci-dessous, seule a remplir `infos`, n'est jamais
+           * atteinte en service : le bloc « Ce que le client doit savoir »
+           * etait mort pour tout le monde. Chez Zahara avait « 30 » et
+           * « Abidjan » en base, et sa vitrine n'en montrait rien.
+           */
+          const f = m.fiche as FicheVitrine | null | undefined;
+          if (f) {
+            setZone(String(f.zone ?? ''));
+            setInfos({
+              delai: String(f.delai_livraison ?? '').trim(),
+              zones: String(f.zones_livrees ?? '').trim(),
+              paiements: Array.isArray(f.paiements_acceptes)
+                ? f.paiements_acceptes.map(v => String(v ?? '').trim()).filter(Boolean)
+                : [],
+              minimum: typeof f.commande_minimum === 'number' ? f.commande_minimum : null,
+            });
+            setRecuperation({
+              mode: String(f.mode_recuperation ?? 'livraison'),
+              preparationMin:
+                typeof f.delai_preparation_min === 'number' ? f.delai_preparation_min : null,
+              // Zero garde sa valeur : c'est « toujours offerte », pas un trou.
+              offerteDes:
+                typeof f.livraison_offerte_des === 'number' ? f.livraison_offerte_des : null,
+            });
+            setModeChoisi(modeParDefaut(f.mode_recuperation));
+          }
 
           const rm = await fetch(`/api/boutiques/${slug}/menu`);
           const d = rm.ok ? await rm.json() : [];
@@ -394,6 +481,19 @@ export default function Page() {
               ? b.commande_minimum
               : null,
         });
+
+        // `livraison_offerte_des` GARDE SON ZERO. Un `|| null` l'aurait
+        // transforme en « le livreur annonce ses frais » — l'exact contraire de
+        // « toujours offerte », et le client aurait paye une course que le
+        // marchand croyait offrir.
+        setRecuperation({
+          mode: String(b.mode_recuperation ?? 'livraison'),
+          preparationMin:
+            typeof b.delai_preparation_min === 'number' ? b.delai_preparation_min : null,
+          offerteDes:
+            typeof b.livraison_offerte_des === 'number' ? b.livraison_offerte_des : null,
+        });
+        setModeChoisi(modeParDefaut(b.mode_recuperation));
 
         setProduits(catalogue.map((p) => ({
           id: String(p.id),
@@ -609,6 +709,21 @@ export default function Page() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             nom, tel, adresse, instructions,
+            /**
+             * LE CHOIX PART AVEC LA COMMANDE, ET LE SERVEUR TRANCHE.
+             *
+             * `mode_recuperation` decide de tout ce qui suit : adresse ou non,
+             * frais ou non, livreur alerte ou non. Le laisser au navigateur
+             * serait le laisser a un onglet reste ouvert apres que le marchand
+             * a change d'avis — la route revalide contre la fiche.
+             *
+             * `heure_retrait` n'est qu'un « HH:MM » : c'est le SERVEUR qui le
+             * date, en heure d'Abidjan. Un client qui commande depuis un autre
+             * fuseau pour sa famille ne doit pas voir son horloge decider.
+             * Vide veut dire « des que pret », et vaudra `null`.
+             */
+            mode_recuperation: modeChoisi,
+            heure_retrait: modeChoisi === 'retrait' ? heureRetrait : '',
             // Le choix du client part avec la ligne : sans lui, le marchand
             // recevrait « chaussure luminous » et devrait rappeler pour
             // demander la pointure — ce que ce travail existe pour eviter.
@@ -623,6 +738,9 @@ export default function Page() {
           setConfirmation(d.order_id);
           setJetonSuivi(String(d.jeton_suivi ?? ''));
           setPanier({}); setNom(''); setTel(''); setAdresse(''); setInstructions('');
+          // L'heure demandee appartenait a la commande qui vient de partir :
+          // la garder ferait proposer la meme a la suivante, sans un mot.
+          setHeureRetrait('');
           /**
            * LE CLIENT DOIT VOIR LE VERDICT.
            *
@@ -661,7 +779,14 @@ export default function Page() {
         .map(l => `- ${l.q}x ${l.prod.nom}${l.variante ? ` — ${l.variante}` : ''}`
           + ` (${fcfa(l.q * l.prod.prix)} FCFA)`)
         .join('\n');
-      const msg = `Bonjour ${header.nom}, je souhaite commander :\n${lignesTexte}\nTotal : ${fcfa(total)} FCFA\nNom : ${nom}\nAdresse : ${adresse}${instructions ? `\nInstructions : ${instructions}` : ''}`;
+      // LE MODE DOIT FIGURER DANS CE TEXTE, pour la meme raison que le choix
+      // de taille : ce message EST la commande, le marchand n'a rien d'autre.
+      // « Adresse : » suivi du vide, chez un client qui vient chercher, se lit
+      // comme une adresse oubliee — et le marchand rappelle pour rien.
+      const recup = modeChoisi === 'retrait'
+        ? `À emporter${heureRetrait ? ` — retrait vers ${heureRetrait}` : ' — dès que prêt'}`
+        : `Adresse : ${adresse}`;
+      const msg = `Bonjour ${header.nom}, je souhaite commander :\n${lignesTexte}\nTotal : ${fcfa(total)} FCFA\nNom : ${nom}\n${recup}${instructions ? `\nInstructions : ${instructions}` : ''}`;
       const digits = telBoutique.replace(/\D/g, '');
 
       /**
@@ -1409,11 +1534,55 @@ export default function Page() {
                       reglent en plus -- l ecran de suivi le montre bien, la
                       vitrine se taisait. Le client decouvrait le surcout a sa
                       porte. NULL ne veut pas dire gratuit : on ne promet donc
-                      pas un montant, on annonce qu il y en aura un. */}
+                      pas un montant, on annonce qu il y en aura un.
+
+                      La phrase depend maintenant du mode ET du total : elle
+                      etait FAUSSE chez un marchand qui offre la livraison, et
+                      sans objet en retrait. La regle vit dans `@/lib/retrait`,
+                      avec celle qu'applique le serveur : le client ne doit pas
+                      lire ici autre chose que ce qu'il paiera la-bas. */}
                   <p className="mt-2 text-xs text-chaux-600">
-                    Les frais de livraison sont annoncés par le livreur et se règlent
-                    en plus, à la réception.
+                    {mentionFrais({
+                      mode: modeChoisi,
+                      offerteDes: recuperation.offerteDes,
+                      total,
+                    })}
                   </p>
+
+                  {/* LE CHOIX N'APPARAIT QUE S'IL Y EN A UN.
+                      Un selecteur a une seule option est un bruit qui fait
+                      douter : une boutique qui ne fait que livrer doit
+                      ressembler exactement a ce qu'elle etait avant. */}
+                  {modesProposes(recuperation.mode).length > 1 && (
+                    <div className="mt-4 grid grid-cols-2 gap-2">
+                      {([
+                        { valeur: 'livraison', titre: 'Livraison', detail: 'On vous l’apporte.' },
+                        { valeur: 'retrait', titre: 'Retrait', detail: 'Vous venez chercher.' },
+                      ] as const).map((choix) => {
+                        const actif = modeChoisi === choix.valeur;
+                        return (
+                          <button
+                            key={choix.valeur}
+                            type="button"
+                            aria-pressed={actif}
+                            onClick={() => setModeChoisi(choix.valeur)}
+                            className={`border p-3 text-left transition ${
+                              actif
+                                ? 'border-nuit-900 bg-nuit-900 text-chaux-50'
+                                : 'border-[var(--hairline)] bg-white text-nuit-800 hover:border-nuit-400'
+                            }`}
+                          >
+                            <span className="block text-sm font-semibold">{choix.titre}</span>
+                            <span
+                              className={`mt-0.5 block text-xs ${actif ? 'text-chaux-200' : 'text-chaux-600'}`}
+                            >
+                              {choix.detail}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
 
                   <div className="mt-5 space-y-3">
                     <input
@@ -1444,12 +1613,55 @@ export default function Page() {
                         </p>
                       )}
                     </div>
-                    <input
-                      className="w-full border border-[var(--hairline)] bg-white px-3 py-2.5 text-sm outline-none transition focus:border-nuit-400"
-                      placeholder="Adresse de livraison"
-                      value={adresse}
-                      onChange={e => setAdresse(e.target.value)}
-                    />
+                    {/* L'ADRESSE DISPARAIT EN RETRAIT, ET C'EST TOUT L'ENJEU.
+                        Elle etait OBLIGATOIRE : sans elle le bouton restait
+                        gris. Un client qui vient chercher sa commande n'a
+                        aucune adresse a donner — il aurait invente n'importe
+                        quoi, ou serait parti. */}
+                    {modeChoisi === 'livraison' && (
+                      <input
+                        className="w-full border border-[var(--hairline)] bg-white px-3 py-2.5 text-sm outline-none transition focus:border-nuit-400"
+                        placeholder="Adresse de livraison"
+                        value={adresse}
+                        onChange={e => setAdresse(e.target.value)}
+                      />
+                    )}
+
+                    {modeChoisi === 'retrait' && (
+                      <div>
+                        <label
+                          htmlFor="heure-retrait"
+                          className="mb-1 block text-xs font-semibold text-nuit-800"
+                        >
+                          Heure de retrait souhaitée
+                        </label>
+                        <input
+                          id="heure-retrait"
+                          type="time"
+                          className="w-full border border-[var(--hairline)] bg-white px-3 py-2.5 text-sm outline-none transition focus:border-nuit-400"
+                          value={heureRetrait}
+                          onChange={e => setHeureRetrait(e.target.value)}
+                        />
+                        {/* VIDE VEUT DIRE « DES QUE PRET », et on le dit :
+                            un champ facultatif qu'on ne presente pas comme tel
+                            se remplit au hasard.
+
+                            ON N'AFFICHE PAS ICI LA PREMIERE HEURE POSSIBLE.
+                            La calculer demanderait de lire l'horloge PENDANT
+                            le rendu, et une heure figee au chargement se
+                            perimerait pendant que le client compose son
+                            panier — elle finirait par mentir. Le serveur, lui,
+                            la calcule a la seconde ou il refuse, et la nomme
+                            dans son message. */}
+                        <p className="mt-1 text-xs text-chaux-600">
+                          Laissez vide pour « dès que c’est prêt ».
+                          {recuperation.preparationMin
+                            ? ` Comptez environ ${recuperation.preparationMin} minutes de préparation.`
+                            : ''}
+                        </p>
+                      </div>
+                    )}
+
                     <input
                       className="w-full border border-[var(--hairline)] bg-white px-3 py-2.5 text-sm outline-none transition focus:border-nuit-400"
                       placeholder="Instructions (facultatif)"
@@ -1463,7 +1675,7 @@ export default function Page() {
                       // serveur qui refuse pour de bon. Un onglet reste ouvert
                       // toute la nuit, et un client ne doit pas decouvrir la
                       // fermeture apres avoir tout saisi.
-                      disabled={envoi || !ouvert || !nom || !telOk || !adresse}
+                      disabled={envoi || !ouvert || !nom || !telOk || (modeChoisi === 'livraison' && !adresse)}
                       className={`${classesBouton('action', 'md', 'carree')} w-full`}
                     >
                       {envoi
@@ -1481,10 +1693,18 @@ export default function Page() {
                         passe pour une panne ». Seul le telephone avait son
                         message ; un client qui oubliait l'adresse voyait un
                         bouton mort et rien d'autre. */}
-                    {ouvert && !envoi && (!nom || !telOk || !adresse) && (
+                    {ouvert && !envoi
+                      && (!nom || !telOk || (modeChoisi === 'livraison' && !adresse)) && (
                       <p className="mt-2 text-xs text-chaux-600">
                         Il manque&nbsp;:{' '}
-                        {[!nom && 'votre nom', !telOk && 'votre numéro', !adresse && 'votre adresse']
+                        {[
+                          !nom && 'votre nom',
+                          !telOk && 'votre numéro',
+                          // En retrait, l'adresse n'est ni demandee ni
+                          // reclamee : la nommer ici renverrait le client
+                          // chercher un champ qui n'existe pas a l'ecran.
+                          modeChoisi === 'livraison' && !adresse && 'votre adresse',
+                        ]
                           .filter(Boolean)
                           .join(', ')}
                         .
