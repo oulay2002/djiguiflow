@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { boutiqueLivre } from '@/lib/boutiquePrete';
 import { envoyerMessage, interrogerTelegram, normaliserTelephoneCI } from '@/lib/canaux';
 import {
   plafondJournalierDepasse,
@@ -430,7 +431,26 @@ export async function POST(req: Request) {
   // AUCUN MESSAGE N'EST ENVOYE ICI. `getChat` et `getChatMember` disent tout
   // ce dont on a besoin, et ne derangent personne.
   const groupe = String(boutique.groupe_livreurs ?? '').trim();
-  if (!jetonDuMarchand) {
+  if (!boutiqueLivre(boutique.mode_recuperation)) {
+    /**
+     * UNE BOUTIQUE DE RETRAIT N'A PAS DE LIVREUR, ET N'EN AURA PAS.
+     *
+     * Sans ce cas, le seul controle qu'elle ne peut PAS satisfaire la laissait
+     * « pas prête » a jamais : le bandeau rouge, l'onboarding inacheve, et un
+     * marchand renvoye a l'etape 4 pour remplir un champ qui n'a aucun sens
+     * chez lui. Le controle reste present et vaut `ok` -- l'omettre ferait
+     * tomber `pret`, qui exige que chaque bloquant reponde.
+     */
+    controles.push(
+      controle(
+        'groupe',
+        0,
+        'ok',
+        'Vos clients viennent chercher leurs commandes : aucun groupe de livreurs'
+          + " n'est nécessaire.",
+      ),
+    );
+  } else if (!jetonDuMarchand) {
     controles.push(
       controle(
         'groupe',

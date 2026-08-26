@@ -21,7 +21,26 @@ export type EtatBranchement = {
   telegramSecretId?: string | null;
   /** Groupe Telegram des livreurs. */
   groupeLivreurs?: string | null;
+  /** `livraison` | `retrait` | `les_deux`. Decide si un livreur est exige. */
+  modeRecuperation?: string | null;
 };
+
+/**
+ * CETTE BOUTIQUE LIVRE-T-ELLE ?
+ *
+ * Le retrait a ouvert la plateforme a un commerce qui en etait EXCLU : un
+ * maquis qui ne fait que de l'a-emporter ne pouvait pas vendre, faute d'un
+ * groupe de livreurs qu'il n'aurait jamais rempli.
+ *
+ * TOUT CE QUI N'EST PAS EXPRESSEMENT « retrait » LIVRE. La colonne vaut
+ * 'livraison' par defaut et une contrainte en ferme les valeurs, mais si une
+ * valeur inconnue passait un jour, elle ne doit pas SUPPRIMER une exigence :
+ * une faute de frappe en base ouvrirait alors la vente a des commandes que
+ * personne ne peut porter. L'inconnu retombe donc du cote strict.
+ */
+export function boutiqueLivre(mode: unknown): boolean {
+  return String(mode ?? '').trim() !== 'retrait';
+}
 
 export type VerdictBranchement =
   | { peutVendre: true }
@@ -49,6 +68,12 @@ export function estBoutiqueDeBanc(etat: EtatBranchement): boolean {
  * CLIENT, un groupe pour lancer un LIVREUR. Ce sont exactement les `BLOQUANTS`
  * du diagnostic.
  *
+ * LE GROUPE N'EST EXIGE QUE DE QUI LIVRE. C'est la seule condition qu'une
+ * boutique de retrait ne peut pas remplir : elle n'a pas de livreur, elle n'en
+ * aura pas, et la lui reclamer revenait a lui interdire de vendre. Le canal
+ * client, lui, reste exige de tous — meme en retrait, il faut pouvoir dire au
+ * client que sa commande est prete.
+ *
  * PAS LE CATALOGUE. Une boutique sans article est deja invisible ; l'ecarter
  * ici la ferait disparaitre pendant qu'elle remplit sa vitrine.
  */
@@ -59,7 +84,9 @@ export function boutiquePeutVendre(etat: EtatBranchement): VerdictBranchement {
   if (!rempli(etat.wasenderSecretId) && !rempli(etat.telegramSecretId)) {
     manque.push('canal_client');
   }
-  if (!rempli(etat.groupeLivreurs)) manque.push('groupe_livreurs');
+  if (boutiqueLivre(etat.modeRecuperation) && !rempli(etat.groupeLivreurs)) {
+    manque.push('groupe_livreurs');
+  }
 
   return manque.length ? { peutVendre: false, manque } : { peutVendre: true };
 }

@@ -1,4 +1,5 @@
 import { exigerAdmin } from '@/lib/adminAuth';
+import { boutiqueLivre } from '@/lib/boutiquePrete';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 
 export const dynamic = 'force-dynamic';
@@ -62,7 +63,7 @@ export async function GET(req: Request) {
   // ---- Les boutiques, avec de quoi juger leur branchement.
   const { data: boutiques, error: errBoutiques } = await sb
     .from('boutiques')
-    .select('id, slug, nom, categorie, actif, essai, groupe_livreurs, wasender_secret_id, telegram_secret_id, telegram_marchand')
+    .select('id, slug, nom, categorie, actif, essai, groupe_livreurs, wasender_secret_id, telegram_secret_id, telegram_marchand, mode_recuperation')
     .order('nom');
 
   if (errBoutiques) {
@@ -116,7 +117,11 @@ export async function GET(req: Request) {
     // rouge du marchand, pour qu'on lui dise ici exactement ce qu'il voit.
     const manque: string[] = [];
     if (!b.wasender_secret_id && !b.telegram_secret_id) manque.push('canal client');
-    if (!String(b.groupe_livreurs ?? '').trim()) manque.push('groupe livreurs');
+    // Une boutique de RETRAIT n'aura jamais de groupe : la lui reclamer ici la
+    // classait « non branchee » a vie, et la comptait comme une panne.
+    if (boutiqueLivre(b.mode_recuperation) && !String(b.groupe_livreurs ?? '').trim()) {
+      manque.push('groupe livreurs');
+    }
     if (nbArticles === 0) manque.push('articles');
 
     let etat: EtatMarchand;

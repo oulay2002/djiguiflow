@@ -42,13 +42,16 @@ export type Database = {
           categorie: string | null
           commande_minimum: number | null
           delai_livraison: string | null
+          delai_preparation_min: number | null
           description: string | null
           emoji: string | null
           essai: boolean
           groupe_livreurs: string | null
           horaires: Json | null
           id: string
+          livraison_offerte_des: number | null
           logo_url: string | null
+          mode_recuperation: string
           nom: string | null
           paiements_acceptes: string[] | null
           pause_jusqua: string | null
@@ -75,13 +78,16 @@ export type Database = {
           categorie?: string | null
           commande_minimum?: number | null
           delai_livraison?: string | null
+          delai_preparation_min?: number | null
           description?: string | null
           emoji?: string | null
           essai?: boolean
           groupe_livreurs?: string | null
           horaires?: Json | null
           id?: string
+          livraison_offerte_des?: number | null
           logo_url?: string | null
+          mode_recuperation?: string
           nom?: string | null
           paiements_acceptes?: string[] | null
           pause_jusqua?: string | null
@@ -108,13 +114,16 @@ export type Database = {
           categorie?: string | null
           commande_minimum?: number | null
           delai_livraison?: string | null
+          delai_preparation_min?: number | null
           description?: string | null
           emoji?: string | null
           essai?: boolean
           groupe_livreurs?: string | null
           horaires?: Json | null
           id?: string
+          livraison_offerte_des?: number | null
           logo_url?: string | null
+          mode_recuperation?: string
           nom?: string | null
           paiements_acceptes?: string[] | null
           pause_jusqua?: string | null
@@ -199,12 +208,14 @@ export type Database = {
           frais_livraison: number | null
           heure_livraison: string | null
           heure_prise_en_charge: string | null
+          heure_retrait: string | null
           id: string
           instructions: string | null
           jeton_suivi: string
           latitude: number | null
           livreur_id: string | null
           longitude: number | null
+          mode_recuperation: string
           nom_livreur: string | null
           note_client: number | null
           note_heure: string | null
@@ -233,12 +244,14 @@ export type Database = {
           frais_livraison?: number | null
           heure_livraison?: string | null
           heure_prise_en_charge?: string | null
+          heure_retrait?: string | null
           id?: string
           instructions?: string | null
           jeton_suivi?: string
           latitude?: number | null
           livreur_id?: string | null
           longitude?: number | null
+          mode_recuperation?: string
           nom_livreur?: string | null
           note_client?: number | null
           note_heure?: string | null
@@ -267,12 +280,14 @@ export type Database = {
           frais_livraison?: number | null
           heure_livraison?: string | null
           heure_prise_en_charge?: string | null
+          heure_retrait?: string | null
           id?: string
           instructions?: string | null
           jeton_suivi?: string
           latitude?: number | null
           livreur_id?: string | null
           longitude?: number | null
+          mode_recuperation?: string
           nom_livreur?: string | null
           note_client?: number | null
           note_heure?: string | null

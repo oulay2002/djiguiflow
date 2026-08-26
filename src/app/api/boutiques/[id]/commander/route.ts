@@ -335,7 +335,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
       .from('boutiques')
       // En UNE seule chaine litterale : concatenee, elle perd son inference et
       // le type retombe sur `GenericStringError`.
-      .select('horaires, pause_jusqua, essai, banc_telegram_id, wasender_secret_id, telegram_secret_id, groupe_livreurs, commande_minimum')
+      .select('horaires, pause_jusqua, essai, banc_telegram_id, wasender_secret_id, telegram_secret_id, groupe_livreurs, commande_minimum, mode_recuperation')
       .eq('id', boutiqueUuid)
       .maybeSingle();
 
@@ -365,6 +365,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
       wasenderSecretId: fiche?.wasender_secret_id,
       telegramSecretId: fiche?.telegram_secret_id,
       groupeLivreurs: fiche?.groupe_livreurs,
+      modeRecuperation: fiche?.mode_recuperation,
     });
 
     if (!verdict.peutVendre) {

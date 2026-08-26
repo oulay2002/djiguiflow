@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { boutiquePeutVendre, estBoutiqueDeBanc } from '@/lib/boutiquePrete';
+import { boutiqueLivre, boutiquePeutVendre, estBoutiqueDeBanc } from '@/lib/boutiquePrete';
 
 /**
  * « Une boutique n'est commandable que si elle est veritablement branchee. »
@@ -98,6 +98,65 @@ describe('les bancs restent dispenses', () => {
     expect(estBoutiqueDeBanc({ bancTelegramId: '-100777' })).toBe(true);
     expect(estBoutiqueDeBanc({ essai: false, bancTelegramId: '' })).toBe(false);
     expect(estBoutiqueDeBanc({})).toBe(false);
+  });
+});
+
+/**
+ * LE RETRAIT OUVRE LA PLATEFORME A QUI N'A PAS DE LIVREUR.
+ *
+ * Exiger un groupe de livreurs d'un maquis qui ne fait que de l'a-emporter ne
+ * le servait pas mal : ca l'EXCLUAIT. Il ne pouvait pas remplir la condition,
+ * donc il ne pouvait pas vendre.
+ *
+ * C'est le second sens de l'erreur — trop strict — celui que ces tests
+ * surveillent en premier, parce qu'il ferme des boutiques vivantes.
+ */
+describe('le groupe de livreurs n est exige que de qui livre', () => {
+  it('une boutique de RETRAIT vend sans aucun groupe', () => {
+    const v = boutiquePeutVendre({
+      ...branchee,
+      groupeLivreurs: null,
+      modeRecuperation: 'retrait',
+    });
+    expect(v.peutVendre).toBe(true);
+  });
+
+  it('mais il lui faut toujours un canal pour prevenir le client', () => {
+    // Meme en retrait, quelqu'un doit dire au client que sa commande est prete.
+    const v = boutiquePeutVendre({
+      ...branchee,
+      wasenderSecretId: null,
+      telegramSecretId: null,
+      groupeLivreurs: null,
+      modeRecuperation: 'retrait',
+    });
+    expect(v.peutVendre === false && v.manque).toEqual(['canal_client']);
+  });
+
+  it('« les deux » livre, donc le groupe reste exige', () => {
+    const v = boutiquePeutVendre({
+      ...branchee,
+      groupeLivreurs: null,
+      modeRecuperation: 'les_deux',
+    });
+    expect(v.peutVendre === false && v.manque).toEqual(['groupe_livreurs']);
+  });
+
+  it('un mode absent se lit « livraison » — les boutiques en service ne bougent pas', () => {
+    const v = boutiquePeutVendre({ ...branchee, groupeLivreurs: null });
+    expect(v.peutVendre === false && v.manque).toEqual(['groupe_livreurs']);
+  });
+
+  it('UN MODE INCONNU RETOMBE DU COTE STRICT', () => {
+    // Une valeur imprevue ne doit jamais SUPPRIMER une exigence : sinon une
+    // faute de frappe en base ouvrirait la vente sans personne pour porter.
+    expect(boutiqueLivre('retait')).toBe(true);
+    expect(boutiqueLivre(null)).toBe(true);
+    expect(boutiqueLivre('')).toBe(true);
+    expect(boutiqueLivre('livraison')).toBe(true);
+    expect(boutiqueLivre('les_deux')).toBe(true);
+    expect(boutiqueLivre('retrait')).toBe(false);
+    expect(boutiqueLivre('  retrait  ')).toBe(false);
   });
 });
 
