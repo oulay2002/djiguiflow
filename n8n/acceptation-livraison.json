@@ -730,7 +730,7 @@
               "boutique": "={{ $('When Executed by Another Workflow').first().json.slug }}",
               "canal": "={{ $('Trouver la commande').first().json.canal }}",
               "destinataire": "={{ String($('Trouver la commande').first().json.chat_id) }}",
-              "message": "=🚚 Excellente nouvelle !\n\nVotre commande {{ $('Trouver la commande').first().json.order_id }} est en route !\n{{ $('Coordonnees livreur').first().json.ligne_client }}⏱️ Temps estimé : 30-45 minutes\n\n🚩 Suivre en direct :\nhttps://www.djiguiflow.com/suivi?ref={{ encodeURIComponent(String($('Trouver la commande').first().json.order_id)) }}{{ $('Trouver la commande').first().json.jeton_suivi ? '&t=' + encodeURIComponent(String($('Trouver la commande').first().json.jeton_suivi)) : '' }}\n\nÀ tout de suite ! 🙌"
+              "message": "=🚚 Excellente nouvelle !\n\nVotre commande {{ $('Trouver la commande').first().json.order_id }} est en route !\n{{ $('Coordonnees livreur').first().json.ligne_client }}⏱️ Temps estimé : 30-45 minutes{{ (() => { const c = $('Trouver la commande').first().json; const j = String(c.jeton_suivi || '').trim(); return j ? '\\n\\n🚩 Suivre en direct :\\nhttps://www.djiguiflow.com/suivi?ref=' + encodeURIComponent(String(c.order_id || '')) + '&t=' + encodeURIComponent(j) : ''; })() }}\n\nÀ tout de suite ! 🙌"
             }
           }
         },
@@ -1427,7 +1427,7 @@
               "boutique": "={{ $('When Executed by Another Workflow').first().json.slug }}",
               "canal": "telegram",
               "destinataire": "={{ $('Code in JavaScript').first().json.chat_id_groupe }}",
-              "message": "=✅ Course acceptée par {{ $('Code in JavaScript').first().json.livreur_name }} !\n\n📦 Commande : {{ $('Trouver la commande').first().json.order_id }}\n👤 Client : {{ $('Trouver la commande').first().json.customer_name }}\n📞 Téléphone : {{ $('Trouver la commande').first().json.phone }}\n📍 Adresse : {{ $('Trouver la commande').first().json.address }}{{ String($('Trouver la commande').first().json.address || '').trim() ? '\\n🗺️ Itinéraire : https://www.google.com/maps/search/' + encodeURIComponent(String($('Trouver la commande').first().json.address).trim()) : '' }}\n\nBonne livraison ! 🛵",
+              "message": "=✅ Course acceptée par {{ $('Code in JavaScript').first().json.livreur_name }} !\n\n📦 Commande : {{ $('Trouver la commande').first().json.order_id }}\n👤 Client : {{ $('Trouver la commande').first().json.customer_name }}\n📞 Téléphone : {{ $('Trouver la commande').first().json.phone }}\n📍 Adresse : {{ $('Trouver la commande').first().json.address }}{{ String($('Trouver la commande').first().json.address || '').trim() ? '\\n🗺️ Itinéraire : https://www.google.com/maps/search/' + encodeURIComponent(String($('Trouver la commande').first().json.address).trim()) : '' }}{{ (() => { const c = $('Trouver la commande').first().json; const la = Number(c.latitude); const lo = Number(c.longitude); return Number.isFinite(la) && Number.isFinite(lo) && (la !== 0 || lo !== 0) ? '\\n🚩 Point exact : https://www.google.com/maps/search/' + la + ',' + lo : ''; })() }}\n\nBonne livraison ! 🛵",
               "reply_markup": ""
             }
           }
@@ -1822,7 +1822,7 @@
     "workflowPublishHistory": [
       {
         "event": "activated",
-        "id": 238,
+        "id": 266,
         "userId": "81519f6f-0887-498a-ad83-5ffd6d591e9a",
         "workflowId": "LqBgRvLeeKUwZhB5"
       }
@@ -2557,7 +2557,7 @@
             "boutique": "={{ $('When Executed by Another Workflow').first().json.slug }}",
             "canal": "={{ $('Trouver la commande').first().json.canal }}",
             "destinataire": "={{ String($('Trouver la commande').first().json.chat_id) }}",
-            "message": "=🚚 Excellente nouvelle !\n\nVotre commande {{ $('Trouver la commande').first().json.order_id }} est en route !\n{{ $('Coordonnees livreur').first().json.ligne_client }}⏱️ Temps estimé : 30-45 minutes\n\n🚩 Suivre en direct :\nhttps://www.djiguiflow.com/suivi?ref={{ encodeURIComponent(String($('Trouver la commande').first().json.order_id)) }}{{ $('Trouver la commande').first().json.jeton_suivi ? '&t=' + encodeURIComponent(String($('Trouver la commande').first().json.jeton_suivi)) : '' }}\n\nÀ tout de suite ! 🙌"
+            "message": "=🚚 Excellente nouvelle !\n\nVotre commande {{ $('Trouver la commande').first().json.order_id }} est en route !\n{{ $('Coordonnees livreur').first().json.ligne_client }}⏱️ Temps estimé : 30-45 minutes{{ (() => { const c = $('Trouver la commande').first().json; const j = String(c.jeton_suivi || '').trim(); return j ? '\\n\\n🚩 Suivre en direct :\\nhttps://www.djiguiflow.com/suivi?ref=' + encodeURIComponent(String(c.order_id || '')) + '&t=' + encodeURIComponent(j) : ''; })() }}\n\nÀ tout de suite ! 🙌"
           }
         }
       },
@@ -3254,7 +3254,7 @@
             "boutique": "={{ $('When Executed by Another Workflow').first().json.slug }}",
             "canal": "telegram",
             "destinataire": "={{ $('Code in JavaScript').first().json.chat_id_groupe }}",
-            "message": "=✅ Course acceptée par {{ $('Code in JavaScript').first().json.livreur_name }} !\n\n📦 Commande : {{ $('Trouver la commande').first().json.order_id }}\n👤 Client : {{ $('Trouver la commande').first().json.customer_name }}\n📞 Téléphone : {{ $('Trouver la commande').first().json.phone }}\n📍 Adresse : {{ $('Trouver la commande').first().json.address }}{{ String($('Trouver la commande').first().json.address || '').trim() ? '\\n🗺️ Itinéraire : https://www.google.com/maps/search/' + encodeURIComponent(String($('Trouver la commande').first().json.address).trim()) : '' }}\n\nBonne livraison ! 🛵",
+            "message": "=✅ Course acceptée par {{ $('Code in JavaScript').first().json.livreur_name }} !\n\n📦 Commande : {{ $('Trouver la commande').first().json.order_id }}\n👤 Client : {{ $('Trouver la commande').first().json.customer_name }}\n📞 Téléphone : {{ $('Trouver la commande').first().json.phone }}\n📍 Adresse : {{ $('Trouver la commande').first().json.address }}{{ String($('Trouver la commande').first().json.address || '').trim() ? '\\n🗺️ Itinéraire : https://www.google.com/maps/search/' + encodeURIComponent(String($('Trouver la commande').first().json.address).trim()) : '' }}{{ (() => { const c = $('Trouver la commande').first().json; const la = Number(c.latitude); const lo = Number(c.longitude); return Number.isFinite(la) && Number.isFinite(lo) && (la !== 0 || lo !== 0) ? '\\n🚩 Point exact : https://www.google.com/maps/search/' + la + ',' + lo : ''; })() }}\n\nBonne livraison ! 🛵",
             "reply_markup": ""
           }
         }
@@ -3653,5 +3653,5 @@
   },
   "sourceWorkflowId": null,
   "tags": [],
-  "versionCounter": 27
+  "versionCounter": 30
 }

@@ -140,7 +140,7 @@
               "boutique": "={{ $json.slug || $json.boutique_id }}",
               "canal": "whatsapp",
               "destinataire": "={{ $json.telephone }}",
-              "message": "=🔔 *Nouvelle commande — {{ $json.nom }}*\n\n📦 Commande #{{ String($('Webhook').first().json.body.id || 'N/A').slice(0,6).toUpperCase() }}\n👤 Client : {{ $('Webhook').first().json.body.client_nom || 'Non renseigne' }}\n📞 Tél : {{ $('Webhook').first().json.body.client_telephone || 'Non renseigne' }}\n📍 Adresse : {{ $('Webhook').first().json.body.client_adresse || 'Non renseignee' }}\n💰 Total : {{ $('Webhook').first().json.body.total || 0 }} FCFA\n\n👉 https://www.djiguiflow.com/dashboard/commandes",
+              "message": "=🔔 *Nouvelle commande — {{ $json.nom }}*\n\n📦 Commande #{{ String($('Webhook').first().json.body.id || 'N/A').slice(0,6).toUpperCase() }}\n👤 Client : {{ $('Webhook').first().json.body.client_nom || 'Non renseigne' }}\n📞 Tél : {{ $('Webhook').first().json.body.client_telephone || 'Non renseigne' }}\n{{ String($('Webhook').first().json.body.mode_recuperation || '') === 'retrait' ? ('🛍️ À EMPORTER — le client vient chercher' + ($('Webhook').first().json.body.heure_retrait ? ' vers ' + DateTime.fromISO($('Webhook').first().json.body.heure_retrait).setZone('Africa/Abidjan').toFormat('HH:mm') : ' dès que prêt')) : ('📍 Adresse : ' + ($('Webhook').first().json.body.client_adresse || 'Non renseignee')) }}\n💰 Total : {{ $('Webhook').first().json.body.total || 0 }} FCFA\n\n👉 https://www.djiguiflow.com/dashboard/commandes",
               "notification": "nouvelle_commande",
               "reply_markup": ""
             }
@@ -248,7 +248,7 @@
               "boutique": "={{ $json.slug || $json.boutique_id }}",
               "canal": "telegram",
               "destinataire": "={{ $json.telegram_marchand }}",
-              "message": "=🔔 Nouvelle commande — {{ $json.nom }}\n\n📦 Commande #{{ String($('Webhook').first().json.body.id || 'N/A').slice(0,6).toUpperCase() }}\n👤 Client : {{ $('Webhook').first().json.body.client_nom || 'Non renseigne' }}\n📞 Tél : {{ $('Webhook').first().json.body.client_telephone || 'Non renseigne' }}\n📍 Adresse : {{ $('Webhook').first().json.body.client_adresse || 'Non renseignee' }}\n💰 Total : {{ $('Webhook').first().json.body.total || 0 }} FCFA\n\n👉 https://www.djiguiflow.com/dashboard/commandes",
+              "message": "=🔔 Nouvelle commande — {{ $json.nom }}\n\n📦 Commande #{{ String($('Webhook').first().json.body.id || 'N/A').slice(0,6).toUpperCase() }}\n👤 Client : {{ $('Webhook').first().json.body.client_nom || 'Non renseigne' }}\n📞 Tél : {{ $('Webhook').first().json.body.client_telephone || 'Non renseigne' }}\n{{ String($('Webhook').first().json.body.mode_recuperation || '') === 'retrait' ? ('🛍️ À EMPORTER — le client vient chercher' + ($('Webhook').first().json.body.heure_retrait ? ' vers ' + DateTime.fromISO($('Webhook').first().json.body.heure_retrait).setZone('Africa/Abidjan').toFormat('HH:mm') : ' dès que prêt')) : ('📍 Adresse : ' + ($('Webhook').first().json.body.client_adresse || 'Non renseignee')) }}\n💰 Total : {{ $('Webhook').first().json.body.total || 0 }} FCFA\n\n👉 https://www.djiguiflow.com/dashboard/commandes",
               "notification": "nouvelle_commande",
               "reply_markup": ""
             }
@@ -311,37 +311,28 @@
         ],
         "type": "n8n-nodes-base.stickyNote",
         "typeVersion": 1
+      },
+      {
+        "id": "ea54f324-3b47-426a-a463-cd7dcd62220b",
+        "name": "Une commande a emporter n'a pas d'adresse",
+        "parameters": {
+          "content": "## « Adresse : Non renseignee » disait deux choses\n\nPour une commande a emporter, le marchand lisait EXACTEMENT ce qu'il lit\nd'une livraison dont le client a oublie son adresse. Il rappelait donc un\nclient qui n'avait rien oublie, pour lui demander une adresse qu'il n'a pas a\ndonner.\n\nLa ligne dit maintenant l'un OU l'autre, jamais un champ vide a interpreter.\n\n`heure_retrait` a NULL veut dire « des que pret » — c'est une reponse, pas une\nabsence de reponse, et le message la distingue. L'heure est affichee en heure\nd'Abidjan : la colonne est un timestamptz, et la lire brute afficherait UTC a\nquelqu'un qui n'a que faire d'UTC.",
+          "height": 220,
+          "width": 540
+        },
+        "position": [
+          860,
+          -400
+        ],
+        "type": "n8n-nodes-base.stickyNote",
+        "typeVersion": 1
       }
     ],
     "workflowId": "22NzoGizdPGkMLRr",
     "workflowPublishHistory": [
       {
         "event": "activated",
-        "id": 244,
-        "userId": "81519f6f-0887-498a-ad83-5ffd6d591e9a",
-        "workflowId": "22NzoGizdPGkMLRr"
-      },
-      {
-        "event": "activated",
-        "id": 248,
-        "userId": "81519f6f-0887-498a-ad83-5ffd6d591e9a",
-        "workflowId": "22NzoGizdPGkMLRr"
-      },
-      {
-        "event": "activated",
-        "id": 254,
-        "userId": "81519f6f-0887-498a-ad83-5ffd6d591e9a",
-        "workflowId": "22NzoGizdPGkMLRr"
-      },
-      {
-        "event": "deactivated",
-        "id": 247,
-        "userId": "81519f6f-0887-498a-ad83-5ffd6d591e9a",
-        "workflowId": "22NzoGizdPGkMLRr"
-      },
-      {
-        "event": "deactivated",
-        "id": 253,
+        "id": 282,
         "userId": "81519f6f-0887-498a-ad83-5ffd6d591e9a",
         "workflowId": "22NzoGizdPGkMLRr"
       }
@@ -486,7 +477,7 @@
             "boutique": "={{ $json.slug || $json.boutique_id }}",
             "canal": "whatsapp",
             "destinataire": "={{ $json.telephone }}",
-            "message": "=🔔 *Nouvelle commande — {{ $json.nom }}*\n\n📦 Commande #{{ String($('Webhook').first().json.body.id || 'N/A').slice(0,6).toUpperCase() }}\n👤 Client : {{ $('Webhook').first().json.body.client_nom || 'Non renseigne' }}\n📞 Tél : {{ $('Webhook').first().json.body.client_telephone || 'Non renseigne' }}\n📍 Adresse : {{ $('Webhook').first().json.body.client_adresse || 'Non renseignee' }}\n💰 Total : {{ $('Webhook').first().json.body.total || 0 }} FCFA\n\n👉 https://www.djiguiflow.com/dashboard/commandes",
+            "message": "=🔔 *Nouvelle commande — {{ $json.nom }}*\n\n📦 Commande #{{ String($('Webhook').first().json.body.id || 'N/A').slice(0,6).toUpperCase() }}\n👤 Client : {{ $('Webhook').first().json.body.client_nom || 'Non renseigne' }}\n📞 Tél : {{ $('Webhook').first().json.body.client_telephone || 'Non renseigne' }}\n{{ String($('Webhook').first().json.body.mode_recuperation || '') === 'retrait' ? ('🛍️ À EMPORTER — le client vient chercher' + ($('Webhook').first().json.body.heure_retrait ? ' vers ' + DateTime.fromISO($('Webhook').first().json.body.heure_retrait).setZone('Africa/Abidjan').toFormat('HH:mm') : ' dès que prêt')) : ('📍 Adresse : ' + ($('Webhook').first().json.body.client_adresse || 'Non renseignee')) }}\n💰 Total : {{ $('Webhook').first().json.body.total || 0 }} FCFA\n\n👉 https://www.djiguiflow.com/dashboard/commandes",
             "notification": "nouvelle_commande",
             "reply_markup": ""
           }
@@ -594,7 +585,7 @@
             "boutique": "={{ $json.slug || $json.boutique_id }}",
             "canal": "telegram",
             "destinataire": "={{ $json.telegram_marchand }}",
-            "message": "=🔔 Nouvelle commande — {{ $json.nom }}\n\n📦 Commande #{{ String($('Webhook').first().json.body.id || 'N/A').slice(0,6).toUpperCase() }}\n👤 Client : {{ $('Webhook').first().json.body.client_nom || 'Non renseigne' }}\n📞 Tél : {{ $('Webhook').first().json.body.client_telephone || 'Non renseigne' }}\n📍 Adresse : {{ $('Webhook').first().json.body.client_adresse || 'Non renseignee' }}\n💰 Total : {{ $('Webhook').first().json.body.total || 0 }} FCFA\n\n👉 https://www.djiguiflow.com/dashboard/commandes",
+            "message": "=🔔 Nouvelle commande — {{ $json.nom }}\n\n📦 Commande #{{ String($('Webhook').first().json.body.id || 'N/A').slice(0,6).toUpperCase() }}\n👤 Client : {{ $('Webhook').first().json.body.client_nom || 'Non renseigne' }}\n📞 Tél : {{ $('Webhook').first().json.body.client_telephone || 'Non renseigne' }}\n{{ String($('Webhook').first().json.body.mode_recuperation || '') === 'retrait' ? ('🛍️ À EMPORTER — le client vient chercher' + ($('Webhook').first().json.body.heure_retrait ? ' vers ' + DateTime.fromISO($('Webhook').first().json.body.heure_retrait).setZone('Africa/Abidjan').toFormat('HH:mm') : ' dès que prêt')) : ('📍 Adresse : ' + ($('Webhook').first().json.body.client_adresse || 'Non renseignee')) }}\n💰 Total : {{ $('Webhook').first().json.body.total || 0 }} FCFA\n\n👉 https://www.djiguiflow.com/dashboard/commandes",
             "notification": "nouvelle_commande",
             "reply_markup": ""
           }
@@ -657,6 +648,21 @@
       ],
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1
+    },
+    {
+      "id": "ea54f324-3b47-426a-a463-cd7dcd62220b",
+      "name": "Une commande a emporter n'a pas d'adresse",
+      "parameters": {
+        "content": "## « Adresse : Non renseignee » disait deux choses\n\nPour une commande a emporter, le marchand lisait EXACTEMENT ce qu'il lit\nd'une livraison dont le client a oublie son adresse. Il rappelait donc un\nclient qui n'avait rien oublie, pour lui demander une adresse qu'il n'a pas a\ndonner.\n\nLa ligne dit maintenant l'un OU l'autre, jamais un champ vide a interpreter.\n\n`heure_retrait` a NULL veut dire « des que pret » — c'est une reponse, pas une\nabsence de reponse, et le message la distingue. L'heure est affichee en heure\nd'Abidjan : la colonne est un timestamptz, et la lire brute afficherait UTC a\nquelqu'un qui n'a que faire d'UTC.",
+        "height": 220,
+        "width": 540
+      },
+      "position": [
+        860,
+        -400
+      ],
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1
     }
   ],
   "settings": {
@@ -667,5 +673,5 @@
   },
   "sourceWorkflowId": null,
   "tags": [],
-  "versionCounter": 6
+  "versionCounter": 7
 }

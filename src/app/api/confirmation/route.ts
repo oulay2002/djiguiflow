@@ -77,6 +77,10 @@ type Ligne = {
   client_adresse: string | null;
   total: number | null;
   canal: string | null;
+  /** `livraison` | `retrait`. Decide si la confirmation lance une course. */
+  mode_recuperation: string | null;
+  /** ISO. NULL veut dire « des que pret », jamais « on ne sait pas ». */
+  heure_retrait: string | null;
   commande_items: LigneItem[] | null;
 };
 
@@ -333,6 +337,10 @@ async function chargerCommande(ref: string) {
       'reference, jeton_suivi, created_at, confirmation_statut, statut, latitude,' +
         ' boutique_id, client_nom,' +
         ' client_telephone, chat_id, client_adresse, total, canal,' +
+        // SANS EUX, LA CONFIRMATION D'UN RETRAIT LANCE UNE COURSE.
+        // « Confirmation Client » enchaine sur « Lancer livreurs » sans rien
+        // savoir de la commande au-dela de ce que cette route lui transmet.
+        ' mode_recuperation, heure_retrait,' +
         ' commande_items(nom_produit, quantite)',
     )
     .ilike('reference', motifExact(ref))
@@ -512,6 +520,21 @@ export async function POST(req: Request) {
           canal: String(ligne.canal ?? 'whatsapp').toLowerCase(),
           chat_id: ligne.chat_id || telClient,
           destinataire: telClient,
+          /**
+           * CE QUI EMPECHE D'ENVOYER UN LIVREUR CHERCHER UNE COMMANDE A
+           * EMPORTER — sur l'autre chemin, celui de l'assistante.
+           *
+           * `/api/boutiques/[id]/commander` porte deja ces deux champs pour la
+           * vitrine. Une commande prise en conversation n'alerte pas les
+           * livreurs a l'enregistrement mais A LA CONFIRMATION : c'est donc ce
+           * webhook-ci qui devait apprendre a les distinguer.
+           *
+           * Ils partent pour TOUTE commande, livraison comprise : un champ qui
+           * n'apparait que dans un cas oblige le workflow a traiter son absence
+           * comme une valeur.
+           */
+          mode_recuperation: String(ligne.mode_recuperation ?? 'livraison'),
+          heure_retrait: ligne.heure_retrait ?? '',
         }),
       });
     } catch (e) {

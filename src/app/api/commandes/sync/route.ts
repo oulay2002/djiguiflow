@@ -3,6 +3,14 @@ import { filtreAppariementChat } from '@/lib/appariementChat';
 import type { Database } from '@/lib/database.types';
 import { normaliserTelephone } from '@/lib/telephone';
 import { prefixeReference } from '@/lib/marchands';
+import {
+  heureRetraitLisible,
+  horodaterRetrait,
+  livraisonOfferte,
+  modeAccepte,
+  modeParDefaut,
+} from '@/lib/retrait';
+import type { ModeCommande } from '@/lib/retrait';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,7 +28,12 @@ type MajCommande = Database['public']['Tables']['commandes']['Update'];
  * Le prompt demandait deja de collecter avant de valider. Il n'a pas suffi —
  * comme d'habitude. Le refus vit donc ici.
  */
-function coordonneesLivrables(nom: unknown, telephone: unknown, adresse: unknown): string[] {
+function coordonneesLivrables(
+  nom: unknown,
+  telephone: unknown,
+  adresse: unknown,
+  livre: boolean,
+): string[] {
   const manquant: string[] = [];
 
   // Un modele qui n'a pas l'information ecrit rarement du vide : il ecrit un
@@ -32,7 +45,14 @@ function coordonneesLivrables(nom: unknown, telephone: unknown, adresse: unknown
   };
 
   if (inventé(nom)) manquant.push('nom');
-  if (inventé(adresse)) manquant.push('adresse');
+  // L'ADRESSE N'EST EXIGEE QUE DE QUI SE FAIT LIVRER.
+  //
+  // Elle etait obligatoire pour tout le monde : une commande a emporter ne
+  // pouvait donc PAS etre validee par l'assistante — elle restait un panier,
+  // sans que rien ne le dise au client, qui venait d'entendre « c'est
+  // enregistre ». La reclamer aurait pousse le modele a en inventer une, ce
+  // que ce controle existe justement pour attraper.
+  if (livre && inventé(adresse)) manquant.push('adresse');
 
   // Le telephone passe par la meme regle que la vitrine : un numero qui ne
   // s'ecrit pas ne se compose pas. « 0000000000 » a la bonne longueur mais ne
@@ -43,6 +63,19 @@ function coordonneesLivrables(nom: unknown, telephone: unknown, adresse: unknown
   }
 
   return manquant;
+}
+
+/**
+ * « 9:5 » → « 09:05 ». Rien d'autre : une saisie illisible ressort telle
+ * quelle, et c'est `horodaterRetrait` qui la refusera, en un seul endroit.
+ *
+ * Sert a comparer ce que l'assistante renvoie a ce qui est deja enregistre :
+ * sans mise au meme format, « 9:30 » et « 09:30 » designeraient deux heures
+ * differentes et la seconde serait rejugee sans raison.
+ */
+function normaliserHeure(brut: string): string {
+  const m = brut.match(/^(\d{1,2}):(\d{2})$/);
+  return m ? `${m[1].padStart(2, '0')}:${m[2]}` : brut;
 }
 
 export async function POST(req: Request) {
@@ -195,8 +228,95 @@ export async function POST(req: Request) {
   // vitrine n'a pas de conversation, son numero en tient lieu. Il est donc
   // applique plus bas, dans l'INSERT.
   poser('chat_id', siFourni(b.chat_id));
-  poser('client_adresse', siFourni(b.address));
   poser('canal', siFourni(b.canal));
+
+  /**
+   * COMMENT LE CLIENT RECUPERE SA COMMANDE — arrete ICI, par le serveur.
+   *
+   * Le prompt de l'assistante lui dira de proposer le retrait quand la boutique
+   * le propose. CELA NE SUFFIT PAS, et ce depot l'a paye plusieurs fois : une
+   * consigne au modele n'est pas un verrou. Le mode est donc verifie contre la
+   * fiche, exactement comme la vitrine le fait — meme fonction, meme refus.
+   *
+   * Un appel qui ne dit rien retombe sur le mode par defaut de la boutique :
+   * l'assistante d'une boutique qui ne livre pas cesse ainsi d'ecrire des
+   * commandes en livraison, meme avant que son prompt ne soit a jour.
+   */
+  const { data: reglages } = await sb
+    .from('boutiques')
+    .select('mode_recuperation, delai_preparation_min, livraison_offerte_des')
+    .eq('id', boutique_id)
+    .maybeSingle();
+
+  const demande = String(b.mode_recuperation ?? '').trim();
+  let modeRetenu: ModeCommande;
+
+  if (!demande) {
+    modeRetenu = modeParDefaut(reglages?.mode_recuperation);
+  } else if (modeAccepte(reglages?.mode_recuperation, demande)) {
+    modeRetenu = demande as ModeCommande;
+  } else {
+    console.error(
+      `Sync ${reference} — mode « ${demande} » refuse`
+      + ` (boutique : ${String(reglages?.mode_recuperation ?? 'inconnu')}).`,
+    );
+    // 422 et non 400 : c'est l'outil de l'assistante qui recoit ce texte, et il
+    // doit pouvoir le relayer au client au lieu de tomber en panne.
+    return Response.json({
+      ok: false,
+      reference,
+      error: demande === 'retrait'
+        ? 'Cette boutique ne propose pas le retrait sur place : proposez la livraison.'
+        : 'Cette boutique ne livre pas : le client doit venir chercher sa commande.',
+    }, { status: 422 });
+  }
+
+  poser('mode_recuperation', modeRetenu);
+  // En retrait, aucune adresse n'est enregistree. Le modele en fournit parfois
+  // une malgre tout — « a emporter », « sur place » — et l'ecrire ferait partir
+  // au marchand une consigne de livraison qui n'en est pas une.
+  if (modeRetenu === 'livraison') poser('client_adresse', siFourni(b.address));
+
+  /**
+   * L'HEURE DEMANDEE, DATEE PAR LE SERVEUR — ET TOLEREE SI ELLE NE CHANGE PAS.
+   *
+   * L'assistante rappelle cette route A CHAQUE information collectee, avec le
+   * meme panier et la meme heure. Revalider le plancher de preparation a chaque
+   * appel ferait donc ECHOUER une conversation qui dure : « 12:30 » demande a
+   * 12:00 chez un marchand qui prepare en 45 minutes deviendrait invalide au
+   * troisieme message, alors que rien n'a change dans la demande du client.
+   *
+   * On ne verifie donc que ce qui CHANGE. Une heure identique a celle deja
+   * enregistree est conservee telle quelle ; c'est la meme regle que la
+   * vitrine, appliquee au seul moment ou elle veut dire quelque chose.
+   */
+  if (modeRetenu === 'retrait') {
+    const brut = String(b.heure_retrait ?? '').trim();
+    if (brut) {
+      const { data: dejaLa } = await sb
+        .from('commandes')
+        .select('heure_retrait')
+        .eq('reference', reference)
+        .maybeSingle();
+
+      // La MEME heure, renvoyee telle quelle : rien n'a change dans la demande
+      // du client, seule l'horloge a tourne. On la garde sans la rejuger.
+      const inchangee = heureRetraitLisible(dejaLa?.heure_retrait) === normaliserHeure(brut)
+        && !!dejaLa?.heure_retrait;
+
+      if (!inchangee) {
+        const verdict = horodaterRetrait(brut, new Date(), reglages?.delai_preparation_min);
+        // UNE HEURE NOUVELLE ET INTENABLE SE REFUSE, MEME S'IL Y EN AVAIT
+        // DEJA UNE. La garder en silence ferait croire au client que son
+        // changement a ete pris, et il se presenterait a l'heure qu'il vient
+        // de donner pendant que le marchand prepare pour l'autre.
+        if (!verdict.ok) {
+          return Response.json({ ok: false, reference, error: verdict.message }, { status: 422 });
+        }
+        poser('heure_retrait', verdict.iso);
+      }
+    }
+  }
 
   const total = Number(b.total_price ?? b.total);
   if (Number.isFinite(total) && total > 0) payload.total = total;
@@ -281,6 +401,7 @@ export async function POST(req: Request) {
         payload.client_nom ?? apres?.client_nom,
         payload.client_telephone ?? apres?.client_telephone,
         payload.client_adresse ?? apres?.client_adresse,
+        modeRetenu === 'livraison',
       );
 
       if (manquant.length) {
@@ -344,15 +465,22 @@ export async function POST(req: Request) {
     // manquait dans SA requete. Le compilateur a revele le trou une fois la
     // table typee.
     const telephone = payload.client_telephone;
-    const adresse = payload.client_adresse;
+    // EN RETRAIT, IL N'Y A PAS D'ADRESSE, ET LA COLONNE EST `not null`.
+    // La chaine vide n'est donc pas un repli commode : c'est la seule valeur
+    // qui dit « aucune adresse » sans mentir, et le reste du produit la lit
+    // deja ainsi — la vitrine ecrit exactement la meme chose.
+    const adresse = modeRetenu === 'livraison' ? payload.client_adresse : '';
     const montant = payload.total;
 
     const manquants: string[] = [];
     if (!telephone) manquants.push('phone');
-    if (!adresse) manquants.push('address');
+    if (modeRetenu === 'livraison' && !adresse) manquants.push('address');
     if (typeof montant !== 'number') manquants.push('total_price');
 
-    if (!telephone || !adresse || typeof montant !== 'number') {
+    // Le test reste ecrit CHAMP PAR CHAMP, et non sur `manquants.length` :
+    // c'est lui qui apprend au compilateur que les trois valeurs existent en
+    // dessous. C'est le meme compilateur qui avait revele ce trou.
+    if (!telephone || adresse === undefined || typeof montant !== 'number') {
       return Response.json(
         { error: `Creation impossible, champs requis absents : ${manquants.join(', ')}` },
         { status: 400 },
@@ -393,6 +521,20 @@ export async function POST(req: Request) {
       client_telephone: telephone,
       client_adresse: adresse,
       total: montant,
+      /**
+       * ZERO EXPLICITE QUAND IL N'Y A RIEN A PAYER, jamais NULL.
+       *
+       * `frais_livraison` a deux absences a ne pas confondre : NULL veut dire
+       * « le livreur ne les a pas encore annonces », zero veut dire « il n'y a
+       * rien a encaisser ». La vitrine applique deja cette regle ; l'oublier
+       * ici ferait crier le garde `livree_sans_frais` sur toute commande prise
+       * par l'assistante — et une veille qu'on bruite est une veille qu'on
+       * cesse de lire.
+       */
+      frais_livraison:
+        modeRetenu === 'retrait' || livraisonOfferte(reglages?.livraison_offerte_des, montant)
+          ? 0
+          : null,
     });
     if (error) return Response.json({ error: 'INSERT: ' + error.message }, { status: 500 });
   }
