@@ -53,16 +53,25 @@ function decider(
   bloqueParQuota: boolean,
   exempt: boolean,
   client: string | null,
-  paniers: Panier[],
-): { autorise: boolean; conversationEnCours: boolean } {
-  if (!bloqueParQuota || exempt) return { autorise: true, conversationEnCours: false };
+  paniers: Panier[] | 'illisible',
+): { autorise: boolean; conversationEnCours: boolean; indetermine: boolean } {
+  if (!bloqueParQuota || exempt) {
+    return { autorise: true, conversationEnCours: false, indetermine: false };
+  }
 
   const ident = String(client ?? '').trim();
+
+  // Base injoignable : on laisse passer, mais on ne PRETEND PAS qu'il y avait
+  // une conversation. Les deux raisons ne se valent pas.
+  if (paniers === 'illisible') {
+    return { autorise: true, conversationEnCours: false, indetermine: true };
+  }
+
   const conversationEnCours = ident
     ? paniers.some((p) => memeClient(p.chat_id, ident) || memeClient(p.client_telephone, ident))
     : false;
 
-  return { autorise: conversationEnCours, conversationEnCours };
+  return { autorise: conversationEnCours, conversationEnCours, indetermine: false };
 }
 
 const CLIENT = '2250759486701';
@@ -112,6 +121,31 @@ describe('le même client sous plusieurs adresses', () => {
   it('deux identifiants Telegram différents ne se confondent pas', () => {
     const d = decider(true, false, '1724402569', [{ chat_id: '1724402570' }]);
     expect(d.autorise).toBe(false);
+  });
+});
+
+describe('quand on ne peut pas savoir', () => {
+  // LES DEUX ERREURS NE COÛTENT PAS LA MÊME CHOSE. Laisser passer à tort :
+  // une commande au-delà du forfait, réglée commercialement, et qui profite au
+  // marchand. Bloquer à tort : un client réel coupé au milieu de sa commande,
+  // qui part. Rien ne le rattrape.
+  it('la base illisible laisse passer', () => {
+    expect(decider(true, false, CLIENT, 'illisible').autorise).toBe(true);
+  });
+
+  // MAIS ON NE DÉGUISE PAS L IGNORANCE EN RÈGLE. Marquer « conversation en
+  // cours » rendrait la trace indiscernable d'un vrai cas — et une panne
+  // durable ouvrirait le plafond à tout le monde sans que rien ne le montre.
+  it('mais elle ne se fait pas passer pour une conversation', () => {
+    const d = decider(true, false, CLIENT, 'illisible');
+    expect(d.conversationEnCours).toBe(false);
+    expect(d.indetermine).toBe(true);
+  });
+
+  it('un vrai panier, lui, n est pas indetermine', () => {
+    const d = decider(true, false, CLIENT, [{ chat_id: CLIENT }]);
+    expect(d.conversationEnCours).toBe(true);
+    expect(d.indetermine).toBe(false);
   });
 });
 
