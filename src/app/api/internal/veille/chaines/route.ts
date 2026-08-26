@@ -115,13 +115,40 @@ export async function POST(req: Request) {
     // C'est la rupture la plus couteuse : le client attend une commande que
     // personne ne prepare. Elle s'est produite le 21 aout, quand la recherche
     // de commande lisait encore une feuille devenue vide.
+    // ELLE NE VOYAIT QUE LES COMMANDES CONFIRMEES, ET C'ETAIT LE TROU.
+    //
+    // Le filtre exigeait `confirmation_statut = 'confirmee'`. Or une commande
+    // passee depuis la VITRINE ne traverse aucune etape de confirmation : le
+    // client a clique « commander », il n'y a rien a lui redemander. Sa colonne
+    // reste donc `null`, et elle etait invisible a ce controle.
+    //
+    // C'est precisement la forme que prend la panne la plus probable depuis la
+    // migration : n8n injoignable au moment de la commande. La prise de
+    // commande est etagee pour y survivre — Supabase fait foi et refuse si
+    // l'ecriture rate, la feuille et le webhook n8n sont NON BLOQUANTS — donc
+    // le client commande, le marchand voit sa commande… et AUCUN LIVREUR N'EST
+    // LANCE. L'echec du webhook est journalise, mais personne ne lit les
+    // journaux d'un serveur.
+    //
+    // Le filet pose contre la panne creait donc son propre angle mort : la
+    // commande survit, et c'est justement pour cela que rien ne crie.
+    //
+    // ON ENUMERE LES DEUX ETATS QUI AUTORISENT LE DISPATCH, on n'exclut pas
+    // les autres. `not.in('refusee','demandee')` aurait paru equivalent et
+    // aurait REPERDU tous les `null` : en SQL, `colonne NOT IN (…)` vaut NULL
+    // quand la colonne est nulle, donc la ligne est ecartee. Le piege qui a
+    // cree ce trou aurait suffi a le recreer.
+    //
+    // `refusee` reste dehors a dessein : ne pas lancer de livreur y est le
+    // comportement correct. `demandee` aussi — le client n'a pas encore
+    // repondu, et attendre est normal.
     await lire(
       'confirmee_sans_livreur',
-      (c) => `confirmée il y a ${Math.round((maintenant - Date.parse(String(c.created_at))) / 60_000)} min, aucun livreur`,
+      (c) => `reçue il y a ${Math.round((maintenant - Date.parse(String(c.created_at))) / 60_000)} min, aucun livreur`,
       (r) => r
         .select('reference, boutique_id, created_at')
         .eq('statut', 'en_attente')
-        .eq('confirmation_statut', 'confirmee')
+        .or('confirmation_statut.is.null,confirmation_statut.eq.confirmee')
         .is('nom_livreur', null)
         .lt('created_at', seuilDispatch)
         .gt('created_at', fenetre)
