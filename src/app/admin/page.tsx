@@ -32,6 +32,7 @@ type Marchand = {
   commandes: number;
   commandesRecentes: number;
   derniereVente: string | null;
+  whatsappOuvert: boolean;
   manque: string[];
   etat: 'non branche' | 'branche sans vente' | 'vend' | 'en sommeil';
 };
@@ -39,6 +40,14 @@ type Marchand = {
 type Tableau = {
   marchands: Marchand[];
   entonnoir: Record<string, number>;
+  whatsapp: {
+    ouvertes: number;
+    sansVente: number;
+    coutMensuelFcfa: number;
+    gaspilleMensuelFcfa: number;
+    coutParSessionFcfa: number;
+    noms: string[];
+  };
   anomalies: { type: string; reference: string; signale_le: string }[];
   fenetres: { activiteJours: number; sommeilJours: number };
 };
@@ -149,6 +158,62 @@ export default function AdminPage() {
             ))}
           </div>
         </section>
+
+        {/* CE QUE VOUS PAYEZ, ET POUR QUI.
+            wasenderapi facture 6 USD par mois et par session active. Le compte
+            est celui de la plateforme : ce montant sort de VOTRE poche.
+
+            On n'ouvre rien automatiquement — le marchand doit ecrire pour
+            recevoir son QR. Le risque n'est donc pas l'ouverture, c'est LA
+            FERMETURE : une session ouverte pour quelqu'un qui n'a jamais vendu
+            continue d'etre facturee tous les mois, et rien ne le dit.
+
+            CE N'EST PAS UNE INVITATION A FERMER, c'est une invitation a
+            APPELER : un marchand en sommeil qu'on rappelle vaut mieux qu'une
+            session fermee. */}
+        {t.whatsapp && t.whatsapp.ouvertes > 0 && (
+          <section>
+            <h2 className="font-display text-sm font-bold uppercase tracking-[0.16em] text-nuit-900">
+              Ce que coûtent les sessions WhatsApp
+            </h2>
+
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <div className="border border-[var(--hairline)] bg-white p-4">
+                <p className="font-display text-3xl font-black tabular-nums text-nuit-900">
+                  {t.whatsapp.coutMensuelFcfa.toLocaleString('fr-FR')} F
+                </p>
+                <p className="mt-1 font-semibold text-nuit-800">par mois, au total</p>
+                <p className="mt-1 text-sm text-chaux-600">
+                  {t.whatsapp.ouvertes} session{t.whatsapp.ouvertes > 1 ? 's' : ''} ouverte
+                  {t.whatsapp.ouvertes > 1 ? 's' : ''} ·{' '}
+                  {t.whatsapp.coutParSessionFcfa.toLocaleString('fr-FR')} F chacune
+                </p>
+              </div>
+
+              <div
+                className={`border p-4 ${
+                  t.whatsapp.sansVente > 0
+                    ? 'border-mangue-300 bg-mangue-50'
+                    : 'border-accent-300 bg-accent-50'
+                }`}
+              >
+                <p className="font-display text-3xl font-black tabular-nums">
+                  {t.whatsapp.gaspilleMensuelFcfa.toLocaleString('fr-FR')} F
+                </p>
+                <p className="mt-1 font-semibold">
+                  {t.whatsapp.sansVente === 0
+                    ? 'Aucune session sans vente'
+                    : `${t.whatsapp.sansVente} session${t.whatsapp.sansVente > 1 ? 's' : ''} sans vente sur ${t.fenetres.activiteJours} jours`}
+                </p>
+                {t.whatsapp.noms.length > 0 && (
+                  <p className="mt-1 text-sm opacity-80">
+                    {t.whatsapp.noms.join(', ')} — à rappeler avant d’envisager de fermer.
+                  </p>
+                )}
+              </div>
+            </div>
+          </section>
+        )}
 
         {/* Chaque marchand, et surtout CE QUI LUI MANQUE. */}
         <section>
