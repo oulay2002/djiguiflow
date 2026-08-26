@@ -86,15 +86,46 @@ const TYPES_SCHEMA: Record<string, string> = {
   superette: 'GroceryStore',
   epicerie: 'GroceryStore',
   alimentation: 'GroceryStore',
+
+  // LA MODE, QUE LA PLATEFORME VISE ET QUE CETTE TABLE IGNORAIT.
+  //
+  // Une boutique de vetements tombait sur le repli `LocalBusiness` : valide,
+  // mais muet. `ClothingStore` et `ShoeStore` sont des types que Google sait
+  // presenter richement — et c'est precisement le commerce pour lequel on
+  // vient d'ajouter les pointures, les tailles et les coloris.
+  //
+  // Etendre cette table ne coute RIEN quand elle se trompe : le repli reste
+  // `LocalBusiness`, toujours valide. C'est l'inverse d'une liste fermee qui
+  // refuse ce qu'elle ne connait pas.
+  mode: 'ClothingStore',
+  vetement: 'ClothingStore',
+  vetements: 'ClothingStore',
+  'vetements et accessoire': 'ClothingStore',
+  'vetements et accessoires': 'ClothingStore',
+  'pret-a-porter': 'ClothingStore',
+  friperie: 'ClothingStore',
+  chaussure: 'ShoeStore',
+  chaussures: 'ShoeStore',
+  bijouterie: 'JewelryStore',
+  cosmetique: 'HealthAndBeautyBusiness',
+  cosmetiques: 'HealthAndBeautyBusiness',
+  beaute: 'HealthAndBeautyBusiness',
+  coiffure: 'HairSalon',
+  electronique: 'ElectronicsStore',
+  telephone: 'ElectronicsStore',
+  librairie: 'BookStore',
+  quincaillerie: 'HardwareStore',
 };
 
 function typeSchema(secteur: string): string {
+  // U+0300 a U+036F, en echappements : ces caracteres sont INVISIBLES a
+  // l affichage, et une edition ulterieure les effacerait sans qu on le voie.
   // NFD puis retrait des diacritiques combinants, pour que « supermarché »
   // et « supermarche » tombent sur la meme cle.
   const cle = secteur
     .toLowerCase()
     .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '');
+    .replace(new RegExp('[\u0300-\u036f]', 'g'), '');
   return TYPES_SCHEMA[cle] ?? 'LocalBusiness';
 }
 

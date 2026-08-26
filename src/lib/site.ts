@@ -17,9 +17,20 @@ export const SITE_NOM = 'DjiguiFlow';
 
 export const SITE_TITRE = 'DjiguiFlow — vos commandes tournent sans vous';
 
+/**
+ * La phrase la plus vue du produit, et la seule que beaucoup liront.
+ *
+ * ELLE EST ACCENTUEE, contrairement aux messages techniques du depot. Ce n'est
+ * pas une exception a la convention, c'est la convention : les alertes Telegram
+ * sont ecrites sans accents pour traverser des passerelles ; celle-ci s'affiche
+ * dans un resultat Google et sur un partage WhatsApp, a cote de resultats
+ * ecrits en francais correct. « recoit » et « recu » s'y voyaient — au moment
+ * precis ou se forme la premiere impression, et pour un public dont c'est la
+ * langue.
+ */
 export const SITE_DESCRIPTION =
-  'DjiguiFlow recoit les commandes de votre boutique sur WhatsApp et Telegram, ' +
-  'assigne le livreur de la zone et suit la livraison jusqu’au recu.';
+  'DjiguiFlow reçoit les commandes de votre boutique sur WhatsApp et Telegram, ' +
+  'assigne le livreur de la zone et suit la livraison jusqu’au reçu.';
 
 /** fr_CI : francais de Cote d’Ivoire, le marche vise. */
 export const SITE_LOCALE = 'fr_CI';
