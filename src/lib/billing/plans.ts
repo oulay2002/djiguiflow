@@ -64,6 +64,33 @@ export type BillingPlan = {
  * PREMIER LUNDI — au moment precis ou il devrait etre content.
  *
  * Corrige le 26 aout 2026, avant le premier marchand reel.
+ *
+ * ────────────────────────────────────────────────────────────────────────────
+ * ET LA LIGNE EST LA MEME SUR LES TROIS FORMULES, A DESSEIN.
+ *
+ * Premium annoncait « …et aussi TikTok et WhatsApp » comme un avantage.
+ * Verification faite dans `src/lib/contenus/hebdo.ts` : le paquet hebdomadaire
+ * contient, POUR TOUT LE MONDE — formule d'essai comprise — la photo vedette,
+ * un visuel, une legende, des hashtags, un script TikTok decoupe en plans et un
+ * statut WhatsApp. Aucune differenciation par plan n'existe nulle part : ni
+ * dans le compositeur, ni dans la route, ni dans le workflow.
+ *
+ * Premium vendait donc ce qu'un compte gratuit recoit deja. C'etait le meme
+ * defaut que « plusieurs boutiques sur un meme compte », signale par
+ * l'exploitant lui-meme en relisant sa grille.
+ *
+ * ON A CHOISI DE DIRE LA VERITE PLUTOT QUE DE FABRIQUER LA RARETE. Retenir un
+ * script TikTok — qui ne coute pas un franc de plus a produire — pour le
+ * revendre plus cher rendrait les marchands d'entree de gamme moins
+ * performants. Or leur reussite EST le chiffre d'affaires de la plateforme.
+ *
+ * Premium se distingue sur ce qui coute reellement plus cher : le volume de
+ * commandes, les boutiques multiples — desormais verrouillees en base — et le
+ * support prioritaire.
+ *
+ * La ligne est d'ailleurs plus vendeuse qu'avant : elle nomme tout ce que le
+ * marchand recoit, au lieu de deux reseaux sociaux.
+ * ────────────────────────────────────────────────────────────────────────────
  */
 export const BILLING_PLANS: BillingPlan[] = [
   {
@@ -83,7 +110,7 @@ export const BILLING_PLANS: BillingPlan[] = [
       'Bot WhatsApp + IA — 30 commandes',
       'Suivi client et livreurs',
       'Photos retravaillées pour la vitrine',
-      'Contenus hebdomadaires prêts à publier — Facebook et Instagram',
+      'Contenus hebdomadaires prêts à publier — visuel, légende, hashtags, script TikTok et statut WhatsApp',
     ],
     popular: false,
   },
@@ -101,7 +128,7 @@ export const BILLING_PLANS: BillingPlan[] = [
       'Bot WhatsApp + IA — 300 commandes par mois',
       'Suivi client et livreurs',
       'Photos retravaillées pour la vitrine',
-      'Contenus hebdomadaires prêts à publier — Facebook et Instagram',
+      'Contenus hebdomadaires prêts à publier — visuel, légende, hashtags, script TikTok et statut WhatsApp',
       'Support par e-mail',
     ],
     popular: true,
@@ -120,11 +147,7 @@ export const BILLING_PLANS: BillingPlan[] = [
       'Bot WhatsApp + IA — 1 000 commandes par mois',
       'Suivi client et livreurs',
       'Photos retravaillées pour la vitrine',
-      // Premium ajoute DEUX canaux a ce que Pro recoit deja : la ligne
-      // precedente couvre Facebook et Instagram, celle-ci s'y ajoute. Les
-      // repeter en entier ferait lire deux fois la meme promesse.
-      'Contenus hebdomadaires prêts à publier — Facebook et Instagram',
-      '…et aussi TikTok et WhatsApp',
+      'Contenus hebdomadaires prêts à publier — visuel, légende, hashtags, script TikTok et statut WhatsApp',
       'Plusieurs boutiques sur un même compte',
       'Support prioritaire',
     ],
