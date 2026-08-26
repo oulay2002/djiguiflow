@@ -23,6 +23,22 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'daily',
       priority: 0.9,
     },
+    {
+      // LA PAGE QUI EXISTE POUR ETRE TROUVEE, ET QUI NE L'ETAIT PAS.
+      //
+      // Le guide de branchement a ete ecrit pour qu'un commercant se branche
+      // SEUL, sans appeler personne. Sa raison d'etre est donc d'apparaitre
+      // quand quelqu'un cherche comment vendre depuis son WhatsApp — et le
+      // sitemap ne la declarait pas. Une page d'aide absente de l'index n'aide
+      // que ceux a qui on a deja donne le lien, c'est-a-dire ceux qui avaient
+      // deja appele.
+      //
+      // `monthly` : elle change avec le produit, pas avec le catalogue.
+      url: `${SITE_URL}/aide/brancher`,
+      lastModified: maintenant,
+      changeFrequency: 'monthly',
+      priority: 0.7,
+    },
   ];
 
   // Un registre injoignable ne doit pas faire echouer tout le sitemap :
