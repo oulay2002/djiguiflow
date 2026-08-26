@@ -14,16 +14,49 @@ const origineSupabase = (() => {
 const origineSupabaseWs = origineSupabase.replace(/^https:/, 'wss:');
 
 /**
- * Politique de securite du contenu.
+ * Politique de securite du contenu — BLOQUANTE depuis le 26 aout 2026.
  *
- * Posee en Report-Only volontairement. La session du marchand vit dans des
- * cookies lisibles par JavaScript — l'architecture l'impose, puisque les
- * pages interrogent Supabase depuis le navigateur en s'appuyant sur RLS. Une
- * CSP est donc la vraie barriere contre le vol de session par XSS, mais une
- * CSP mal calibree casse l'application en silence. Report-Only permet de
- * collecter les violations reelles avant de basculer en mode bloquant :
- * remplacer l'en-tete par `Content-Security-Policy` une fois la console
- * propre.
+ * La session du marchand vit dans des cookies lisibles par JavaScript :
+ * l'architecture l'impose, puisque les pages interrogent Supabase depuis le
+ * navigateur en s'appuyant sur RLS. Cette politique est donc LA barriere
+ * contre le vol de session par XSS — et tant qu'elle etait en `Report-Only`,
+ * cette barriere n'existait pas.
+ *
+ * ── CE QUI A DECIDE DU BASCULEMENT ─────────────────────────────────────────
+ *
+ * Le plan ecrit ici etait « collecter les violations reelles, puis basculer ».
+ * Le collecteur a tourne : ZERO rapport en vingt-quatre heures — mais sur cinq
+ * chargements de page seulement, tous les notres. Une absence sur cinq visites
+ * ne prouve rien, et attendre un vrai trafic aurait repousse le basculement
+ * apres l'ouverture aux marchands.
+ *
+ * On a donc remplace la preuve empirique, hors d'atteinte, par l'ELIMINATION
+ * DES CAUSES, verifiees une par une dans le code :
+ *
+ *   - tout ce qui est appele a l'exterieur — Sheets, Telegram, Mistral,
+ *     GeniusPay — l'est cote SERVEUR ; le navigateur ne joint que notre
+ *     origine et Supabase, tous deux autorises ;
+ *   - les polices viennent de `next/font`, qui les sert depuis notre domaine ;
+ *   - aucune iframe, donc `frame-src 'self'` ne peut rien casser ;
+ *   - aucune analytique tierce ;
+ *   - les apercus d'image passent par `blob:`, deja autorise ;
+ *   - le service worker est de meme origine, couvert par `worker-src`.
+ *
+ * ── ET C'EST MAINTENANT QUE C'EST LE MOINS RISQUE ──────────────────────────
+ *
+ * Aucun marchand reel n'est en production. Une politique trop stricte casserait
+ * aujourd'hui l'ecran de son auteur, et dans un mois celui de quelqu'un qui
+ * vend. C'est le meme raisonnement que la limite de boutiques par forfait,
+ * posee le meme jour : le geste est gratuit tant qu'il ne coute a personne.
+ *
+ * ── LE FILET RESTE, ET IL DEVIENT UNE ALARME ───────────────────────────────
+ *
+ * `report-uri` et `report-to` sont CONSERVES. Une politique bloquante rapporte
+ * ce qu'elle bloque : le collecteur cesse d'etre un observateur muet pour
+ * devenir la sonde qui dira, en une ligne de journal, ce qui a ete refuse et ou.
+ *
+ * POUR REVENIR EN ARRIERE : remettre `Content-Security-Policy-Report-Only` a la
+ * place de `Content-Security-Policy` dans `enTetesSecurite`. Une seule ligne.
  */
 const csp = [
   "default-src 'self'",
@@ -70,7 +103,7 @@ const csp = [
 ].join('; ');
 
 const enTetesSecurite = [
-  { key: 'Content-Security-Policy-Report-Only', value: csp },
+  { key: 'Content-Security-Policy', value: csp },
   // Declare le groupe que `report-to` designe plus haut. Sans lui, la
   // directive moderne ne pointe vers rien.
   {
