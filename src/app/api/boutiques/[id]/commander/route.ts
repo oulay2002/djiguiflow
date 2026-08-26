@@ -920,6 +920,20 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
           nom: String(nom || 'Client'),
           total: String(total),
           boutique_id: m.boutiqueId,
+          /**
+           * SANS CE CHAMP, LE MESSAGE DE CONFIRMATION PARLE DE LIVRAISON.
+           *
+           * « Confirmez-vous être disponible pour la réception ? » — lu par un
+           * client qui vient CHERCHER sa commande. Constate au banc de chaine
+           * le 26 aout : le texte est compose dans « Confirmation Client », qui
+           * ne connaissait de la commande que ce que cette route lui envoie.
+           *
+           * Il part pour TOUTE commande, livraison comprise : un champ qui
+           * n'apparait que dans un cas oblige le workflow a traiter son absence
+           * comme une valeur.
+           */
+          mode_recuperation: modeRetenu,
+          heure_retrait: heureRetraitIso ?? '',
         }),
       signal: delai(DELAI_WEBHOOK),
     });

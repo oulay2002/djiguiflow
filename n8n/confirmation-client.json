@@ -298,7 +298,7 @@
               "boutique": "={{ $json.slug }}",
               "canal": "={{ $json.canal_client }}",
               "destinataire": "={{ $json.destinataire_client }}",
-              "message": "=🍽️ Bonjour {{ $json.nom }},\n\nVotre commande {{ $json.reference }} ({{ $json.total }} F) chez {{ $json.nom_boutique }} est bien reçue.\n\nAvant de lancer la préparation, confirmez-vous être disponible pour la réception ?\n\n👉 Confirmer ou annuler :\nhttps://www.djiguiflow.com/api/confirmation?ref={{ encodeURIComponent(String($json.reference || '')) }}&t={{ encodeURIComponent(String($json.jeton_suivi)) }}"
+              "message": "=🍽️ Bonjour {{ $json.nom }},\n\nVotre commande {{ $json.reference }} ({{ $json.total }} F) chez {{ $json.nom_boutique }} est bien reçue.\n\n{{ String($json.mode_recuperation || '').trim() === 'retrait' ? ('Avant de lancer la préparation, confirmez-vous venir la chercher' + ($json.heure_retrait ? ' vers ' + DateTime.fromISO($json.heure_retrait).setZone('Africa/Abidjan').toFormat('HH:mm') : '') + ' ?') : 'Avant de lancer la préparation, confirmez-vous être disponible pour la réception ?' }}\n\n👉 Confirmer ou annuler :\nhttps://www.djiguiflow.com/api/confirmation?ref={{ encodeURIComponent(String($json.reference || '')) }}&t={{ encodeURIComponent(String($json.jeton_suivi)) }}"
             }
           }
         },
@@ -794,13 +794,28 @@
         ],
         "type": "n8n-nodes-base.stickyNote",
         "typeVersion": 1
+      },
+      {
+        "id": "bc4e7cc0-c94a-4f42-b64d-b2d03a1e6435",
+        "name": "Le mot juste selon le mode",
+        "parameters": {
+          "content": "## « disponible pour la réception », a qui vient chercher\n\nCe message demandait a TOUT client s'il serait disponible pour la reception —\ny compris a celui qui a choisi de passer prendre sa commande au comptoir.\n\nTrouve au BANC DE CHAINE le 26 aout, en lisant le texte reellement envoye dans\nles donnees d'execution. Aucune relecture ne l'avait vu : le message est\ncompose ici, et ce workflow ne connaissait de la commande que ce que\n`/api/boutiques/[id]/commander` lui transmet — `mode_recuperation` n'en\nfaisait pas partie.\n\nLe champ part maintenant pour TOUTE commande, livraison comprise : un champ\nqui n'apparait que dans un cas oblige a traiter son absence comme une valeur.",
+          "height": 220,
+          "width": 540
+        },
+        "position": [
+          1060,
+          600
+        ],
+        "type": "n8n-nodes-base.stickyNote",
+        "typeVersion": 1
       }
     ],
     "workflowId": "Ks6tpQSDYSQ3UG1o",
     "workflowPublishHistory": [
       {
         "event": "activated",
-        "id": 294,
+        "id": 302,
         "userId": "81519f6f-0887-498a-ad83-5ffd6d591e9a",
         "workflowId": "Ks6tpQSDYSQ3UG1o"
       }
@@ -1103,7 +1118,7 @@
             "boutique": "={{ $json.slug }}",
             "canal": "={{ $json.canal_client }}",
             "destinataire": "={{ $json.destinataire_client }}",
-            "message": "=🍽️ Bonjour {{ $json.nom }},\n\nVotre commande {{ $json.reference }} ({{ $json.total }} F) chez {{ $json.nom_boutique }} est bien reçue.\n\nAvant de lancer la préparation, confirmez-vous être disponible pour la réception ?\n\n👉 Confirmer ou annuler :\nhttps://www.djiguiflow.com/api/confirmation?ref={{ encodeURIComponent(String($json.reference || '')) }}&t={{ encodeURIComponent(String($json.jeton_suivi)) }}"
+            "message": "=🍽️ Bonjour {{ $json.nom }},\n\nVotre commande {{ $json.reference }} ({{ $json.total }} F) chez {{ $json.nom_boutique }} est bien reçue.\n\n{{ String($json.mode_recuperation || '').trim() === 'retrait' ? ('Avant de lancer la préparation, confirmez-vous venir la chercher' + ($json.heure_retrait ? ' vers ' + DateTime.fromISO($json.heure_retrait).setZone('Africa/Abidjan').toFormat('HH:mm') : '') + ' ?') : 'Avant de lancer la préparation, confirmez-vous être disponible pour la réception ?' }}\n\n👉 Confirmer ou annuler :\nhttps://www.djiguiflow.com/api/confirmation?ref={{ encodeURIComponent(String($json.reference || '')) }}&t={{ encodeURIComponent(String($json.jeton_suivi)) }}"
           }
         }
       },
@@ -1599,6 +1614,21 @@
       ],
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1
+    },
+    {
+      "id": "bc4e7cc0-c94a-4f42-b64d-b2d03a1e6435",
+      "name": "Le mot juste selon le mode",
+      "parameters": {
+        "content": "## « disponible pour la réception », a qui vient chercher\n\nCe message demandait a TOUT client s'il serait disponible pour la reception —\ny compris a celui qui a choisi de passer prendre sa commande au comptoir.\n\nTrouve au BANC DE CHAINE le 26 aout, en lisant le texte reellement envoye dans\nles donnees d'execution. Aucune relecture ne l'avait vu : le message est\ncompose ici, et ce workflow ne connaissait de la commande que ce que\n`/api/boutiques/[id]/commander` lui transmet — `mode_recuperation` n'en\nfaisait pas partie.\n\nLe champ part maintenant pour TOUTE commande, livraison comprise : un champ\nqui n'apparait que dans un cas oblige a traiter son absence comme une valeur.",
+        "height": 220,
+        "width": 540
+      },
+      "position": [
+        1060,
+        600
+      ],
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1
     }
   ],
   "settings": {
@@ -1610,5 +1640,5 @@
   },
   "sourceWorkflowId": null,
   "tags": [],
-  "versionCounter": 15
+  "versionCounter": 16
 }
