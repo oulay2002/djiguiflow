@@ -161,9 +161,21 @@ async function tariferPanier(
     }
   }
 
-  // L'ordre du panier du client est conserve.
+  /**
+   * L'ordre du panier du client est conserve.
+   *
+   * ON RELIT PAR `clef(d)`, PAS PAR `d.id`. La table est remplie sous `clef` —
+   * `id::variante` des qu'une declinaison existe — et testee sous `clef` vingt
+   * lignes plus haut. Seule cette relecture utilisait `d.id`.
+   *
+   * CE QUE CA COUTAIT : toute ligne portant une pointure, une taille ou un
+   * coloris etait SILENCIEUSEMENT PERDUE ici. Une commande de chaussures en 42
+   * se reduisait a « Panier vide » (400) ou a une commande amputee — c'est-a-dire
+   * que la fonctionnalite des declinaisons ne fonctionnait pas du tout sur la
+   * vitrine, sans qu'une erreur ne le dise. Trouve a l'audit du 26 aout 2026.
+   */
   return demandes
-    .map((d) => resolues.get(d.id))
+    .map((d) => resolues.get(clef(d)))
     .filter((l): l is LigneCommande => Boolean(l));
 }
 

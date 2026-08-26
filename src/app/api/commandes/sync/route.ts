@@ -115,9 +115,45 @@ export async function POST(req: Request) {
 
   const { data: existante } = await sb
     .from('commandes')
-    .select('statut, nom_livreur')
+    .select('statut, nom_livreur, boutique_id')
     .eq('reference', referenceDemandee)
     .maybeSingle();
+
+  /**
+   * UNE BOUTIQUE N'ECRIT PAS DANS LA COMMANDE D'UNE AUTRE.
+   *
+   * `boutique_id` etait exige a l'entree puis JAMAIS utilise comme filtre :
+   * les neuf requetes de cette route portaient sur `reference` seule, et la
+   * reference est unique sur TOUTE la base. L'assistante inventant elle-meme
+   * ses references, il suffisait d'amener le modele a en retenir une autre —
+   * un client dictant « ma commande ATT-1000000006 » — pour que la boutique A
+   * ecrase le nom, le telephone, l'adresse et le total d'une commande de B.
+   *
+   * ET LA REPONSE RENDAIT LE `jeton_suivi` DE B. Ce jeton partait ensuite dans
+   * le lien de confirmation envoye au client de A, qui pouvait alors lire les
+   * coordonnees du client de B et ANNULER sa commande. Le jeton est
+   * precisement la preuve que la phase 4 a rendue obligatoire ; il etait remis
+   * au mauvais destinataire.
+   *
+   * LE REFUS EST POSE ICI, EN UN SEUL POINT, et non repete sur neuf requetes :
+   * une garde recopiee neuf fois est une garde qu'on oubliera a la dixieme.
+   * Les ecritures sont cloisonnees en plus, mais c'est le second rideau.
+   *
+   * On ne rend PAS une reference neuve dans ce cas, contrairement au cas
+   * « commande terminee » plus bas : la reference existe et elle est valide,
+   * simplement pas ici. Poursuivre sous un autre numero masquerait une
+   * tentative derriere un succes.
+   */
+  if (existante && String(existante.boutique_id ?? '') !== boutique_id) {
+    console.error(
+      `Sync — REFUS : la reference ${referenceDemandee} appartient a une autre boutique`
+      + ` que ${boutique_id}. Rien n'a ete ecrit.`,
+    );
+    return Response.json({
+      ok: false,
+      error: 'Cette référence appartient à une autre boutique.',
+    }, { status: 409 });
+  }
 
   const estTerminee = existante
     && (TERMINEES.includes(String(existante.statut ?? ''))
@@ -297,6 +333,7 @@ export async function POST(req: Request) {
         .from('commandes')
         .select('heure_retrait')
         .eq('reference', reference)
+        .eq('boutique_id', boutique_id)
         .maybeSingle();
 
       // La MEME heure, renvoyee telle quelle : rien n'a change dans la demande
@@ -325,6 +362,7 @@ export async function POST(req: Request) {
     .from('commandes')
     .select('reference')
     .eq('reference', reference)
+    .eq('boutique_id', boutique_id)
     .maybeSingle();
 
   // ---- LE MARQUEUR « on a demande, on attend ».
@@ -370,6 +408,7 @@ export async function POST(req: Request) {
         .from('commandes')
         .update({ confirmation_statut: 'demandee' })
         .eq('reference', reference)
+        .eq('boutique_id', boutique_id)
         .is('confirmation_statut', null);
 
       if (errMarque) {
@@ -395,6 +434,7 @@ export async function POST(req: Request) {
         .from('commandes')
         .select('client_nom, client_telephone, client_adresse')
         .eq('reference', reference)
+        .eq('boutique_id', boutique_id)
         .maybeSingle();
 
       const manquant = coordonneesLivrables(
@@ -425,6 +465,7 @@ export async function POST(req: Request) {
         .from('commandes')
         .update({ statut: 'en_attente' })
         .eq('reference', reference)
+        .eq('boutique_id', boutique_id)
         .eq('statut', 'panier');
 
       if (errPromotion) {
@@ -441,6 +482,7 @@ export async function POST(req: Request) {
         .from('commandes')
         .select('jeton_suivi')
         .eq('reference', reference)
+        .eq('boutique_id', boutique_id)
         .maybeSingle();
       return Response.json({
         ok: true,
@@ -452,7 +494,8 @@ export async function POST(req: Request) {
     const { error } = await sb
       .from('commandes')
       .update(payload)
-      .eq('reference', reference);
+      .eq('reference', reference)
+      .eq('boutique_id', boutique_id);
     if (error) return Response.json({ error: 'UPDATE: ' + error.message }, { status: 500 });
   } else {
     // A LA CREATION, les colonnes NOT NULL doivent etre garanties ICI.
@@ -559,6 +602,7 @@ export async function POST(req: Request) {
     .from('commandes')
     .select('id, jeton_suivi')
     .eq('reference', reference)
+    .eq('boutique_id', boutique_id)
     .maybeSingle();
   if (!cmd) return Response.json({ error: 'commande introuvable après upsert' }, { status: 500 });
 

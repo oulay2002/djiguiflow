@@ -36,23 +36,45 @@ export async function POST(req: Request) {
   const sb = getSupabaseAdmin();
   if (!sb) return Response.json({ error: 'Base indisponible' }, { status: 503 });
 
-  // La commande et le livreur doivent appartenir a la boutique de l'appelant :
-  // sans ce controle, un marchand connecte pourrait assigner le livreur d'un
-  // autre, ou pire, une commande qui ne lui appartient pas.
+  /**
+   * LA COMMANDE ET LE LIVREUR APPARTIENNENT A LA BOUTIQUE DE L'APPELANT.
+   *
+   * C'ETAIT ECRIT ICI, EN COMMENTAIRE, ET NULLE PART DANS LE CODE. Les deux
+   * lectures ne filtraient que sur `id`, et le seul controle verifiait que la
+   * commande et le livreur etaient dans la MEME boutique — pas dans CELLE du
+   * connecte. `m.boutiqueId` n'apparaissait dans aucune requete.
+   *
+   * Ce que cela permettait : un marchand authentifie avec son propre slug —
+   * donc parfaitement en regle vis-a-vis d'`exigerAccesMarchand` — postait deux
+   * identifiants appartenant a un concurrent. Le controle passait, trois tables
+   * de l'autre boutique etaient ecrites, et DEUX MESSAGES partaient a son
+   * livreur et a son client depuis le bot du premier. C'etait le seul endroit
+   * de tout `/api/dashboard/**` ou une mutation n'etait pas bornee au porteur
+   * du jeton : seule l'imprevisibilite des UUID retenait l'exploitation, et un
+   * UUID n'est pas un controle d'acces.
+   *
+   * Le filtre est donc pose dans les deux LECTURES : ce qui n'appartient pas a
+   * l'appelant n'existe pas pour lui, et le 404 ne distingue pas « inconnu » de
+   * « pas a vous ».
+   */
   const [{ data: commande }, { data: livreur }] = await Promise.all([
     sb.from('commandes')
       .select('id, boutique_id, reference, client_nom, client_telephone, chat_id, client_adresse, total')
       .eq('id', commandeId)
+      .eq('boutique_id', m.boutiqueId)
       .maybeSingle(),
     sb.from('livreurs')
       .select('id, boutique_id, nom, telephone')
       .eq('id', livreurId)
+      .eq('boutique_id', m.boutiqueId)
       .maybeSingle(),
   ]);
 
   if (!commande || !livreur) {
     return Response.json({ error: 'Commande ou livreur introuvable' }, { status: 404 });
   }
+  // Les deux lectures etant deja bornees, ce test ne peut plus echouer. On le
+  // garde : il coute une comparaison, et il tomberait si un filtre disparaissait.
   if (commande.boutique_id !== livreur.boutique_id) {
     return Response.json({ error: 'Commande et livreur de boutiques différentes' }, { status: 409 });
   }

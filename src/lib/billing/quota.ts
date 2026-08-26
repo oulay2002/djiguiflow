@@ -1,5 +1,6 @@
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import { estAdmin } from '@/lib/adminAuth';
+import { planApplicable } from '@/lib/billing/acces';
 import {
   FENETRE_QUOTA_JOURS,
   getBillingPlan,
@@ -97,13 +98,30 @@ export async function etatQuota(userId: string): Promise<EtatQuota | null> {
 
   const { data: abonnement } = await sb
     .from('subscriptions')
-    .select('plan_key, current_period_start')
+    .select('plan_key, current_period_start, current_period_end, status')
     .eq('user_id', userId)
     .maybeSingle();
 
-  // Sans abonnement, le compte est sur l'essai : c'est le plan le plus
-  // restrictif, et le repli doit toujours accorder le moins.
-  const plan = getBillingPlan(abonnement?.plan_key ?? '') ?? getBillingPlan('essai');
+  /**
+   * LE PLAN APPLICABLE, PAS LE PLAN INSCRIT.
+   *
+   * Cette lecture ne demandait que `plan_key` et `current_period_start`. Ni le
+   * statut, ni la date de fin — alors que RIEN ne revoque une ligne
+   * d'abonnement : `prolonger_acces` la pose, et aucune tache, aucun
+   * declencheur ne repasse derriere. Un forfait paye un seul mois accordait
+   * donc son plafond indefiniment, la fenetre de facturation avancant toute
+   * seule depuis une ancre figee.
+   *
+   * La seule lecture qui tenait compte de l'echeance vivait dans une route que
+   * seul le NAVIGATEUR consultait — une porte que le client ferme n'est pas
+   * une porte. Elle vit maintenant dans `acces.ts`, et c'est le serveur qui la
+   * lit.
+   *
+   * Sans abonnement — ou avec un abonnement echu — le compte retombe sur
+   * l'essai : le plan le plus restrictif, et le repli doit toujours accorder
+   * le moins.
+   */
+  const plan = getBillingPlan(planApplicable(abonnement)) ?? getBillingPlan('essai');
   if (!plan) return null;
 
   const { debut, fin } = fenetreCourante(abonnement?.current_period_start ?? null);

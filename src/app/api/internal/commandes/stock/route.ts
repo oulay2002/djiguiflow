@@ -1,4 +1,5 @@
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
+import { referenceRecevable } from '@/lib/reference';
 
 export const dynamic = 'force-dynamic';
 
@@ -52,6 +53,11 @@ export async function POST(req: Request) {
 
   const reference = String(corps.reference ?? corps.order_id ?? '').trim();
   if (!reference) return Response.json({ error: 'reference requise' }, { status: 400 });
+
+  // Meme liste blanche que les routes publiques. Voir `@/lib/reference`.
+  if (!referenceRecevable(reference)) {
+    return Response.json({ error: 'reference invalide' }, { status: 400 });
+  }
 
   const sb = getSupabaseAdmin();
   if (!sb) return Response.json({ error: 'Base indisponible' }, { status: 503 });

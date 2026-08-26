@@ -182,6 +182,54 @@ for (const signature of definer) {
   }
 }
 
+/**
+ * ── PASSAGE 1 bis : LE ROLE QUE CE GARDE NE REGARDAIT PAS ─────────────────
+ *
+ * Tout ce qui precede cherche `REVOKE ... FROM PUBLIC`. C'etait le bon reflexe
+ * Postgres, et c'est le mauvais role sur Supabase.
+ *
+ * SUPABASE N'ACCORDE JAMAIS A PUBLIC. Il accorde nommement a `anon` et
+ * `authenticated`, par des droits par defaut poses sur le schema `public` :
+ * toute fonction qui y nait porte donc `anon=X` dans son ACL, et PUBLIC n'y
+ * figure pas. Un `pg_dump` rend alors, pour la meme fonction, un
+ * `REVOKE ALL ... FROM PUBLIC` **et** un `GRANT ALL ... TO "anon"`. Le passage
+ * ci-dessus voyait le revoke, se declarait satisfait, et laissait la fonction
+ * ouverte a tout visiteur.
+ *
+ * Constate le 26 aout 2026 : `limiter_boutiques_par_plan` est nee ouverte a
+ * `anon` et a `authenticated`, ce garde est reste vert. Elle ne rendait rien —
+ * c'est une fonction de declencheur, elle echoue hors declencheur — mais la
+ * meme migration ecrite pour `prolonger_acces` ou `jeton_canal` aurait ouvert a
+ * tout visiteur une fonction qui contourne RLS par construction.
+ *
+ * D'OU UNE LISTE BLANCHE, ET NON UNE DETECTION. On ne peut pas deduire du SQL
+ * si une ouverture est voulue : seul un humain le sait. Les trois fonctions de
+ * vitrine sont publiques par dessein — c'est ce que la vitrine appelle sans
+ * compte. Toute autre doit etre justifiee ici, a la main, en toute conscience.
+ */
+const OUVERTES_A_DESSEIN = new Set([
+  '"public"."vitrine_boutique"("p_ref" "text")',
+  '"public"."vitrine_boutiques"()',
+  '"public"."vitrine_produits"("p_ref" "text")',
+].map(normaliser));
+
+const accordeesAnon = new Set(
+  [...reference.matchAll(/^GRANT ALL ON FUNCTION (.+) TO "(?:anon|authenticated)";\s*$/gm)]
+    .map((m) => normaliser(m[1])),
+);
+
+for (const signature of definer) {
+  if (accordeesAnon.has(signature) && !OUVERTES_A_DESSEIN.has(signature)) {
+    problemes.push({
+      ou: REFERENCE,
+      quoi: `${signature} est SECURITY DEFINER et executable par anon ou authenticated`,
+      geste:
+        `revoke all on function ${signature.replace(/"/g, '')} from anon, authenticated;\n`
+        + "      (ou, si l'ouverture est voulue, l'inscrire dans OUVERTES_A_DESSEIN de ce script)",
+    });
+  }
+}
+
 // ────────────────────────────────────── passage 2 : la cause, dans les migrations
 
 const fichiers = readdirSync(MIGRATIONS)

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { estAdmin } from '@/lib/adminAuth';
+import { accesOuvert } from '@/lib/billing/acces';
 
 export const runtime = 'nodejs';
 
@@ -49,34 +50,14 @@ function buildSupabaseAdminClient() {
   });
 }
 
-const STATUTS_OUVRANTS = new Set(['active', 'trialing']);
-
 /**
- * L'acces est-il reellement ouvert ?
+ * LA REGLE A QUITTE CE FICHIER, ET C'ETAIT TOUT LE PROBLEME.
  *
- * Le statut ne suffit pas : il faut aussi que la periode payee ne soit pas
- * echue. Cette verification manquait, et le tableau de bord se contentait du
- * statut — une ligne « active » ouvrait donc l'acces indefiniment. Avec
- * Stripe, c'est un webhook manque qui laissait passer un abonne resilie ; en
- * prepaye, ou plus rien ne vient fermer la porte, un seul paiement aurait valu
- * acces a vie.
- *
- * Le calcul reste ici, cote serveur : le navigateur ne doit pas avoir a
- * refaire une arithmetique de dates pour savoir s'il a le droit d'entrer.
+ * Elle etait juste, mais son unique consommateur etait le NAVIGATEUR. Les
+ * decisions serveur — quota, garde de l'assistante, limite multi-boutiques —
+ * ne lisaient que `plan_key` et accordaient donc les droits d'un forfait
+ * expire, indefiniment. Voir `@/lib/billing/acces`.
  */
-function accesOuvert(abonnement: { status?: string | null; current_period_end?: string | null } | null): boolean {
-  if (!abonnement) return false;
-  if (!abonnement.status || !STATUTS_OUVRANTS.has(abonnement.status)) return false;
-
-  // Pas de date de fin : on ne ferme pas une porte qu'on ne sait pas dater.
-  // Le cas se presente sur les acces ouverts a la main, avant le prepaye.
-  if (!abonnement.current_period_end) return true;
-
-  const fin = Date.parse(abonnement.current_period_end);
-  if (Number.isNaN(fin)) return true;
-
-  return fin > Date.now();
-}
 
 export async function GET(request: Request) {
   const accessToken = getBearerToken(request);

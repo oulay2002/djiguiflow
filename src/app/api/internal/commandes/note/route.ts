@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
+import { referenceRecevable } from '@/lib/reference';
 
 export const dynamic = 'force-dynamic';
 
@@ -53,6 +54,12 @@ export async function POST(req: Request) {
 
   if (!reference) {
     return NextResponse.json({ error: 'reference requise' }, { status: 400 });
+  }
+
+  // Meme liste blanche que les routes publiques : une reference doit avoir la
+  // forme d'une reference avant d'atteindre la base. Voir `@/lib/reference`.
+  if (!referenceRecevable(reference)) {
+    return NextResponse.json({ error: 'reference invalide' }, { status: 400 });
   }
   if (!Number.isInteger(note) || note < 1 || note > 5) {
     return NextResponse.json({ error: 'note attendue entre 1 et 5' }, { status: 400 });

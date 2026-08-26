@@ -30,6 +30,14 @@ const SECRET = 'secret-de-banc';
 const etats = vi.hoisted(() => ({
   // La commande existe-t-elle deja ? Faux => chemin INSERT.
   existeDeja: false,
+  // A QUELLE BOUTIQUE APPARTIENT LA LIGNE EXISTANTE.
+  //
+  // Le simulacre l'omettait, et la route ne la lisait pas : c'est exactement le
+  // trou que l'audit du 26 aout a trouve. Une reference etant unique sur toute
+  // la base, la boutique A pouvait ecraser la commande de B — et recevoir son
+  // `jeton_suivi` en retour, donc le pouvoir de lire ses coordonnees et
+  // d'annuler sa commande.
+  boutiqueDeLaLigne: '11111111-1111-1111-1111-111111111111',
   inserees: [] as Record<string, unknown>[],
 }));
 
@@ -70,7 +78,15 @@ vi.mock('@/lib/supabaseAdmin', () => ({
           }
           // Les deux sondes d'existence, en tete de route.
           if (!etats.existeDeja) return { data: null, error: null };
-          return { data: { reference: 'ZAH-1', statut: 'en_attente', nom_livreur: '' }, error: null };
+          return {
+            data: {
+              reference: 'ZAH-1',
+              statut: 'en_attente',
+              nom_livreur: '',
+              boutique_id: etats.boutiqueDeLaLigne,
+            },
+            error: null,
+          };
         },
         then: (r: (v: unknown) => void) => r({ error: null }),
       };
@@ -106,6 +122,7 @@ beforeEach(() => {
   vi.resetModules();
   process.env.SYNC_SECRET = SECRET;
   etats.existeDeja = false;
+  etats.boutiqueDeLaLigne = COMMANDE.boutique_id;
   etats.inserees = [];
 });
 
@@ -133,7 +150,41 @@ describe('le jeton de suivi rendu par /api/commandes/sync', () => {
     expect(corps.jeton_suivi).toBe(JETON);
   });
 
-  it('3. ne le rend a personne sans le secret', async () => {
+  /**
+   * LE JETON NE PART PAS CHEZ LE VOISIN.
+   *
+   * `boutique_id` etait exige a l'entree de cette route puis JAMAIS utilise
+   * comme filtre : les neuf requetes portaient sur `reference` seule, et une
+   * reference est unique sur TOUTE la base.
+   *
+   * L'assistante inventant elle-meme ses references, il suffisait d'amener le
+   * modele a en retenir une autre — un client dictant « ma commande
+   * ATT-1000000006 » — pour que la boutique A ecrase le nom, le telephone,
+   * l'adresse et le total d'une commande de B. Et la reponse rendait le
+   * `jeton_suivi` de B, qui partait dans le lien de confirmation envoye au
+   * client de A : celui-ci pouvait alors LIRE les coordonnees du client de B et
+   * ANNULER sa commande.
+   *
+   * Le jeton est precisement la preuve que la phase 4 a rendue obligatoire.
+   * Il etait remis au mauvais destinataire.
+   */
+  it('4. REFUSE une reference qui appartient a une autre boutique', async () => {
+    etats.existeDeja = true;
+    etats.boutiqueDeLaLigne = '99999999-9999-9999-9999-999999999999';
+
+    const { statut, corps } = await appeler({
+      reference: COMMANDE.reference,
+      boutique_id: COMMANDE.boutique_id,
+      customer_name: 'Curieux',
+    });
+
+    expect(statut).toBe(409);
+    expect(corps.ok).toBe(false);
+    // Et surtout : aucun jeton ne sort.
+    expect(corps.jeton_suivi).toBeUndefined();
+  });
+
+  it('5. ne le rend a personne sans le secret', async () => {
     const { POST } = await import('@/app/api/commandes/sync/route');
     const req = new Request('https://www.djiguiflow.com/api/commandes/sync', {
       method: 'POST',

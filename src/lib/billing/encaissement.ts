@@ -1,5 +1,5 @@
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
-import { verifierPaiement, type ResultatVerification } from '@/lib/billing/geniuspay';
+import { geniuspayBacASable, verifierPaiement, type ResultatVerification } from '@/lib/billing/geniuspay';
 import { prolongerAcces } from '@/lib/billing/periode';
 import type { Database } from '@/lib/database.types';
 
@@ -175,7 +175,27 @@ export async function honorerPaiement(params: {
   // prestataire, montant conforme. `etat: 'sandbox'` est donc un SUCCES de test,
   // pas un echec. Seule la derniere marche, celle qui donne les droits, n'est
   // pas franchie.
-  if (verdict.environnement === 'sandbox' && !bacASableAccepte()) {
+  /**
+   * LE MONDE DE LA TRANSACTION SE DECIDE CHEZ NOUS, PAS CHEZ LE PRESTATAIRE.
+   *
+   * Ce test ne portait que sur `verdict.environnement`, qui vient de
+   * `data.environment` dans la reponse GeniusPay — un champ que notre propre
+   * lecteur traite comme FACULTATIF (`data.environment ? String(...) : null`).
+   * Une reponse qui l'omet, un jour, sur une version d'API, ou pour un moyen de
+   * paiement particulier, rendait donc `null`, le garde ne se declenchait pas,
+   * et une transaction simulee ouvrait un abonnement reel. La production tourne
+   * aujourd'hui sur une cle de bac a sable : le cas n'a rien de theorique.
+   *
+   * Le signal local existait deja et il est certain : `geniuspayBacASable()`
+   * lit le PREFIXE DE NOTRE PROPRE CLE. Il ne dependait de personne, et il
+   * n'etait utilise que par les routes de diagnostic — jamais par le garde qui
+   * ouvre les droits.
+   *
+   * On garde les deux : si l'un des deux dit « bac a sable », c'en est un.
+   * Un faux positif coute une relance ; un faux negatif offre le produit.
+   */
+  const enBacASable = verdict.environnement === 'sandbox' || geniuspayBacASable();
+  if (enBacASable && !bacASableAccepte()) {
     return { etat: 'sandbox' };
   }
 
