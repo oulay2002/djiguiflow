@@ -103,6 +103,17 @@
           ]
         ]
       },
+      "Dire au livreur que c est offert": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Demander la position",
+              "type": "main"
+            }
+          ]
+        ]
+      },
       "If": {
         "main": [
           [
@@ -116,6 +127,24 @@
             {
               "index": 0,
               "node": "Demander note client",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Livraison offerte ?": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Dire au livreur que c est offert",
+              "type": "main"
+            }
+          ],
+          [
+            {
+              "index": 0,
+              "node": "Demander les frais",
               "type": "main"
             }
           ]
@@ -175,7 +204,7 @@
             },
             {
               "index": 0,
-              "node": "Demander les frais",
+              "node": "Livraison offerte ?",
               "type": "main"
             }
           ]
@@ -1816,13 +1845,81 @@
         "type": "n8n-nodes-base.httpRequest",
         "typeVersion": 4.2,
         "waitBetweenTries": 5000
+      },
+      {
+        "id": "f563745a-05d1-45fd-a883-2716d4c5951b",
+        "name": "Livraison offerte ?",
+        "notes": "Quand le marchand offre la livraison, IL N'Y A RIEN A DEMANDER AU LIVREUR : le montant est deja arrete a zero en base. Lui presenter les boutons de tarif l'inviterait a nommer un prix que le client n'a pas a payer. Une valeur absente ou illisible passe par la sortie FAUSSE et retombe donc sur le comportement d'hier : le livreur annonce ses frais.",
+        "parameters": {
+          "conditions": {
+            "combinator": "and",
+            "conditions": [
+              {
+                "id": "g1000000-0000-4000-8000-000000000001",
+                "leftValue": "={{ String($('Trouver la commande').first().json.frais_livraison ?? '').trim() === '0' }}",
+                "operator": {
+                  "operation": "true",
+                  "singleValue": true,
+                  "type": "boolean"
+                },
+                "rightValue": ""
+              }
+            ],
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            }
+          }
+        },
+        "position": [
+          2064,
+          240
+        ],
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2
+      },
+      {
+        "id": "c20f66b1-a05d-43f8-b739-b044552be7a4",
+        "name": "Dire au livreur que c est offert",
+        "notes": "La phrase qui evite une dispute sur le pas de la porte. Elle remplace la question des frais : il n'y en a pas a annoncer, et le livreur doit savoir AVANT d'arriver que son du vient du commercant.",
+        "parameters": {
+          "options": {},
+          "workflowId": {
+            "__rl": true,
+            "cachedResultName": "Envoyer réponse client",
+            "mode": "list",
+            "value": "JkNvcqsZaY22dfk5"
+          },
+          "workflowInputs": {
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": true,
+            "mappingMode": "defineBelow",
+            "matchingColumns": [],
+            "schema": [],
+            "value": {
+              "boutique": "={{ $('When Executed by Another Workflow').first().json.slug }}",
+              "canal": "telegram",
+              "destinataire": "={{ $('Code in JavaScript').first().json.chat_id_groupe }}",
+              "message": "=🎁 {{ $('Code in JavaScript').first().json.livreur_name }}, la livraison de la commande {{ $('Trouver la commande').first().json.order_id }} est OFFERTE par le commercant.\n\nNe demandez rien au client : c est le commercant qui vous regle.",
+              "sheet_document_id": "={{ $('When Executed by Another Workflow').first().json.sheet_document_id }}"
+            }
+          }
+        },
+        "position": [
+          2288,
+          128
+        ],
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.3
       }
     ],
     "workflowId": "LqBgRvLeeKUwZhB5",
     "workflowPublishHistory": [
       {
         "event": "activated",
-        "id": 266,
+        "id": 298,
         "userId": "81519f6f-0887-498a-ad83-5ffd6d591e9a",
         "workflowId": "LqBgRvLeeKUwZhB5"
       }
@@ -1928,6 +2025,17 @@
         ]
       ]
     },
+    "Dire au livreur que c est offert": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Demander la position",
+            "type": "main"
+          }
+        ]
+      ]
+    },
     "If": {
       "main": [
         [
@@ -1941,6 +2049,24 @@
           {
             "index": 0,
             "node": "Demander note client",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Livraison offerte ?": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Dire au livreur que c est offert",
+            "type": "main"
+          }
+        ],
+        [
+          {
+            "index": 0,
+            "node": "Demander les frais",
             "type": "main"
           }
         ]
@@ -2000,7 +2126,7 @@
           },
           {
             "index": 0,
-            "node": "Demander les frais",
+            "node": "Livraison offerte ?",
             "type": "main"
           }
         ]
@@ -3643,6 +3769,74 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "waitBetweenTries": 5000
+    },
+    {
+      "id": "f563745a-05d1-45fd-a883-2716d4c5951b",
+      "name": "Livraison offerte ?",
+      "notes": "Quand le marchand offre la livraison, IL N'Y A RIEN A DEMANDER AU LIVREUR : le montant est deja arrete a zero en base. Lui presenter les boutons de tarif l'inviterait a nommer un prix que le client n'a pas a payer. Une valeur absente ou illisible passe par la sortie FAUSSE et retombe donc sur le comportement d'hier : le livreur annonce ses frais.",
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "g1000000-0000-4000-8000-000000000001",
+              "leftValue": "={{ String($('Trouver la commande').first().json.frais_livraison ?? '').trim() === '0' }}",
+              "operator": {
+                "operation": "true",
+                "singleValue": true,
+                "type": "boolean"
+              },
+              "rightValue": ""
+            }
+          ],
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          }
+        }
+      },
+      "position": [
+        2064,
+        240
+      ],
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2
+    },
+    {
+      "id": "c20f66b1-a05d-43f8-b739-b044552be7a4",
+      "name": "Dire au livreur que c est offert",
+      "notes": "La phrase qui evite une dispute sur le pas de la porte. Elle remplace la question des frais : il n'y en a pas a annoncer, et le livreur doit savoir AVANT d'arriver que son du vient du commercant.",
+      "parameters": {
+        "options": {},
+        "workflowId": {
+          "__rl": true,
+          "cachedResultName": "Envoyer réponse client",
+          "mode": "list",
+          "value": "JkNvcqsZaY22dfk5"
+        },
+        "workflowInputs": {
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true,
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "schema": [],
+          "value": {
+            "boutique": "={{ $('When Executed by Another Workflow').first().json.slug }}",
+            "canal": "telegram",
+            "destinataire": "={{ $('Code in JavaScript').first().json.chat_id_groupe }}",
+            "message": "=🎁 {{ $('Code in JavaScript').first().json.livreur_name }}, la livraison de la commande {{ $('Trouver la commande').first().json.order_id }} est OFFERTE par le commercant.\n\nNe demandez rien au client : c est le commercant qui vous regle.",
+            "sheet_document_id": "={{ $('When Executed by Another Workflow').first().json.sheet_document_id }}"
+          }
+        }
+      },
+      "position": [
+        2288,
+        128
+      ],
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3
     }
   ],
   "settings": {
@@ -3653,5 +3847,5 @@
   },
   "sourceWorkflowId": null,
   "tags": [],
-  "versionCounter": 30
+  "versionCounter": 31
 }

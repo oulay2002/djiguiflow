@@ -327,6 +327,7 @@
               "chat_id": "={{ Number($('Données commande').first().json.chat_id) || 0 }}",
               "customer_name": "={{ $('Données commande').first().json.customer_name || 'Client app' }}",
               "destinataire": "={{ $('Données commande').first().json.phone }}",
+              "frais_livraison": "={{ $('Données commande').first().json.frais_livraison }}",
               "groupeLivreurs": "={{ $('Données commande').first().json.groupeLivreurs }}",
               "items": "={{ $('Données commande').first().json.items || '[]' }}",
               "order_id": "={{ $('Données commande').first().json.order_id }}",
@@ -425,6 +426,12 @@
                 "name": "heure_retrait",
                 "type": "string",
                 "value": "={{ $json.body.heure_retrait }}"
+              },
+              {
+                "id": "d2000000-0000-4000-8000-000000000007",
+                "name": "frais_livraison",
+                "type": "string",
+                "value": "={{ $json.body.frais_livraison }}"
               }
             ]
           },
@@ -883,7 +890,7 @@
     "workflowPublishHistory": [
       {
         "event": "activated",
-        "id": 284,
+        "id": 292,
         "userId": "81519f6f-0887-498a-ad83-5ffd6d591e9a",
         "workflowId": "McPXBAfBRAmaUfEF"
       }
@@ -1215,6 +1222,7 @@
             "chat_id": "={{ Number($('Données commande').first().json.chat_id) || 0 }}",
             "customer_name": "={{ $('Données commande').first().json.customer_name || 'Client app' }}",
             "destinataire": "={{ $('Données commande').first().json.phone }}",
+            "frais_livraison": "={{ $('Données commande').first().json.frais_livraison }}",
             "groupeLivreurs": "={{ $('Données commande').first().json.groupeLivreurs }}",
             "items": "={{ $('Données commande').first().json.items || '[]' }}",
             "order_id": "={{ $('Données commande').first().json.order_id }}",
@@ -1313,6 +1321,12 @@
               "name": "heure_retrait",
               "type": "string",
               "value": "={{ $json.body.heure_retrait }}"
+            },
+            {
+              "id": "d2000000-0000-4000-8000-000000000007",
+              "name": "frais_livraison",
+              "type": "string",
+              "value": "={{ $json.body.frais_livraison }}"
             }
           ]
         },
@@ -1775,5 +1789,5 @@
   },
   "sourceWorkflowId": null,
   "tags": [],
-  "versionCounter": 17
+  "versionCounter": 18
 }

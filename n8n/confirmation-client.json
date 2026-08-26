@@ -575,6 +575,7 @@
               "chat_id": "={{ Number($('Code in JavaScript').first().json.chat_id) }}",
               "customer_name": "={{ $('Code in JavaScript').first().json.nom }}",
               "destinataire": "={{ $('Code in JavaScript').first().json.phone }}",
+              "frais_livraison": "={{ $('Code in JavaScript').first().json.frais_livraison }}",
               "groupeLivreurs": "={{ $('Code in JavaScript').first().json.groupe_livreurs }}",
               "items": "={{ [].concat($('Code in JavaScript').first().json.items || []).join(', ') }}",
               "order_id": "={{ $('Code in JavaScript').first().json.reference }}",
@@ -799,7 +800,7 @@
     "workflowPublishHistory": [
       {
         "event": "activated",
-        "id": 286,
+        "id": 294,
         "userId": "81519f6f-0887-498a-ad83-5ffd6d591e9a",
         "workflowId": "Ks6tpQSDYSQ3UG1o"
       }
@@ -1379,6 +1380,7 @@
             "chat_id": "={{ Number($('Code in JavaScript').first().json.chat_id) }}",
             "customer_name": "={{ $('Code in JavaScript').first().json.nom }}",
             "destinataire": "={{ $('Code in JavaScript').first().json.phone }}",
+            "frais_livraison": "={{ $('Code in JavaScript').first().json.frais_livraison }}",
             "groupeLivreurs": "={{ $('Code in JavaScript').first().json.groupe_livreurs }}",
             "items": "={{ [].concat($('Code in JavaScript').first().json.items || []).join(', ') }}",
             "order_id": "={{ $('Code in JavaScript').first().json.reference }}",
@@ -1608,5 +1610,5 @@
   },
   "sourceWorkflowId": null,
   "tags": [],
-  "versionCounter": 14
+  "versionCounter": 15
 }

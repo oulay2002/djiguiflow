@@ -554,6 +554,17 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
    */
   let jetonSuivi = '';
 
+  /**
+   * CE QUE LE CLIENT DEVRA — OU NON — AU LIVREUR, calcule UNE FOIS.
+   *
+   * Il est ecrit en base ET transmis au dispatch. Le recalculer a chaque
+   * endroit ferait exactement ce que ce chantier evite depuis le debut : deux
+   * lectures de la meme regle qui finissent par diverger, et un livreur qui
+   * reclame au client une somme que la base dit offerte.
+   */
+  const fraisEnregistres: number | null =
+    modeRetenu === 'retrait' || livraisonOfferte(offerteDes, total) ? 0 : null;
+
   // ---- 1. Supabase : c'est ici que la commande existe ou n'existe pas.
   if (sb) {
     if (!boutiqueUuid) {
@@ -593,8 +604,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
          * On laisse NULL dans le seul cas ou c'est vrai : une livraison dont le
          * livreur annoncera le prix.
          */
-        frais_livraison:
-          modeRetenu === 'retrait' || livraisonOfferte(offerteDes, total) ? 0 : null,
+        frais_livraison: fraisEnregistres,
         chat_id: phone,
         total,
         // `canal` dit COMMENT JOINDRE le client, pas d'ou vient la commande.
@@ -840,6 +850,20 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
            */
           mode_recuperation: modeRetenu,
           heure_retrait: heureRetraitIso ?? '',
+          /**
+           * CE QUE LE LIVREUR DOIT SAVOIR AVANT D'ACCEPTER.
+           *
+           * `0` veut dire « il n'y a rien a encaisser », et c'est LUI que ca
+           * regarde en premier : une livraison offerte se regle entre le
+           * marchand et lui, jamais a la porte du client. Sans cette valeur, il
+           * reclamerait au client une somme que personne ne lui doit — c'est la
+           * dispute que cette fonctionnalite peut creer, et elle se joue sur le
+           * pas de la porte, la ou plus personne ne rattrape rien.
+           *
+           * Chaine vide quand le livreur annoncera ses frais : « rien a dire »
+           * ne doit pas se confondre avec « zero franc ».
+           */
+          frais_livraison: fraisEnregistres === null ? '' : String(fraisEnregistres),
           total_price: String(total),
           sheetCommandes: m.sheetCommandes,
           // Sans ce champ, le workflow n8n retombait sur le groupe de
