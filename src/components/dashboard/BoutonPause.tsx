@@ -20,7 +20,7 @@
  * `etatBoutique`.
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useSyncExternalStore } from 'react';
 import { PauseCircle, PlayCircle } from 'lucide-react';
 import { classesBouton } from '@/components/ui/Bouton';
 import { supabase } from '@/lib/supabase';
@@ -106,9 +106,63 @@ export default function BoutonPause() {
     void ecrire(fin.toISOString());
   };
 
-  // Une pause deja expiree ne doit rien afficher : le serveur la considere
-  // levee, l'ecran doit dire la meme chose.
-  const enPause = pauseJusqua !== null && Date.parse(pauseJusqua) > Date.now();
+  /**
+   * Une pause deja expiree ne doit rien afficher : le serveur la considere
+   * levee, l'ecran doit dire la meme chose.
+   *
+   * ELLE NE SE LEVAIT PAS TOUTE SEULE. La comparaison se faisait PENDANT LE
+   * RENDU — `Date.parse(pauseJusqua) > Date.now()`. Le rendu devenait donc
+   * dependant de l'heure qu'il est, ce que React ne sait pas suivre : le
+   * bandeau « Boutique en pause » restait affiche apres l'expiration, jusqu'a
+   * ce qu'autre chose provoque un nouveau rendu. Un marchand qui laisse son
+   * tableau de bord ouvert voyait sa boutique fermee alors qu'elle vendait.
+   *
+   * L'heure d'expiration est CONNUE : on ne la sonde pas, on s'y rend. Un seul
+   * minuteur, arme sur ce qui reste, et remplace des que la pause change.
+   */
+  /**
+   * Une pause deja expiree ne doit rien afficher : le serveur la considere
+   * levee, l'ecran doit dire la meme chose.
+   *
+   * ELLE NE SE LEVAIT PAS TOUTE SEULE. La comparaison se faisait PENDANT LE
+   * RENDU. Le rendu devenait dependant de l'heure qu'il est, ce que React ne
+   * sait pas suivre : le bandeau « Boutique en pause » restait affiche apres
+   * l'expiration, jusqu'a ce qu'autre chose provoque un nouveau rendu. Un
+   * marchand qui laisse son tableau de bord ouvert voyait sa boutique fermee
+   * alors qu'elle vendait.
+   */
+  const finPause = pauseJusqua === null ? NaN : Date.parse(pauseJusqua);
+
+  /**
+   * ON S'ABONNE A L'HORLOGE, on ne la consulte pas pendant le rendu.
+   *
+   * `useSyncExternalStore` est fait pour cela : l'heure qu'il est est une
+   * source EXTERIEURE a React, et l'instant d'expiration est connu d'avance —
+   * on ne sonde donc rien, on pose un minuteur qui se declenche pile a ce
+   * moment-la, et React redessine.
+   *
+   * Le premier argument s'abonne, le deuxieme lit l'etat courant, le troisieme
+   * repond pour le rendu serveur : `false`, parce qu'un bandeau de pause n'a
+   * aucun sens dans un HTML fige — il vaut mieux ne rien afficher que d'afficher
+   * quelque chose que le navigateur devra effacer.
+   */
+  const enPause = useSyncExternalStore(
+    useCallback(
+      (redessiner: () => void) => {
+        if (!Number.isFinite(finPause)) return () => {};
+        const reste = finPause - Date.now();
+        if (reste <= 0) return () => {};
+
+        // Une seconde de marge : se reveiller pile a la milliseconde laisserait
+        // la comparaison retomber du mauvais cote une fois sur deux.
+        const minuteur = setTimeout(redessiner, reste + 1000);
+        return () => clearTimeout(minuteur);
+      },
+      [finPause],
+    ),
+    () => Number.isFinite(finPause) && finPause > Date.now(),
+    () => false,
+  );
 
   if (!uuid) return null;
 

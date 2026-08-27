@@ -718,11 +718,19 @@ export async function POST(req: Request) {
     // prix connus si possible (jamais bloquant)
     let priceMap = new Map<string, number>();
     try {
-      const { data: prods } = await sb.from('produits').select('*').eq('boutique_id', boutique_id);
+      // ON NE DEMANDE QUE LES DEUX COLONNES QU'ON LIT. `select('*')` obligeait
+      // a typer la ligne en `any` — donc a renoncer au compilateur sur un
+      // calcul de PRIX — et rapatriait au passage le stock, le seuil d'alerte
+      // et les photos pour n'en rien faire.
+      const { data: prods } = await sb
+        .from('produits')
+        .select('nom, prix')
+        .eq('boutique_id', boutique_id);
+
       priceMap = new Map(
-        (prods || []).map((p: any) => [
+        (prods ?? []).map((p) => [
           String(p.nom || '').toLowerCase(),
-          Number(p.prix ?? p.prix_unitaire ?? 0) || 0,
+          Number(p.prix ?? 0) || 0,
         ])
       );
     } catch { /* prix inconnus → 0 */ }
