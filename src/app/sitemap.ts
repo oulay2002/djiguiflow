@@ -1,5 +1,6 @@
 import type { MetadataRoute } from 'next';
 import { listerMarchands } from '@/lib/marchands';
+import { documentsPubliables } from '@/lib/legal';
 import { SITE_URL } from '@/lib/site';
 
 // Le registre des boutiques vit en base, pas dans le code. On rafraichit donc
@@ -63,5 +64,40 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     console.error('Sitemap : registre des marchands illisible :', e);
   }
 
-  return [...pagesFixes, ...boutiques];
+  // LES DOCUMENTS JURIDIQUES, ET SEULEMENT CEUX QUI SONT FINIS.
+  //
+  // Un document qui porte encore un `[A COMPLETER]` est un projet : le
+  // soumettre aux moteurs ferait remonter une CGV a trous sur une recherche
+  // « conditions DjiguiFlow », avec l'autorite d'un resultat Google. La liste
+  // se calcule donc a partir des fichiers eux-memes, pas d'un drapeau qu'on
+  // oublierait de basculer — le jour ou le dernier marqueur est comble, la
+  // page entre au sitemap toute seule.
+  //
+  // L'index /legal ne s'annonce que s'il a quelque chose a montrer.
+  let legal: MetadataRoute.Sitemap = [];
+  try {
+    const publiables = await documentsPubliables();
+    if (publiables.length > 0) {
+      legal = [
+        {
+          url: `${SITE_URL}/legal`,
+          lastModified: maintenant,
+          changeFrequency: 'yearly' as const,
+          priority: 0.3,
+        },
+        ...publiables.map((doc) => ({
+          url: `${SITE_URL}/legal/${doc.slug}`,
+          lastModified: maintenant,
+          changeFrequency: 'yearly' as const,
+          priority: 0.3,
+        })),
+      ];
+    }
+  } catch (e) {
+    // Meme principe que pour les boutiques : un sitemap partiel vaut mieux
+    // qu'une erreur 500, qui ferait chuter la frequence de passage du robot.
+    console.error('Sitemap : documents legaux illisibles :', e);
+  }
+
+  return [...pagesFixes, ...boutiques, ...legal];
 }
