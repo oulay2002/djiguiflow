@@ -53,14 +53,24 @@ jobs:
       - name: Types
         run: npm run typecheck
 
-      # `continue-on-error` est volontaire et TEMPORAIRE. Le depot porte sept
-      # erreurs de lint preexistantes, sans rapport avec les changements en
-      # cours. Bloquer dessus des aujourd'hui rendrait la CI rouge en
-      # permanence, et une CI toujours rouge ne se lit plus. A retirer des que
-      # ces sept-la sont corrigees.
+      # BLOQUANTE DEPUIS LE 27 AOUT 2026.
+      #
+      # Elle portait `continue-on-error: true` avec la note « temporaire, a
+      # retirer des que les sept erreurs preexistantes sont corrigees ». Le
+      # resultat : le linter ne gardait RIEN. Une faute reelle — un `any` pose
+      # sur un calcul de prix — y dormait depuis des semaines.
+      #
+      # Deux des sept etaient de vrais defauts et sont corriges : ce `any`, et
+      # un bandeau de pause qui ne se levait pas tout seul parce qu'il lisait
+      # l'heure pendant le rendu. Les cinq autres relevent d'une seule regle,
+      # degradee en avertissement et documentee dans `eslint.config.mjs` — elle
+      # demande de charger les donnees ailleurs, ce qui est une refonte et non
+      # une correction de style.
+      #
+      # Un garde qui arrete quelque chose vaut mieux qu'un garde debranche pour
+      # qu'il se taise.
       - name: Style
         run: npm run lint
-        continue-on-error: true
 
       - name: Tests unitaires
         run: npm test
