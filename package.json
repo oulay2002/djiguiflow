@@ -19,7 +19,8 @@
     "verifier:migrations": "node scripts/verifier-migrations.mjs",
     "verifier:definer": "node scripts/verifier-fonctions-definer.mjs",
     "verifier:palette": "node scripts/palette-maison.mjs",
-    "verifier:etats": "node scripts/collisions-couleur.mjs"
+    "verifier:etats": "node scripts/collisions-couleur.mjs",
+    "verifier:production": "node scripts/verifier-production.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.4",
