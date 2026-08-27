@@ -88,7 +88,8 @@ const MINUTES_APRES_ACCEPTATION = 15;
 
 type Constat = {
   /** Le silence observe, en un mot-cle stable pour n8n. */
-  type: 'sans_livreur' | 'stock_non_decompte' | 'abandons_en_retard' | 'client_non_prevenu';
+  type: 'sans_livreur' | 'stock_non_decompte' | 'abandons_en_retard' | 'client_non_prevenu'
+    | 'sauvegarde_muette';
   /** Toujours nomme : un compte global n'est pas actionnable. */
   boutique: string;
   reference: string;
@@ -128,6 +129,20 @@ export async function POST(req: Request) {
   const champs = 'reference, total, created_at, boutiques(nom)';
 
   // ---- 1. Confirmee, et personne ne s'en est saisi.
+  /**
+   * UNE SAUVEGARDE PLUS VIEILLE QUE CELA N'A PAS TOURNE.
+   *
+   * Elle passe a 4 h 30 chaque nuit. Trente heures laissent donc SIX HEURES DE
+   * BATTEMENT au-dela du rythme quotidien : une nuit manquee est rattrapee le
+   * matin meme — 4 h 30 plus trente heures — mais un simple retard de la file ne
+   * reveille personne.
+   *
+   * Un seuil plus serre crierait chaque fois que GitHub prend deux heures, et
+   * une alerte qui se trompe s'apprend a ignorer — c'est le defaut qu'on
+   * repare, pas celui qu'on veut refaire.
+   */
+  const HEURES_SANS_SAUVEGARDE = 30;
+
   const seuilLivreur = iso(maintenant - MINUTES_SANS_LIVREUR * 60_000);
   const { data: sansLivreur, error: errLivreur } = await sb
     .from('commandes')
@@ -216,13 +231,75 @@ export async function POST(req: Request) {
   // Si l'on avalait l'erreur, la route rendrait « 0 constat » et n8n
   // conclurait que la chaine va bien. Un moniteur qui ment quand il est casse
   // est pire que pas de moniteur : il fabrique une confiance sans objet.
-  const panne = errLivreur ?? errStock ?? errAbandons ?? errTemoin ?? errPrevenu;
+  /**
+   * LA TACHE QUI NE TOURNE PLUS — le silence le plus couteux de tous.
+   *
+   * Le 27 aout 2026, la sauvegarde des donnees n'avait pas tourne de la nuit.
+   * GitHub sacrifie les taches planifiees quand sa plateforme est chargee, et
+   * RIEN NE L'AURAIT DIT : le workflow alerte quand la sauvegarde echoue, il
+   * ne peut rien dire quand elle ne demarre pas.
+   *
+   * Ce controle vit ICI, sur une sonde appelee par n8n depuis le VPS, et non
+   * dans une tache planifiee GitHub — confier la surveillance a ce qui vient
+   * de defaillir ne surveille rien.
+   *
+   * UNE LIGNE ABSENTE COMPTE COMME UN SILENCE. Si la table ne porte encore
+   * aucun pointage, c'est soit que la sauvegarde n'a jamais pointe, soit
+   * qu'elle ne tourne plus depuis longtemps : dans les deux cas il faut le
+   * dire. Traiter l'absence comme « rien a signaler » serait precisement le
+   * defaut qu'on repare.
+   */
+  const { data: pointages, error: errPointage } = await sb
+    .from('pointages')
+    .select('cle, dernier_le')
+    .in('cle', ['sauvegarde_donnees', 'sauvegarde_schema']);
+
+  const panne = errLivreur ?? errStock ?? errAbandons ?? errTemoin ?? errPrevenu ?? errPointage;
   if (panne) {
     console.error('Sante — lecture impossible :', panne.message);
     return Response.json(
       { ok: false, erreur: `Lecture impossible : ${panne.message}` },
       { status: 503 },
     );
+  }
+
+  /**
+   * LES TACHES QUI SE SONT TUES.
+   *
+   * On enumere les taches ATTENDUES plutot que de parcourir ce que la table
+   * contient : une tache qui n'a jamais pointe n'y a aucune ligne, et c'est
+   * exactement le cas qu'il faut voir. Parcourir la table ne montrerait que
+   * celles qui ont deja fonctionne au moins une fois.
+   */
+  const TACHES_ATTENDUES: { cle: string; nom: string }[] = [
+    { cle: 'sauvegarde_donnees', nom: 'Sauvegarde des donnees' },
+    { cle: 'sauvegarde_schema', nom: 'Sauvegarde du schema' },
+  ];
+
+  const vuLe = new Map(
+    (pointages ?? []).map((p) => [String(p.cle), Date.parse(String(p.dernier_le ?? ''))]),
+  );
+
+  for (const tache of TACHES_ATTENDUES) {
+    const dernier = vuLe.get(tache.cle);
+    const jamais = dernier === undefined || !Number.isFinite(dernier);
+    const ageMin = jamais ? Number.POSITIVE_INFINITY : Math.round((maintenant - dernier) / 60_000);
+
+    if (!jamais && ageMin < HEURES_SANS_SAUVEGARDE * 60) continue;
+
+    constats.push({
+      type: 'sauvegarde_muette',
+      // Ce constat ne porte sur aucune boutique : c'est la plateforme entiere
+      // qui est exposee. Le champ reste rempli pour que n8n n'ait pas a
+      // traiter un cas particulier.
+      boutique: 'PLATEFORME',
+      reference: tache.cle,
+      age_minutes: jamais ? -1 : ageMin,
+      detail: jamais
+        ? `${tache.nom} n'a JAMAIS pointe — soit elle ne tourne pas, soit elle ne sait pas encore pointer`
+        : `${tache.nom} n'a pas tourne depuis ${Math.round(ageMin / 60)} h`
+          + ` — c'est la seule copie des donnees`,
+    });
   }
 
   for (const l of (sansLivreur ?? []) as unknown as LigneCommande[]) {

@@ -184,6 +184,57 @@ jobs:
           git push
           echo "Pousse."
 
+      # ── ELLE DECLARE QU'ELLE EST PASSEE ────────────────────────────────────
+      #
+      # Le 27 aout 2026, cette sauvegarde N'A PAS TOURNE de la nuit : GitHub
+      # sacrifie les taches planifiees quand sa plateforme est chargee. Personne
+      # n'aurait ete prevenu — l'alerte plus bas se declenche quand la
+      # sauvegarde ECHOUE, elle ne peut rien dire quand elle NE DEMARRE PAS.
+      #
+      # Une tache qui echoue crie toute seule. Une tache qui ne tourne jamais est
+      # muette, et ce qu'elle protege ici est la seule copie des donnees.
+      #
+      # Le pointage est relu par `/api/internal/sante`, appelee toutes les
+      # quinze minutes par n8n DEPUIS LE VPS. La surveillance ne vit pas dans
+      # GitHub : la confier a ce qui vient de defaillir ne surveillerait rien.
+      #
+      # APRES LE PUSH, JAMAIS AVANT. Pose plus haut, le pointage mentirait
+      # exactement quand il ne faut pas — la tache aurait commence, echoue, et
+      # la sonde la croirait a jour.
+      #
+      # NON BLOQUANT, ET C'EST DELIBERE. La mission de ce workflow est de
+      # sauvegarder, pas de se surveiller. Un pointage qui rate ne doit jamais
+      # faire echouer une sauvegarde reussie — la sonde dira simplement qu'elle
+      # ne pointe plus, ce qui est le bon message.
+      #
+      # SANS `SYNC_SECRET`, LE POINTAGE N'A PAS LIEU et la sonde annoncera
+      # « n'a JAMAIS pointe ». C'est voulu : l'absence du secret se voit, au
+      # lieu de se taire.
+      - name: Pointer le passage
+        if: success()
+        continue-on-error: true
+        env:
+          SECRET: ${{ secrets.SYNC_SECRET }}
+          SITE: https://www.djiguiflow.com
+        run: |
+          if [ -z "$SECRET" ]; then
+            echo "::warning::SYNC_SECRET absent — le passage n'est pas pointe."
+            echo "::warning::La sonde de sante annoncera « n a JAMAIS pointe »."
+            exit 0
+          fi
+
+          code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 \
+            -X POST "$SITE/api/internal/pointage" \
+            -H "x-sync-secret: $SECRET" \
+            -H 'Content-Type: application/json' \
+            -d '{"cle":"sauvegarde_donnees","detail":"donnees, comptes et images"}')
+
+          if [ "$code" = "200" ]; then
+            echo "Passage pointe."
+          else
+            echo "::warning::Pointage refuse (HTTP $code) — la sauvegarde, elle, est bien poussee."
+          fi
+
       # UNE SAUVEGARDE QUI ECHOUE EN SILENCE N'EST PAS UNE SAUVEGARDE. C'est
       # meme le pire des cas : on croit etre couvert. L'alerte part sur le bot
       # de veille de la plateforme, sans parse_mode — un texte d'erreur avec un
