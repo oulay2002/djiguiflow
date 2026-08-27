@@ -206,3 +206,41 @@ jobs:
               --title "Schema : la reference a change" \
               --body-file /tmp/corps-pr.md
           fi
+
+      # ── ELLE DECLARE QU'ELLE EST PASSEE ────────────────────────────────────
+      #
+      # Meme raison que sur la sauvegarde des donnees : une tache qui ECHOUE
+      # crie toute seule, une tache qui NE DEMARRE PAS est muette. Le 27 aout
+      # 2026, aucune des deux n'a tourne de la nuit et rien ne l'a dit.
+      #
+      # ELLE POINTE MEME QUAND LE SCHEMA N'A PAS BOUGE. C'est le cas NORMAL, et
+      # c'est bien un passage reussi : ce qu'on surveille est que la tache
+      # tourne, pas qu'elle trouve quelque chose. Ne pointer qu'en cas de
+      # changement ferait crier la sonde chaque fois que le schema est stable —
+      # c'est-a-dire presque toujours.
+      #
+      # Non bloquant : la mission de ce workflow est de tenir la reference, pas
+      # de se surveiller.
+      - name: Pointer le passage
+        if: success()
+        continue-on-error: true
+        env:
+          SECRET: ${{ secrets.SYNC_SECRET }}
+          SITE: https://www.djiguiflow.com
+        run: |
+          if [ -z "$SECRET" ]; then
+            echo "::warning::SYNC_SECRET absent — le passage n'est pas pointe."
+            exit 0
+          fi
+
+          code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 \
+            -X POST "$SITE/api/internal/pointage" \
+            -H "x-sync-secret: $SECRET" \
+            -H 'Content-Type: application/json' \
+            -d '{"cle":"sauvegarde_schema","detail":"reference du schema"}')
+
+          if [ "$code" = "200" ]; then
+            echo "Passage pointe."
+          else
+            echo "::warning::Pointage refuse (HTTP $code) — la reference, elle, est a jour."
+          fi
