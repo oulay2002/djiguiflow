@@ -353,6 +353,42 @@ export type Database = {
         }
         Relationships: []
       }
+      demandes_droits: {
+        Row: {
+          cree_le: string
+          detail: Json | null
+          id: string
+          preuve: string
+          reference: string | null
+          statut: string
+          telephone: string
+          traite_le: string | null
+          type: string
+        }
+        Insert: {
+          cree_le?: string
+          detail?: Json | null
+          id?: string
+          preuve: string
+          reference?: string | null
+          statut?: string
+          telephone: string
+          traite_le?: string | null
+          type: string
+        }
+        Update: {
+          cree_le?: string
+          detail?: Json | null
+          id?: string
+          preuve?: string
+          reference?: string | null
+          statut?: string
+          telephone?: string
+          traite_le?: string | null
+          type?: string
+        }
+        Relationships: []
+      }
       livraisons: {
         Row: {
           commande_id: string | null

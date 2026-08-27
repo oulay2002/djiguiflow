@@ -659,6 +659,15 @@ export default function Home() {
             <Link href="/login" className="transition hover:text-white">
               Connexion
             </Link>
+            {/*
+              Le droit d'accès ne vaut que s'il se trouve. Un écran des droits
+              qu'on n'atteint qu'en connaissant son URL n'est pas un droit
+              offert, c'est un droit caché — et le pied de page est le seul
+              endroit qu'une personne cherche instinctivement.
+            */}
+            <Link href="/mes-donnees" className="transition hover:text-white">
+              Mes données
+            </Link>
           </nav>
         </div>
 

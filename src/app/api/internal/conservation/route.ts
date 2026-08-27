@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { effacerDossier } from '@/lib/dossierClient';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import {
   CHAMPS_A_EFFACER,
@@ -6,6 +7,7 @@ import {
   JOURS_TRACE_RELANCE,
   MOIS_AVANT_ANONYMISATION,
   NOM_ANONYME,
+  STATUTS_CLOS,
 } from '@/lib/conservation';
 
 export const dynamic = 'force-dynamic';
@@ -65,7 +67,7 @@ export async function POST(req: Request) {
   const limiteCommande = new Date(maintenant);
   limiteCommande.setMonth(limiteCommande.getMonth() - MOIS_AVANT_ANONYMISATION);
 
-  const fait = { paniers: 0, commandes: 0, relances: 0 };
+  const fait = { paniers: 0, commandes: 0, relances: 0, effacements: 0 };
   const erreurs: string[] = [];
 
   // ── 1. Paniers jamais convertis ────────────────────────────────────────
@@ -109,7 +111,7 @@ export async function POST(req: Request) {
     const { data, error } = await sb
       .from('commandes')
       .select('id')
-      .in('statut', ['livree', 'annulee', 'abandonnee'])
+      .in('statut', [...STATUTS_CLOS])
       .lt('created_at', limiteCommande.toISOString())
       .neq('client_nom', NOM_ANONYME)
       .limit(500);
@@ -181,6 +183,52 @@ export async function POST(req: Request) {
     }
   }
 
+  // ── 4. Les effacements demandés et pas encore achevés ──────────────────
+  //
+  // POURQUOI ILS REVIENNENT ICI. Une personne peut demander l'effacement alors
+  // qu'une commande est encore en route : on ne touche pas à celle-là, sans
+  // quoi le livreur n'aurait plus ni nom ni adresse. Sa demande reste donc
+  // ouverte, et c'est cette tâche qui la termine — dès la nuit qui suit la
+  // fermeture de la commande.
+  //
+  // Sans ce passage, le droit serait « enregistré » et jamais honoré : la
+  // personne devrait revenir le redemander, sans savoir qu'elle le doit.
+  {
+    const { data, error } = await sb
+      .from('demandes_droits')
+      .select('id, telephone')
+      .eq('type', 'effacement')
+      .eq('statut', 'recue')
+      .limit(100);
+
+    if (error) erreurs.push(`demandes de droits illisibles : ${error.message}`);
+    else if (data?.length) {
+      for (const d of data) {
+        if (essai) { fait.effacements += 1; continue; }
+        try {
+          const bilan = await effacerDossier(sb, String(d.telephone));
+          if (bilan.commandesEnCours > 0) continue;
+
+          const { error: errMaj } = await sb
+            .from('demandes_droits')
+            .update({ statut: 'honoree', traite_le: new Date().toISOString(), detail: bilan })
+            .eq('id', d.id);
+          if (errMaj) {
+            erreurs.push(`demande ${d.id} non close : ${errMaj.message}`);
+            continue;
+          }
+          fait.effacements += 1;
+        } catch (e) {
+          // Une demande qui échoue ne doit pas emporter les autres : chacune
+          // concerne une personne différente.
+          erreurs.push(
+            `effacement differe impossible : ${e instanceof Error ? e.message : String(e)}`,
+          );
+        }
+      }
+    }
+  }
+
   /**
    * UNE ERREUR REND 503, ET C'EST VOULU.
    *
@@ -194,7 +242,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, erreurs, fait, essai }, { status: 503 });
   }
 
-  const total = fait.paniers + fait.commandes + fait.relances;
+  const total = fait.paniers + fait.commandes + fait.relances + fait.effacements;
   if (total > 0) {
     console.log(
       `Conservation${essai ? ' (essai a blanc)' : ''} — ${fait.paniers} panier(s) supprime(s), `
