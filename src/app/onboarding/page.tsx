@@ -382,7 +382,7 @@ export default function OnboardingPage() {
   };
 
   return (
-    <main className="min-h-screen bg-chaux-100 pb-20">
+    <main id="contenu" className="min-h-screen bg-chaux-100 pb-20">
       <header className="indigo-weave relative bg-nuit-900 px-5 pb-10 pt-8 text-chaux-50 sm:px-8">
         <div className="mx-auto max-w-3xl">
           <h1 className="font-display text-3xl font-black leading-[1.05] sm:text-5xl">

@@ -114,7 +114,7 @@ export default function AdminPage() {
 
   if (!t) {
     return (
-      <main className="min-h-screen bg-chaux-50 px-5 py-20">
+      <main id="contenu" className="min-h-screen bg-chaux-50 px-5 py-20">
         <div className="mx-auto h-40 max-w-4xl animate-pulse border border-chaux-200 bg-white" />
       </main>
     );
@@ -124,7 +124,7 @@ export default function AdminPage() {
   const commandesRecentes = t.marchands.reduce((s, m) => s + m.commandesRecentes, 0);
 
   return (
-    <main className="min-h-screen bg-chaux-50">
+    <main id="contenu" className="min-h-screen bg-chaux-50">
       <div className="mx-auto flex max-w-5xl flex-col gap-12 px-4 py-12 sm:px-6">
 
         <header>

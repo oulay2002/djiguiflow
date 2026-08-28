@@ -204,6 +204,31 @@ function Ecran() {
     if (demandeEffacement) zoneConfirmation.current?.focus();
   }, [demandeEffacement]);
 
+  /**
+   * LE DOSSIER S'OUVRE : ON LE DIT, ET ON Y EMMENE LE FOCUS.
+   *
+   * C'est le geste central de l'ecran, et il etait muet. Le bouton se
+   * desactive pendant l'appel, donc il perd le focus : mesure, `activeElement`
+   * retombait sur `<body>`. Quatre sections apparaissaient sans que rien ne
+   * l'annonce, et l'utilisateur au lecteur d'ecran avait perdu sa place.
+   *
+   * Le focus va sur l'en-tete du dossier plutot que sur une region `aria-live`
+   * : il annonce ET replace le curseur au debut de ce qui vient d'arriver, si
+   * bien que la lecture continue naturellement dans les sections suivantes.
+   * Une region live aurait lu une phrase, puis laisse la personne sur `<body>`.
+   *
+   * `ouvertureDeja` empeche de reprendre le focus a chaque re-rendu du
+   * dossier — on ne le vole qu'une fois, a l'arrivee.
+   */
+  const enteteDossier = useRef<HTMLParagraphElement | null>(null);
+  const ouvertureDeja = useRef(false);
+  useEffect(() => {
+    if (!dossier) { ouvertureDeja.current = false; return; }
+    if (ouvertureDeja.current) return;
+    ouvertureDeja.current = true;
+    enteteDossier.current?.focus();
+  }, [dossier]);
+
   const charger = useCallback(async (
     r: string,
     jeton: string,
@@ -288,8 +313,29 @@ function Ecran() {
   // L'ouverture automatique est en cours : la porte n'a rien a demander.
   const ouvertureParLien = Boolean(refUrl && jetonUrl) && chargement && !dossier && !efface;
 
+  /**
+   * LES DEUX PREUVES SONT-ELLES LA ?
+   *
+   * Une seule condition, lue par le bouton ET par la soumission du formulaire.
+   * Ecrite deux fois, elle aurait diverge : la touche « OK » du clavier serait
+   * partie sans les quatre chiffres alors que le bouton les exigeait.
+   *
+   * Le serveur les reclame TOUJOURS a qui n'a pas de jeton valide
+   * (`preuveClient.ts` : verdictDuTelephone === 'absent' → refus). Et apres un
+   * lien refuse, le jeton de l'URL ne vaut plus rien : le serveur traite un
+   * jeton FAUX comme une tentative et refuse sans meme regarder les chiffres.
+   *
+   * Chaque envoi voue a l'echec consomme un des vingt appels par tranche de
+   * dix minutes ET PAR ADRESSE — or les operateurs mobiles d'ici partagent
+   * massivement leurs IP : ce budget n'appartient pas a une personne, mais a
+   * un quartier.
+   */
+  const envoiPossible = !chargement
+    && ref.trim() !== ''
+    && !((!jetonUrl || lienEchoue) && tel4.length !== 4);
+
   return (
-    <main className="mx-auto max-w-3xl px-5 py-10">
+    <main id="contenu" className="mx-auto max-w-3xl px-5 py-10">
       <LienRetour href="/">Retour à l’accueil</LienRetour>
 
       <h1 className="mt-6 font-display text-3xl text-nuit-900">Vos données</h1>
@@ -349,6 +395,25 @@ function Ecran() {
             les quatre derniers chiffres du numéro qui l’a passée.
           </p>
 
+          {/*
+            UN VRAI <form>, ET PAS DEUX `onKeyDown`.
+            La touche « OK » du clavier Android ne faisait rien : sans element
+            de formulaire, il n'y a pas de soumission implicite, et la personne
+            cherchait un bouton qu'elle venait de depasser. `/suivi` avait
+            colle un `onKeyDown` sur chacun de ses champs — ca marche, mais ca
+            se reoublie au champ suivant. Le `<form>` le tient une fois pour
+            toutes, et il donne en prime le bon libelle de touche au clavier
+            virtuel.
+            `noValidate` : la validation est la notre, et ses messages sont
+            ecrits en francais pour cette page — pas ceux du navigateur.
+          */}
+          <form
+            noValidate
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (envoiPossible) void charger(ref, lienEchoue ? '' : jetonUrl, tel4);
+            }}
+          >
           <div className="mt-5 grid gap-4 sm:grid-cols-2">
             <label className="block">
               <span className="text-sm font-medium text-nuit-900">Référence de commande</span>
@@ -410,34 +475,12 @@ function Ecran() {
 
           <div className="mt-5">
             <Bouton
+              type="submit"
               variante="action"
-              /*
-                APRES UN LIEN REFUSE, ON CESSE DE L'ENVOYER.
-                Le serveur traite un jeton FAUX comme une tentative, pas comme
-                un oubli : il refuse sans meme regarder les quatre chiffres
-                (`preuveClient.ts` : verdictDuJeton === 'invalide' → refus
-                immediat). En reexpediant le jeton de l'URL, le formulaire
-                aurait donc echoue quoi que la personne tape — alors que le
-                message qu'on venait de lui ecrire lui promettait ce chemin.
-                Une consigne qu'on donne doit mener quelque part.
-              */
-              onClick={() => void charger(ref, lienEchoue ? '' : jetonUrl, tel4)}
-              /*
-                LES QUATRE CHIFFRES SONT EXIGES AVANT L'ENVOI, COMME SUR /suivi.
-                Le serveur les reclame TOUJOURS a qui n'a pas de jeton
-                (`preuveClient.ts` : verdictDuTelephone === 'absent' → refus).
-                Sans cette condition, le bouton partait quand meme, le serveur
-                rendait son 404, et son texte — le meme pour tous les refus,
-                volontairement — invitait a verifier une reference qui etait
-                juste. Le seul des quatre refus que le client peut distinguer
-                sans rien reveler, c'est celui-la : on le retire donc du lot
-                AVANT l'envoi, au lieu d'essayer de le nommer apres.
-                Au passage, chaque envoi inutile consomme un des vingt appels
-                par tranche de dix minutes ET PAR ADRESSE — or les operateurs
-                mobiles d'ici partagent massivement leurs IP : ce budget-la
-                n'appartient pas a une personne, mais a un quartier.
-              */
-              disabled={chargement || !ref.trim() || ((!jetonUrl || lienEchoue) && tel4.length !== 4)}
+              // Pas d'`onClick` : le bouton soumet le formulaire, et la
+              // condition d'envoi vit a un seul endroit (`envoiPossible`).
+              // Deux chemins d'envoi, c'est deux requetes au premier clic.
+              disabled={!envoiPossible}
               chargement={chargement}
             >
               Voir mes données
@@ -466,6 +509,7 @@ function Ecran() {
               </span>
             </p>
           )}
+          </form>
         </section>
       )}
 
@@ -485,7 +529,11 @@ function Ecran() {
       {dossier && !dossier.efface && (
         <>
           <section className={`mt-8 ${CADRE}`}>
-            <p className="flex items-center gap-2 text-sm text-chaux-600">
+            <p
+              ref={enteteDossier}
+              tabIndex={-1}
+              className="flex items-center gap-2 text-sm text-chaux-600"
+            >
               <ShieldCheck className="size-4 text-accent-600" aria-hidden />
               Dossier de la personne joignable au <strong className="font-mono">{dossier.numero}</strong>
             </p>
@@ -716,7 +764,7 @@ function ApresEffacement({ etat }: { etat: { complet: boolean; bilan: Bilan } })
 
 export default function PageMesDonnees() {
   return (
-    <Suspense fallback={<main className="mx-auto max-w-3xl px-5 py-10" />}>
+    <Suspense fallback={<main id="contenu" className="mx-auto max-w-3xl px-5 py-10" />}>
       <Ecran />
     </Suspense>
   );
