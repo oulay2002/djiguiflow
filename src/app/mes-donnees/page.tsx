@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useCallback, useEffect, useState } from 'react';
+import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { ShieldCheck, Trash2, TriangleAlert } from 'lucide-react';
@@ -84,6 +84,67 @@ type Bilan = {
 
 const CADRE = 'border border-nuit-900/12 bg-white/70 p-5';
 
+/**
+ * Ce que ce geste-ci va toucher, compte sur le dossier affiche.
+ *
+ * POURQUOI DES CHIFFRES, ET PAS UNE FORMULE. « Vos donnees seront effacees »
+ * ne dit pas si cela concerne une commande ou douze. La personne qui confirme
+ * doit reconnaitre SON dossier dans la phrase — sinon la confirmation ne
+ * confirme rien, elle ne fait que retarder le meme clic.
+ *
+ * LE CAS OU IL N'Y A RIEN A EFFACER N'EST PAS UNE ERREUR. Quelqu'un dont
+ * toutes les commandes sont en cours a le droit de demander l'effacement ; la
+ * demande est enregistree et la tache nocturne l'applique a la fermeture. Lui
+ * afficher « 0 commande » le laisserait croire que son geste n'a servi a rien.
+ *
+ * Les accords sont ecrits en toutes lettres. Un « commande(s) » a l'ecran est
+ * un gabarit qu'on lit, pas une phrase qu'on ecrit.
+ */
+function porteeDuGeste(dossier: Dossier): string {
+  const closes = dossier.commandes.filter((c) => c.close).length;
+  const parties: string[] = [];
+
+  if (closes > 0) {
+    parties.push(
+      closes === 1
+        ? '1 commande terminée perdra votre nom, votre téléphone et votre adresse'
+        : `${closes} commandes terminées perdront votre nom, votre téléphone et votre adresse`,
+    );
+  }
+  if (dossier.paniers > 0) {
+    parties.push(
+      dossier.paniers === 1 ? '1 panier sera supprimé' : `${dossier.paniers} paniers seront supprimés`,
+    );
+  }
+  if (dossier.relances > 0) {
+    parties.push(
+      dossier.relances === 1
+        ? '1 relance sera supprimée'
+        : `${dossier.relances} relances seront supprimées`,
+    );
+  }
+  if (dossier.avisLivraison > 0) {
+    parties.push(
+      dossier.avisLivraison === 1
+        ? '1 avis de livraison sera retiré'
+        : `${dossier.avisLivraison} avis de livraison seront retirés`,
+    );
+  }
+
+  // Les espaces qui precedent « : » et « ; » sont INSECABLES (U+00A0), ici et
+  // dans le `join` plus bas. Invisible a la relecture du source, d'ou cette
+  // note : la regle typographique francaise l'exige, et a 360 px c'est elle
+  // qui empeche la ponctuation de tomber seule en tete de ligne.
+  if (parties.length === 0) {
+    return (
+      'Vos commandes sont toutes en cours : rien ne peut être effacé aujourd’hui. '
+      + 'Nous enregistrons votre demande et l’appliquons dès qu’elles seront terminées.'
+    );
+  }
+
+  return `C’est définitif, et voici ce que cela touche : ${parties.join(' ; ')}.`;
+}
+
 function dateLisible(iso: string | null): string {
   if (!iso) return '';
   const d = new Date(iso);
@@ -105,6 +166,33 @@ function Ecran() {
   const [demandeEffacement, setDemandeEffacement] = useState(false);
   const [efface, setEfface] = useState<{ complet: boolean; bilan: Bilan } | null>(null);
   const [effacementEnCours, setEffacementEnCours] = useState(false);
+
+  const zoneConfirmation = useRef<HTMLDivElement | null>(null);
+
+  /**
+   * LE VERROU QUI NE DEPEND PAS DU RENDU.
+   *
+   * `disabled={effacementEnCours}` ne ferme la porte qu'au repaint suivant.
+   * Deux touchers separes de quelques millisecondes — le reflexe exact sur un
+   * telephone lent — passent tous les deux avant lui. Une ref est posee dans
+   * le meme tour de boucle que l'appel, donc avant le second.
+   */
+  const effacementLance = useRef(false);
+
+  /**
+   * LE FOCUS VA SUR L'AVERTISSEMENT, PAS SUR LE BOUTON ROUGE.
+   *
+   * Avant, les deux boutons occupaient la meme position dans le meme `div` :
+   * React reutilisait le noeud, donc « Oui, effacer definitivement » naissait
+   * sous le doigt ET heritait du focus. Un second toucher impatient, ou une
+   * seconde frappe sur Entree, effacait.
+   *
+   * Poser le focus sur le bloc d'avertissement fait lire la portee reelle au
+   * lecteur d'ecran, et laisse « Annuler » en premiere tabulation.
+   */
+  useEffect(() => {
+    if (demandeEffacement) zoneConfirmation.current?.focus();
+  }, [demandeEffacement]);
 
   const charger = useCallback(async (r: string, jeton: string, chiffres: string) => {
     setChargement(true);
@@ -140,6 +228,8 @@ function Ecran() {
   }, [refUrl, jetonUrl, charger]);
 
   const effacer = useCallback(async () => {
+    if (effacementLance.current) return;
+    effacementLance.current = true;
     setEffacementEnCours(true);
     setErreur('');
     try {
@@ -161,9 +251,16 @@ function Ecran() {
         setDossier(null);
         setDemandeEffacement(false);
       } else {
+        // LE VERROU SE ROUVRE SUR L'ECHEC, ET SUR LUI SEUL. Sans cela, un
+        // refus temporaire condamnerait la personne a recharger la page pour
+        // exercer un droit. Le reessai ne peut pas doubler l'effacement : une
+        // seconde demande sur un dossier deja anonymise sort par `dejaEfface`
+        // et n'inscrit rien au registre.
+        effacementLance.current = false;
         setErreur(String(corps?.error ?? '') || 'L’effacement n’a pas abouti.');
       }
     } catch {
+      effacementLance.current = false;
       setErreur('La connexion a échoué. Vos données n’ont pas été touchées.');
     } finally {
       setEffacementEnCours(false);
@@ -379,31 +476,78 @@ function Ecran() {
               </p>
             )}
 
+            {/*
+              LES DEUX ETATS PORTENT UNE CLE DISTINCTE, ET C'EST LE CORRECTIF.
+              Sans elle, les deux `div` occupent la meme position dans le meme
+              parent : React reutilise le noeud, le bouton de confirmation
+              naissait donc aux coordonnees exactes de celui qu'on venait de
+              toucher (verifie : left 41px, height 44px, a l'identique) et
+              gardait le focus. Un second toucher impatient sur un telephone
+              lent tombait sur un effacement definitif. La cle force le
+              remontage ; l'avertissement intercale deplace la cible.
+            */}
             {!demandeEffacement ? (
-              <div className="mt-5">
+              <div key="demande" className="mt-5">
                 <Bouton variante="calme" onClick={() => setDemandeEffacement(true)}>
                   Je veux effacer mes données
                 </Bouton>
               </div>
             ) : (
-              <div className="mt-5 flex flex-wrap items-center gap-3">
-                <Bouton
-                  variante="action"
-                  onClick={() => void effacer()}
-                  chargement={effacementEnCours}
-                  disabled={effacementEnCours}
-                >
-                  <Trash2 className="size-4" aria-hidden />
-                  Oui, effacer définitivement
-                </Bouton>
-                <Bouton variante="fantome" onClick={() => setDemandeEffacement(false)}>
-                  Annuler
-                </Bouton>
+              <div
+                key="confirmation"
+                ref={zoneConfirmation}
+                tabIndex={-1}
+                role="group"
+                aria-label="Confirmer l’effacement"
+                className="mt-4 border-t border-bissap-200 pt-4"
+              >
+                <p className="text-sm font-medium text-nuit-900">{porteeDuGeste(dossier)}</p>
+
+                {/*
+                  ANNULER EN PREMIER, ET EMPILE A DESSEIN SUR TELEPHONE.
+                  Dans le DOM, la premiere tabulation — et le premier element
+                  qu'annonce un lecteur d'ecran apres l'avertissement — est la
+                  sortie, pas le geste irreversible.
+                  Cote a cote, les deux libelles depassent 360 px : le retour a
+                  la ligne mettait « Annuler » seul sur une ligne, reduit a un
+                  mot maigre, et posait le geste irreversible en bas — la ou le
+                  pouce tombe. Empiles pleine largeur, la sortie devient une
+                  cible de 44 px qu'un toucher imprecis rencontre AVANT le
+                  bouton rouge.
+                */}
+                <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+                  <Bouton
+                    variante="fantome"
+                    className="w-full sm:w-auto"
+                    onClick={() => setDemandeEffacement(false)}
+                  >
+                    Annuler
+                  </Bouton>
+                  <Bouton
+                    variante="action"
+                    className="w-full sm:w-auto"
+                    onClick={() => void effacer()}
+                    chargement={effacementEnCours}
+                    disabled={effacementEnCours}
+                  >
+                    <Trash2 className="size-4" aria-hidden />
+                    Oui, effacer définitivement
+                  </Bouton>
+                </div>
               </div>
             )}
 
+            {/*
+              ANNONCE : LE VERROU A ROUVERT, DONC CE MESSAGE EST ACTIONNABLE.
+              Tant qu'un echec d'effacement etait sans reessai, ce paragraphe
+              n'etait qu'un constat. Il porte desormais une consigne — reessayez
+              — et un lecteur d'ecran ne l'entendait pas : le focus est reste
+              sur le bouton, et rien n'a change dans l'arbre qu'il annonce.
+              Le jumeau de la porte reste muet ; il releve de la passe
+              d'accessibilite, pas de ce chemin-ci.
+            */}
             {erreur && (
-              <p className="mt-4 flex items-start gap-2 text-sm text-bissap-600">
+              <p role="alert" className="mt-4 flex items-start gap-2 text-sm text-bissap-600">
                 <TriangleAlert className="mt-0.5 size-4 shrink-0" aria-hidden />
                 <span>{erreur}</span>
               </p>
