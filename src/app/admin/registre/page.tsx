@@ -81,7 +81,7 @@ export default function PageRegistre() {
 
   if (erreur) {
     return (
-      <main className="mx-auto max-w-4xl px-5 py-10">
+      <main id="contenu" className="mx-auto max-w-4xl px-5 py-10">
         <LienRetour href="/admin">Retour au tableau</LienRetour>
         <p className="mt-6 flex items-start gap-2 text-sm text-bissap-600">
           <TriangleAlert className="mt-0.5 size-4 shrink-0" aria-hidden />
@@ -92,11 +92,11 @@ export default function PageRegistre() {
   }
 
   if (!registre) {
-    return <main className="mx-auto max-w-4xl px-5 py-10 text-sm text-chaux-600">Lecture…</main>;
+    return <main id="contenu" className="mx-auto max-w-4xl px-5 py-10 text-sm text-chaux-600">Lecture…</main>;
   }
 
   return (
-    <main className="mx-auto max-w-4xl px-5 py-10">
+    <main id="contenu" className="mx-auto max-w-4xl px-5 py-10">
       <div className="print:hidden">
         <LienRetour href="/admin">Retour au tableau</LienRetour>
       </div>

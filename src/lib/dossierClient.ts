@@ -33,12 +33,22 @@ import { cleAppariement, memeNumero } from '@/lib/telephone';
  */
 type Sb = NonNullable<ReturnType<typeof getSupabaseAdmin>>;
 
+/**
+ * NI `total`, NI `statut` : ILS N'ONT JAMAIS ÉTÉ AFFICHÉS.
+ *
+ * Les deux traversaient le réseau à chaque ouverture du dossier sans jamais
+ * atteindre un écran. Sur un forfait compté — la contrainte nommée dans
+ * PRODUCT.md —, c'est du poids payé pour rien, et sur un écran de protection
+ * des données c'est pire que du poids : on transportait le montant d'une
+ * commande pour répondre à la question « que gardez-vous sur moi ? ».
+ *
+ * `statut` reste lu en base, parce que `close` en découle — mais il s'arrête
+ * ici. C'est la réponse, pas la matière première, qui sort.
+ */
 export type LigneCommande = {
   reference: string;
   date: string | null;
   boutique: string;
-  total: number | null;
-  statut: string | null;
   close: boolean;
   /** Ce qu'on détient sur cette commande, dit en clair. */
   detenu: string[];
@@ -132,7 +142,7 @@ export async function rassemblerDossier(sb: Sb, telephone: string): Promise<Doss
   const cmd = await sb
     .from('commandes')
     .select(
-      'id, reference, created_at, total, statut, client_nom, client_telephone,'
+      'id, reference, created_at, statut, client_nom, client_telephone,'
       + ' client_adresse, instructions, latitude, chat_id, boutiques(nom)',
     )
     .ilike('client_telephone', motif)
@@ -141,7 +151,7 @@ export async function rassemblerDossier(sb: Sb, telephone: string): Promise<Doss
   if (cmd.error) echoue('commandes', cmd.error.message);
 
   type Brute = {
-    id: string; reference: string; created_at: string | null; total: number | null;
+    id: string; reference: string; created_at: string | null;
     statut: string | null; client_nom: string | null; client_telephone: string | null;
     client_adresse: string | null; instructions: string | null; latitude: number | null;
     chat_id: string | null; boutiques: { nom: string | null } | null;
@@ -154,8 +164,6 @@ export async function rassemblerDossier(sb: Sb, telephone: string): Promise<Doss
     reference: c.reference,
     date: c.created_at,
     boutique: c.boutiques?.nom ?? 'Boutique',
-    total: c.total,
-    statut: c.statut,
     close: commandeClose(c.statut),
     detenu: detenuSurCommande(c),
   }));

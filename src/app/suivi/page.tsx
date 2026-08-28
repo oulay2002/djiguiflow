@@ -268,7 +268,15 @@ function Suivre() {
           <p className="font-mono text-xs uppercase tracking-[0.28em] text-mangue-300">
             Suivi en direct
           </p>
-          <h1 className="mt-3 font-display text-3xl font-black leading-[1.05] sm:text-4xl">
+          {/*
+            `hyphens-auto` ne change RIEN a 100 % : aucune coupure n'est
+            necessaire, le navigateur n'en pose pas. A 200 % de texte, « Où en
+            est ma commande ? » atteint 60 px et son mot le plus long depassait
+            le conteneur — 375 px de document pour 360 de fenetre, donc un
+            defilement lateral sur l'ecran qu'un client ouvre le plus souvent.
+            La cesure s'appuie sur `lang="fr"` pose dans le gabarit.
+          */}
+          <h1 className="mt-3 font-display text-3xl font-black leading-[1.05] hyphens-auto sm:text-4xl">
             Où en est ma commande ?
           </h1>
           <p className="mt-3 text-sm text-chaux-200">
@@ -276,8 +284,18 @@ function Suivre() {
             derniers chiffres de votre numéro. La page se met à jour toute seule.
           </p>
 
-          <div className="mt-7 flex gap-2">
-            <label className="flex-1">
+          {/*
+            `flex-wrap` : les deux champs et le bouton tiennent sur une ligne a
+            100 %, et le bouton descend des que le texte grossit. Sans lui, la
+            rangee poussait le document a 375 px pour une fenetre de 360 — et
+            un defilement lateral sur l'ecran qu'un client ouvre le plus
+            souvent, celui du suivi de sa commande.
+            `min-w-0` sur le champ souple : sans lui, un `flex-1` refuse de
+            descendre sous la largeur de son contenu et le retour a la ligne
+            n'aurait rien resolu.
+          */}
+          <div className="mt-7 flex flex-wrap gap-2">
+            <label className="min-w-0 flex-1">
               <span className="sr-only">Référence de la commande</span>
               <input
                 className="w-full border border-chaux-50/25 bg-nuit-800/70 px-4 py-3 font-mono text-sm tracking-wide text-chaux-50 placeholder:text-chaux-400 focus:border-mangue-300 focus:outline-none"
@@ -554,7 +572,7 @@ export default function Page() {
   return (
     <Suspense
       fallback={
-        <main className="flex min-h-screen items-center justify-center bg-chaux-100">
+        <main id="contenu" className="flex min-h-screen items-center justify-center bg-chaux-100">
           <p className="font-mono text-xs uppercase tracking-[0.2em] text-chaux-600">Chargement…</p>
         </main>
       }

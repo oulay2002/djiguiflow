@@ -218,7 +218,7 @@ export default function LoginPage() {
   return (
     <Suspense
       fallback={
-        <main className="flex min-h-screen items-center justify-center bg-[var(--background)] px-4 py-12">
+        <main id="contenu" className="flex min-h-screen items-center justify-center bg-[var(--background)] px-4 py-12">
           <p className="font-mono text-sm text-chaux-600">Chargement…</p>
         </main>
       }

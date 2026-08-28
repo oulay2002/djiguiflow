@@ -23,9 +23,6 @@ type Boutique = {
   telephone: string | null;
   telegram_marchand: string | null;
   groupe_livreurs: string | null;
-  sheet_commandes: string | null;
-  sheet_menu: string | null;
-  sheet_notes: string | null;
   slug?: string | null;
   // Etat de branchement des canaux. Les jetons eux-memes ne sortent jamais du
   // serveur : la page ne sait que s'ils existent.
@@ -121,14 +118,14 @@ function Voyant({ ton, children }: { ton: Ton; children: React.ReactNode }) {
 /**
  * Une etape du branchement : son rang, son titre, ce qu'elle demande.
  *
- * SANS RANG, CE N'EST PAS UNE ETAPE. Le classeur Google portait le numero 5 sur
- * 5, sous un titre annoncant « Cinq etapes, dans cet ordre » -- alors que le
- * guide le range parmi les surprises : « le classeur Google est facultatif,
- * sans lui tout fonctionne quand meme ». Un marchand non technicien voyait un
- * numero, le croyait obligatoire, et s'y bloquait au dernier pas.
+ * SANS RANG, CE N'EST PAS UNE ETAPE. Le classeur Google portait le numero 5
+ * sur 5, sous un titre annoncant « Cinq etapes, dans cet ordre » : un marchand
+ * non technicien voyait un numero, le croyait obligatoire, et s'y bloquait au
+ * dernier pas. On l'avait donc degrade en etape sans rang — puis retire tout a
+ * fait le 28 aout 2026, quand plus rien ne lisait ces onglets.
  *
- * Numeroter, c'est promettre que la chose est requise. On ne numerote donc que
- * ce qui l'est.
+ * La regle qui reste vaut au-dela de ce cas : numeroter, c'est promettre que
+ * la chose est requise. On ne numerote donc que ce qui l'est.
  */
 function Etape({
   rang,
@@ -272,46 +269,6 @@ export default function OnboardingPage() {
   };
 
   /**
-   * Cree les onglets manquants de CETTE boutique.
-   *
-   * Une boutique creee depuis le tableau de bord ne passe jamais par le
-   * provisionnement administrateur : elle n'a donc aucun onglet, et son
-   * assistante ne peut ni lire une carte ni enregistrer une commande. Le
-   * marchand n'a pas a savoir cela, encore moins a creer des onglets a la main.
-   *
-   * L'operation est sans risque : un onglet existant est laisse intact, en-tetes
-   * comprises. On peut donc cliquer deux fois.
-   */
-  const preparerClasseur = async () => {
-    annoncer('attente', 'Préparation du classeur…');
-    try {
-      const r = await fetchDashboard(avecBoutique('/api/dashboard/boutique/onglets', boutiqueId), {
-        method: 'POST',
-      });
-      const j = await r.json().catch(() => null);
-      if (!r.ok) {
-        annoncer('erreur', j?.error || 'Préparation impossible.');
-        return;
-      }
-      const crees: string[] = j?.crees ?? [];
-      // Six secondes et non cinq : ce message nomme les onglets crees, il y a
-      // plus a lire.
-      annoncer(
-        'ok',
-        crees.length
-          ? `Onglet(s) créé(s) : ${crees.join(', ')}`
-          : 'Vos onglets existaient déjà, rien à créer.',
-        6000,
-      );
-      // La fiche porte les noms retenus : on la recharge pour les afficher.
-      const f = await fetchDashboard(avecBoutique('/api/onboarding', boutiqueId));
-      if (f.ok) setBoutique(await f.json());
-    } catch {
-      annoncer('erreur', 'Connexion impossible.');
-    }
-  };
-
-  /**
    * Eprouve le branchement, et nomme l'etape en cause.
    *
    * ELLE NE PASSE AUCUNE COMMANDE. Deux messages d'essai partent — sur le
@@ -382,7 +339,7 @@ export default function OnboardingPage() {
   };
 
   return (
-    <main className="min-h-screen bg-chaux-100 pb-20">
+    <main id="contenu" className="min-h-screen bg-chaux-100 pb-20">
       <header className="indigo-weave relative bg-nuit-900 px-5 pb-10 pt-8 text-chaux-50 sm:px-8">
         <div className="mx-auto max-w-3xl">
           <h1 className="font-display text-3xl font-black leading-[1.05] sm:text-5xl">
@@ -539,52 +496,13 @@ export default function OnboardingPage() {
               />
             </Etape>
 
-            <Etape
-              titre="Vos feuilles Google"
-              aide="Sans ce classeur, tout fonctionne quand même : vos commandes vivent dans DjiguiFlow. Ne le remplissez que si vous tenez déjà vos ventes dans une feuille Google et voulez l’y retrouver."
-            >
-              <div className="grid gap-3 sm:grid-cols-3">
-                {(
-                  [
-                    ['sheet_commandes', 'Commandes', 'Commandes_MaBoutique'],
-                    ['sheet_menu', 'Menu', 'Menu_MaBoutique'],
-                    ['sheet_notes', 'Notes', 'Notes_MaBoutique'],
-                  ] as const
-                ).map(([champ, libelle, exemple]) => (
-                  <label key={champ} className="block">
-                    <span className="font-mono text-xs uppercase tracking-[0.16em] text-chaux-600">
-                      {libelle}
-                    </span>
-                    <input
-                      key={champ + (boutique[champ] || '')}
-                      defaultValue={boutique[champ] || ''}
-                      onBlur={(e) => enregistrer(champ, e.target.value)}
-                      className={`${CHAMP} mt-1.5`}
-                      placeholder={exemple}
-                    />
-                  </label>
-                ))}
-              </div>
-
-              {/* Le marchand n'a pas a creer ses onglets a la main, ni meme a
-                  savoir qu'ils existent. Un clic, et c'est pret.
-
-                  Le systeme possede deja ce bouton : `calme`, la variante des
-                  gestes secondaires. Ecrit a la main il etait arrondi au milieu
-                  d'une page qui n'a pas un seul angle adouci, et haut de 36 px
-                  la ou le pouce en demande 44. */}
-              <button
-                type="button"
-                onClick={preparerClasseur}
-                className={`${classesBouton('calme', 'md', 'carree')} mt-4`}
-              >
-                Créer mes onglets automatiquement
-              </button>
-              <p className="mt-2 text-sm text-chaux-600">
-                Laissez les champs vides et cliquez : les onglets sont créés à votre nom.
-                Si vous les avez déjà, rien n’est effacé.
-              </p>
-            </Etape>
+            {/* L'ETAPE « VOS FEUILLES GOOGLE » EST RETIREE — 28 aout 2026.
+                Elle demandait au marchand trois noms d'onglets et lui offrait
+                un bouton pour les creer. Plus rien ne lit ces onglets : ni
+                l'assistante, decouplee depuis le 19 aout, ni les 23 workflows,
+                debranches le 27. On reclamait donc un renseignement dont on ne
+                faisait plus rien — le pire de ce qu'un branchement peut faire a
+                quelqu'un qui n'est pas technicien. */}
 
             {/* LE TEST N'EST PAS UNE SIXIEME ETAPE : il ne demande rien a
                 remplir, il verifie les cinq precedentes. Il porte donc un

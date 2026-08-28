@@ -147,7 +147,11 @@ export function LienRetour({ href, children }: { href: string; children: ReactNo
          au gris sale, et la perforation en pointilles — qui EST le motif —
          devenait invisible. Un talon qu'on ne reconnait pas est une pilule.
          Le papier plein se detache du bandeau et rend ses pointilles. */
-      className="stub group inline-flex min-h-10 items-center gap-2 rounded-r-full bg-chaux-50 py-2 pl-4 pr-5 text-sm font-semibold text-nuit-700 hover:bg-white hover:text-nuit-900"
+      /* `min-h-11` et pas `min-h-10` : 44 px, comme tout le reste. Le talon
+         mesurait 40 px sur les douze pages qui le posent — le seul geste de
+         navigation de ces ecrans, et le seul a passer sous la regle du pouce.
+         Personne ne l'avait vu parce que 40 px se touchent presque toujours. */
+      className="stub group inline-flex min-h-11 items-center gap-2 rounded-r-full bg-chaux-50 py-2 pl-4 pr-5 text-sm font-semibold text-nuit-700 hover:bg-white hover:text-nuit-900"
     >
       <ArrowLeft className="h-4 w-4 transition-transform duration-150 group-hover:-translate-x-0.5" />
       {children}

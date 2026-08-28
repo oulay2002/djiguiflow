@@ -38,7 +38,7 @@
  * serait un mensonge sur la seule ligne d'un registre qui engage. On la change
  * en même temps qu'on change les traitements, jamais autrement.
  */
-export const REGISTRE_MIS_A_JOUR = '27 août 2026';
+export const REGISTRE_MIS_A_JOUR = '28 août 2026';
 
 /** Qui la donnée concerne. Le registre les sépare, l'écran ne montre que `client`. */
 export type Personne = 'client' | 'marchand' | 'livreur';
@@ -65,6 +65,26 @@ export type Traitement = {
   /** Les données, dites comme on les dirait à la personne — pas des noms de colonnes. */
   donnees: string[];
   finalite: string;
+  /**
+   * La durée, en deux ou trois mots — de quoi la LIRE EN COLONNE.
+   *
+   * POURQUOI CE CHAMP EXISTE, ALORS QUE `conservation` DIT DÉJÀ LA DURÉE.
+   * Parce que `conservation` est une phrase, et que quatre d'entre elles
+   * dépassent cent signes — jusqu'à 147. L'écran des droits les affichait en
+   * monospace, au nom de « la règle du chiffre en mono », et rendait donc de
+   * la prose en police de code : huit résumés de 48 à 116 px de haut, un
+   * registre « replié » de 800 px. DESIGN.md dit pourtant que « IBM Plex Mono
+   * n'est pas une police de code ici ».
+   *
+   * Ce champ porte ce que la règle visait réellement : une valeur que l'œil
+   * compare d'une ligne à l'autre. `conservation` garde l'explication, et
+   * n'est pas modifiée — le registre de l'admin et les documents juridiques
+   * la citent telle quelle.
+   *
+   * Court veut dire COURT : au-delà d'une vingtaine de signes, la colonne
+   * cesse de se lire et le résumé redevient un paragraphe.
+   */
+  duree: string;
   conservation: string;
   /** Qui d'autre y a accès. Un hébergeur en est un. */
   destinataires: string[];
@@ -97,13 +117,20 @@ export const TRAITEMENTS: Traitement[] = [
       'l’heure de retrait, si vous venez chercher la commande',
     ],
     finalite: 'Préparer votre commande, vous la livrer, et vous permettre de la suivre.',
+    duree: '12 mois',
     conservation:
       '12 mois après la fin de la commande, puis votre identité est effacée. '
-      + 'Le montant et la date restent, sans vous : c’est la comptabilité du marchand.',
+      + 'Le montant et la date restent, sans vous : c’est la comptabilité du marchand. '
+      + 'Votre position GPS, elle, part bien plus tôt — 30 jours après la fin de la '
+      + 'commande — car elle ne sert qu’à trouver votre porte le jour de la livraison. '
+      + 'Votre adresse écrite, elle, reste jusqu’aux 12 mois.',
+    // Google Sheets figurait ici jusqu'au 28 août 2026 : une copie complète de
+    // chaque commande partait dans un tableur, avec le nom, le téléphone et
+    // l'adresse. L'écriture est débranchée et les colonnes supprimées — voir
+    // le bloc au-dessus de `journaux_techniques`.
     destinataires: [
       'le marchand chez qui vous avez commandé',
       'le livreur qui prend votre commande en charge',
-      'Google Sheets — une copie de la commande y est écrite (voir plus bas)',
       'Supabase (hébergeur de la base) et le serveur d’automatisation',
     ],
     effacement: 'anonymise',
@@ -117,6 +144,7 @@ export const TRAITEMENTS: Traitement[] = [
     finalite:
       'Reprendre une commande interrompue, et permettre au marchand de mesurer '
       + 'combien de paniers n’aboutissent pas.',
+    duree: '30 jours',
     conservation: '30 jours, puis suppression complète.',
     destinataires: ['le marchand concerné', 'Supabase (hébergeur de la base)'],
     effacement: 'supprime',
@@ -130,6 +158,7 @@ export const TRAITEMENTS: Traitement[] = [
     finalite:
       'Tenir la règle « une relance par personne et par mois ». Sans cette trace, '
       + 'on vous relancerait à nouveau faute de se souvenir de l’avoir déjà fait.',
+    duree: '90 jours',
     conservation: '90 jours, puis suppression.',
     destinataires: ['le marchand concerné', 'Supabase (hébergeur de la base)'],
     effacement: 'supprime',
@@ -141,6 +170,7 @@ export const TRAITEMENTS: Traitement[] = [
     ou: 'Base de données (table « livraisons »)',
     donnees: ['la note que vous avez donnée', 'le commentaire que vous avez écrit'],
     finalite: 'Permettre au marchand de suivre la qualité du service de livraison.',
+    duree: 'Avec la livraison',
     conservation:
       'Aussi longtemps que la livraison, dont elle fait partie. Le commentaire '
       + 'est retiré en même temps que votre identité.',
@@ -154,6 +184,7 @@ export const TRAITEMENTS: Traitement[] = [
     ou: 'Base de données (table « relances_stop »)',
     donnees: ['votre numéro de téléphone', 'la boutique et la date du refus'],
     finalite: 'Ne plus jamais vous envoyer de relance commerciale.',
+    duree: 'Sans limite',
     conservation: 'Sans limite de durée, tant que le refus doit être honoré.',
     destinataires: ['le marchand concerné', 'Supabase (hébergeur de la base)'],
     effacement: 'garde',
@@ -170,6 +201,7 @@ export const TRAITEMENTS: Traitement[] = [
     ou: 'Base de données (table « demandes_droits »)',
     donnees: ['votre numéro de téléphone', 'la nature de la demande et sa date'],
     finalite: 'Pouvoir prouver, plus tard, que votre demande a bien été honorée.',
+    duree: 'Sans limite',
     conservation: 'Sans limite de durée.',
     destinataires: ['l’administrateur de la plateforme', 'Supabase (hébergeur de la base)'],
     effacement: 'garde',
@@ -177,33 +209,26 @@ export const TRAITEMENTS: Traitement[] = [
       'C’est la trace de votre demande elle-même. L’effacer reviendrait à '
       + 'effacer la preuve qu’on vous a obéi.',
   },
-  {
-    cle: 'messages',
-    nom: 'Les messages échangés avec la boutique',
-    concerne: ['client'],
-    ou: 'Feuille de calcul Google du marchand (« Logs_Envois ») et serveur d’automatisation',
-    donnees: [
-      'le texte des messages qui vous ont été envoyés',
-      'le numéro ou l’identifiant auquel ils ont été adressés',
-      'la date et le canal utilisé',
-    ],
-    finalite:
-      'Permettre au marchand de retrouver ce qui vous a été dit, et de comprendre '
-      + 'un message qui ne vous serait pas parvenu.',
-    conservation:
-      'Aussi longtemps que le marchand garde sa feuille de calcul. Cette copie '
-      + 'n’est pas effacée par la purge automatique.',
-    destinataires: [
-      'le marchand concerné',
-      'Google (la feuille de calcul est hébergée chez lui)',
-      'le fournisseur du canal — WhatsApp ou Telegram',
-    ],
-    effacement: 'garde',
-    pourquoi:
-      'Cette copie vit dans le tableur du marchand, hors de portée de cet écran. '
-      + 'Elle relève de lui, et c’est à lui qu’il faut la demander. Le dire est '
-      + 'préférable à laisser croire qu’un effacement l’emporte.',
-  },
+  /*
+   * LE TRAITEMENT « messages » A DISPARU LE 28 AOÛT 2026, et il faut savoir
+   * pourquoi il a existé.
+   *
+   * Chaque message envoyé à un client — son texte entier, et le numéro auquel
+   * il partait — était consigné dans une feuille de calcul Google
+   * (« Logs_Envois », 568 lignes). La purge nocturne ne l'atteignait pas : les
+   * durées de conservation ne valaient que pour la base.
+   *
+   * Deux issues étaient possibles : porter la purge jusqu'à la feuille, ou
+   * cesser d'y écrire. On a mesuré d'abord — treize nœuds Google Sheets, dont
+   * neuf déjà morts, et RIEN qui relise jamais ces colonnes — puis le marchand
+   * a confirmé qu'il n'ouvrait pas la feuille. Le journal a donc été débranché
+   * et ses colonnes supprimées, plutôt que d'entretenir un second système de
+   * conservation dans un endroit qu'on ne maîtrise pas.
+   *
+   * Le texte des messages ne vit plus que là où il a toujours vécu : sur le
+   * téléphone de la personne et chez WhatsApp ou Telegram — ce que
+   * `HORS_DE_PORTEE` dit toujours, parce que c'est toujours vrai.
+   */
   {
     cle: 'journaux_techniques',
     nom: 'Journaux techniques',
@@ -216,6 +241,7 @@ export const TRAITEMENTS: Traitement[] = [
     finalite:
       'Détecter les tentatives d’accès aux commandes d’autrui et les pannes. '
       + 'Ces lignes ne portent pas votre nom.',
+    duree: 'Chez l’hébergeur',
     conservation: 'Selon la durée propre à l’hébergeur, hors de notre maîtrise.',
     destinataires: ['Vercel', 'l’hébergeur du serveur d’automatisation'],
     effacement: 'garde',
@@ -236,6 +262,7 @@ export const TRAITEMENTS: Traitement[] = [
       'l’abonnement, les paiements et les préférences de notification',
     ],
     finalite: 'Faire fonctionner la boutique, encaisser l’abonnement, envoyer les alertes.',
+    duree: 'Durée du compte',
     conservation: 'Tant que le compte existe.',
     destinataires: [
       'Supabase (hébergeur de la base)',
@@ -258,6 +285,7 @@ export const TRAITEMENTS: Traitement[] = [
       'les livraisons effectuées et la rémunération associée',
     ],
     finalite: 'Affecter les livraisons, suivre la course, calculer la rémunération.',
+    duree: 'Durée du rattachement',
     conservation: 'Tant que le livreur est rattaché à une boutique.',
     destinataires: ['le marchand qui l’emploie', 'Supabase (hébergeur de la base)'],
     effacement: 'garde',
@@ -284,21 +312,18 @@ export const HORS_DE_PORTEE: { quoi: string; pourquoi: string }[] = [
       'Ils sont sur votre téléphone et sur les serveurs de la messagerie. '
       + 'Vous seul pouvez les y supprimer.',
   },
-  {
-    quoi: 'La copie de vos commandes dans la feuille de calcul du marchand',
-    pourquoi:
-      'Chaque commande est aussi écrite dans un tableur Google que le marchand '
-      + 'utilise pour son suivi. Cette copie porte votre nom, votre téléphone et '
-      + 'votre adresse. Elle n’est pas effacée par cet écran : demandez-la au '
-      + 'marchand, qui en est responsable.',
-  },
-  {
-    quoi: 'Le journal des messages qui vous ont été envoyés',
-    pourquoi:
-      'Le texte de chaque message, et le numéro auquel il a été adressé, sont '
-      + 'consignés dans le même tableur. Cette copie appartient au marchand et '
-      + 'échappe à cet écran, comme la précédente.',
-  },
+  /*
+   * DEUX LIMITES ONT ÉTÉ RETIRÉES LE 28 AOÛT 2026 — parce qu'elles ont cessé
+   * d'exister, et c'est la bonne façon de faire disparaître une limite.
+   *
+   * On avouait ici que la copie des commandes et le journal des messages
+   * vivaient dans une feuille de calcul Google, avec nom, téléphone et adresse,
+   * hors de portée de tout effacement. Plutôt que de mieux le formuler, on a
+   * débranché l'écriture et supprimé quarante-quatre colonnes d'identité dans
+   * le classeur.
+   *
+   * Une limite qu'on explique bien reste une limite ; celle-ci n'est plus là.
+   */
   {
     quoi: 'Les sauvegardes des jours précédents',
     pourquoi:

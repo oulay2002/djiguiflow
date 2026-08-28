@@ -16,9 +16,16 @@ import { LienRetour } from '@/components/ui/Bouton';
  */
 export default function LayoutLegal({ children }: { children: ReactNode }) {
   return (
-    <main className="min-h-screen bg-chaux-50">
+    <main id="contenu" className="min-h-screen bg-chaux-50">
       <div className="border-b border-chaux-200 bg-white">
-        <div className="mx-auto flex max-w-4xl items-center justify-between gap-4 px-4 py-5 sm:px-6">
+        {/*
+          `flex-wrap` : le talon et le lien tiennent cote a cote a 100 %, et
+          passent l'un sous l'autre des que le texte grossit. Sans lui, la
+          rangee gardait sa largeur intrinseque et poussait le document a
+          447 px pour une fenetre de 360 — un defilement lateral sur des pages
+          qui ne sont QUE du texte long.
+        */}
+        <div className="mx-auto flex max-w-4xl flex-wrap items-center justify-between gap-4 px-4 py-5 sm:px-6">
           <LienRetour href="/">Accueil</LienRetour>
 
           <Link

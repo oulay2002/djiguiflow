@@ -184,7 +184,9 @@ export default function Home() {
             </button>
           </div>
 
-          <div className="flex items-center gap-2">
+          {/* `flex-wrap` : la rangee de tete descend au lieu d'imposer sa
+              largeur au document quand le texte grossit. */}
+          <div className="flex flex-wrap items-center justify-end gap-2">
             <Link
               href="/login"
               className="hidden px-3 py-2 text-sm text-nuit-100 transition hover:text-white sm:inline-flex"
@@ -193,7 +195,19 @@ export default function Home() {
             </Link>
             <Link
               href="/register"
-              className="inline-flex whitespace-nowrap bg-bissap-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-bissap-600"
+              /*
+                PAS DE `whitespace-nowrap` ICI, ET C'EST LE CORRECTIF.
+                Ce libelle interdit de se couper impose une largeur minimale au
+                bandeau entier. A 100 % il tient ; a 200 % de texte — le
+                reglage d'accessibilite du systeme, pas le zoom du navigateur —
+                il exigeait 319 px de large et poussait tout le document a
+                483 px pour une fenetre de 360. La page entiere se defilait
+                alors lateralement, y compris le corps des articles.
+                Le libelle peut se couper en deux lignes : c'est laid une fois
+                sur mille, contre une page inutilisable pour qui grossit le
+                texte.
+              */
+              className="inline-flex bg-bissap-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-bissap-600"
             >
               Ouvrir ma boutique
             </Link>
@@ -212,7 +226,14 @@ export default function Home() {
               </Eyebrow>
             </div>
 
-            <h1 className="mt-6 max-w-[15ch] font-display text-[2.75rem] font-extrabold leading-[0.95] tracking-[-0.03em] sm:text-6xl lg:text-[4.25rem]">
+            {/*
+              `max-w-[15ch]` borne la MESURE, pas la casse : `ch` grandit avec
+              la police, donc a 200 % de texte cette limite valait 470 px pour
+              une fenetre de 360, et le titre imposait sa largeur au document
+              entier. `hyphens-auto` (invisible a 100 %, ou aucune coupure
+              n'est necessaire) et `min-w-0` le laissent redescendre.
+            */}
+            <h1 className="mt-6 min-w-0 max-w-[15ch] font-display text-[2.75rem] font-extrabold leading-[0.95] tracking-[-0.03em] hyphens-auto sm:text-6xl lg:text-[4.25rem]">
               Un client commande à{' '}
               <span className="font-mono text-mangue-300 tracking-tight">23:41</span>. C’est livré à{' '}
               <span className="font-mono text-accent-300 tracking-tight">23:52</span>.
@@ -380,7 +401,11 @@ export default function Home() {
             className=" bg-chaux-50 p-6 soft-shadow sm:p-8"
             style={{ '--tear-bg': CHAUX } as CSSProperties}
           >
-            <div className="flex items-baseline justify-between font-mono text-xs uppercase tracking-[0.16em] text-chaux-600">
+            {/* `flex-wrap` + `gap-x-3` : l'en-tete du ticket tient sur une
+                ligne a 100 %, et la date descend quand le texte grossit. En
+                mono capitales avec `0.16em` d'interlettrage, ces deux libelles
+                sont larges bien avant de le paraitre. */}
+            <div className="flex flex-wrap items-baseline justify-between gap-x-3 font-mono text-xs uppercase tracking-[0.16em] text-chaux-600">
               <span>djiguiflow · relevé</span>
               <span>mar. 4 août</span>
             </div>

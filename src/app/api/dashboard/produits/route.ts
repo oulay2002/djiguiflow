@@ -1,4 +1,3 @@
-import { readHeaders, readSheet, appendRow, updateCells } from '@/lib/googleSheets';
 import { exigerAccesMarchand } from '@/lib/dashboardAuth';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 
@@ -172,27 +171,6 @@ export async function POST(req: Request) {
     return Response.json({ error: 'Enregistrement impossible, reessayez' }, { status: 503 });
   }
 
-  // ---- 2. Miroir feuille, jamais bloquant.
-  try {
-    const payload: Record<string, string> = {
-      id: reference,
-      nom: String(nom),
-      categorie: String(categorie || 'Divers'),
-      prix: String(prix ?? ''),
-      description: String(description || ''),
-      disponible: disponible ? 'TRUE' : 'FALSE',
-      image: String(image || ''),
-      stock: stockNum === null ? '' : String(stockNum),
-      stock_initial: stockNum === null ? '' : String(stockNum),
-      seuil_alerte: seuilNum === null ? '' : String(seuilNum),
-    };
-    const headers = await readHeaders(`${m.sheetMenu}!A1:Z1`, m.sheetId);
-    await appendRow(`${m.sheetMenu}!A:Z`, headers.map(h => payload[h] ?? ''), m.sheetId);
-  } catch (e) {
-    // Le produit est en base : le marchand le voit, la vitrine le vend.
-    console.error(`Produits — miroir ${m.sheetMenu} impossible (${m.id}) :`, e);
-  }
-
   return Response.json({ ok: true, boutique_id: m.id, reference });
 }
 
@@ -345,52 +323,14 @@ export async function PATCH(req: Request) {
     }
   }
 
-  // ---- Miroir feuille, jamais bloquant.
-  //
-  // C'EST LA FEUILLE QUE LIT L'ASSISTANTE, pas Supabase. Une correction qui ne
-  // toucherait que la base laisserait le bot proposer l'ancien nom et l'ancien
-  // prix a tous les clients : le marchand croirait avoir corrige, et rien
-  // n'aurait change pour ceux qui commandent.
-  //
-  // L'echec reste silencieux, comme a la creation : le produit est corrige en
-  // base, la vitrine le vend juste, et une feuille indisponible ne doit pas
-  // faire echouer la modification.
-  try {
-    const onglet = m.sheetMenu;
-    const headers = await readHeaders(`${onglet}!A1:Z1`, m.sheetId);
-    const lignes = await readSheet(`${onglet}!A:Z`, m.sheetId);
-    const index = lignes.findIndex((l) => String(l.id ?? '').trim() === String(reference));
-
-    if (index >= 0) {
-      const ancienne = lignes[index];
-      const valeur = (cle: string, neuf: unknown, transforme?: (v: unknown) => string) =>
-        neuf === undefined ? String(ancienne[cle] ?? '') : (transforme ? transforme(neuf) : String(neuf ?? ''));
-
-      const ligne = headers.map((h) => {
-        switch (h) {
-          case 'nom': return valeur('nom', nom, (v) => String(v).trim());
-          case 'categorie': return valeur('categorie', categorie, (v) => String(v || 'Divers'));
-          case 'prix': return valeur('prix', prix, (v) => String(Number(v) || 0));
-          case 'description': return valeur('description', description);
-          case 'image': return valeur('image', image);
-          case 'disponible': return valeur('disponible', disponible, (v) => (v ? 'TRUE' : 'FALSE'));
-          case 'stock': return valeur('stock', patch.stock, (v) => (v === null ? '' : String(v)));
-          case 'seuil_alerte': return valeur('seuil_alerte', patch.seuil_alerte, (v) => (v === null ? '' : String(v)));
-          // La feuille n'est plus lue par l'assistante depuis le 19 aout, mais
-          // tant qu'elle porte cette colonne elle ne doit pas dire l'inverse de
-          // la base : un marchand qui rouvrirait son onglet y lirait une carte
-          // du jour qu'il a defaite la veille.
-          case 'menu_du_jour': return valeur('menu_du_jour', patch.menu_du_jour, (v) => (v ? 'TRUE' : 'FALSE'));
-          default: return String(ancienne[h] ?? '');
-        }
-      });
-
-      // +2 : une ligne d'en-tete, et Sheets compte a partir de 1.
-      await updateCells(`${onglet}!A${index + 2}:Z${index + 2}`, [ligne], m.sheetId);
-    }
-  } catch (e) {
-    console.error(`Produits — miroir ${m.sheetMenu} impossible (${m.id}) :`, e);
-  }
+  /*
+    LE MIROIR EST RETIRE — 28 aout 2026. Son commentaire disait « C'EST LA
+    FEUILLE QUE LIT L'ASSISTANTE, pas Supabase », et trente lignes plus bas un
+    autre disait « la feuille n'est plus lue par l'assistante depuis le 19
+    aout ». Le second etait le vrai : le decouplage a eu lieu, et le premier
+    n'a jamais ete corrige. Une justification perimee tient un code en vie
+    aussi surement qu'une bonne raison.
+  */
 
   return Response.json({ ok: true });
 }

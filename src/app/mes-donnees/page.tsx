@@ -1,10 +1,11 @@
 'use client';
 
-import { Suspense, useCallback, useEffect, useState } from 'react';
+import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { ShieldCheck, Trash2, TriangleAlert } from 'lucide-react';
+import { ChevronDown, Loader2, ShieldCheck, Trash2, TriangleAlert } from 'lucide-react';
 import { Bouton, LienRetour } from '@/components/ui/Bouton';
+import { lignesDuBilan, lireReponseEffacement, type Bilan } from '@/lib/reponseEffacement';
 
 /**
  * L'écran des droits : ce qu'on détient sur vous, et comment le faire partir.
@@ -36,6 +37,7 @@ type Traitement = {
   nom: string;
   donnees: string[];
   finalite: string;
+  duree: string;
   conservation: string;
   destinataires: string[];
   effacement: 'anonymise' | 'supprime' | 'garde';
@@ -46,8 +48,6 @@ type Commande = {
   reference: string;
   date: string | null;
   boutique: string;
-  total: number | null;
-  statut: string | null;
   close: boolean;
   detenu: string[];
 };
@@ -73,16 +73,72 @@ type Dossier = {
   horsDePortee: { quoi: string; pourquoi: string }[];
 };
 
-type Bilan = {
-  commandesAnonymisees: number;
-  paniersSupprimes: number;
-  relancesSupprimees: number;
-  avisRetires: number;
-  commandesEnCours: number;
-  refusEnregistres: number;
-};
+// `Bilan` est defini avec le lecteur de reponse, et pas ici : c'est la forme
+// que le SERVEUR rend, et deux copies d'une meme forme finissent par diverger
+// sans que rien ne le dise.
 
 const CADRE = 'border border-nuit-900/12 bg-white/70 p-5';
+
+/**
+ * Ce que ce geste-ci va toucher, compte sur le dossier affiche.
+ *
+ * POURQUOI DES CHIFFRES, ET PAS UNE FORMULE. « Vos donnees seront effacees »
+ * ne dit pas si cela concerne une commande ou douze. La personne qui confirme
+ * doit reconnaitre SON dossier dans la phrase — sinon la confirmation ne
+ * confirme rien, elle ne fait que retarder le meme clic.
+ *
+ * LE CAS OU IL N'Y A RIEN A EFFACER N'EST PAS UNE ERREUR. Quelqu'un dont
+ * toutes les commandes sont en cours a le droit de demander l'effacement ; la
+ * demande est enregistree et la tache nocturne l'applique a la fermeture. Lui
+ * afficher « 0 commande » le laisserait croire que son geste n'a servi a rien.
+ *
+ * Les accords sont ecrits en toutes lettres. Un « commande(s) » a l'ecran est
+ * un gabarit qu'on lit, pas une phrase qu'on ecrit.
+ */
+function porteeDuGeste(dossier: Dossier): string {
+  const closes = dossier.commandes.filter((c) => c.close).length;
+  const parties: string[] = [];
+
+  if (closes > 0) {
+    parties.push(
+      closes === 1
+        ? '1 commande terminée perdra votre nom, votre téléphone et votre adresse'
+        : `${closes} commandes terminées perdront votre nom, votre téléphone et votre adresse`,
+    );
+  }
+  if (dossier.paniers > 0) {
+    parties.push(
+      dossier.paniers === 1 ? '1 panier sera supprimé' : `${dossier.paniers} paniers seront supprimés`,
+    );
+  }
+  if (dossier.relances > 0) {
+    parties.push(
+      dossier.relances === 1
+        ? '1 relance sera supprimée'
+        : `${dossier.relances} relances seront supprimées`,
+    );
+  }
+  if (dossier.avisLivraison > 0) {
+    parties.push(
+      dossier.avisLivraison === 1
+        ? '1 avis de livraison sera retiré'
+        : `${dossier.avisLivraison} avis de livraison seront retirés`,
+    );
+  }
+
+  // Les espaces qui precedent « : » et « ; » sont INSECABLES (U+00A0), ici et
+  // dans le `join` plus bas. Invisible a la relecture du source, d'ou cette
+  // note : la regle typographique francaise l'exige, et a 360 px c'est elle
+  // qui empeche la ponctuation de tomber seule en tete de ligne.
+  if (parties.length === 0) {
+    return (
+      'Vos commandes sont toutes en cours : rien ne peut être effacé aujourd’hui. '
+      + 'Nous enregistrons votre demande et l’appliquons dès qu’elles seront terminées.'
+    );
+  }
+
+  return `C’est définitif, et voici ce que cela touche : ${parties.join(' ; ')}.`;
+}
 
 function dateLisible(iso: string | null): string {
   if (!iso) return '';
@@ -102,13 +158,81 @@ function Ecran() {
   const [erreur, setErreur] = useState('');
   const [chargement, setChargement] = useState(false);
 
+  /**
+   * Vrai quand c'est l'ouverture AUTOMATIQUE par le lien qui a echoue.
+   *
+   * Sans cette distinction, on ne peut pas parler juste : le meme refus veut
+   * dire « votre lien n'a pas marche » a celui qui n'a rien tape, et
+   * « verifiez votre saisie » a celui qui vient de taper. Le drapeau retombe
+   * des que la personne envoie le formulaire elle-meme.
+   */
+  const [lienEchoue, setLienEchoue] = useState(false);
+
   const [demandeEffacement, setDemandeEffacement] = useState(false);
   const [efface, setEfface] = useState<{ complet: boolean; bilan: Bilan } | null>(null);
   const [effacementEnCours, setEffacementEnCours] = useState(false);
 
-  const charger = useCallback(async (r: string, jeton: string, chiffres: string) => {
+  const zoneConfirmation = useRef<HTMLDivElement | null>(null);
+
+  /**
+   * LE VERROU QUI NE DEPEND PAS DU RENDU.
+   *
+   * `disabled={effacementEnCours}` ne ferme la porte qu'au repaint suivant.
+   * Deux touchers separes de quelques millisecondes — le reflexe exact sur un
+   * telephone lent — passent tous les deux avant lui. Une ref est posee dans
+   * le meme tour de boucle que l'appel, donc avant le second.
+   */
+  const effacementLance = useRef(false);
+
+  /**
+   * LE FOCUS VA SUR L'AVERTISSEMENT, PAS SUR LE BOUTON ROUGE.
+   *
+   * Avant, les deux boutons occupaient la meme position dans le meme `div` :
+   * React reutilisait le noeud, donc « Oui, effacer definitivement » naissait
+   * sous le doigt ET heritait du focus. Un second toucher impatient, ou une
+   * seconde frappe sur Entree, effacait.
+   *
+   * Poser le focus sur le bloc d'avertissement fait lire la portee reelle au
+   * lecteur d'ecran, et laisse « Annuler » en premiere tabulation.
+   */
+  useEffect(() => {
+    if (demandeEffacement) zoneConfirmation.current?.focus();
+  }, [demandeEffacement]);
+
+  /**
+   * LE DOSSIER S'OUVRE : ON LE DIT, ET ON Y EMMENE LE FOCUS.
+   *
+   * C'est le geste central de l'ecran, et il etait muet. Le bouton se
+   * desactive pendant l'appel, donc il perd le focus : mesure, `activeElement`
+   * retombait sur `<body>`. Quatre sections apparaissaient sans que rien ne
+   * l'annonce, et l'utilisateur au lecteur d'ecran avait perdu sa place.
+   *
+   * Le focus va sur l'en-tete du dossier plutot que sur une region `aria-live`
+   * : il annonce ET replace le curseur au debut de ce qui vient d'arriver, si
+   * bien que la lecture continue naturellement dans les sections suivantes.
+   * Une region live aurait lu une phrase, puis laisse la personne sur `<body>`.
+   *
+   * `ouvertureDeja` empeche de reprendre le focus a chaque re-rendu du
+   * dossier — on ne le vole qu'une fois, a l'arrivee.
+   */
+  const enteteDossier = useRef<HTMLParagraphElement | null>(null);
+  const ouvertureDeja = useRef(false);
+  useEffect(() => {
+    if (!dossier) { ouvertureDeja.current = false; return; }
+    if (ouvertureDeja.current) return;
+    ouvertureDeja.current = true;
+    enteteDossier.current?.focus();
+  }, [dossier]);
+
+  const charger = useCallback(async (
+    r: string,
+    jeton: string,
+    chiffres: string,
+    viaLien = false,
+  ) => {
     setChargement(true);
     setErreur('');
+    setLienEchoue(false);
     try {
       const res = await fetch('/api/mes-donnees', {
         method: 'POST',
@@ -120,12 +244,59 @@ function Ecran() {
         setDossier(corps);
       } else {
         setDossier(null);
+
+        /*
+          UN 429 N'EST PAS UN LIEN REFUSE, ET C'EST TOUT LE CORRECTIF.
+          `lienEchoue` etait pose sur N'IMPORTE QUEL echec de l'ouverture
+          automatique. Or il commande trois choses : le titre « Ouvrons-le
+          autrement », l'abandon du jeton de l'URL, et la reecriture du
+          message. Sur une rafale ou une panne, les trois etaient faux — le
+          lien est parfaitement valable, il faut seulement attendre.
+          Seul un 404 dit que la preuve est refusee. Lui seul invalide le lien.
+        */
+        const preuveRefusee = res.status === 404;
+        setLienEchoue(viaLien && preuveRefusee);
+
+        /*
+          LE DELAI EST CONNU, DONC IL SE DIT.
+          `prouverClient` pose `Retry-After` sur le 429, en secondes. Le
+          message du serveur s'arrete a « patientez quelques minutes » parce
+          qu'il ne peut pas viser plus juste pour tous ses appelants ; ici on a
+          l'en-tete. « Quelques minutes » fait revenir au bout d'une, et chaque
+          retour consomme un appel du budget PAR ADRESSE — que les operateurs
+          d'ici partagent a l'echelle d'un quartier.
+        */
+        const attendre = Number(res.headers.get('Retry-After'));
+        const minutes = Number.isFinite(attendre) && attendre > 0
+          ? Math.max(1, Math.ceil(attendre / 60))
+          : 0;
+
+        /*
+          ON REMPLACE, ON N'AJOUTE PAS. Coller « Réessayez dans 7 minutes » a
+          la suite de « Patientez quelques minutes » disait deux fois la meme
+          chose, la seconde contredisant vaguement la premiere. Quand le delai
+          est connu, il remplace la formule vague ; quand il ne l'est pas, le
+          message du serveur passe tel quel.
+          « depuis votre connexion » plutot que « vous avez fait trop de
+          demandes » : le plafond est PAR ADRESSE, et les operateurs d'ici
+          partagent leurs IP a l'echelle d'un quartier. Le tour de phrase evite
+          d'accuser quelqu'un d'un geste qu'un inconnu a fait.
+        */
+        const messageServeur = String(corps?.error ?? '')
+          || 'Nous n’avons pas pu vérifier qu’il s’agit bien de vous.';
+
         setErreur(
-          String(corps?.error ?? '')
-          || 'Nous n’avons pas pu vérifier qu’il s’agit bien de vous.',
+          res.status === 429 && minutes
+            ? 'Trop de demandes ont été faites depuis votre connexion, qui est '
+              + `peut-être partagée avec d’autres. Réessayez dans ${
+                minutes === 1 ? 'une minute' : `${minutes} minutes`}.`
+            : messageServeur,
         );
       }
     } catch {
+      // Une coupure reseau n'invalide aucun lien : on ne renvoie pas la
+      // personne vers la saisie manuelle pour un cable.
+      setLienEchoue(false);
       setErreur('La connexion a échoué. Réessayez dans un instant.');
     } finally {
       setChargement(false);
@@ -136,10 +307,12 @@ function Ecran() {
   // le dossier sans rien demander. Celui qui arrive les mains vides voit le
   // formulaire.
   useEffect(() => {
-    if (refUrl && jetonUrl) void charger(refUrl, jetonUrl, '');
+    if (refUrl && jetonUrl) void charger(refUrl, jetonUrl, '', true);
   }, [refUrl, jetonUrl, charger]);
 
   const effacer = useCallback(async () => {
+    if (effacementLance.current) return;
+    effacementLance.current = true;
     setEffacementEnCours(true);
     setErreur('');
     try {
@@ -153,29 +326,98 @@ function Ecran() {
           confirme: true,
         }),
       });
-      const corps = (await res.json().catch(() => null)) as
-        | { ok?: boolean; complet?: boolean; bilan?: Bilan; error?: string }
-        | null;
-      if (res.ok && corps?.bilan) {
-        setEfface({ complet: corps.complet === true, bilan: corps.bilan });
+      const corps = await res.json().catch(() => null);
+
+      /*
+        TROIS ISSUES, PAS DEUX — ET C'EST LE CORRECTIF.
+        On testait `res.ok && corps.bilan`. La route rend pourtant un SUCCES
+        SANS BILAN quand le dossier est deja anonymise : il n'y a rien a
+        compter, donc rien a inscrire. La condition tombait a faux, et l'ecran
+        repondait « L'effacement n'a pas abouti » a quelqu'un dont les donnees
+        etaient parties — alors que rouvrir le lien garde dans son message est
+        LE geste qui suit un effacement.
+        Le commentaire qui se trouvait ici CITAIT `dejaEfface` pour expliquer
+        pourquoi le reessai etait sans danger. Le raisonnement etait juste, la
+        lecture de la reponse ne le suivait pas : un commentaire ne verifie
+        rien. La table de verite vit desormais dans `lireReponseEffacement`,
+        avec son test.
+      */
+      const issue = lireReponseEffacement(res.ok, corps);
+
+      if (issue.sorte === 'efface') {
+        setEfface({ complet: issue.complet, bilan: issue.bilan });
         setDossier(null);
         setDemandeEffacement(false);
+      } else if (issue.sorte === 'dejaEfface') {
+        // Ni bilan a montrer, ni echec a annoncer : on bascule le dossier sur
+        // le panneau qui dit deja la verite — « ces donnees ont deja ete
+        // effacees ». Le verrou reste ferme, l'etat est terminal.
+        setDossier((d) => (d ? { ...d, efface: true } : d));
+        setDemandeEffacement(false);
       } else {
-        setErreur(String(corps?.error ?? '') || 'L’effacement n’a pas abouti.');
+        // LE VERROU SE ROUVRE SUR L'ECHEC, ET SUR LUI SEUL. Sans cela, un
+        // refus temporaire condamnerait la personne a recharger la page pour
+        // exercer un droit.
+        effacementLance.current = false;
+        setErreur(issue.message);
       }
     } catch {
+      effacementLance.current = false;
       setErreur('La connexion a échoué. Vos données n’ont pas été touchées.');
     } finally {
       setEffacementEnCours(false);
     }
   }, [ref, refUrl, jetonUrl, tel4]);
 
+  // L'ouverture automatique est en cours : la porte n'a rien a demander.
+  const ouvertureParLien = Boolean(refUrl && jetonUrl) && chargement && !dossier && !efface;
+
+  /**
+   * LES DEUX PREUVES SONT-ELLES LA ?
+   *
+   * Une seule condition, lue par le bouton ET par la soumission du formulaire.
+   * Ecrite deux fois, elle aurait diverge : la touche « OK » du clavier serait
+   * partie sans les quatre chiffres alors que le bouton les exigeait.
+   *
+   * Le serveur les reclame TOUJOURS a qui n'a pas de jeton valide
+   * (`preuveClient.ts` : verdictDuTelephone === 'absent' → refus). Et apres un
+   * lien refuse, le jeton de l'URL ne vaut plus rien : le serveur traite un
+   * jeton FAUX comme une tentative et refuse sans meme regarder les chiffres.
+   *
+   * Chaque envoi voue a l'echec consomme un des vingt appels par tranche de
+   * dix minutes ET PAR ADRESSE — or les operateurs mobiles d'ici partagent
+   * massivement leurs IP : ce budget n'appartient pas a une personne, mais a
+   * un quartier.
+   */
+  const envoiPossible = !chargement
+    && ref.trim() !== ''
+    && !((!jetonUrl || lienEchoue) && tel4.length !== 4);
+
   return (
-    <main className="mx-auto max-w-3xl px-5 py-10">
+    <main id="contenu" className="mx-auto max-w-3xl px-5 py-10">
       <LienRetour href="/">Retour à l’accueil</LienRetour>
 
-      <h1 className="mt-6 font-display text-3xl text-nuit-900">Vos données</h1>
-      <p className="mt-2 text-chaux-600" style={{ fontSize: 'var(--text-chapeau)' }}>
+      {/*
+        LA GRAISSE MANQUAIT, ET AVEC ELLE TOUT LE CARACTERE.
+        `font-display` ne pose que la famille : le titre heritait de 400, sur
+        une grotesque a contraste variable dessinee pour vivre a 800. « Vos
+        données » ne se lisait pas comme un tampon mais comme une phrase un peu
+        grande, et rien ne le separait du chapeau qui le suit. 800 est dans le
+        fichier variable deja charge — le corriger ne coute pas un octet.
+        `font-extrabold` et non `font-black` : la variable s'arrete a 800, et
+        demander 900 ferait synthetiser au trait ce qu'on vient de reparer.
+      */}
+      <h1 className="mt-6 font-display text-3xl font-extrabold leading-[1.05] tracking-[-0.02em] text-nuit-900 sm:text-4xl">
+        Vos données
+      </h1>
+      {/*
+        `text-chapeau` ET PAS `style={{ fontSize: var(--text-chapeau) }}`.
+        Le jeton porte DEUX valeurs — la taille et son interligne de 1,625. Une
+        valeur litterale n'en transporte qu'une : le chapeau rendait a 1,5,
+        l'interligne du corps, et perdait 2,125 px de plomb par ligne. C'est ce
+        dommage-la que la regle de DESIGN.md existe pour empecher.
+      */}
+      <p className="mt-2 text-chapeau text-chaux-600">
         Voyez ce que DjiguiFlow détient à votre sujet, pourquoi, et pendant combien de
         temps. Vous pouvez en demander l’effacement.
       </p>
@@ -196,9 +438,28 @@ function Ecran() {
 
       {efface && <ApresEffacement etat={efface} />}
 
-      {!dossier && !efface && (
+      {/*
+        L'ARRIVEE PAR LIEN A SON PROPRE ECRAN.
+        La porte s'affichait pendant tout le chargement : celui qui venait de
+        toucher son lien dans WhatsApp lisait « Prouvez que c'est bien vous »,
+        avec une reference pre-remplie qu'il n'avait jamais tapee, plusieurs
+        secondes durant en 3G. On lui reclamait a l'ecran ce qu'il venait
+        justement de fournir.
+      */}
+      {ouvertureParLien && (
+        <section className={`mt-8 ${CADRE}`} aria-busy>
+          <p className="flex items-center gap-2 text-sm text-chaux-600">
+            <Loader2 className="size-4 animate-spin text-nuit-700" aria-hidden />
+            Nous ouvrons votre dossier…
+          </p>
+        </section>
+      )}
+
+      {!dossier && !efface && !ouvertureParLien && (
         <section className={`mt-8 ${CADRE}`}>
-          <h2 className="font-display text-xl text-nuit-900">Prouvez que c’est bien vous</h2>
+          <h2 className="font-display text-2xl font-bold tracking-[-0.01em] text-nuit-900">
+            {lienEchoue ? 'Ouvrons-le autrement' : 'Prouvez que c’est bien vous'}
+          </h2>
           {/*
             POURQUOI CETTE EXPLICATION EST OBLIGATOIRE À L'ÉCRAN. Sans elle, le
             client se demande pourquoi on lui réclame une référence alors qu'il
@@ -209,56 +470,141 @@ function Ecran() {
             Nous ne demandons pas seulement votre numéro : n’importe qui pourrait taper
             celui d’un voisin et lire son adresse. Utilisez le lien reçu dans votre message
             de commande — ou, si vous l’avez perdu, la référence d’une de vos commandes et
-            les quatre derniers chiffres de votre numéro.
+            les quatre derniers chiffres du numéro qui l’a passée.
           </p>
 
+          {/*
+            UN VRAI <form>, ET PAS DEUX `onKeyDown`.
+            La touche « OK » du clavier Android ne faisait rien : sans element
+            de formulaire, il n'y a pas de soumission implicite, et la personne
+            cherchait un bouton qu'elle venait de depasser. `/suivi` avait
+            colle un `onKeyDown` sur chacun de ses champs — ca marche, mais ca
+            se reoublie au champ suivant. Le `<form>` le tient une fois pour
+            toutes, et il donne en prime le bon libelle de touche au clavier
+            virtuel.
+            `noValidate` : la validation est la notre, et ses messages sont
+            ecrits en francais pour cette page — pas ceux du navigateur.
+          */}
+          <form
+            noValidate
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (envoiPossible) void charger(ref, lienEchoue ? '' : jetonUrl, tel4);
+            }}
+          >
           <div className="mt-5 grid gap-4 sm:grid-cols-2">
             <label className="block">
               <span className="text-sm font-medium text-nuit-900">Référence de commande</span>
               <input
                 value={ref}
                 onChange={(e) => setRef(e.target.value)}
-                placeholder="ZH-1042"
-                className="mt-1 w-full border border-nuit-900/20 bg-white px-3 py-2 font-mono text-sm text-nuit-900"
+                /*
+                  L'EXEMPLE A LA LONGUEUR DES VRAIES REFERENCES.
+                  Il portait « ZH-1042 ». Le prefixe est juste — c'est le plus
+                  repandu en base — mais sept caracteres quand les vraies en
+                  font seize a vingt-huit. La cliente comparait sa longue
+                  reference a ce court exemple et concluait qu'elle n'avait pas
+                  la bonne chose. Un exemple faux a la porte renvoie chez elle
+                  quelqu'un qui tenait la cle.
+                */
+                placeholder="ZH-1234567890-0000"
+                autoComplete="off"
+                spellCheck={false}
+                aria-describedby="ou-trouver-reference"
+                className="mt-1 min-h-11 w-full border border-nuit-900/20 bg-white px-3 py-2.5 font-mono text-sm text-nuit-900"
               />
+              <span id="ou-trouver-reference" className="mt-1 block text-xs text-chaux-600">
+                Elle est en haut du message que la boutique vous a envoyé.
+              </span>
             </label>
             <label className="block">
               <span className="text-sm font-medium text-nuit-900">
-                4 derniers chiffres de votre numéro
+                4 derniers chiffres du numéro qui a commandé
               </span>
               <input
                 value={tel4}
                 onChange={(e) => setTel4(e.target.value.replace(/\D/g, '').slice(0, 4))}
                 inputMode="numeric"
+                maxLength={4}
+                autoComplete="off"
                 placeholder="0405"
-                className="mt-1 w-full border border-nuit-900/20 bg-white px-3 py-2 font-mono text-sm text-nuit-900"
+                aria-describedby="pourquoi-quatre-chiffres"
+                className="mt-1 min-h-11 w-full border border-nuit-900/20 bg-white px-3 py-2.5 font-mono text-sm text-nuit-900"
               />
+              {/*
+                « DU NUMERO QUI A COMMANDE », ET PAS « DE VOTRE NUMERO ».
+                Une commande passee depuis le telephone d'un proche, ou depuis
+                un second numero, se refusait sans que rien ne dise pourquoi :
+                la personne tapait les chiffres du seul numero qu'elle
+                considere comme le sien. C'est la commande qui designe le
+                numero, pas la personne.
+              */}
+              {/*
+                L'AIDE AJOUTE, ELLE NE REPETE PAS. Elle disait « les deux sont
+                necessaires » — ce que le chapeau explique deja deux paragraphes
+                plus haut, et mieux, avec la raison. Ici, la seule question
+                ouverte est « quel numero ? », et c'est a elle de repondre.
+              */}
+              <span id="pourquoi-quatre-chiffres" className="mt-1 block text-xs text-chaux-600">
+                Ceux du numéro qui a servi à commander, même si ce n’est pas le vôtre.
+              </span>
             </label>
           </div>
 
           <div className="mt-5">
             <Bouton
+              type="submit"
               variante="action"
-              onClick={() => void charger(ref, jetonUrl, tel4)}
-              disabled={chargement || !ref.trim()}
+              // Pas d'`onClick` : le bouton soumet le formulaire, et la
+              // condition d'envoi vit a un seul endroit (`envoiPossible`).
+              // Deux chemins d'envoi, c'est deux requetes au premier clic.
+              disabled={!envoiPossible}
               chargement={chargement}
             >
               Voir mes données
             </Bouton>
           </div>
 
+          {/*
+            NE PAS REPROCHER UNE SAISIE QU'ON N'A PAS FAITE.
+            Le refus du serveur est le meme pour tous les cas, et c'est
+            volontaire : le distinguer dirait a celui qui devine qu'il a trouve
+            une vraie commande. Mais son texte invite a « verifier la
+            reference » — ce qui n'a aucun sens pour quelqu'un qui a seulement
+            touche un lien. On ne change donc pas le verdict, on change a QUI
+            on parle : ce qui a echoue, et par ou passer maintenant. Aucune
+            cause n'est affirmee, parce qu'aucune n'est connue d'ici.
+          */}
           {erreur && (
-            <p className="mt-4 flex items-start gap-2 text-sm text-bissap-600">
+            <p role="alert" className="mt-4 flex items-start gap-2 text-sm text-bissap-600">
               <TriangleAlert className="mt-0.5 size-4 shrink-0" aria-hidden />
-              <span>{erreur}</span>
+              <span>
+                {/*
+                  NE PAS RECLAMER CE QUI EST DEJA A L'ECRAN. Le lien porte la
+                  reference, et le champ est donc pre-rempli : demander de la
+                  « saisir » envoyait retaper ce qu'on voit — et brûler un
+                  second appel du budget partage pour rien. Quand elle est la,
+                  il ne manque que les quatre chiffres, et on ne demande que ca.
+                */}
+                {lienEchoue
+                  ? ref.trim()
+                    ? 'Ce lien ne nous a pas permis d’ouvrir votre dossier. Votre référence '
+                      + 'est déjà inscrite ci-dessus : ajoutez les quatre derniers chiffres du '
+                      + 'numéro qui a commandé, et nous ouvrons le dossier sans le lien.'
+                    : 'Ce lien ne nous a pas permis d’ouvrir votre dossier. Saisissez la '
+                      + 'référence de votre commande et les quatre derniers chiffres du numéro '
+                      + 'qui a commandé : c’est le même chemin, sans le lien.'
+                  : erreur}
+              </span>
             </p>
           )}
+          </form>
         </section>
       )}
 
       {dossier?.efface && (
         <section className="mt-8 border border-accent-200 bg-accent-50 p-5">
-          <h2 className="flex items-center gap-2 font-display text-xl text-nuit-900">
+          <h2 className="flex items-center gap-2 font-display text-2xl font-bold tracking-[-0.01em] text-nuit-900">
             <ShieldCheck className="size-5 text-accent-600" aria-hidden />
             Ces données ont déjà été effacées
           </h2>
@@ -272,9 +618,27 @@ function Ecran() {
       {dossier && !dossier.efface && (
         <>
           <section className={`mt-8 ${CADRE}`}>
-            <p className="flex items-center gap-2 text-sm text-chaux-600">
+            <p
+              ref={enteteDossier}
+              tabIndex={-1}
+              className="flex items-center gap-2 text-sm text-chaux-600"
+            >
               <ShieldCheck className="size-4 text-accent-600" aria-hidden />
-              Dossier de la personne joignable au <strong className="font-mono">{dossier.numero}</strong>
+              Dossier de la personne joignable au{' '}
+              {/*
+                PAS DE `whitespace-nowrap` ICI, ET C'EST UN ARBITRAGE.
+                « 01 •• •• •• 05 » se coupe en deux au milieu du masque a
+                360 px, ce qui est laid. Le rendre insecable le repare — et
+                coute 200 px de defilement lateral a 200 % de texte (382 → 583
+                px mesures), parce qu'un mot de quatorze signes en mono a 28 px
+                ne rentre plus nulle part. Une coupure disgracieuse pour tout
+                le monde vaut mieux qu'une page qui defile de travers pour qui
+                grossit son texte.
+                `font-semibold` et non `<strong>` nu : celui-ci vaut 700, et
+                600 suffit — le numero n'est pas le sujet de la phrase, il en
+                est la preuve.
+              */}
+              <strong className="font-mono font-semibold">{dossier.numero}</strong>
             </p>
 
             <dl className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
@@ -291,11 +655,50 @@ function Ecran() {
                 restera : c’est lui qui nous empêche de vous écrire à nouveau.
               </p>
             )}
+
+            {/*
+              LA DEMANDE DEJA FAITE, DITE ICI OU NULLE PART.
+              `demandesAnterieures` etait collecte, type, transmis a chaque
+              ouverture — et jamais affiche. Quelqu'un dont l'effacement attend
+              la cloture d'une commande revenait, ne voyait aucune trace de sa
+              demande, et la refaisait. On payait le reseau pour l'information
+              qui aurait evite le second passage.
+            */}
+            {dossier.demandesAnterieures.length > 0 && (
+              <p className="mt-4 text-sm text-nuit-900">
+                Vous avez déjà demandé un effacement
+                {dateLisible(dossier.demandesAnterieures[0].date)
+                  ? ` le ${dateLisible(dossier.demandesAnterieures[0].date)}`
+                  : ''}
+                . Il est enregistré et s’applique dès que vos commandes en cours seront
+                terminées — vous n’avez rien à redemander.
+              </p>
+            )}
+
+            {/*
+              LE RACCOURCI VERS LA DECISION.
+              La personne qui vient POUR effacer n'a pas a traverser tout le
+              registre pour trouver le bouton. Ce lien n'enleve rien a ceux qui
+              lisent : il ouvre une seconde porte, plus haut.
+            */}
+            <p className="mt-4">
+              <a
+                href="#effacement"
+                className="inline-flex min-h-11 items-center text-sm font-medium text-bissap-600 underline underline-offset-4 transition hover:text-bissap-700"
+              >
+                Aller directement à la demande d’effacement
+              </a>
+            </p>
           </section>
 
           {dossier.commandes.length > 0 && (
             <section className={`mt-6 ${CADRE}`}>
-              <h2 className="font-display text-xl text-nuit-900">Vos commandes</h2>
+              {/* « chez ce marchand » : le traitement de la section suivante
+                  s'appelle aussi « Vos commandes ». Deux entrees identiques
+                  dans la navigation par titres d'un lecteur d'ecran ne
+                  designent pas la meme chose — l'une est la liste, l'autre
+                  la regle de conservation. */}
+              <h2 className="font-display text-2xl font-bold tracking-[-0.01em] text-nuit-900">Vos commandes chez ce marchand</h2>
               <ul className="mt-4 divide-y divide-nuit-900/10">
                 {dossier.commandes.map((c) => (
                   <li key={c.reference} className="py-3">
@@ -318,26 +721,103 @@ function Ecran() {
           )}
 
           <section className={`mt-6 ${CADRE}`}>
-            <h2 className="font-display text-xl text-nuit-900">
+            <h2 className="font-display text-2xl font-bold tracking-[-0.01em] text-nuit-900">
               Ce que nous gardons, et pendant combien de temps
             </h2>
-            <ul className="mt-4 space-y-5">
+            {/*
+              CE QU'ON MONTRE FERMÉ, ET CE QU'ON N'A PAS LE DROIT DE REPLIER.
+              Les huit traitements dépliés faisaient 5 097 px et 1 114 mots à
+              360 px — six écrans de défilement AVANT le bouton d'effacement.
+              Conséquence mesurable : les limites qu'on a pris tant de soin à
+              placer au-dessus du bouton n'étaient jamais lues, parce qu'on
+              saute un mur.
+              Restent visibles sans ouvrir : le nom, la DURÉE — la seule
+              réponse à « pendant combien de temps ? », qui est la question du
+              titre — et l'avertissement « conservé même après un effacement ».
+              Ce dernier ne se replie pas : il contredit ce que la personne
+              s'apprête à faire, le cacher derrière un clic le ferait manquer
+              exactement à qui il s'adresse.
+              Finalité, données et destinataires s'ouvrent à la demande : ils
+              répondent à « pourquoi » et « qui », questions qu'on se pose
+              traitement par traitement, jamais sur les huit d'un coup.
+            */}
+            <ul className="mt-4 space-y-3">
               {dossier.traitements.map((t) => (
-                <li key={t.cle}>
-                  <h3 className="font-medium text-nuit-900">{t.nom}</h3>
-                  <p className="mt-1 text-sm text-chaux-600">{t.finalite}</p>
-                  <p className="mt-1 text-sm text-chaux-600">
-                    <strong className="font-medium text-nuit-900">Données :</strong>{' '}
-                    {t.donnees.join(' · ')}
-                  </p>
-                  <p className="mt-1 text-sm text-chaux-600">
-                    <strong className="font-medium text-nuit-900">Durée :</strong>{' '}
-                    {t.conservation}
-                  </p>
-                  <p className="mt-1 text-sm text-chaux-600">
-                    <strong className="font-medium text-nuit-900">Qui y a accès :</strong>{' '}
-                    {t.destinataires.join(' · ')}
-                  </p>
+                <li key={t.cle} className="border-t border-nuit-900/10 pt-3 first:border-0 first:pt-0">
+                  <details className="group">
+                    {/* Le nom reste un `h3` A L'INTERIEUR du `summary` : le
+                        replier ne doit pas le retirer de la navigation par
+                        titres, qui est la facon dont un lecteur d'ecran
+                        parcourt un registre de huit entrees. */}
+                    {/* `flex-wrap` : a 100 % le nom et la duree tiennent sur
+                        une ligne ; a 200 % de texte, la duree et son chevron
+                        descendent sous le nom au lieu de pousser le document.
+                        Meme traitement que les quatre autres rangees de la
+                        coque — une rangee qui ne peut pas ceder impose sa
+                        largeur a toute la page. */}
+                    <summary className="flex min-h-11 cursor-pointer list-none flex-wrap items-center justify-between gap-3">
+                      {/* 600 et pas 500 : a 14 px, 500 contre le 400 du corps
+                          ne fait pas un titre — et quatre roles differents de
+                          l'ecran portaient deja ce meme 14/500. */}
+                      <h3 className="min-w-0 text-sm font-semibold text-nuit-900">{t.nom}</h3>
+                      {/*
+                        `t.duree` ET PAS `t.conservation` — C'EST LE CORRECTIF.
+                        On affichait ici la PHRASE de conservation, en mono, au
+                        nom de « la regle du chiffre en mono ». Quatre des dix
+                        phrases depassent cent signes, jusqu'a 147 : le resume
+                        rendait donc de la prose en police de code, sur trois a
+                        cinq lignes, et le registre « replie » faisait 800 px.
+                        DESIGN.md dit pourtant que « IBM Plex Mono n'est pas une
+                        police de code ici ».
+                        Le calibrage precedent avait ete fait contre l'exemple
+                        « 3 ans apres la derniere commande » — une valeur qui
+                        n'existe pas dans l'inventaire. `duree` porte ce que la
+                        regle visait vraiment : une valeur courte que l'oeil
+                        compare d'une ligne a l'autre. La phrase, elle, descend
+                        dans le corps deplie.
+                        `min-w-0` reste : a 200 % de texte, une duree doit
+                        pouvoir ceder plutot que pousser le document.
+                      */}
+                      <span className="flex min-w-0 items-center gap-2 font-mono text-xs text-chaux-600">
+                        {t.duree}
+                        {/* `shrink-0` SUR L'ICONE, `min-w-0` sur le texte :
+                            c'est le texte qui doit ceder, jamais le chevron.
+                            Sans lui, a 200 % l'icone s'ecrasait a une largeur
+                            de ZERO tandis que son trace continuait de peindre
+                            12 px hors de sa boite — un debordement invisible a
+                            la bissection, puisque plus aucune BOITE ne
+                            depassait. */}
+                        <ChevronDown
+                          className="size-4 shrink-0 transition-transform group-open:rotate-180"
+                          aria-hidden
+                        />
+                      </span>
+                    </summary>
+
+                    <p className="mt-2 text-sm text-chaux-600">{t.finalite}</p>
+
+                    {/* La phrase de conservation, la ou elle a la place d'etre
+                        lue : dans le corps deplie, en texte courant, et non
+                        comprimee en monospace dans un resume. */}
+                    <p className="mt-2 text-sm text-chaux-600">
+                      <strong className="font-medium text-nuit-900">Durée :</strong>{' '}
+                      {t.conservation}
+                    </p>
+
+                    <p className="mt-2 text-xs font-semibold uppercase tracking-[0.12em] text-chaux-600">
+                      Données
+                    </p>
+                    <ul className="mt-1 space-y-0.5 text-sm text-chaux-600">
+                      {t.donnees.map((d) => (
+                        <li key={d}>{d}</li>
+                      ))}
+                    </ul>
+                    <p className="mt-2 text-sm text-chaux-600">
+                      <strong className="font-medium text-nuit-900">Qui y a accès :</strong>{' '}
+                      {t.destinataires.join(', ')}
+                    </p>
+                  </details>
+
                   {t.effacement === 'garde' && t.pourquoi && (
                     <p className="mt-1 text-sm text-mangue-700">
                       Conservé même après un effacement — {t.pourquoi}
@@ -348,10 +828,21 @@ function Ecran() {
             </ul>
           </section>
 
-          <section className="mt-6 border border-bissap-200 bg-bissap-50 p-5">
-            <h2 className="font-display text-xl text-nuit-900">Demander l’effacement</h2>
+          <section
+            id="effacement"
+            /* `scroll-mt-6` : arriver par l'ancre ne doit pas coller le titre
+               au bord haut de l'ecran — on veut voir qu'on est entre dans une
+               section, pas atterrir dessus. Meme reglage que `.etape` du
+               guide. */
+            className="mt-6 scroll-mt-6 border border-bissap-200 bg-bissap-50 p-5"
+          >
+            <h2 className="font-display text-2xl font-bold tracking-[-0.01em] text-nuit-900">Demander l’effacement</h2>
 
-            <p className="mt-2 text-sm text-nuit-900">
+            {/* `max-w-[62ch]` : a 1280 px, ce paragraphe composait 88 signes
+                par ligne — bien au-dela des 75 ou l'oeil retrouve encore le
+                debut de la ligne suivante. Et c'est celui qu'il faut le moins
+                mal lire : il dit ce que l'effacement laisse en place. */}
+            <p className="mt-2 max-w-[62ch] text-sm text-nuit-900">
               Vos commandes terminées perdent votre nom, votre téléphone et votre adresse.
               Le montant et la date restent, sans vous : c’est la comptabilité du marchand,
               qu’il doit conserver.
@@ -379,31 +870,78 @@ function Ecran() {
               </p>
             )}
 
+            {/*
+              LES DEUX ETATS PORTENT UNE CLE DISTINCTE, ET C'EST LE CORRECTIF.
+              Sans elle, les deux `div` occupent la meme position dans le meme
+              parent : React reutilise le noeud, le bouton de confirmation
+              naissait donc aux coordonnees exactes de celui qu'on venait de
+              toucher (verifie : left 41px, height 44px, a l'identique) et
+              gardait le focus. Un second toucher impatient sur un telephone
+              lent tombait sur un effacement definitif. La cle force le
+              remontage ; l'avertissement intercale deplace la cible.
+            */}
             {!demandeEffacement ? (
-              <div className="mt-5">
+              <div key="demande" className="mt-5">
                 <Bouton variante="calme" onClick={() => setDemandeEffacement(true)}>
                   Je veux effacer mes données
                 </Bouton>
               </div>
             ) : (
-              <div className="mt-5 flex flex-wrap items-center gap-3">
-                <Bouton
-                  variante="action"
-                  onClick={() => void effacer()}
-                  chargement={effacementEnCours}
-                  disabled={effacementEnCours}
-                >
-                  <Trash2 className="size-4" aria-hidden />
-                  Oui, effacer définitivement
-                </Bouton>
-                <Bouton variante="fantome" onClick={() => setDemandeEffacement(false)}>
-                  Annuler
-                </Bouton>
+              <div
+                key="confirmation"
+                ref={zoneConfirmation}
+                tabIndex={-1}
+                role="group"
+                aria-label="Confirmer l’effacement"
+                className="mt-4 border-t border-bissap-200 pt-4"
+              >
+                <p className="text-sm font-medium text-nuit-900">{porteeDuGeste(dossier)}</p>
+
+                {/*
+                  ANNULER EN PREMIER, ET EMPILE A DESSEIN SUR TELEPHONE.
+                  Dans le DOM, la premiere tabulation — et le premier element
+                  qu'annonce un lecteur d'ecran apres l'avertissement — est la
+                  sortie, pas le geste irreversible.
+                  Cote a cote, les deux libelles depassent 360 px : le retour a
+                  la ligne mettait « Annuler » seul sur une ligne, reduit a un
+                  mot maigre, et posait le geste irreversible en bas — la ou le
+                  pouce tombe. Empiles pleine largeur, la sortie devient une
+                  cible de 44 px qu'un toucher imprecis rencontre AVANT le
+                  bouton rouge.
+                */}
+                <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+                  <Bouton
+                    variante="fantome"
+                    className="w-full sm:w-auto"
+                    onClick={() => setDemandeEffacement(false)}
+                  >
+                    Annuler
+                  </Bouton>
+                  <Bouton
+                    variante="action"
+                    className="w-full sm:w-auto"
+                    onClick={() => void effacer()}
+                    chargement={effacementEnCours}
+                    disabled={effacementEnCours}
+                  >
+                    <Trash2 className="size-4" aria-hidden />
+                    Oui, effacer définitivement
+                  </Bouton>
+                </div>
               </div>
             )}
 
+            {/*
+              ANNONCE : LE VERROU A ROUVERT, DONC CE MESSAGE EST ACTIONNABLE.
+              Tant qu'un echec d'effacement etait sans reessai, ce paragraphe
+              n'etait qu'un constat. Il porte desormais une consigne — reessayez
+              — et un lecteur d'ecran ne l'entendait pas : le focus est reste
+              sur le bouton, et rien n'a change dans l'arbre qu'il annonce.
+              Le jumeau de la porte reste muet ; il releve de la passe
+              d'accessibilite, pas de ce chemin-ci.
+            */}
             {erreur && (
-              <p className="mt-4 flex items-start gap-2 text-sm text-bissap-600">
+              <p role="alert" className="mt-4 flex items-start gap-2 text-sm text-bissap-600">
                 <TriangleAlert className="mt-0.5 size-4 shrink-0" aria-hidden />
                 <span>{erreur}</span>
               </p>
@@ -415,34 +953,135 @@ function Ecran() {
   );
 }
 
+/**
+ * La tuile de comptage de la maison, enfin conforme.
+ *
+ * DEUX REGLES NOMMEES ETAIENT PRISES A L'ENVERS.
+ *
+ * 1. « LA REGLE DU CHIFFRE EN MONO ». Ces quatre nombres sont le seul endroit
+ *    de l'ecran ou l'oeil compare d'une tuile a l'autre. Ils rendaient en
+ *    Bricolage, une proportionnelle : le « 1 » n'y a pas la chasse du « 0 »,
+ *    donc les quatre chiffres ne s'alignaient pas et dansaient quand ils
+ *    changeaient. `tabular-nums` par-dessus le mono : la regle vaut aussi
+ *    entre deux etats du meme compteur, pas seulement entre deux tuiles.
+ *
+ * 2. « LE CHIFFRE EN HAUT, L'INTITULE EN DESSOUS ». DESIGN.md declare
+ *    l'inversion deliberee, et c'est bien le chiffre qu'on compare : il doit
+ *    rester sur la meme ligne quelle que soit la longueur de l'intitule. Or
+ *    « Paniers non validés » passe sur deux lignes a 360 px, et les quatre
+ *    nombres se decalaient.
+ *
+ * `flex-col-reverse` fait l'inversion A L'ECRAN SEULEMENT : le `dl` garde son
+ * ordre `dt` puis `dd`, qui est celui qu'un lecteur d'ecran doit entendre —
+ * l'intitule avant sa valeur. Inverser la source aurait corrige l'oeil en
+ * cassant l'oreille.
+ *
+ * `font-bold` et non `font-black` : 700 est la graisse que DESIGN.md donne au
+ * role `donnee`, et desormais la plus haute face mono reellement chargee.
+ */
 function Compteur({ libelle, valeur }: { libelle: string; valeur: number }) {
+  // `justify-end` : en `col-reverse`, le debut de l'axe est EN BAS. Sans lui,
+  // les tuiles se tassaient vers le bas de leur cellule de grille, et « 2 » se
+  // retrouvait 16 px sous « 12 » des que l'intitule voisin passait sur deux
+  // lignes — ce que le renversement etait justement cense empecher.
   return (
-    <div>
-      <dt className="text-sm text-chaux-600">{libelle}</dt>
-      <dd className="font-display text-2xl text-nuit-900">{valeur}</dd>
+    <div className="flex flex-col-reverse justify-end">
+      <dt className="mt-1 text-xs font-semibold uppercase tracking-[0.12em] text-chaux-600">
+        {libelle}
+      </dt>
+      <dd className="font-mono text-3xl font-bold leading-none tracking-[-0.01em] tabular-nums text-nuit-900">
+        {valeur}
+      </dd>
     </div>
   );
 }
 
+/**
+ * La dernière image d'un acte irréversible.
+ *
+ * ── POURQUOI CE BLOC MERITE AUTANT DE SOIN QUE LE BOUTON ROUGE ─────────────
+ *
+ * Regle du pic-fin : c'est ce que garde en memoire quelqu'un qui vient
+ * d'exercer un droit definitif. Il ecrivait « 0 commande(s) : votre identite
+ * en a ete retiree » — le gabarit a parentheses ET l'affichage d'un zero, que
+ * la docstring de `porteeDuGeste` interdit tous les deux, huit cents lignes
+ * plus haut dans ce meme fichier. La composition des lignes est donc sortie
+ * dans `lignesDuBilan`, ou un test la tient.
+ *
+ * ── LE FOCUS, PARCE QUE LA PAGE CHANGE ENTIEREMENT ─────────────────────────
+ *
+ * Le dossier disparait, ce panneau le remplace. Sans deplacement de focus,
+ * l'utilisateur au lecteur d'ecran entend le silence et reste sur `<body>` :
+ * il vient d'effacer ses donnees et rien ne le lui confirme. Meme motif que
+ * l'ouverture du dossier et que la zone de confirmation — c'est la troisieme
+ * fois que cet ecran en a besoin, et la premiere ou il l'avait oublie.
+ *
+ * ── PAS DE LIEN DE SORTIE, ET C'EST MESURE ────────────────────────────────
+ *
+ * J'en avais ajoute un — « Relire ce que la plateforme conserve » — au nom
+ * d'un bloc « qui ne propose plus rien ». Le navigateur a dit le contraire :
+ * `setDossier(null)` fait retomber la page a 844 px, un seul ecran, ou tout
+ * ce qui reste focalisable tient a cinq elements. « Retour a l'accueil » y
+ * est a 40 px et « Lire la politique de confidentialite » a 239 px — la meme
+ * destination que mon lien, sous un autre nom, 470 px plus bas et visible en
+ * meme temps. Deux libelles differents pour une meme URL, c'est deux
+ * destinations pour qui parcourt la liste des liens d'un lecteur d'ecran.
+ *
+ * Une sortie qu'on ajoute sans mesurer l'ecran ou elle atterrit est une
+ * repetition. Celles qui existent sont AU-DESSUS du panneau, ce qui est leur
+ * place : on ne quitte pas un accuse de reception par le bas.
+ */
 function ApresEffacement({ etat }: { etat: { complet: boolean; bilan: Bilan } }) {
   const { bilan, complet } = etat;
+  const titre = useRef<HTMLHeadingElement | null>(null);
+  useEffect(() => { titre.current?.focus(); }, []);
+
+  const lignes = lignesDuBilan(bilan);
+
   return (
-    <section className="mt-8 border border-accent-200 bg-accent-50 p-5">
-      <h2 className="flex items-center gap-2 font-display text-xl text-nuit-900">
-        <ShieldCheck className="size-5 text-accent-600" aria-hidden />
+    /*
+      `wrap-anywhere` : c'est « automatiquement » qui faisait defiler la page.
+      La regle posee sur h1/h2/h3 dans globals.css ne couvre que le bareme
+      d'affichage ; ce panneau est du CORPS DE TEXTE, et son mot le plus long
+      mesure 266 px a 200 % de texte systeme. Un mot insecable impose sa
+      largeur a son conteneur, qui l'impose au document : mesure a 320 px, le
+      document reclamait 395 px et TOUT defilait lateralement. Avec la regle,
+      307 px, sous la fenetre.
+    */
+    <section className="mt-8 border border-accent-200 bg-accent-50 p-5 wrap-anywhere">
+      <h2
+        ref={titre}
+        tabIndex={-1}
+        className="flex items-center gap-2 font-display text-2xl font-bold tracking-[-0.01em] text-nuit-900"
+      >
+        <ShieldCheck className="size-5 shrink-0 text-accent-600" aria-hidden />
         C’est fait
       </h2>
-      <ul className="mt-3 space-y-1 text-sm text-nuit-900">
-        <li>{bilan.commandesAnonymisees} commande(s) : votre identité en a été retirée.</li>
-        <li>{bilan.paniersSupprimes} panier(s) supprimé(s).</li>
-        <li>{bilan.relancesSupprimees} trace(s) de relance supprimée(s).</li>
-        {bilan.avisRetires > 0 && <li>{bilan.avisRetires} commentaire(s) de livraison retiré(s).</li>}
-      </ul>
 
+      {lignes.length > 0 ? (
+        <ul className="mt-3 space-y-1 text-sm text-nuit-900">
+          {lignes.map((l) => <li key={l}>{l}</li>)}
+        </ul>
+      ) : (
+        /*
+          AUCUNE LIGNE N'EST UN CAS LEGITIME, PAS UN BILAN VIDE A AFFICHER.
+          Quelqu'un dont toutes les commandes sont en cours a exerce son droit :
+          il n'y avait rien a retirer aujourd'hui. Lui montrer une liste de
+          zeros lui dirait que son geste n'a servi a rien.
+        */
+        <p className="mt-3 text-sm text-nuit-900">
+          Il n’y avait rien à retirer aujourd’hui — mais votre demande est enregistrée.
+        </p>
+      )}
+
+      {/* Deux phrases entieres plutot qu'une phrase a trous : une conjugaison
+          assemblee par cinq ternaires est le meme gabarit que « commande(s) »,
+          simplement plus difficile a relire. */}
       {!complet && (
         <p className="mt-3 text-sm text-mangue-700">
-          {bilan.commandesEnCours} commande(s) sont encore en cours et n’ont pas été
-          touchées. Elles le seront automatiquement dès qu’elles seront terminées.
+          {bilan.commandesEnCours === 1
+            ? 'Une commande est encore en cours et n’a pas été touchée. Elle le sera automatiquement dès qu’elle sera terminée — vous n’aurez rien à redemander.'
+            : `${bilan.commandesEnCours} commandes sont encore en cours et n’ont pas été touchées. Elles le seront automatiquement dès qu’elles seront terminées — vous n’aurez rien à redemander.`}
         </p>
       )}
 
@@ -456,7 +1095,7 @@ function ApresEffacement({ etat }: { etat: { complet: boolean; bilan: Bilan } })
 
 export default function PageMesDonnees() {
   return (
-    <Suspense fallback={<main className="mx-auto max-w-3xl px-5 py-10" />}>
+    <Suspense fallback={<main id="contenu" className="mx-auto max-w-3xl px-5 py-10" />}>
       <Ecran />
     </Suspense>
   );
