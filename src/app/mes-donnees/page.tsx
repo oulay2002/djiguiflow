@@ -244,14 +244,59 @@ function Ecran() {
         setDossier(corps);
       } else {
         setDossier(null);
-        setLienEchoue(viaLien);
+
+        /*
+          UN 429 N'EST PAS UN LIEN REFUSE, ET C'EST TOUT LE CORRECTIF.
+          `lienEchoue` etait pose sur N'IMPORTE QUEL echec de l'ouverture
+          automatique. Or il commande trois choses : le titre « Ouvrons-le
+          autrement », l'abandon du jeton de l'URL, et la reecriture du
+          message. Sur une rafale ou une panne, les trois etaient faux — le
+          lien est parfaitement valable, il faut seulement attendre.
+          Seul un 404 dit que la preuve est refusee. Lui seul invalide le lien.
+        */
+        const preuveRefusee = res.status === 404;
+        setLienEchoue(viaLien && preuveRefusee);
+
+        /*
+          LE DELAI EST CONNU, DONC IL SE DIT.
+          `prouverClient` pose `Retry-After` sur le 429, en secondes. Le
+          message du serveur s'arrete a « patientez quelques minutes » parce
+          qu'il ne peut pas viser plus juste pour tous ses appelants ; ici on a
+          l'en-tete. « Quelques minutes » fait revenir au bout d'une, et chaque
+          retour consomme un appel du budget PAR ADRESSE — que les operateurs
+          d'ici partagent a l'echelle d'un quartier.
+        */
+        const attendre = Number(res.headers.get('Retry-After'));
+        const minutes = Number.isFinite(attendre) && attendre > 0
+          ? Math.max(1, Math.ceil(attendre / 60))
+          : 0;
+
+        /*
+          ON REMPLACE, ON N'AJOUTE PAS. Coller « Réessayez dans 7 minutes » a
+          la suite de « Patientez quelques minutes » disait deux fois la meme
+          chose, la seconde contredisant vaguement la premiere. Quand le delai
+          est connu, il remplace la formule vague ; quand il ne l'est pas, le
+          message du serveur passe tel quel.
+          « depuis votre connexion » plutot que « vous avez fait trop de
+          demandes » : le plafond est PAR ADRESSE, et les operateurs d'ici
+          partagent leurs IP a l'echelle d'un quartier. Le tour de phrase evite
+          d'accuser quelqu'un d'un geste qu'un inconnu a fait.
+        */
+        const messageServeur = String(corps?.error ?? '')
+          || 'Nous n’avons pas pu vérifier qu’il s’agit bien de vous.';
+
         setErreur(
-          String(corps?.error ?? '')
-          || 'Nous n’avons pas pu vérifier qu’il s’agit bien de vous.',
+          res.status === 429 && minutes
+            ? 'Trop de demandes ont été faites depuis votre connexion, qui est '
+              + `peut-être partagée avec d’autres. Réessayez dans ${
+                minutes === 1 ? 'une minute' : `${minutes} minutes`}.`
+            : messageServeur,
         );
       }
     } catch {
-      setLienEchoue(viaLien);
+      // Une coupure reseau n'invalide aucun lien : on ne renvoie pas la
+      // personne vers la saisie manuelle pour un cable.
+      setLienEchoue(false);
       setErreur('La connexion a échoué. Réessayez dans un instant.');
     } finally {
       setChargement(false);
@@ -534,10 +579,21 @@ function Ecran() {
             <p role="alert" className="mt-4 flex items-start gap-2 text-sm text-bissap-600">
               <TriangleAlert className="mt-0.5 size-4 shrink-0" aria-hidden />
               <span>
+                {/*
+                  NE PAS RECLAMER CE QUI EST DEJA A L'ECRAN. Le lien porte la
+                  reference, et le champ est donc pre-rempli : demander de la
+                  « saisir » envoyait retaper ce qu'on voit — et brûler un
+                  second appel du budget partage pour rien. Quand elle est la,
+                  il ne manque que les quatre chiffres, et on ne demande que ca.
+                */}
                 {lienEchoue
-                  ? 'Ce lien ne nous a pas permis d’ouvrir votre dossier. Saisissez la '
-                    + 'référence de votre commande et les quatre derniers chiffres du numéro '
-                    + 'qui a commandé : c’est le même chemin, sans le lien.'
+                  ? ref.trim()
+                    ? 'Ce lien ne nous a pas permis d’ouvrir votre dossier. Votre référence '
+                      + 'est déjà inscrite ci-dessus : ajoutez les quatre derniers chiffres du '
+                      + 'numéro qui a commandé, et nous ouvrons le dossier sans le lien.'
+                    : 'Ce lien ne nous a pas permis d’ouvrir votre dossier. Saisissez la '
+                      + 'référence de votre commande et les quatre derniers chiffres du numéro '
+                      + 'qui a commandé : c’est le même chemin, sans le lien.'
                   : erreur}
               </span>
             </p>
