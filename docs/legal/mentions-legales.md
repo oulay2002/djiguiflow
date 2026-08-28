@@ -8,7 +8,7 @@ Le service DjiguiFlow, accessible à l'adresse <https://www.djiguiflow.com>, est
 
 - **Exploitant** : OULAÏ Jean Paul
 - **Forme** : entreprise individuelle
-- **Adresse** : [À COMPLÉTER : adresse complète — commune, quartier, Abidjan / Côte d'Ivoire]
+- **Adresse** : Akouédo Synacassci, Rue G11 — Abidjan, Côte d'Ivoire
 - **Numéro de registre** : RCCM CI-AGB-2021-A-307
 - **Téléphone** : +225 01 02 91 88 86
 - **Courriel** : contact@djiguiflow.com
