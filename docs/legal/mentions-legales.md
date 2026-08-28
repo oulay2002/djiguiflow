@@ -1,6 +1,6 @@
 # Mentions légales
 
-**Dernière mise à jour : [À COMPLÉTER : date de mise en ligne]**
+**Dernière mise à jour : 5 septembre 2026**
 
 ## 1. Éditeur du service
 
@@ -10,7 +10,6 @@ Le service DjiguiFlow, accessible à l'adresse <https://www.djiguiflow.com>, est
 - **Forme** : entreprise individuelle
 - **Adresse** : [À COMPLÉTER : adresse complète — commune, quartier, Abidjan / Côte d'Ivoire]
 - **Numéro de registre** : RCCM CI-AGB-2021-A-307
-- **Numéro de compte contribuable** : [À COMPLÉTER, ou supprimer cette ligne]
 - **Téléphone** : +225 01 02 91 88 86
 - **Courriel** : contact@djiguiflow.com
 

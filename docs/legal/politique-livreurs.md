@@ -1,6 +1,6 @@
 # Politique livreurs
 
-**Dernière mise à jour : [À COMPLÉTER : date de mise en ligne]**
+**Dernière mise à jour : 5 septembre 2026**
 **Version : 1.0**
 
 Ce document s'adresse aux personnes qui assurent les livraisons pour une boutique utilisant DjiguiFlow, et aux marchands qui les rattachent à leur boutique.

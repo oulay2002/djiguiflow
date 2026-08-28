@@ -1,6 +1,6 @@
 # Politique de confidentialité
 
-**Dernière mise à jour : [À COMPLÉTER : date de mise en ligne]**
+**Dernière mise à jour : 5 septembre 2026**
 **Version : 1.0**
 
 ## Préambule
