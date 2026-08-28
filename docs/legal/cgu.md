@@ -147,6 +147,10 @@ Le traitement des données personnelles est régi par la [Politique de confident
 
 En synthèse : chaque Marchand est **responsable de traitement** pour les données de ses Clients finaux et de ses Livreurs ; l'Éditeur agit en qualité de **sous-traitant** pour ces données, et de responsable de traitement pour les données du compte du Marchand.
 
+**Instruction permanente pour les droits d'accès et d'effacement.** En acceptant les présentes, le Marchand donne pour instruction permanente à l'Éditeur de servir directement, par les outils du service, les demandes d'**accès** et d'**effacement** émanant de ses Clients finaux, sans consultation préalable. Cette instruction couvre la page « Mes données » décrite à l'article 8.3 de la Politique de confidentialité.
+
+Elle existe parce qu'un droit qui doit transiter par un intermédiaire n'est pas exercé : il est différé, puis oublié. L'effacement préserve les mentions nécessaires à la comptabilité du Marchand — montant, date et articles subsistent, détachés de toute personne — de sorte que cette instruction ne lui fait perdre aucune écriture. Le Marchand conserve la faculté de retirer cette instruction en écrivant à l'Éditeur ; les demandes seront alors traitées dans le délai de trente jours de droit commun.
+
 ## Article 11 — Responsabilité
 
 ### 11.1 Responsabilité de l'Éditeur

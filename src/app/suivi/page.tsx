@@ -1,6 +1,7 @@
 'use client';
 
 import { Suspense, useCallback, useEffect, useState } from 'react';
+import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { classesBouton } from '@/components/ui/Bouton';
@@ -523,9 +524,25 @@ function Suivre() {
         )}
 
         {suivi && (
-          <p className="mt-8 text-center text-sm text-chaux-600">
-            Un doute sur votre commande ? Répondez au message du commerçant, il vous lit.
-          </p>
+          <>
+            <p className="mt-8 text-center text-sm text-chaux-600">
+              Un doute sur votre commande ? Répondez au message du commerçant, il vous lit.
+            </p>
+            {/*
+              LE CHEMIN NATUREL VERS SES DROITS. Le client est ici, et il vient
+              de prouver son identité : la même preuve ouvre son dossier. Lui
+              faire retaper sa référence sur un autre écran serait lui demander
+              deux fois ce qu'il a déjà donné.
+            */}
+            <p className="mt-3 text-center text-sm">
+              <Link
+                href={`/mes-donnees?ref=${encodeURIComponent(ref)}${jetonUrl ? `&t=${encodeURIComponent(jetonUrl)}` : ''}`}
+                className="text-chaux-600 underline underline-offset-4 transition hover:text-nuit-800"
+              >
+                Voir ou effacer les données que nous gardons sur vous
+              </Link>
+            </p>
+          </>
         )}
       </div>
     </main>

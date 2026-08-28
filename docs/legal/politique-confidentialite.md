@@ -63,6 +63,8 @@ Chaque Marchand demeure responsable de la licéité de la collecte auprès de se
 
 **L'identifiant de conversation est une donnée personnelle.** Ce n'est pas un nom, mais c'est l'adresse par laquelle une personne peut être jointe : il est traité comme telle, et anonymisé au même titre que le nom.
 
+**Où vit le contenu des messages.** Les messages échangés ne sont pas conservés dans la base de la Plateforme. Ils demeurent chez le fournisseur du canal — WhatsApp ou Telegram — et le texte de ceux qui ont été **envoyés** au Client final est consigné, avec son destinataire, dans la feuille de calcul du Marchand (article 5.3).
+
 **Aucune donnée bancaire n'est traitée.** Le prix des commandes est réglé directement entre le Client final et le Marchand ; il ne transite jamais par la Plateforme, qui n'enregistre aucune donnée de paiement des commandes.
 
 ### 3.3 Livreur
@@ -128,6 +130,14 @@ L'anonymisation est irréversible.
 
 Une commande n'est anonymisée que si elle est **close** — livrée, annulée ou abandonnée. Une commande de treize mois encore « en attente » n'est pas une donnée à effacer : c'est une anomalie à examiner.
 
+### 5.3 Ce que le traitement périodique n'atteint pas
+
+Les durées ci-dessus s'appliquent à la **base de données** de la Plateforme.
+
+Elles ne s'appliquent pas à la **feuille de calcul du Marchand** : chaque commande y est également écrite, avec le nom, le numéro de téléphone, l'adresse et l'identifiant de conversation du Client final, ainsi que le texte des messages qui lui ont été envoyés. Cette copie relève du Marchand, qui en est le responsable de traitement, et aucune purge automatique ne s'y applique aujourd'hui.
+
+Ce point figure ici, à l'endroit même où les durées sont annoncées, et non en note de fin : une durée énoncée sans sa limite vaudrait engagement sur une donnée dont la Plateforme ne se sépare pas. Il est également indiqué au Client final sur la page « Mes données », avant qu'il ne demande un effacement.
+
 ## Article 6 — Destinataires et sous-traitants
 
 Les données ne sont ni vendues, ni louées, ni cédées à des tiers à des fins commerciales.
@@ -145,6 +155,7 @@ Les données ne sont ni vendues, ni louées, ni cédées à des tiers à des fin
 | **Vercel Inc.** | Hébergement de l'application | Données transitant par le service | États-Unis |
 | **Supabase Inc.** | Base de données, authentification | Ensemble des données stockées | [À COMPLÉTER : région d'hébergement du projet] |
 | **n8n** (auto-hébergé) | Automatisation des traitements | Commandes, messages, notifications | [À COMPLÉTER : pays du serveur] |
+| **Google LLC** (Sheets) | Feuille de suivi du Marchand, alimentée automatiquement | **Nom, téléphone, adresse, identifiant de messagerie, articles et montant** de chaque commande ; nom et appréciations laissées après livraison | États-Unis |
 | **Mistral AI** | Modèle de langage de l'Assistante | Contenu des messages échangés | Union européenne |
 | **wasenderapi** | Passerelle WhatsApp | Messages et identifiants de conversation | [À COMPLÉTER] |
 | **Telegram** | Canal de conversation | Messages et identifiants de conversation | Selon les conditions de Telegram |
@@ -185,20 +196,32 @@ Toute personne dispose des droits d'**accès**, de **rectification**, d'**efface
 | Vous êtes | Adressez-vous à |
 |---|---|
 | **Marchand** | [À COMPLÉTER : donnees@djiguiflow.com] |
-| **Client final d'une boutique** | **Au Marchand concerné**, dont les coordonnées figurent sur la vitrine de sa boutique. Vous pouvez également écrire à l'Éditeur, qui transmettra. |
+| **Client final d'une boutique** | **En autonomie sur la page « Mes données »** (article 8.3), pour consulter vos données et en demander l'effacement. Pour toute autre demande — rectification, limitation — adressez-vous **au Marchand concerné**, dont les coordonnées figurent sur la vitrine de sa boutique, ou à l'Éditeur, qui transmettra. |
 | **Livreur** | Au Marchand auquel vous êtes rattaché, ou à l'Éditeur |
 
-Le Client final s'adresse au Marchand parce que c'est lui le responsable de traitement de ses données. L'Éditeur, sous-traitant, ne peut agir que sur instruction du Marchand — sauf pour le droit d'opposition aux relances, qui est traité immédiatement (article 8.2).
+Le Marchand est le responsable de traitement des données de ses Clients finaux ; l'Éditeur agit en qualité de sous-traitant, sur instruction. En acceptant les Conditions générales, le Marchand donne pour instruction permanente à l'Éditeur de servir directement, par les outils du service, les demandes d'accès et d'effacement de ses Clients finaux — de sorte que ces deux droits s'exercent sans délai et sans intermédiaire (articles 8.2 et 8.3). Les autres demandes suivent la voie du Marchand.
 
 ### 8.2 Le refus des relances est immédiat
 
 Il n'est pas nécessaire d'écrire à qui que ce soit pour ne plus être relancé : **répondre « STOP » à un message suffit**. Le refus prend effet immédiatement et définitivement, sans autre formalité.
 
-### 8.3 Délai de réponse
+### 8.3 L'accès et l'effacement s'exercent en autonomie
 
-Une demande reçoit une réponse dans un délai maximal de **trente (30) jours**. Une pièce d'identité peut être demandée en cas de doute raisonnable sur l'identité du demandeur.
+La page **« Mes données »** permet à tout Client final de consulter l'intégralité des données conservées à son sujet — commandes, paniers non validés, relances reçues, appréciations de livraison — et d'en demander l'effacement. La demande est exécutée **immédiatement**, sans intervention humaine et sans délai d'instruction.
 
-### 8.4 Réclamation
+**L'identité est vérifiée sans demander de pièce d'identité.** Un numéro de téléphone n'est pas un secret : l'accès est ouvert par le lien reçu dans le message de commande, ou par une référence de commande accompagnée des quatre derniers chiffres du numéro. Ce contrôle est plafonné à dix tentatives par jour et par commande. Réclamer une pièce d'identité pour un droit de cette nature reviendrait à collecter davantage de données que la demande n'en fait disparaître.
+
+**Ce que l'effacement recouvre.** Les commandes terminées perdent le nom, le téléphone, l'adresse, les instructions de livraison, la position et l'identifiant de messagerie ; le montant, la date et les articles subsistent, sans lien avec une personne, au titre de la comptabilité du Marchand. Les paniers non validés, les traces de relance et les commentaires de livraison sont supprimés.
+
+**Ce que l'effacement ne recouvre pas**, et qui est indiqué à la personne avant qu'elle ne décide : une commande encore en cours n'est pas modifiée — elle le sera automatiquement dès sa clôture ; les messages déjà reçus sur le téléphone de la personne relèvent de sa messagerie ; la copie des commandes figurant dans le tableur du Marchand relève du Marchand ; les sauvegardes de sécurité conservent les données jusqu'à leur remplacement.
+
+**Le numéro est conservé sur la liste des refus**, et sur elle seule. Sans cette trace, plus rien n'empêcherait de solliciter à nouveau la personne qui vient de demander l'effacement.
+
+### 8.4 Délai de réponse
+
+Une demande reçoit une réponse dans un délai maximal de **trente (30) jours**. Une pièce d'identité peut être demandée en cas de doute raisonnable sur l'identité du demandeur. Ce délai et cette faculté ne s'appliquent pas aux droits exercés en autonomie aux articles 8.2 et 8.3, qui prennent effet immédiatement.
+
+### 8.5 Réclamation
 
 Toute personne estimant que ses droits ne sont pas respectés peut saisir l'**ARTCI**.
 
@@ -225,5 +248,6 @@ Toute modification substantielle de la présente politique est notifiée aux Mar
 > 2. **Transferts hors Côte d'Ivoire** (article 6.3) — régime d'autorisation à vérifier ; c'est le point le plus exposé du dossier.
 > 3. **Régions d'hébergement** (article 6.2) — à renseigner précisément pour Supabase, le VPS n8n et wasenderapi.
 > 4. **Durée des journaux techniques** (article 5) — à fixer, puis à appliquer réellement dans le code.
+> 5. **La copie Google Sheets** (article 6.2) — constatée le 27 août 2026 sur les workflows en production : chaque commande y est écrite avec nom, téléphone et adresse, et **rien ne l'y efface**. Les durées de conservation de l'article 5 ne s'appliquent donc qu'à la base de données. Deux issues : cesser d'y écrire l'identité du Client final, ou y porter la purge. Tant que ce n'est pas tranché, l'article 8.3 le déclare franchement au Client, mais c'est le trou le plus concret de ce dossier.
 >
 > Les durées de l'article 5 correspondent à ce qu'applique `src/lib/conservation.ts`. Toute modification de ce document doit être répercutée dans le code, et inversement : un document qui décrit une durée que le code n'applique pas est pire que pas de document.

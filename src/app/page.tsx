@@ -659,6 +659,24 @@ export default function Home() {
             <Link href="/login" className="transition hover:text-white">
               Connexion
             </Link>
+            {/*
+              Le droit d'accès ne vaut que s'il se trouve. Un écran des droits
+              qu'on n'atteint qu'en connaissant son URL n'est pas un droit
+              offert, c'est un droit caché — et le pied de page est le seul
+              endroit qu'une personne cherche instinctivement.
+            */}
+            <Link href="/mes-donnees" className="transition hover:text-white">
+              Mes données
+            </Link>
+            {/*
+              UNE POLITIQUE QUE PERSONNE NE PEUT ATTEINDRE N'EST PAS PUBLIEE.
+              Les cinq documents existaient et figuraient au sitemap, mais aucun
+              lien du site n'y menait : seul celui qui connaissait l'URL pouvait
+              les lire. Le pied de page est le premier endroit ou on les cherche.
+            */}
+            <Link href="/legal" className="transition hover:text-white">
+              Mentions & confidentialité
+            </Link>
           </nav>
         </div>
 

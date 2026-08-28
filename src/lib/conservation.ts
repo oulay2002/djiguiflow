@@ -105,6 +105,16 @@ export const CHAMPS_A_EFFACER = [
 export const NOM_ANONYME = 'Client (données effacées)';
 
 /**
+ * Les statuts qui closent une commande.
+ *
+ * TROIS ENDROITS EN DÉPENDENT : la purge nocturne, l'effacement demandé par un
+ * client, et la règle ci-dessous. Recopiée, cette liste divergerait — et la
+ * divergence se paierait en commandes anonymisées alors qu'elles sont encore en
+ * cours, ou jamais anonymisées parce qu'un statut manque à une copie.
+ */
+export const STATUTS_CLOS = ['livree', 'annulee', 'abandonnee'] as const;
+
+/**
  * Une commande est-elle prête à être anonymisée ?
  *
  * ELLE DOIT ÊTRE CLOSE, pas seulement ancienne. Une commande vieille de treize
@@ -124,7 +134,7 @@ export function peutEtreAnonymisee(a: {
   if (ne > limite.getTime()) return false;
 
   const statut = String(a.statut ?? '').trim().toLowerCase();
-  if (!['livree', 'annulee', 'abandonnee'].includes(statut)) return false;
+  if (!(STATUTS_CLOS as readonly string[]).includes(statut)) return false;
 
   // Déjà anonymisée : on ne repasse pas dessus, sinon chaque balayage
   // rapporterait le même travail comme s'il venait d'être fait.

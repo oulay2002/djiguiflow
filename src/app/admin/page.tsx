@@ -138,6 +138,14 @@ export default function AdminPage() {
             {total} marchand{total > 1 ? 's' : ''} · {commandesRecentes} commande
             {commandesRecentes > 1 ? 's' : ''} sur {t.fenetres.activiteJours} jours.
           </p>
+          <p className="mt-4">
+            <Link
+              href="/admin/registre"
+              className="text-sm text-nuit-700 underline underline-offset-4 transition hover:text-nuit-900"
+            >
+              Registre des traitements de données
+            </Link>
+          </p>
         </header>
 
         {/* L'ENTONNOIR. Sa forme dit ou l'on perd du monde — un total ne le
