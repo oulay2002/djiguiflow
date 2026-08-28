@@ -3,7 +3,7 @@
 import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { ShieldCheck, Trash2, TriangleAlert } from 'lucide-react';
+import { Loader2, ShieldCheck, Trash2, TriangleAlert } from 'lucide-react';
 import { Bouton, LienRetour } from '@/components/ui/Bouton';
 
 /**
@@ -163,6 +163,16 @@ function Ecran() {
   const [erreur, setErreur] = useState('');
   const [chargement, setChargement] = useState(false);
 
+  /**
+   * Vrai quand c'est l'ouverture AUTOMATIQUE par le lien qui a echoue.
+   *
+   * Sans cette distinction, on ne peut pas parler juste : le meme refus veut
+   * dire « votre lien n'a pas marche » a celui qui n'a rien tape, et
+   * « verifiez votre saisie » a celui qui vient de taper. Le drapeau retombe
+   * des que la personne envoie le formulaire elle-meme.
+   */
+  const [lienEchoue, setLienEchoue] = useState(false);
+
   const [demandeEffacement, setDemandeEffacement] = useState(false);
   const [efface, setEfface] = useState<{ complet: boolean; bilan: Bilan } | null>(null);
   const [effacementEnCours, setEffacementEnCours] = useState(false);
@@ -194,9 +204,15 @@ function Ecran() {
     if (demandeEffacement) zoneConfirmation.current?.focus();
   }, [demandeEffacement]);
 
-  const charger = useCallback(async (r: string, jeton: string, chiffres: string) => {
+  const charger = useCallback(async (
+    r: string,
+    jeton: string,
+    chiffres: string,
+    viaLien = false,
+  ) => {
     setChargement(true);
     setErreur('');
+    setLienEchoue(false);
     try {
       const res = await fetch('/api/mes-donnees', {
         method: 'POST',
@@ -208,12 +224,14 @@ function Ecran() {
         setDossier(corps);
       } else {
         setDossier(null);
+        setLienEchoue(viaLien);
         setErreur(
           String(corps?.error ?? '')
           || 'Nous n’avons pas pu vérifier qu’il s’agit bien de vous.',
         );
       }
     } catch {
+      setLienEchoue(viaLien);
       setErreur('La connexion a échoué. Réessayez dans un instant.');
     } finally {
       setChargement(false);
@@ -224,7 +242,7 @@ function Ecran() {
   // le dossier sans rien demander. Celui qui arrive les mains vides voit le
   // formulaire.
   useEffect(() => {
-    if (refUrl && jetonUrl) void charger(refUrl, jetonUrl, '');
+    if (refUrl && jetonUrl) void charger(refUrl, jetonUrl, '', true);
   }, [refUrl, jetonUrl, charger]);
 
   const effacer = useCallback(async () => {
@@ -267,6 +285,9 @@ function Ecran() {
     }
   }, [ref, refUrl, jetonUrl, tel4]);
 
+  // L'ouverture automatique est en cours : la porte n'a rien a demander.
+  const ouvertureParLien = Boolean(refUrl && jetonUrl) && chargement && !dossier && !efface;
+
   return (
     <main className="mx-auto max-w-3xl px-5 py-10">
       <LienRetour href="/">Retour à l’accueil</LienRetour>
@@ -293,9 +314,28 @@ function Ecran() {
 
       {efface && <ApresEffacement etat={efface} />}
 
-      {!dossier && !efface && (
+      {/*
+        L'ARRIVEE PAR LIEN A SON PROPRE ECRAN.
+        La porte s'affichait pendant tout le chargement : celui qui venait de
+        toucher son lien dans WhatsApp lisait « Prouvez que c'est bien vous »,
+        avec une reference pre-remplie qu'il n'avait jamais tapee, plusieurs
+        secondes durant en 3G. On lui reclamait a l'ecran ce qu'il venait
+        justement de fournir.
+      */}
+      {ouvertureParLien && (
+        <section className={`mt-8 ${CADRE}`} aria-busy>
+          <p className="flex items-center gap-2 text-sm text-chaux-600">
+            <Loader2 className="size-4 animate-spin text-nuit-700" aria-hidden />
+            Nous ouvrons votre dossier…
+          </p>
+        </section>
+      )}
+
+      {!dossier && !efface && !ouvertureParLien && (
         <section className={`mt-8 ${CADRE}`}>
-          <h2 className="font-display text-xl text-nuit-900">Prouvez que c’est bien vous</h2>
+          <h2 className="font-display text-xl text-nuit-900">
+            {lienEchoue ? 'Ouvrons-le autrement' : 'Prouvez que c’est bien vous'}
+          </h2>
           {/*
             POURQUOI CETTE EXPLICATION EST OBLIGATOIRE À L'ÉCRAN. Sans elle, le
             client se demande pourquoi on lui réclame une référence alors qu'il
@@ -306,7 +346,7 @@ function Ecran() {
             Nous ne demandons pas seulement votre numéro : n’importe qui pourrait taper
             celui d’un voisin et lire son adresse. Utilisez le lien reçu dans votre message
             de commande — ou, si vous l’avez perdu, la référence d’une de vos commandes et
-            les quatre derniers chiffres de votre numéro.
+            les quatre derniers chiffres du numéro qui l’a passée.
           </p>
 
           <div className="mt-5 grid gap-4 sm:grid-cols-2">
@@ -315,39 +355,115 @@ function Ecran() {
               <input
                 value={ref}
                 onChange={(e) => setRef(e.target.value)}
-                placeholder="ZH-1042"
+                /*
+                  L'EXEMPLE A LA LONGUEUR DES VRAIES REFERENCES.
+                  Il portait « ZH-1042 ». Le prefixe est juste — c'est le plus
+                  repandu en base — mais sept caracteres quand les vraies en
+                  font seize a vingt-huit. La cliente comparait sa longue
+                  reference a ce court exemple et concluait qu'elle n'avait pas
+                  la bonne chose. Un exemple faux a la porte renvoie chez elle
+                  quelqu'un qui tenait la cle.
+                */
+                placeholder="ZH-1234567890-0000"
+                autoComplete="off"
+                spellCheck={false}
+                aria-describedby="ou-trouver-reference"
                 className="mt-1 w-full border border-nuit-900/20 bg-white px-3 py-2 font-mono text-sm text-nuit-900"
               />
+              <span id="ou-trouver-reference" className="mt-1 block text-xs text-chaux-600">
+                Elle est en haut du message que la boutique vous a envoyé.
+              </span>
             </label>
             <label className="block">
               <span className="text-sm font-medium text-nuit-900">
-                4 derniers chiffres de votre numéro
+                4 derniers chiffres du numéro qui a commandé
               </span>
               <input
                 value={tel4}
                 onChange={(e) => setTel4(e.target.value.replace(/\D/g, '').slice(0, 4))}
                 inputMode="numeric"
+                maxLength={4}
+                autoComplete="off"
                 placeholder="0405"
+                aria-describedby="pourquoi-quatre-chiffres"
                 className="mt-1 w-full border border-nuit-900/20 bg-white px-3 py-2 font-mono text-sm text-nuit-900"
               />
+              {/*
+                « DU NUMERO QUI A COMMANDE », ET PAS « DE VOTRE NUMERO ».
+                Une commande passee depuis le telephone d'un proche, ou depuis
+                un second numero, se refusait sans que rien ne dise pourquoi :
+                la personne tapait les chiffres du seul numero qu'elle
+                considere comme le sien. C'est la commande qui designe le
+                numero, pas la personne.
+              */}
+              {/*
+                L'AIDE AJOUTE, ELLE NE REPETE PAS. Elle disait « les deux sont
+                necessaires » — ce que le chapeau explique deja deux paragraphes
+                plus haut, et mieux, avec la raison. Ici, la seule question
+                ouverte est « quel numero ? », et c'est a elle de repondre.
+              */}
+              <span id="pourquoi-quatre-chiffres" className="mt-1 block text-xs text-chaux-600">
+                Ceux du numéro qui a servi à commander, même si ce n’est pas le vôtre.
+              </span>
             </label>
           </div>
 
           <div className="mt-5">
             <Bouton
               variante="action"
-              onClick={() => void charger(ref, jetonUrl, tel4)}
-              disabled={chargement || !ref.trim()}
+              /*
+                APRES UN LIEN REFUSE, ON CESSE DE L'ENVOYER.
+                Le serveur traite un jeton FAUX comme une tentative, pas comme
+                un oubli : il refuse sans meme regarder les quatre chiffres
+                (`preuveClient.ts` : verdictDuJeton === 'invalide' → refus
+                immediat). En reexpediant le jeton de l'URL, le formulaire
+                aurait donc echoue quoi que la personne tape — alors que le
+                message qu'on venait de lui ecrire lui promettait ce chemin.
+                Une consigne qu'on donne doit mener quelque part.
+              */
+              onClick={() => void charger(ref, lienEchoue ? '' : jetonUrl, tel4)}
+              /*
+                LES QUATRE CHIFFRES SONT EXIGES AVANT L'ENVOI, COMME SUR /suivi.
+                Le serveur les reclame TOUJOURS a qui n'a pas de jeton
+                (`preuveClient.ts` : verdictDuTelephone === 'absent' → refus).
+                Sans cette condition, le bouton partait quand meme, le serveur
+                rendait son 404, et son texte — le meme pour tous les refus,
+                volontairement — invitait a verifier une reference qui etait
+                juste. Le seul des quatre refus que le client peut distinguer
+                sans rien reveler, c'est celui-la : on le retire donc du lot
+                AVANT l'envoi, au lieu d'essayer de le nommer apres.
+                Au passage, chaque envoi inutile consomme un des vingt appels
+                par tranche de dix minutes ET PAR ADRESSE — or les operateurs
+                mobiles d'ici partagent massivement leurs IP : ce budget-la
+                n'appartient pas a une personne, mais a un quartier.
+              */
+              disabled={chargement || !ref.trim() || ((!jetonUrl || lienEchoue) && tel4.length !== 4)}
               chargement={chargement}
             >
               Voir mes données
             </Bouton>
           </div>
 
+          {/*
+            NE PAS REPROCHER UNE SAISIE QU'ON N'A PAS FAITE.
+            Le refus du serveur est le meme pour tous les cas, et c'est
+            volontaire : le distinguer dirait a celui qui devine qu'il a trouve
+            une vraie commande. Mais son texte invite a « verifier la
+            reference » — ce qui n'a aucun sens pour quelqu'un qui a seulement
+            touche un lien. On ne change donc pas le verdict, on change a QUI
+            on parle : ce qui a echoue, et par ou passer maintenant. Aucune
+            cause n'est affirmee, parce qu'aucune n'est connue d'ici.
+          */}
           {erreur && (
-            <p className="mt-4 flex items-start gap-2 text-sm text-bissap-600">
+            <p role="alert" className="mt-4 flex items-start gap-2 text-sm text-bissap-600">
               <TriangleAlert className="mt-0.5 size-4 shrink-0" aria-hidden />
-              <span>{erreur}</span>
+              <span>
+                {lienEchoue
+                  ? 'Ce lien ne nous a pas permis d’ouvrir votre dossier. Saisissez la '
+                    + 'référence de votre commande et les quatre derniers chiffres du numéro '
+                    + 'qui a commandé : c’est le même chemin, sans le lien.'
+                  : erreur}
+              </span>
             </p>
           )}
         </section>
