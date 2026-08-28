@@ -117,7 +117,7 @@ Ces durées sont appliquées automatiquement par un traitement périodique de la
 | **Refus de relance (« STOP »)** | **Sans limite** | **Jamais effacé** |
 | Compte du Marchand | Durée du contrat + 30 jours | Suppression ou anonymisation |
 | Pièces comptables et de facturation | Durée légale de conservation | Conservation |
-| Journaux techniques et de sécurité | [À COMPLÉTER : 12 mois ?] | Suppression |
+| Journaux techniques et de sécurité | Durée propre à chaque hébergeur | Suppression par l'hébergeur |
 
 ### 5.1 Pourquoi le panier est supprimé et la commande anonymisée
 
@@ -252,7 +252,7 @@ Toute modification substantielle de la présente politique est notifiée aux Mar
 > 1. **Déclaration ARTCI** (article 2) — statut à renseigner. C'est la question qui a motivé ce document.
 > 2. **Transferts hors Côte d'Ivoire** (article 6.3) — régime d'autorisation à vérifier ; c'est le point le plus exposé du dossier.
 > 3. **Régions d'hébergement** (article 6.2) — à renseigner précisément pour Supabase, le VPS n8n et wasenderapi.
-> 4. **Durée des journaux techniques** (article 5) — à fixer, puis à appliquer réellement dans le code.
+> 4. **Durée des journaux techniques** (article 5) — l'Éditeur ne conserve aucun journal en propre : ils vivent chez Vercel et sur le serveur d'automatisation, selon les durées de ceux-ci. Mesuré le 28 août 2026 : le serveur n8n détenait 5 374 exécutions, la plus ancienne du 16 août — soit douze jours, mais c'est aussi la date de sa mise en service, ce qui ne permet pas de conclure qu'une purge s'applique. **Pour transformer cette ligne en engagement**, fixer explicitement `EXECUTIONS_DATA_MAX_AGE` sur le serveur (l'accès à sa configuration est requis), puis l'écrire ici. Le point compte : une exécution conserve les données qui l'ont traversée, donc le texte des messages d'un client.
 > 5. ~~**La copie Google Sheets**~~ — **FERMÉ le 28 août 2026.** Constaté le 27 : chaque commande partait dans une feuille de calcul avec nom, téléphone et adresse, ainsi que le texte de chaque message envoyé, et rien ne l'y effaçait. Mesuré avant de trancher — treize nœuds Google Sheets dont neuf déjà morts, et aucun qui relise jamais ces colonnes. L'écriture a été débranchée, les workflows auxiliaires archivés, la credential Google supprimée, et **quarante-quatre colonnes d'identité retirées du classeur** (670 lignes conservées, sans personne dedans). Reste, hors de notre portée, l'historique des versions du document Google, qui garde trace des valeurs supprimées jusqu'à son expiration ou la suppression du fichier.
 >
 > Les durées de l'article 5 correspondent à ce qu'applique `src/lib/conservation.ts`. Toute modification de ce document doit être répercutée dans le code, et inversement : un document qui décrit une durée que le code n'applique pas est pire que pas de document.
