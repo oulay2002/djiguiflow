@@ -38,7 +38,7 @@
  * serait un mensonge sur la seule ligne d'un registre qui engage. On la change
  * en même temps qu'on change les traitements, jamais autrement.
  */
-export const REGISTRE_MIS_A_JOUR = '27 août 2026';
+export const REGISTRE_MIS_A_JOUR = '28 août 2026';
 
 /** Qui la donnée concerne. Le registre les sépare, l'écran ne montre que `client`. */
 export type Personne = 'client' | 'marchand' | 'livreur';
@@ -121,10 +121,13 @@ export const TRAITEMENTS: Traitement[] = [
     conservation:
       '12 mois après la fin de la commande, puis votre identité est effacée. '
       + 'Le montant et la date restent, sans vous : c’est la comptabilité du marchand.',
+    // Google Sheets figurait ici jusqu'au 28 août 2026 : une copie complète de
+    // chaque commande partait dans un tableur, avec le nom, le téléphone et
+    // l'adresse. L'écriture est débranchée et les colonnes supprimées — voir
+    // le bloc au-dessus de `journaux_techniques`.
     destinataires: [
       'le marchand chez qui vous avez commandé',
       'le livreur qui prend votre commande en charge',
-      'Google Sheets — une copie de la commande y est écrite (voir plus bas)',
       'Supabase (hébergeur de la base) et le serveur d’automatisation',
     ],
     effacement: 'anonymise',
@@ -203,34 +206,26 @@ export const TRAITEMENTS: Traitement[] = [
       'C’est la trace de votre demande elle-même. L’effacer reviendrait à '
       + 'effacer la preuve qu’on vous a obéi.',
   },
-  {
-    cle: 'messages',
-    nom: 'Les messages échangés avec la boutique',
-    concerne: ['client'],
-    ou: 'Feuille de calcul Google du marchand (« Logs_Envois ») et serveur d’automatisation',
-    donnees: [
-      'le texte des messages qui vous ont été envoyés',
-      'le numéro ou l’identifiant auquel ils ont été adressés',
-      'la date et le canal utilisé',
-    ],
-    finalite:
-      'Permettre au marchand de retrouver ce qui vous a été dit, et de comprendre '
-      + 'un message qui ne vous serait pas parvenu.',
-    duree: 'Chez le marchand',
-    conservation:
-      'Aussi longtemps que le marchand garde sa feuille de calcul. Cette copie '
-      + 'n’est pas effacée par la purge automatique.',
-    destinataires: [
-      'le marchand concerné',
-      'Google (la feuille de calcul est hébergée chez lui)',
-      'le fournisseur du canal — WhatsApp ou Telegram',
-    ],
-    effacement: 'garde',
-    pourquoi:
-      'Cette copie vit dans le tableur du marchand, hors de portée de cet écran. '
-      + 'Elle relève de lui, et c’est à lui qu’il faut la demander. Le dire est '
-      + 'préférable à laisser croire qu’un effacement l’emporte.',
-  },
+  /*
+   * LE TRAITEMENT « messages » A DISPARU LE 28 AOÛT 2026, et il faut savoir
+   * pourquoi il a existé.
+   *
+   * Chaque message envoyé à un client — son texte entier, et le numéro auquel
+   * il partait — était consigné dans une feuille de calcul Google
+   * (« Logs_Envois », 568 lignes). La purge nocturne ne l'atteignait pas : les
+   * durées de conservation ne valaient que pour la base.
+   *
+   * Deux issues étaient possibles : porter la purge jusqu'à la feuille, ou
+   * cesser d'y écrire. On a mesuré d'abord — treize nœuds Google Sheets, dont
+   * neuf déjà morts, et RIEN qui relise jamais ces colonnes — puis le marchand
+   * a confirmé qu'il n'ouvrait pas la feuille. Le journal a donc été débranché
+   * et ses colonnes supprimées, plutôt que d'entretenir un second système de
+   * conservation dans un endroit qu'on ne maîtrise pas.
+   *
+   * Le texte des messages ne vit plus que là où il a toujours vécu : sur le
+   * téléphone de la personne et chez WhatsApp ou Telegram — ce que
+   * `HORS_DE_PORTEE` dit toujours, parce que c'est toujours vrai.
+   */
   {
     cle: 'journaux_techniques',
     nom: 'Journaux techniques',
@@ -314,21 +309,18 @@ export const HORS_DE_PORTEE: { quoi: string; pourquoi: string }[] = [
       'Ils sont sur votre téléphone et sur les serveurs de la messagerie. '
       + 'Vous seul pouvez les y supprimer.',
   },
-  {
-    quoi: 'La copie de vos commandes dans la feuille de calcul du marchand',
-    pourquoi:
-      'Chaque commande est aussi écrite dans un tableur Google que le marchand '
-      + 'utilise pour son suivi. Cette copie porte votre nom, votre téléphone et '
-      + 'votre adresse. Elle n’est pas effacée par cet écran : demandez-la au '
-      + 'marchand, qui en est responsable.',
-  },
-  {
-    quoi: 'Le journal des messages qui vous ont été envoyés',
-    pourquoi:
-      'Le texte de chaque message, et le numéro auquel il a été adressé, sont '
-      + 'consignés dans le même tableur. Cette copie appartient au marchand et '
-      + 'échappe à cet écran, comme la précédente.',
-  },
+  /*
+   * DEUX LIMITES ONT ÉTÉ RETIRÉES LE 28 AOÛT 2026 — parce qu'elles ont cessé
+   * d'exister, et c'est la bonne façon de faire disparaître une limite.
+   *
+   * On avouait ici que la copie des commandes et le journal des messages
+   * vivaient dans une feuille de calcul Google, avec nom, téléphone et adresse,
+   * hors de portée de tout effacement. Plutôt que de mieux le formuler, on a
+   * débranché l'écriture et supprimé quarante-quatre colonnes d'identité dans
+   * le classeur.
+   *
+   * Une limite qu'on explique bien reste une limite ; celle-ci n'est plus là.
+   */
   {
     quoi: 'Les sauvegardes des jours précédents',
     pourquoi:

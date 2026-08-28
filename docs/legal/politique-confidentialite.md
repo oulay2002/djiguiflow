@@ -63,7 +63,7 @@ Chaque Marchand demeure responsable de la licéité de la collecte auprès de se
 
 **L'identifiant de conversation est une donnée personnelle.** Ce n'est pas un nom, mais c'est l'adresse par laquelle une personne peut être jointe : il est traité comme telle, et anonymisé au même titre que le nom.
 
-**Où vit le contenu des messages.** Les messages échangés ne sont pas conservés dans la base de la Plateforme. Ils demeurent chez le fournisseur du canal — WhatsApp ou Telegram — et le texte de ceux qui ont été **envoyés** au Client final est consigné, avec son destinataire, dans la feuille de calcul du Marchand (article 5.3).
+**Où vit le contenu des messages.** Les messages échangés ne sont **pas conservés par la Plateforme** — ni dans sa base, ni ailleurs. Ils demeurent chez le fournisseur du canal, WhatsApp ou Telegram, et sur le téléphone de la personne.
 
 **Aucune donnée bancaire n'est traitée.** Le prix des commandes est réglé directement entre le Client final et le Marchand ; il ne transite jamais par la Plateforme, qui n'enregistre aucune donnée de paiement des commandes.
 
@@ -130,13 +130,13 @@ L'anonymisation est irréversible.
 
 Une commande n'est anonymisée que si elle est **close** — livrée, annulée ou abandonnée. Une commande de treize mois encore « en attente » n'est pas une donnée à effacer : c'est une anomalie à examiner.
 
-### 5.3 Ce que le traitement périodique n'atteint pas
+### 5.3 Ces durées valent pour la totalité des données
 
-Les durées ci-dessus s'appliquent à la **base de données** de la Plateforme.
+Les durées ci-dessus s'appliquent à l'ensemble des données personnelles détenues par la Plateforme, sans exception.
 
-Elles ne s'appliquent pas à la **feuille de calcul du Marchand** : chaque commande y est également écrite, avec le nom, le numéro de téléphone, l'adresse et l'identifiant de conversation du Client final, ainsi que le texte des messages qui lui ont été envoyés. Cette copie relève du Marchand, qui en est le responsable de traitement, et aucune purge automatique ne s'y applique aujourd'hui.
+Jusqu'au 28 août 2026, elles ne valaient que pour la base de données : une copie de chaque commande — nom, téléphone, adresse, identifiant de conversation — ainsi que le texte des messages envoyés étaient également écrits dans une feuille de calcul externe, qu'aucune purge n'atteignait. **Cette écriture a été supprimée, et les colonnes correspondantes retirées de la feuille.** Plus aucune donnée personnelle n'y est enregistrée.
 
-Ce point figure ici, à l'endroit même où les durées sont annoncées, et non en note de fin : une durée énoncée sans sa limite vaudrait engagement sur une donnée dont la Plateforme ne se sépare pas. Il est également indiqué au Client final sur la page « Mes données », avant qu'il ne demande un effacement.
+Ce point figure ici, à l'endroit même où les durées sont annoncées : une durée énoncée sans son périmètre réel vaudrait engagement sur une donnée dont la Plateforme ne se sépare pas.
 
 ## Article 6 — Destinataires et sous-traitants
 
@@ -155,7 +155,6 @@ Les données ne sont ni vendues, ni louées, ni cédées à des tiers à des fin
 | **Vercel Inc.** | Hébergement de l'application | Données transitant par le service | États-Unis |
 | **Supabase Inc.** | Base de données, authentification | Ensemble des données stockées | [À COMPLÉTER : région d'hébergement du projet] |
 | **n8n** (auto-hébergé) | Automatisation des traitements | Commandes, messages, notifications | [À COMPLÉTER : pays du serveur] |
-| **Google LLC** (Sheets) | Feuille de suivi du Marchand, alimentée automatiquement | **Nom, téléphone, adresse, identifiant de messagerie, articles et montant** de chaque commande ; nom et appréciations laissées après livraison | États-Unis |
 | **Mistral AI** | Modèle de langage de l'Assistante | Contenu des messages échangés | Union européenne |
 | **wasenderapi** | Passerelle WhatsApp | Messages et identifiants de conversation | [À COMPLÉTER] |
 | **Telegram** | Canal de conversation | Messages et identifiants de conversation | Selon les conditions de Telegram |
@@ -213,7 +212,9 @@ La page **« Mes données »** permet à tout Client final de consulter l'intég
 
 **Ce que l'effacement recouvre.** Les commandes terminées perdent le nom, le téléphone, l'adresse, les instructions de livraison, la position et l'identifiant de messagerie ; le montant, la date et les articles subsistent, sans lien avec une personne, au titre de la comptabilité du Marchand. Les paniers non validés, les traces de relance et les commentaires de livraison sont supprimés.
 
-**Ce que l'effacement ne recouvre pas**, et qui est indiqué à la personne avant qu'elle ne décide : une commande encore en cours n'est pas modifiée — elle le sera automatiquement dès sa clôture ; les messages déjà reçus sur le téléphone de la personne relèvent de sa messagerie ; la copie des commandes figurant dans le tableur du Marchand relève du Marchand ; les sauvegardes de sécurité conservent les données jusqu'à leur remplacement.
+**Ce que l'effacement ne recouvre pas**, et qui est indiqué à la personne avant qu'elle ne décide : une commande encore en cours n'est pas modifiée — elle le sera automatiquement dès sa clôture ; les messages déjà reçus sur le téléphone de la personne relèvent de sa messagerie ; les sauvegardes de sécurité conservent les données jusqu'à leur remplacement.
+
+Cette liste comptait une quatrième réserve — la copie des commandes dans le tableur du Marchand — jusqu'au 28 août 2026. Elle a été levée en supprimant la copie elle-même, plutôt qu'en la formulant mieux (article 5.3).
 
 **Le numéro est conservé sur la liste des refus**, et sur elle seule. Sans cette trace, plus rien n'empêcherait de solliciter à nouveau la personne qui vient de demander l'effacement.
 
@@ -248,6 +249,6 @@ Toute modification substantielle de la présente politique est notifiée aux Mar
 > 2. **Transferts hors Côte d'Ivoire** (article 6.3) — régime d'autorisation à vérifier ; c'est le point le plus exposé du dossier.
 > 3. **Régions d'hébergement** (article 6.2) — à renseigner précisément pour Supabase, le VPS n8n et wasenderapi.
 > 4. **Durée des journaux techniques** (article 5) — à fixer, puis à appliquer réellement dans le code.
-> 5. **La copie Google Sheets** (article 6.2) — constatée le 27 août 2026 sur les workflows en production : chaque commande y est écrite avec nom, téléphone et adresse, et **rien ne l'y efface**. Les durées de conservation de l'article 5 ne s'appliquent donc qu'à la base de données. Deux issues : cesser d'y écrire l'identité du Client final, ou y porter la purge. Tant que ce n'est pas tranché, l'article 8.3 le déclare franchement au Client, mais c'est le trou le plus concret de ce dossier.
+> 5. ~~**La copie Google Sheets**~~ — **FERMÉ le 28 août 2026.** Constaté le 27 : chaque commande partait dans une feuille de calcul avec nom, téléphone et adresse, ainsi que le texte de chaque message envoyé, et rien ne l'y effaçait. Mesuré avant de trancher — treize nœuds Google Sheets dont neuf déjà morts, et aucun qui relise jamais ces colonnes. L'écriture a été débranchée, les workflows auxiliaires archivés, la credential Google supprimée, et **quarante-quatre colonnes d'identité retirées du classeur** (670 lignes conservées, sans personne dedans). Reste, hors de notre portée, l'historique des versions du document Google, qui garde trace des valeurs supprimées jusqu'à son expiration ou la suppression du fichier.
 >
 > Les durées de l'article 5 correspondent à ce qu'applique `src/lib/conservation.ts`. Toute modification de ce document doit être répercutée dans le code, et inversement : un document qui décrit une durée que le code n'applique pas est pire que pas de document.

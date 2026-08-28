@@ -6,7 +6,7 @@ import {
   JOURS_TRACE_RELANCE,
   MOIS_AVANT_ANONYMISATION,
 } from '@/lib/conservation';
-import { HORS_DE_PORTEE } from '@/lib/donneesPersonnelles';
+import { HORS_DE_PORTEE, TRAITEMENTS } from '@/lib/donneesPersonnelles';
 
 /**
  * Le document juridique et le code disent-ils la même chose ?
@@ -74,22 +74,29 @@ describe('la politique annonce les durées que le code applique', () => {
 
 describe('la politique avoue ce que l’effacement n’atteint pas', () => {
   /**
-   * LE POINT LE PLUS FACILE À TAIRE, DONC CELUI QU'ON FIGE.
+   * CE CONTRÔLE A ÉTÉ RETOURNÉ LE 28 AOÛT 2026, ET C'EST TOUT SON INTÉRÊT.
    *
-   * Une copie complète de chaque commande — nom, téléphone, adresse — part dans
-   * une feuille de calcul Google que la purge nocturne n'atteint pas. Le jour où
-   * quelqu'un retire ce paragraphe pour faire plus propre, le document promet
-   * des durées qui ne valent que pour la moitié des données.
+   * Il exigeait l'inverse : que le document DÉCLARE la copie Google Sheets,
+   * parce qu'une copie complète de chaque commande — nom, téléphone, adresse —
+   * partait dans une feuille de calcul que la purge n'atteignait pas. Le taire
+   * aurait fait promettre des durées ne valant que pour la moitié des données.
+   *
+   * La copie a été supprimée. Le contrôle garde donc la même fonction —
+   * empêcher le document de mentir sur son périmètre — mais dans l'autre sens :
+   * plus aucun destinataire Google ne doit réapparaître sans que le code
+   * l'accompagne. Le jour où un nœud Google Sheets reviendrait dans un
+   * workflow, c'est ici qu'il faudrait le déclarer, et ce test rappellerait
+   * qu'on ne le fait pas.
    */
-  it('la copie dans la feuille de calcul figure à l’article 5', async () => {
-    const texte = await lire('politique-confidentialite.md');
-    expect(texte).toContain('5.3');
-    expect(texte.toLowerCase()).toContain('feuille de calcul');
+  it('aucune copie chez un tiers ne subsiste dans l’inventaire', () => {
+    const sujets = HORS_DE_PORTEE.map((h) => h.quoi.toLowerCase());
+    expect(sujets.some((s) => s.includes('feuille de calcul') || s.includes('tableur'))).toBe(false);
   });
 
-  it('Google figure au tableau des sous-traitants', async () => {
+  it('Google ne figure plus au tableau des sous-traitants', async () => {
     const texte = await lire('politique-confidentialite.md');
-    expect(texte).toContain('Google');
+    const tableau = texte.split('### 6.2')[1]?.split('### 6.3')[0] ?? '';
+    expect(tableau).not.toContain('Google');
   });
 
   // Ce que le code avoue au client doit l'être aussi dans le document : sinon
@@ -98,9 +105,23 @@ describe('la politique avoue ce que l’effacement n’atteint pas', () => {
     const texte = (await lire('politique-confidentialite.md')).toLowerCase();
     const sujets = HORS_DE_PORTEE.map((h) => h.quoi.toLowerCase());
 
-    expect(sujets.some((s) => s.includes('feuille de calcul'))).toBe(true);
+    expect(sujets.some((s) => s.includes('whatsapp') || s.includes('telegram'))).toBe(true);
+    expect(sujets.some((s) => s.includes('sauvegarde'))).toBe(true);
     expect(texte).toContain('sauvegarde');
     expect(texte).toMatch(/whatsapp|telegram/);
+  });
+
+  /**
+   * L'INVENTAIRE NE DOIT PLUS PORTER DE DESTINATAIRE GOOGLE.
+   *
+   * C'est le contrôle qui tient la promesse de l'article 5.3 : « ces durées
+   * valent pour la totalité des données ». Un traitement qui redéclarerait
+   * Google parmi ses destinataires rendrait cette phrase fausse.
+   */
+  it('aucun traitement ne déclare Google comme destinataire', () => {
+    const fautifs = TRAITEMENTS.filter((t) =>
+      t.destinataires.some((d) => /google/i.test(d)) || /google/i.test(t.ou));
+    expect(fautifs.map((t) => t.cle)).toEqual([]);
   });
 });
 

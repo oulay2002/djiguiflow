@@ -73,9 +73,9 @@ export async function GET(req: Request) {
       'Raison sociale et adresse du responsable de traitement',
       'Personne désignée comme point de contact auprès de l’ARTCI',
       'Numéro de déclaration ARTCI, une fois la déclaration effectuée',
-      'Analyse des transferts hors Côte d’Ivoire (Supabase, Vercel, hébergeur du serveur d’automatisation, Google) et garanties associées',
+      'Analyse des transferts hors Côte d’Ivoire (Supabase, Vercel, hébergeur du serveur d’automatisation) et garanties associées',
       'Relecture des cinq documents de docs/legal/ par un conseil ivoirien : ils existent, ils portent encore des marqueurs « à compléter », et ils restent hors index tant qu’il en reste un',
-      'Décision sur la copie Google Sheets : cesser d’y écrire l’identité du client, ou y porter la purge — aujourd’hui les durées ne valent que pour la base',
+      'Suppression définitive du document Google, ou de son historique de versions : les colonnes d’identité en ont été retirées le 28 août 2026, mais l’historique du fichier garde trace des valeurs supprimées',
     ],
   });
 }

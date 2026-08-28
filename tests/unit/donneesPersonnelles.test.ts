@@ -92,15 +92,24 @@ describe('inventaire — ce qu’on garde même après un effacement', () => {
 
 describe('inventaire — les limites déclarées', () => {
   /**
-   * TAIRE UNE LIMITE SERAIT LA SEULE FAUTE VRAIMENT GRAVE.
+   * TAIRE UNE LIMITE SERAIT LA SEULE FAUTE VRAIMENT GRAVE — mais la MEILLEURE
+   * façon de traiter une limite reste de la faire disparaître.
    *
-   * Une personne qui clique « effacer » et à qui l'on répond « c'est fait »
-   * croit que tout est parti. La copie dans le tableur du marchand porte son
-   * nom, son téléphone et son adresse — et l'écran ne l'atteint pas.
+   * Ce contrôle exigeait l'inverse : que le mot « tableur » figure ici, parce
+   * qu'une copie de chaque commande — nom, téléphone, adresse — vivait dans une
+   * feuille de calcul que l'effacement n'atteignait pas. Il a rempli son office
+   * le 28 août 2026 : c'est LUI qui a signalé que l'inventaire venait de
+   * changer.
+   *
+   * La copie ayant été supprimée, il est retourné. Une limite qu'on explique
+   * bien reste une limite ; celle-ci n'existe plus, et la réafficher au client
+   * serait désormais lui mentir dans l'autre sens — lui faire croire qu'une
+   * copie de ses données subsiste quelque part.
    */
-  it('la copie chez le marchand est déclarée hors de portée', () => {
+  it('aucune copie chez un tiers n’est déclarée hors de portée', () => {
     const dit = HORS_DE_PORTEE.map((h) => `${h.quoi} ${h.pourquoi}`).join(' ').toLowerCase();
-    expect(dit).toContain('tableur');
+    expect(dit).not.toContain('tableur');
+    expect(dit).not.toContain('feuille de calcul');
   });
 
   it('les messages déjà reçus et les sauvegardes sont déclarés aussi', () => {

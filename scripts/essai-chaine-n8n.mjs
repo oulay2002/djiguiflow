@@ -174,21 +174,51 @@ async function nettoyer() {
  */
 const DISPATCH = 'whr4BFlseHHQURZl';
 
+/**
+ * La derniere execution de « Dispatch livreurs », OU l'aveu qu'on n'a pas pu lire.
+ *
+ * ── POURQUOI CE RETOUR A DEUX ETATS ────────────────────────────────────────
+ *
+ * Elle rendait `null` sur N'IMPORTE QUEL echec — reseau coupe, delai depasse,
+ * VPS qui hoquette — et l'appelant comparait bêtement `apres !== avant`. Un
+ * `null` valait donc « la valeur a change », c'est-a-dire « UN LIVREUR EST
+ * PARTI ».
+ *
+ * Le 28 aout 2026 elle a crie au loup : « 5520 -> null » sur une commande a
+ * emporter, alors que `Dispatch livreurs` n'avait pas tourne — sa derniere
+ * execution datait de 16:04:44 et la commande etait de 16:04:56. Le banc
+ * accusait la chaine d'un defaut grave qui n'existait pas.
+ *
+ * UN DOUTE RENDU COMME UNE CERTITUDE est le pire defaut qu'un banc puisse
+ * avoir : il use la confiance qu'on lui accorde, et le jour ou il aura raison
+ * on cherchera d'abord l'erreur de mesure. C'est le meme motif que la sonde de
+ * veille qui annoncait n8n injoignable sur un seul fetch rate.
+ *
+ * On reessaie donc — un trou passager n'est pas une reponse — puis, si la
+ * lecture reste impossible, on le DIT au lieu de conclure.
+ */
 async function derniereExecutionDispatch() {
   const api = env('N8N_API_URL') || 'https://n8n.djiguiflow.com/api/v1';
   const clef = env('N8N_VPS_KEY') || env('N8N_API_KEY');
-  if (!clef) return null;
-  try {
-    const r = await fetch(`${api}/executions?limit=1&workflowId=${DISPATCH}`, {
-      headers: { 'X-N8N-API-KEY': clef },
-      signal: AbortSignal.timeout(15000),
-    });
-    if (!r.ok) return null;
-    const j = await r.json();
-    return j?.data?.[0]?.id ?? 'aucune';
-  } catch {
-    return null;
+  if (!clef) return { lisible: false, raison: 'aucune cle n8n' };
+
+  // Trois essais : le VPS a des coupures de quelques secondes, et conclure sur
+  // la premiere serait conclure sur un hoquet.
+  for (let essai = 0; essai < 3; essai += 1) {
+    if (essai > 0) await new Promise((r) => setTimeout(r, 3000));
+    try {
+      const r = await fetch(`${api}/executions?limit=1&workflowId=${DISPATCH}`, {
+        headers: { 'X-N8N-API-KEY': clef },
+        signal: AbortSignal.timeout(15000),
+      });
+      if (!r.ok) continue;
+      const j = await r.json();
+      return { lisible: true, id: j?.data?.[0]?.id ?? 'aucune' };
+    } catch {
+      // Trou passager : on retente.
+    }
   }
+  return { lisible: false, raison: 'n8n illisible apres trois essais' };
 }
 
 /** Combien d'executions n8n existent, tous workflows confondus. */
@@ -483,7 +513,7 @@ try {
       String(enBase?.frais_livraison));
   }
 
-  if (dispatchAvant !== null) {
+  if (dispatchAvant.lisible) {
     // On laisse a la chaine le temps de se tromper : conclure trop vite au
     // silence, c'est se feliciter d'une lenteur.
     process.stdout.write('  ...  on laisse le temps de se tromper ');
@@ -493,13 +523,36 @@ try {
     }
     console.log();
     const dispatchApres = await derniereExecutionDispatch();
-    verifier(
-      'AUCUN LIVREUR N A ETE LANCE',
-      dispatchApres === dispatchAvant,
-      dispatchApres === dispatchAvant
-        ? `Dispatch livreurs inchange (${dispatchAvant})`
-        : `Dispatch livreurs a tourne : ${dispatchAvant} -> ${dispatchApres}`,
-    );
+
+    /**
+     * TROIS ISSUES, ET NON DEUX.
+     *
+     * « Je n'ai pas pu lire » n'est pas « un livreur est parti ». Les
+     * confondre a fait accuser la chaine a tort le 28 aout ; le banc echoue
+     * donc toujours quand il ne sait pas, mais en DISANT qu'il ne sait pas.
+     * Un banc qui se trompe de reproche est pire qu'un banc muet : on cherche
+     * le defaut la ou il n'est pas.
+     */
+    if (!dispatchApres.lisible) {
+      verifier(
+        'AUCUN LIVREUR N A ETE LANCE',
+        false,
+        `INDETERMINE — ${dispatchApres.raison}. Ce n'est PAS la preuve qu'un `
+        + 'livreur est parti : relancez le banc, ou lisez les executions de '
+        + 'Dispatch livreurs a la main.',
+      );
+    } else {
+      const inchange = dispatchApres.id === dispatchAvant.id;
+      verifier(
+        'AUCUN LIVREUR N A ETE LANCE',
+        inchange,
+        inchange
+          ? `Dispatch livreurs inchange (${dispatchAvant.id})`
+          : `Dispatch livreurs a tourne : ${dispatchAvant.id} -> ${dispatchApres.id}`,
+      );
+    }
+  } else {
+    console.log(`  ...  contrôle du silence impossible — ${dispatchAvant.raison}`);
   }
 
   /**
