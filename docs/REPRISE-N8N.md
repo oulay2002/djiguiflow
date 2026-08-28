@@ -97,6 +97,39 @@ machine même** : elle meurt avec elle.
 ⚠ Le fuseau n'est pas un détail. Le VPS est arrivé sur `Europe/Berlin`, ce qui
 aurait décalé de deux heures le cron 7 h-21 h de l'alerte retard.
 
+#### La purge des exécutions — À REPOSER SUR UN SERVEUR NEUF
+
+Posée le 28 août 2026. Elle porte un **engagement de la politique de
+confidentialité** : 7 jours pour les journaux d'exécution. Un serveur reconstruit
+sans elle rendrait ce document faux, et personne ne le verrait.
+
+Dans `/docker/n8n/.env` :
+
+```
+EXECUTIONS_DATA_PRUNE=true
+EXECUTIONS_DATA_MAX_AGE=168
+```
+
+⚠ **DEUX PIÈGES, rencontrés tous les deux.**
+
+1. **`MAX_AGE` seule ne purge rien.** `PRUNE=true` est l'interrupteur, `MAX_AGE`
+   la durée — en HEURES. Poser l'âge sans l'interrupteur donne l'illusion d'un
+   engagement.
+2. **Le `.env` seul n'atteint pas le conteneur.** `docker-compose.yml` n'a pas
+   d'`env_file` : il énumère ses variables une par une. Il faut donc AUSSI les
+   déclarer dans le bloc `environment:` du service n8n, sous la forme
+   `- EXECUTIONS_DATA_PRUNE=${EXECUTIONS_DATA_PRUNE}`. Sans cela, Docker ne lit
+   le `.env` que pour substituer des `${...}` déjà présents.
+
+Et `docker compose up -d` a répondu `Running` — donc SANS rien recréer — tant que
+seul le `.env` avait changé. Le message de démarrage ne prouve rien.
+
+**LA SEULE VÉRIFICATION QUI VAUT**, depuis l'intérieur du conteneur :
+
+```
+docker exec n8n-n8n-1 printenv | grep -i execution
+```
+
 ---
 
 ## À FAIRE MAINTENANT, avant tout incident
