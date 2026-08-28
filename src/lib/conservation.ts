@@ -75,6 +75,48 @@ export const MOIS_AVANT_ANONYMISATION = 12;
 export const JOURS_TRACE_RELANCE = 90;
 
 /**
+ * Positions GPS : 30 jours après la clôture de la commande.
+ *
+ * ── POURQUOI ELLES NE SUIVENT PAS LES DOUZE MOIS DE LA COMMANDE ────────────
+ *
+ * Elles en héritaient : la position du livreur et celle du client partaient
+ * avec le reste, à l'anonymisation. C'était une durée subie, pas choisie — la
+ * position se trouvait sur la même ligne que la commande, donc elle vivait
+ * aussi longtemps.
+ *
+ * Or une position géographique n'a AUCUNE utilité passé la livraison. Elle
+ * sert au livreur à trouver la porte ; le lendemain, elle ne sert plus à
+ * personne. La garder onze mois de plus, c'est détenir le point exact du
+ * domicile de quelqu'un sans aucune raison de le faire.
+ *
+ * ── CE QU'ON NE PERD PAS ───────────────────────────────────────────────────
+ *
+ * L'ADRESSE EN TOUTES LETTRES RESTE, jusqu'à l'anonymisation à douze mois : le
+ * marchand garde de quoi comprendre une livraison contestée. Seul le POINT GPS
+ * s'en va. C'est ce qui rend cette durée courte sans coût : elle retire la
+ * donnée la plus intrusive et la moins utile, sans toucher à la trace
+ * commerciale.
+ *
+ * ── ELLE COUVRE LES DEUX POSITIONS, ET C'EST DÉLIBÉRÉ ──────────────────────
+ *
+ * Celle du livreur comme celle du client. L'argument est le même pour les
+ * deux, et deux durées différentes pour deux points GPS portés par la même
+ * ligne seraient impossibles à défendre — comme à expliquer à qui les lit.
+ */
+export const JOURS_POSITION_GPS = 30;
+
+/**
+ * Les colonnes de position, effacées à trente jours.
+ *
+ * Elles figurent AUSSI dans `CHAMPS_A_EFFACER` : à douze mois, l'anonymisation
+ * les repasse. C'est sans effet — elles sont déjà nulles — et c'est voulu :
+ * une commande qui échapperait à la règle des trente jours, pour une raison
+ * qu'on n'a pas prévue, reste rattrapée par celle des douze mois. Deux filets
+ * valent mieux qu'un quand ce qu'on protège est le domicile de quelqu'un.
+ */
+export const CHAMPS_POSITION = ['latitude', 'longitude', 'position_livreur'] as const;
+
+/**
  * Ce qu'une commande anonymisée ne porte plus.
  *
  * `chat_id` EN FAIT PARTIE, et ce n'est pas évident : ce n'est pas un nom, mais

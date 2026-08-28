@@ -120,7 +120,10 @@ export const TRAITEMENTS: Traitement[] = [
     duree: '12 mois',
     conservation:
       '12 mois après la fin de la commande, puis votre identité est effacée. '
-      + 'Le montant et la date restent, sans vous : c’est la comptabilité du marchand.',
+      + 'Le montant et la date restent, sans vous : c’est la comptabilité du marchand. '
+      + 'Votre position GPS, elle, part bien plus tôt — 30 jours après la fin de la '
+      + 'commande — car elle ne sert qu’à trouver votre porte le jour de la livraison. '
+      + 'Votre adresse écrite, elle, reste jusqu’aux 12 mois.',
     // Google Sheets figurait ici jusqu'au 28 août 2026 : une copie complète de
     // chaque commande partait dans un tableur, avec le nom, le téléphone et
     // l'adresse. L'écriture est débranchée et les colonnes supprimées — voir

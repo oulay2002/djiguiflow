@@ -2,7 +2,9 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import { describe, expect, it } from 'vitest';
 import {
+  CHAMPS_POSITION,
   JOURS_PANIER_ABANDONNE,
+  JOURS_POSITION_GPS,
   JOURS_TRACE_RELANCE,
   MOIS_AVANT_ANONYMISATION,
 } from '@/lib/conservation';
@@ -56,6 +58,40 @@ describe('la politique annonce les durées que le code applique', () => {
   it('la trace de relance : quatre-vingt-dix jours de part et d’autre', async () => {
     const texte = await lire('politique-confidentialite.md');
     expect(texte).toContain(`${JOURS_TRACE_RELANCE} jours`);
+  });
+
+  /**
+   * LA POSITION GPS EST LA DURÉE LA PLUS FACILE À DÉSACCORDER.
+   *
+   * Elle vit dans DEUX documents — la politique de confidentialité et la
+   * politique livreurs — et elle est plus courte que celle de la commande qui
+   * la porte. Un jour, quelqu'un lira « 12 mois » dans l'article 5 et
+   * « harmonisera » l'un des deux, ou remettra la position dans le lot des
+   * douze mois en trouvant cela plus simple.
+   *
+   * Ce serait rallonger en silence la conservation du point exact d'un
+   * domicile. Les deux documents et la constante doivent donc tomber ensemble.
+   */
+  it('la position GPS : trente jours dans les DEUX politiques et dans le code', async () => {
+    const confidentialite = await lire('politique-confidentialite.md');
+    const livreurs = await lire('politique-livreurs.md');
+
+    expect(JOURS_POSITION_GPS).toBe(30);
+    expect(confidentialite).toContain(`${JOURS_POSITION_GPS} jours`);
+    expect(livreurs).toContain('trente (30) jours');
+  });
+
+  /**
+   * L'ADRESSE EN TOUTES LETTRES NE PART PAS AVEC LE POINT GPS.
+   *
+   * C'est ce qui rend la durée de trente jours acceptable pour le marchand :
+   * il garde de quoi comprendre une livraison contestée. Si un jour
+   * `CHAMPS_POSITION` se mettait à contenir `client_adresse`, le document
+   * cesserait d'être vrai — et le marchand perdrait sa trace commerciale sans
+   * que personne l'ait décidé.
+   */
+  it('la règle des trente jours ne touche QUE des positions', () => {
+    expect([...CHAMPS_POSITION].sort()).toEqual(['latitude', 'longitude', 'position_livreur']);
   });
 
   /**

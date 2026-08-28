@@ -57,12 +57,11 @@ Est décomptée toute commande enregistrée au bénéfice du Marchand pendant la
 
 Le Marchand est alerté à l'approche du plafond. Une fois le plafond atteint :
 
-- [À COMPLÉTER — choisir et supprimer les autres :
-  **(a)** les commandes suivantes continuent d'être enregistrées et sont facturées au tarif de **[X] F par commande supplémentaire**, réglées à l'échéance suivante ;
-  **(b)** l'enregistrement de nouvelles commandes est suspendu jusqu'au renouvellement de la période ou jusqu'au passage à la formule supérieure ;
-  **(c)** le Marchand est invité à passer à la formule supérieure, le service demeurant actif dans l'intervalle et la différence de tarif étant appelée au prorata.]
+- l'enregistrement de **nouvelles** commandes est suspendu jusqu'au renouvellement de la période, ou jusqu'au passage à la formule supérieure ;
+- **une conversation déjà engagée avec un client va à son terme.** Le plafond n'interrompt jamais un échange en cours : le client qui est en train de commander est servi, et c'est la commande suivante qui est refusée. Couper au milieu ferait perdre au Marchand une vente déjà à moitié faite, et laisserait son client sans réponse ;
+- aucune commande n'est facturée au-delà du forfait : le dépassement ne crée jamais de somme à payer que le Marchand n'aurait pas choisie.
 
-> **À trancher avant publication.** Le code de la Plateforme définit les plafonds mais ce document doit dire ce qui se passe lorsqu'ils sont atteints. Ne pas le dire exposerait à un litige au premier marchand qui dépasse. C'est une décision commerciale, pas une question de rédaction.
+Le Marchand peut lever la suspension à tout moment en passant à la formule supérieure (article 3.3).
 
 ### 3.3 Changement de formule
 
@@ -139,7 +138,7 @@ Un remboursement au prorata des **mois entiers non entamés** est dû dans les s
 
 1. **Modification substantielle refusée** — hausse tarifaire, modification substantielle des CGU ou suppression d'une fonctionnalité substantielle, refusée par le Marchand dans les trente (30) jours de sa notification (CGU, articles 3, 5.3 et 12.2) ;
 2. **Résiliation par l'Éditeur** sans manquement imputable au Marchand, notamment en cas d'arrêt du service (article 7.2) ;
-3. **Indisponibilité prolongée** — interruption continue du service imputable à l'Éditeur excédant **[À COMPLÉTER : 72 heures ?]** consécutives, hors maintenance annoncée et hors force majeure.
+3. **Indisponibilité prolongée** — interruption continue du service imputable à l'Éditeur excédant **soixante-douze (72) heures** consécutives, hors maintenance annoncée et hors force majeure.
 
 Dans ces trois cas, la remise consentie au titre de la durée prépayée est recalculée sur la durée effectivement consommée.
 
@@ -172,7 +171,7 @@ La résiliation pour manquement obéit à l'article 12.3 des CGU. Elle ne donne 
 
 ## Article 9 — Réclamations
 
-Toute réclamation relative à la facturation ou à l'exécution de l'abonnement est adressée à support@djiguiflow.com. L'Éditeur y répond dans un délai de **[À COMPLÉTER : 15 jours ouvrés ?]**.
+Toute réclamation relative à la facturation ou à l'exécution de l'abonnement est adressée à support@djiguiflow.com. L'Éditeur y répond dans un délai de **quinze (15) jours ouvrés**.
 
 Les réclamations d'un client final relatives à une commande relèvent du Marchand, non de l'Éditeur (CGU, article 7).
 

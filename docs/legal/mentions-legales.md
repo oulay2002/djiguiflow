@@ -26,7 +26,7 @@ Le service est hébergé et exploité au moyen des prestataires suivants :
 |---|---|
 | Hébergement de l'application web | Vercel Inc. — 440 N Barranca Ave #4133, Covina, CA 91723, États-Unis |
 | Base de données et authentification | Supabase Inc. — 970 Toa Payoh North, Singapour |
-| Automatisation des traitements | Serveur privé virtuel exploité par [À COMPLÉTER : hébergeur du VPS n8n et pays d'implantation] |
+| Automatisation des traitements | Serveur privé virtuel — Hostinger International Limited, Paris, France |
 
 La liste complète des prestataires qui traitent des données personnelles, et les garanties associées, figure dans la [Politique de confidentialité](politique-confidentialite.md).
 

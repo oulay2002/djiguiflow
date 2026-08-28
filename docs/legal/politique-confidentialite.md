@@ -112,6 +112,7 @@ Ces durées sont appliquées automatiquement par un traitement périodique de la
 |---|---|---|
 | **Panier non converti** | 30 jours | **Suppression complète** |
 | **Commande close** | 12 mois | **Anonymisation** |
+| **Position GPS** (client et livreur) | 30 jours après clôture | Effacement du point ; l’adresse en toutes lettres demeure |
 | **Trace de relance** | 90 jours | Suppression |
 | **Refus de relance (« STOP »)** | **Sans limite** | **Jamais effacé** |
 | Compte du Marchand | Durée du contrat + 30 jours | Suppression ou anonymisation |
@@ -153,10 +154,10 @@ Les données ne sont ni vendues, ni louées, ni cédées à des tiers à des fin
 | Sous-traitant | Rôle | Données concernées | Implantation |
 |---|---|---|---|
 | **Vercel Inc.** | Hébergement de l'application | Données transitant par le service | États-Unis |
-| **Supabase Inc.** | Base de données, authentification | Ensemble des données stockées | [À COMPLÉTER : région d'hébergement du projet] |
-| **n8n** (auto-hébergé) | Automatisation des traitements | Commandes, messages, notifications | [À COMPLÉTER : pays du serveur] |
+| **Supabase Inc.** | Base de données, authentification | Ensemble des données stockées | **France** (Paris, `eu-west-3`) |
+| **n8n** (auto-hébergé) | Automatisation des traitements | Commandes, messages, notifications | **France** (Paris, Hostinger) |
 | **Mistral AI** | Modèle de langage de l'Assistante | Contenu des messages échangés | Union européenne |
-| **wasenderapi** | Passerelle WhatsApp | Messages et identifiants de conversation | [À COMPLÉTER] |
+| **wasenderapi** | Passerelle WhatsApp | Messages et identifiants de conversation | Royaume-Uni (siège) ; localisation des serveurs non publiée |
 | **Telegram** | Canal de conversation | Messages et identifiants de conversation | Selon les conditions de Telegram |
 | **GeniusPay** | Encaissement des abonnements | Données de paiement du **Marchand uniquement** | Côte d'Ivoire |
 
@@ -228,10 +229,9 @@ Toute personne estimant que ses droits ne sont pas respectés peut saisir l'**AR
 
 ## Article 9 — Témoins de connexion (cookies)
 
-Le service utilise :
+Le service n'utilise que des **témoins strictement nécessaires** à son fonctionnement — maintien de la session et sécurité. Ceux-là ne requièrent pas de consentement.
 
-- des **témoins strictement nécessaires** au fonctionnement — maintien de la session, sécurité — qui ne requièrent pas de consentement ;
-- [À COMPLÉTER : décrire les éventuels témoins de mesure d'audience et le mécanisme de recueil du consentement, ou supprimer cette ligne si aucun n'est utilisé].
+**Aucun témoin de mesure d'audience, de publicité ou de suivi comportemental n'est déposé**, et aucun outil d'analytique n'est installé sur le service. Il n'y a donc pas de bandeau de consentement, parce qu'il n'y a rien à consentir.
 
 ## Article 10 — Mineurs
 
