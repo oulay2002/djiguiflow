@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { ChevronDown, Loader2, ShieldCheck, Trash2, TriangleAlert } from 'lucide-react';
 import { Bouton, LienRetour } from '@/components/ui/Bouton';
+import { lireReponseEffacement, type Bilan } from '@/lib/reponseEffacement';
 
 /**
  * L'écran des droits : ce qu'on détient sur vous, et comment le faire partir.
@@ -71,14 +72,9 @@ type Dossier = {
   horsDePortee: { quoi: string; pourquoi: string }[];
 };
 
-type Bilan = {
-  commandesAnonymisees: number;
-  paniersSupprimes: number;
-  relancesSupprimees: number;
-  avisRetires: number;
-  commandesEnCours: number;
-  refusEnregistres: number;
-};
+// `Bilan` est defini avec le lecteur de reponse, et pas ici : c'est la forme
+// que le SERVEUR rend, et deux copies d'une meme forme finissent par diverger
+// sans que rien ne le dise.
 
 const CADRE = 'border border-nuit-900/12 bg-white/70 p-5';
 
@@ -284,21 +280,40 @@ function Ecran() {
           confirme: true,
         }),
       });
-      const corps = (await res.json().catch(() => null)) as
-        | { ok?: boolean; complet?: boolean; bilan?: Bilan; error?: string }
-        | null;
-      if (res.ok && corps?.bilan) {
-        setEfface({ complet: corps.complet === true, bilan: corps.bilan });
+      const corps = await res.json().catch(() => null);
+
+      /*
+        TROIS ISSUES, PAS DEUX — ET C'EST LE CORRECTIF.
+        On testait `res.ok && corps.bilan`. La route rend pourtant un SUCCES
+        SANS BILAN quand le dossier est deja anonymise : il n'y a rien a
+        compter, donc rien a inscrire. La condition tombait a faux, et l'ecran
+        repondait « L'effacement n'a pas abouti » a quelqu'un dont les donnees
+        etaient parties — alors que rouvrir le lien garde dans son message est
+        LE geste qui suit un effacement.
+        Le commentaire qui se trouvait ici CITAIT `dejaEfface` pour expliquer
+        pourquoi le reessai etait sans danger. Le raisonnement etait juste, la
+        lecture de la reponse ne le suivait pas : un commentaire ne verifie
+        rien. La table de verite vit desormais dans `lireReponseEffacement`,
+        avec son test.
+      */
+      const issue = lireReponseEffacement(res.ok, corps);
+
+      if (issue.sorte === 'efface') {
+        setEfface({ complet: issue.complet, bilan: issue.bilan });
         setDossier(null);
+        setDemandeEffacement(false);
+      } else if (issue.sorte === 'dejaEfface') {
+        // Ni bilan a montrer, ni echec a annoncer : on bascule le dossier sur
+        // le panneau qui dit deja la verite — « ces donnees ont deja ete
+        // effacees ». Le verrou reste ferme, l'etat est terminal.
+        setDossier((d) => (d ? { ...d, efface: true } : d));
         setDemandeEffacement(false);
       } else {
         // LE VERROU SE ROUVRE SUR L'ECHEC, ET SUR LUI SEUL. Sans cela, un
         // refus temporaire condamnerait la personne a recharger la page pour
-        // exercer un droit. Le reessai ne peut pas doubler l'effacement : une
-        // seconde demande sur un dossier deja anonymise sort par `dejaEfface`
-        // et n'inscrit rien au registre.
+        // exercer un droit.
         effacementLance.current = false;
-        setErreur(String(corps?.error ?? '') || 'L’effacement n’a pas abouti.');
+        setErreur(issue.message);
       }
     } catch {
       effacementLance.current = false;
