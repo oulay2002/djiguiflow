@@ -643,20 +643,36 @@ export default function Home() {
             </p>
           </div>
 
-          <nav className="flex flex-wrap gap-x-8 gap-y-3 text-sm">
-            <Link href="#metier" className="transition hover:text-white">
+          {/*
+            UNE SEULE LIGNE A PARTIR DE `lg`, ET C'EST STRUCTUREL.
+
+            Le septieme lien tombait a la ligne. On aurait pu raboter l'ecart
+            jusqu'a ce que ca rentre — mais un reglage cale sur UNE largeur se
+            defait a la suivante, et la prochaine entree du menu le referait
+            tomber sans prevenir.
+
+            `lg:flex-nowrap` interdit le retour a la ligne des que les deux
+            blocs sont cote a cote. Si le menu venait a manquer de place, c'est
+            le bloc de gauche qui cede — son paragraphe se rewrap, ce qui ne se
+            voit pas, plutot que le menu qui casse, ce qui se voit.
+
+            En dessous de `lg` le pied de page est empile : `flex-wrap` y reste
+            necessaire, et un menu sur deux lignes y est normal.
+          */}
+          <nav className="flex flex-wrap gap-x-6 gap-y-3 text-sm lg:flex-nowrap">
+            <Link href="#metier" className="whitespace-nowrap transition hover:text-white">
               Ce que ça change
             </Link>
-            <Link href="#tarifs" className="transition hover:text-white">
+            <Link href="#tarifs" className="whitespace-nowrap transition hover:text-white">
               Tarifs
             </Link>
-            <Link href="#questions" className="transition hover:text-white">
+            <Link href="#questions" className="whitespace-nowrap transition hover:text-white">
               Questions
             </Link>
-            <Link href="/boutiques" className="transition hover:text-white">
+            <Link href="/boutiques" className="whitespace-nowrap transition hover:text-white">
               Les boutiques
             </Link>
-            <Link href="/login" className="transition hover:text-white">
+            <Link href="/login" className="whitespace-nowrap transition hover:text-white">
               Connexion
             </Link>
             {/*
@@ -665,7 +681,7 @@ export default function Home() {
               offert, c'est un droit caché — et le pied de page est le seul
               endroit qu'une personne cherche instinctivement.
             */}
-            <Link href="/mes-donnees" className="transition hover:text-white">
+            <Link href="/mes-donnees" className="whitespace-nowrap transition hover:text-white">
               Mes données
             </Link>
             {/*
@@ -673,9 +689,14 @@ export default function Home() {
               Les cinq documents existaient et figuraient au sitemap, mais aucun
               lien du site n'y menait : seul celui qui connaissait l'URL pouvait
               les lire. Le pied de page est le premier endroit ou on les cherche.
+
+              Le libelle est celui que la page se donne a elle-meme. Il disait
+              « Mentions & confidentialite » : deux fois plus long, et il
+              annoncait deux documents la ou il y en a cinq — les CGU et les CGV
+              n'y etaient pas.
             */}
-            <Link href="/legal" className="transition hover:text-white">
-              Mentions & confidentialité
+            <Link href="/legal" className="whitespace-nowrap transition hover:text-white">
+              Documents légaux
             </Link>
           </nav>
         </div>
