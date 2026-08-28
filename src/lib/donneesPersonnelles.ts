@@ -65,6 +65,26 @@ export type Traitement = {
   /** Les données, dites comme on les dirait à la personne — pas des noms de colonnes. */
   donnees: string[];
   finalite: string;
+  /**
+   * La durée, en deux ou trois mots — de quoi la LIRE EN COLONNE.
+   *
+   * POURQUOI CE CHAMP EXISTE, ALORS QUE `conservation` DIT DÉJÀ LA DURÉE.
+   * Parce que `conservation` est une phrase, et que quatre d'entre elles
+   * dépassent cent signes — jusqu'à 147. L'écran des droits les affichait en
+   * monospace, au nom de « la règle du chiffre en mono », et rendait donc de
+   * la prose en police de code : huit résumés de 48 à 116 px de haut, un
+   * registre « replié » de 800 px. DESIGN.md dit pourtant que « IBM Plex Mono
+   * n'est pas une police de code ici ».
+   *
+   * Ce champ porte ce que la règle visait réellement : une valeur que l'œil
+   * compare d'une ligne à l'autre. `conservation` garde l'explication, et
+   * n'est pas modifiée — le registre de l'admin et les documents juridiques
+   * la citent telle quelle.
+   *
+   * Court veut dire COURT : au-delà d'une vingtaine de signes, la colonne
+   * cesse de se lire et le résumé redevient un paragraphe.
+   */
+  duree: string;
   conservation: string;
   /** Qui d'autre y a accès. Un hébergeur en est un. */
   destinataires: string[];
@@ -97,6 +117,7 @@ export const TRAITEMENTS: Traitement[] = [
       'l’heure de retrait, si vous venez chercher la commande',
     ],
     finalite: 'Préparer votre commande, vous la livrer, et vous permettre de la suivre.',
+    duree: '12 mois',
     conservation:
       '12 mois après la fin de la commande, puis votre identité est effacée. '
       + 'Le montant et la date restent, sans vous : c’est la comptabilité du marchand.',
@@ -117,6 +138,7 @@ export const TRAITEMENTS: Traitement[] = [
     finalite:
       'Reprendre une commande interrompue, et permettre au marchand de mesurer '
       + 'combien de paniers n’aboutissent pas.',
+    duree: '30 jours',
     conservation: '30 jours, puis suppression complète.',
     destinataires: ['le marchand concerné', 'Supabase (hébergeur de la base)'],
     effacement: 'supprime',
@@ -130,6 +152,7 @@ export const TRAITEMENTS: Traitement[] = [
     finalite:
       'Tenir la règle « une relance par personne et par mois ». Sans cette trace, '
       + 'on vous relancerait à nouveau faute de se souvenir de l’avoir déjà fait.',
+    duree: '90 jours',
     conservation: '90 jours, puis suppression.',
     destinataires: ['le marchand concerné', 'Supabase (hébergeur de la base)'],
     effacement: 'supprime',
@@ -141,6 +164,7 @@ export const TRAITEMENTS: Traitement[] = [
     ou: 'Base de données (table « livraisons »)',
     donnees: ['la note que vous avez donnée', 'le commentaire que vous avez écrit'],
     finalite: 'Permettre au marchand de suivre la qualité du service de livraison.',
+    duree: 'Avec la livraison',
     conservation:
       'Aussi longtemps que la livraison, dont elle fait partie. Le commentaire '
       + 'est retiré en même temps que votre identité.',
@@ -154,6 +178,7 @@ export const TRAITEMENTS: Traitement[] = [
     ou: 'Base de données (table « relances_stop »)',
     donnees: ['votre numéro de téléphone', 'la boutique et la date du refus'],
     finalite: 'Ne plus jamais vous envoyer de relance commerciale.',
+    duree: 'Sans limite',
     conservation: 'Sans limite de durée, tant que le refus doit être honoré.',
     destinataires: ['le marchand concerné', 'Supabase (hébergeur de la base)'],
     effacement: 'garde',
@@ -170,6 +195,7 @@ export const TRAITEMENTS: Traitement[] = [
     ou: 'Base de données (table « demandes_droits »)',
     donnees: ['votre numéro de téléphone', 'la nature de la demande et sa date'],
     finalite: 'Pouvoir prouver, plus tard, que votre demande a bien été honorée.',
+    duree: 'Sans limite',
     conservation: 'Sans limite de durée.',
     destinataires: ['l’administrateur de la plateforme', 'Supabase (hébergeur de la base)'],
     effacement: 'garde',
@@ -190,6 +216,7 @@ export const TRAITEMENTS: Traitement[] = [
     finalite:
       'Permettre au marchand de retrouver ce qui vous a été dit, et de comprendre '
       + 'un message qui ne vous serait pas parvenu.',
+    duree: 'Chez le marchand',
     conservation:
       'Aussi longtemps que le marchand garde sa feuille de calcul. Cette copie '
       + 'n’est pas effacée par la purge automatique.',
@@ -216,6 +243,7 @@ export const TRAITEMENTS: Traitement[] = [
     finalite:
       'Détecter les tentatives d’accès aux commandes d’autrui et les pannes. '
       + 'Ces lignes ne portent pas votre nom.',
+    duree: 'Chez l’hébergeur',
     conservation: 'Selon la durée propre à l’hébergeur, hors de notre maîtrise.',
     destinataires: ['Vercel', 'l’hébergeur du serveur d’automatisation'],
     effacement: 'garde',
@@ -236,6 +264,7 @@ export const TRAITEMENTS: Traitement[] = [
       'l’abonnement, les paiements et les préférences de notification',
     ],
     finalite: 'Faire fonctionner la boutique, encaisser l’abonnement, envoyer les alertes.',
+    duree: 'Durée du compte',
     conservation: 'Tant que le compte existe.',
     destinataires: [
       'Supabase (hébergeur de la base)',
@@ -258,6 +287,7 @@ export const TRAITEMENTS: Traitement[] = [
       'les livraisons effectuées et la rémunération associée',
     ],
     finalite: 'Affecter les livraisons, suivre la course, calculer la rémunération.',
+    duree: 'Durée du rattachement',
     conservation: 'Tant que le livreur est rattaché à une boutique.',
     destinataires: ['le marchand qui l’emploie', 'Supabase (hébergeur de la base)'],
     effacement: 'garde',

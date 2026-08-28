@@ -37,6 +37,7 @@ type Traitement = {
   nom: string;
   donnees: string[];
   finalite: string;
+  duree: string;
   conservation: string;
   destinataires: string[];
   effacement: 'anonymise' | 'supprime' | 'garde';
@@ -704,20 +705,25 @@ function Ecran() {
                           l'ecran portaient deja ce meme 14/500. */}
                       <h3 className="min-w-0 text-sm font-semibold text-nuit-900">{t.nom}</h3>
                       {/*
-                        `min-w-0` ET PAS `shrink-0` — c'est un correctif de
-                        regression, introduite par le repliage lui-meme.
-                        `shrink-0` interdisait a la duree de ceder : a 200 % de
-                        texte, « 3 ans apres la derniere commande » reclamait
-                        423 px dans un `summary` qui en fait 322, ecrasait le
-                        titre voisin a 26 px, et poussait le document a 554 px
-                        pour une fenetre de 360. Le retrait du seul
-                        `flex-shrink` le ramene a 386.
-                        `font-mono` : ces durees se comparent d'une ligne a
-                        l'autre — c'est la regle du chiffre en mono, et elles
-                        ne s'alignaient pas.
+                        `t.duree` ET PAS `t.conservation` — C'EST LE CORRECTIF.
+                        On affichait ici la PHRASE de conservation, en mono, au
+                        nom de « la regle du chiffre en mono ». Quatre des dix
+                        phrases depassent cent signes, jusqu'a 147 : le resume
+                        rendait donc de la prose en police de code, sur trois a
+                        cinq lignes, et le registre « replie » faisait 800 px.
+                        DESIGN.md dit pourtant que « IBM Plex Mono n'est pas une
+                        police de code ici ».
+                        Le calibrage precedent avait ete fait contre l'exemple
+                        « 3 ans apres la derniere commande » — une valeur qui
+                        n'existe pas dans l'inventaire. `duree` porte ce que la
+                        regle visait vraiment : une valeur courte que l'oeil
+                        compare d'une ligne a l'autre. La phrase, elle, descend
+                        dans le corps deplie.
+                        `min-w-0` reste : a 200 % de texte, une duree doit
+                        pouvoir ceder plutot que pousser le document.
                       */}
                       <span className="flex min-w-0 items-center gap-2 font-mono text-xs text-chaux-600">
-                        {t.conservation}
+                        {t.duree}
                         {/* `shrink-0` SUR L'ICONE, `min-w-0` sur le texte :
                             c'est le texte qui doit ceder, jamais le chevron.
                             Sans lui, a 200 % l'icone s'ecrasait a une largeur
@@ -733,6 +739,14 @@ function Ecran() {
                     </summary>
 
                     <p className="mt-2 text-sm text-chaux-600">{t.finalite}</p>
+
+                    {/* La phrase de conservation, la ou elle a la place d'etre
+                        lue : dans le corps deplie, en texte courant, et non
+                        comprimee en monospace dans un resume. */}
+                    <p className="mt-2 text-sm text-chaux-600">
+                      <strong className="font-medium text-nuit-900">Durée :</strong>{' '}
+                      {t.conservation}
+                    </p>
 
                     <p className="mt-2 text-xs font-semibold uppercase tracking-[0.12em] text-chaux-600">
                       Données
