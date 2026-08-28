@@ -153,7 +153,7 @@ Les données ne sont ni vendues, ni louées, ni cédées à des tiers à des fin
 
 | Sous-traitant | Rôle | Données concernées | Implantation |
 |---|---|---|---|
-| **Vercel Inc.** | Hébergement de l'application | Données transitant par le service | États-Unis |
+| **Vercel Inc.** | Hébergement de l'application | Données transitant par le service | Société de droit américain ; **traitement en France** (Paris, `cdg1`) |
 | **Supabase Inc.** | Base de données, authentification | Ensemble des données stockées | **France** (Paris, `eu-west-3`) |
 | **n8n** (auto-hébergé) | Automatisation des traitements | Commandes, messages, notifications | **France** (Paris, Hostinger) |
 | **Mistral AI** | Modèle de langage de l'Assistante | Contenu des messages échangés | Union européenne |
@@ -165,7 +165,11 @@ Les données ne sont ni vendues, ni louées, ni cédées à des tiers à des fin
 
 Certains sous-traitants sont établis hors de Côte d'Ivoire. Ces transferts sont nécessaires à l'exécution du service et encadrés par les engagements contractuels de ces prestataires.
 
-> **[À COMPLÉTER avant publication]** — La loi n° 2013-450 encadre les transferts vers les pays n'assurant pas un niveau de protection suffisant. Vérifier avec un conseil si une autorisation préalable de l'ARTCI est requise pour les transferts vers les États-Unis, et documenter les garanties obtenues de chaque sous-traitant.
+**Les données sont traitées et stockées en France.** La base de données, le serveur d'automatisation et l'exécution de l'application se trouvent tous à Paris. Le modèle de langage de l'Assistante est établi dans l'Union européenne. Deux prestataires font exception : la passerelle WhatsApp, dont le siège est au Royaume-Uni et dont la localisation des serveurs n'est pas publiée, et Telegram, selon ses propres conditions.
+
+Vercel et Supabase sont des sociétés de droit américain, mais **le traitement lui-même n'a pas lieu aux États-Unis** : il a été délibérément fixé en France. Cette distinction — nationalité du prestataire d'une part, lieu du traitement d'autre part — est le point à soumettre au conseil ci-dessous.
+
+> **[À COMPLÉTER avant publication]** — La loi n° 2013-450 encadre les transferts vers les pays n'assurant pas un niveau de protection suffisant. Vérifier avec un conseil si une autorisation préalable de l'ARTCI est requise, sachant que le traitement a lieu en France mais que deux prestataires sont de nationalité américaine, et obtenir de la passerelle WhatsApp la localisation de ses serveurs.
 
 ### 6.4 Autorités
 
