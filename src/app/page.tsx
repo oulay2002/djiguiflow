@@ -668,6 +668,15 @@ export default function Home() {
             <Link href="/mes-donnees" className="transition hover:text-white">
               Mes données
             </Link>
+            {/*
+              UNE POLITIQUE QUE PERSONNE NE PEUT ATTEINDRE N'EST PAS PUBLIEE.
+              Les cinq documents existaient et figuraient au sitemap, mais aucun
+              lien du site n'y menait : seul celui qui connaissait l'URL pouvait
+              les lire. Le pied de page est le premier endroit ou on les cherche.
+            */}
+            <Link href="/legal" className="transition hover:text-white">
+              Mentions & confidentialité
+            </Link>
           </nav>
         </div>
 

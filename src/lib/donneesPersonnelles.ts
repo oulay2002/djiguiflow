@@ -178,6 +178,33 @@ export const TRAITEMENTS: Traitement[] = [
       + 'effacer la preuve qu’on vous a obéi.',
   },
   {
+    cle: 'messages',
+    nom: 'Les messages échangés avec la boutique',
+    concerne: ['client'],
+    ou: 'Feuille de calcul Google du marchand (« Logs_Envois ») et serveur d’automatisation',
+    donnees: [
+      'le texte des messages qui vous ont été envoyés',
+      'le numéro ou l’identifiant auquel ils ont été adressés',
+      'la date et le canal utilisé',
+    ],
+    finalite:
+      'Permettre au marchand de retrouver ce qui vous a été dit, et de comprendre '
+      + 'un message qui ne vous serait pas parvenu.',
+    conservation:
+      'Aussi longtemps que le marchand garde sa feuille de calcul. Cette copie '
+      + 'n’est pas effacée par la purge automatique.',
+    destinataires: [
+      'le marchand concerné',
+      'Google (la feuille de calcul est hébergée chez lui)',
+      'le fournisseur du canal — WhatsApp ou Telegram',
+    ],
+    effacement: 'garde',
+    pourquoi:
+      'Cette copie vit dans le tableur du marchand, hors de portée de cet écran. '
+      + 'Elle relève de lui, et c’est à lui qu’il faut la demander. Le dire est '
+      + 'préférable à laisser croire qu’un effacement l’emporte.',
+  },
+  {
     cle: 'journaux_techniques',
     nom: 'Journaux techniques',
     concerne: ['client', 'marchand', 'livreur'],
@@ -264,6 +291,13 @@ export const HORS_DE_PORTEE: { quoi: string; pourquoi: string }[] = [
       + 'utilise pour son suivi. Cette copie porte votre nom, votre téléphone et '
       + 'votre adresse. Elle n’est pas effacée par cet écran : demandez-la au '
       + 'marchand, qui en est responsable.',
+  },
+  {
+    quoi: 'Le journal des messages qui vous ont été envoyés',
+    pourquoi:
+      'Le texte de chaque message, et le numéro auquel il a été adressé, sont '
+      + 'consignés dans le même tableur. Cette copie appartient au marchand et '
+      + 'échappe à cet écran, comme la précédente.',
   },
   {
     quoi: 'Les sauvegardes des jours précédents',

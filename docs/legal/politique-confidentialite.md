@@ -63,6 +63,8 @@ Chaque Marchand demeure responsable de la licéité de la collecte auprès de se
 
 **L'identifiant de conversation est une donnée personnelle.** Ce n'est pas un nom, mais c'est l'adresse par laquelle une personne peut être jointe : il est traité comme telle, et anonymisé au même titre que le nom.
 
+**Où vit le contenu des messages.** Les messages échangés ne sont pas conservés dans la base de la Plateforme. Ils demeurent chez le fournisseur du canal — WhatsApp ou Telegram — et le texte de ceux qui ont été **envoyés** au Client final est consigné, avec son destinataire, dans la feuille de calcul du Marchand (article 5.3).
+
 **Aucune donnée bancaire n'est traitée.** Le prix des commandes est réglé directement entre le Client final et le Marchand ; il ne transite jamais par la Plateforme, qui n'enregistre aucune donnée de paiement des commandes.
 
 ### 3.3 Livreur
@@ -127,6 +129,14 @@ L'anonymisation est irréversible.
 ### 5.2 Seules les commandes closes sont concernées
 
 Une commande n'est anonymisée que si elle est **close** — livrée, annulée ou abandonnée. Une commande de treize mois encore « en attente » n'est pas une donnée à effacer : c'est une anomalie à examiner.
+
+### 5.3 Ce que le traitement périodique n'atteint pas
+
+Les durées ci-dessus s'appliquent à la **base de données** de la Plateforme.
+
+Elles ne s'appliquent pas à la **feuille de calcul du Marchand** : chaque commande y est également écrite, avec le nom, le numéro de téléphone, l'adresse et l'identifiant de conversation du Client final, ainsi que le texte des messages qui lui ont été envoyés. Cette copie relève du Marchand, qui en est le responsable de traitement, et aucune purge automatique ne s'y applique aujourd'hui.
+
+Ce point figure ici, à l'endroit même où les durées sont annoncées, et non en note de fin : une durée énoncée sans sa limite vaudrait engagement sur une donnée dont la Plateforme ne se sépare pas. Il est également indiqué au Client final sur la page « Mes données », avant qu'il ne demande un effacement.
 
 ## Article 6 — Destinataires et sous-traitants
 

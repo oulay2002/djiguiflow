@@ -1,6 +1,7 @@
 'use client';
 
 import { Suspense, useCallback, useEffect, useState } from 'react';
+import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { ShieldCheck, Trash2, TriangleAlert } from 'lucide-react';
 import { Bouton, LienRetour } from '@/components/ui/Bouton';
@@ -177,6 +178,20 @@ function Ecran() {
       <p className="mt-2 text-chaux-600" style={{ fontSize: 'var(--text-chapeau)' }}>
         Voyez ce que DjiguiFlow détient à votre sujet, pourquoi, et pendant combien de
         temps. Vous pouvez en demander l’effacement.
+      </p>
+      {/*
+        L'ECRAN MONTRE, LA POLITIQUE ENGAGE. L'un dit ce qu'on detient sur VOUS,
+        l'autre ce a quoi la plateforme s'oblige envers tout le monde. Renvoyer
+        de l'un a l'autre evite que le second ne soit qu'une page que personne
+        n'ouvre.
+      */}
+      <p className="mt-2 text-sm">
+        <Link
+          href="/legal/confidentialite"
+          className="text-chaux-600 underline underline-offset-4 transition hover:text-nuit-800"
+        >
+          Lire la politique de confidentialité
+        </Link>
       </p>
 
       {efface && <ApresEffacement etat={efface} />}

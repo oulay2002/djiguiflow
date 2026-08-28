@@ -74,7 +74,8 @@ export async function GET(req: Request) {
       'Personne désignée comme point de contact auprès de l’ARTCI',
       'Numéro de déclaration ARTCI, une fois la déclaration effectuée',
       'Analyse des transferts hors Côte d’Ivoire (Supabase, Vercel, hébergeur du serveur d’automatisation, Google) et garanties associées',
-      'Politique de confidentialité publique, à rédiger avec un conseil',
+      'Relecture des cinq documents de docs/legal/ par un conseil ivoirien : ils existent, ils portent encore des marqueurs « à compléter », et ils restent hors index tant qu’il en reste un',
+      'Décision sur la copie Google Sheets : cesser d’y écrire l’identité du client, ou y porter la purge — aujourd’hui les durées ne valent que pour la base',
     ],
   });
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import { Suspense, useCallback, useEffect, useState } from 'react';
+import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { classesBouton } from '@/components/ui/Bouton';
@@ -534,12 +535,12 @@ function Suivre() {
               deux fois ce qu'il a déjà donné.
             */}
             <p className="mt-3 text-center text-sm">
-              <a
+              <Link
                 href={`/mes-donnees?ref=${encodeURIComponent(ref)}${jetonUrl ? `&t=${encodeURIComponent(jetonUrl)}` : ''}`}
                 className="text-chaux-600 underline underline-offset-4 transition hover:text-nuit-800"
               >
                 Voir ou effacer les données que nous gardons sur vous
-              </a>
+              </Link>
             </p>
           </>
         )}
