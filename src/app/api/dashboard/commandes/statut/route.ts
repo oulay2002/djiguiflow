@@ -1,7 +1,5 @@
-import { readSheet, readHeaders, updateCells } from '@/lib/googleSheets';
 import { exigerAccesMarchand } from '@/lib/dashboardAuth';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
-import type { Marchand } from '@/lib/marchands';
 import { canalDeReponse, envoyerMessage } from '@/lib/canaux';
 import { boutiqueLivre } from '@/lib/boutiquePrete';
 import { heureRetraitLisible } from '@/lib/retrait';
@@ -13,8 +11,13 @@ import { heureRetraitLisible } from '@/lib/retrait';
  * toute chose et renvoyait 503 des que Google Sheets refusait — un quota
  * sature empechait donc le marchand de passer une commande en « livree »
  * alors que son tableau de bord, qui lit Supabase, fonctionnait parfaitement.
- * La feuille est desormais mise a jour apres coup, en miroir, sans pouvoir
- * bloquer l'action.
+ * La feuille fut ensuite mise a jour apres coup, en miroir, sans pouvoir
+ * bloquer l'action ; le 28 aout 2026 elle n'est plus ecrite du tout.
+ *
+ * CE QUE LE MIROIR COUTAIT ENCORE. Pour un seul changement de statut il
+ * relisait l'onglet ENTIER, puis ecrivait jusqu'a deux cellules — trois appels
+ * Google sur le chemin d'un geste que le marchand fait dix fois par jour. La
+ * reponse portait meme son verdict (`miroir`), que personne n'affichait.
  */
 
 type Admin = NonNullable<ReturnType<typeof getSupabaseAdmin>>;
@@ -48,62 +51,6 @@ const STATUTS_METIER: Record<string, string> = {
   livree: 'livree',
 };
 
-/** A, B, … Z, AA, AB… */
-function lettreColonne(idx: number): string {
-  let n = idx + 1;
-  let s = '';
-  while (n > 0) {
-    const r = (n - 1) % 26;
-    s = String.fromCharCode(65 + r) + s;
-    n = Math.floor((n - 1) / 26);
-  }
-  return s;
-}
-
-/**
- * Reporte le statut dans la feuille du marchand.
- *
- * Ne leve jamais : les workflows n8n lisent encore la feuille, mais le
- * marchand, lui, lit Supabase. Un echec ici ne doit pas lui refuser l'action.
- */
-async function refleterDansFeuille(
-  m: Marchand,
-  orderId: string,
-  statutLivraison: string,
-  action: string,
-  maintenant: string,
-): Promise<'ok' | 'absente' | 'echec'> {
-  try {
-    const entetes = await readHeaders(`${m.sheetCommandes}!A1:Z1`, m.sheetId);
-    const lignes = await readSheet(`${m.sheetCommandes}!A:Z`, m.sheetId);
-
-    const i = lignes.findIndex((r) => String(r.order_id || '').trim() === orderId);
-    if (i === -1) return 'absente';
-
-    const numeroLigne = i + 2; // +1 en-tete, +1 index 1-based
-    const colonne = (nom: string) => {
-      const idx = entetes.indexOf(nom);
-      return idx >= 0 ? lettreColonne(idx) : null;
-    };
-
-    const cStatut = colonne('statut_livraison');
-    if (cStatut) {
-      await updateCells(`${m.sheetCommandes}!${cStatut}${numeroLigne}`, [[statutLivraison]], m.sheetId);
-    }
-    if (action === 'acceptee') {
-      const c = colonne('heure_prise_en_charge');
-      if (c) await updateCells(`${m.sheetCommandes}!${c}${numeroLigne}`, [[maintenant]], m.sheetId);
-    }
-    if (action === 'livree') {
-      const c = colonne('heure_livraison');
-      if (c) await updateCells(`${m.sheetCommandes}!${c}${numeroLigne}`, [[maintenant]], m.sheetId);
-    }
-    return 'ok';
-  } catch (e) {
-    console.error(`Statut ${orderId} — miroir ${m.sheetCommandes} impossible :`, e);
-    return 'echec';
-  }
-}
 
 export async function POST(req: Request) {
   const { order_id, action, boutique_id } = await req.json();
@@ -173,10 +120,7 @@ export async function POST(req: Request) {
     return Response.json({ error: 'Mise a jour impossible, reessayez' }, { status: 503 });
   }
 
-  // ---- 2. Miroir feuille, jamais bloquant.
-  const miroir = await refleterDansFeuille(m, reference, statutLivraison, action, maintenant);
-
-  // ---- 3. Notification WhatsApp au client.
+  // ---- 2. Notification WhatsApp au client.
   //
   // L'envoi partait vers `N8N_NOTIF_CLIENT_URL`, qui pointe sur le webhook
   // `notif-client`. Or ce chemin n'existe pas : verifie le 12 aout 2026, il
@@ -244,5 +188,5 @@ export async function POST(req: Request) {
     }
   }
 
-  return Response.json({ ok: true, boutique_id: m.id, statut: statutLivraison, miroir, notif });
+  return Response.json({ ok: true, boutique_id: m.id, statut: statutLivraison, notif });
 }

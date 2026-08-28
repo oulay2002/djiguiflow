@@ -131,7 +131,32 @@ export type ContenuLegal = {
  * Separee de la lecture disque pour etre testable sans fichier.
  */
 export function analyserDocument(brut: string): ContenuLegal {
-  const markdown = brut.replace(NOTE_REDACTION, '\n').trimEnd();
+  /**
+   * LES FINS DE LIGNE SONT NORMALISÉES AVANT TOUT, ET CE N'EST PAS COSMÉTIQUE.
+   *
+   * En JavaScript, `.` ne franchit AUCUN terminateur de ligne — `\n`, mais
+   * aussi `\r`. Sur un fichier en CRLF, `(?:>.*\n?)+` s'arrête donc après la
+   * PREMIÈRE ligne de la note, l'ancre `$` échoue, et la note entière reste
+   * dans le document.
+   *
+   * Git stocke ces fichiers en LF et les rend en CRLF dans une copie de
+   * travail Windows. Le même code se comportait donc différemment sur le poste
+   * de développement et en production — où tout allait bien, la construction
+   * se faisant sous Linux.
+   *
+   * ── POURQUOI CORRIGER UN DÉFAUT QUI N'ATTEINT PAS LA PRODUCTION ────────────
+   *
+   * Parce qu'il fausse le COMPTAGE. Le 28 août 2026, le marqueur vivant dans
+   * la note des mentions légales — celui qui dit « les mentions à compléter
+   * doivent être renseignées », et qui disparaîtra à la publication — était
+   * compté localement comme un trou à combler. On croyait attendre une
+   * information qu'on possédait déjà.
+   *
+   * Et le jour où un `.gitattributes` figerait le CRLF, ou qu'on construirait
+   * sous Windows, la note partirait en ligne. Un défaut qui ne se voit que
+   * d'un côté finit toujours par passer de l'autre.
+   */
+  const markdown = brut.replace(/\r\n/g, '\n').replace(NOTE_REDACTION, '\n').trimEnd();
 
   // `matchAll` sur une copie globale : `MARQUEUR` n'est pas globale, et lui
   // ajouter le drapeau `g` la rendrait porteuse d'un `lastIndex` partage entre
@@ -160,13 +185,41 @@ export async function lireDocument(doc: DocumentLegal): Promise<ContenuLegal> {
   return analyserDocument(await fs.readFile(chemin, 'utf8'));
 }
 
-/** Les documents sans marqueur : les seuls a lier et a soumettre aux moteurs. */
-export async function documentsPubliables(): Promise<DocumentLegal[]> {
+/**
+ * Le dossier est-il complet ? TOUS les documents, ou aucun.
+ *
+ * ── POURQUOI CETTE REGLE EXISTE, ET CE QUI L'A REVELEE ─────────────────────
+ *
+ * Le 28 aout 2026, remplir la date de mise en ligne a retire le DERNIER
+ * marqueur des CGU. Elles sont donc devenues publiables a elles seules —
+ * indexees, au sitemap, sans bandeau — alors que les mentions legales, elles,
+ * attendaient toujours l'adresse de l'exploitant.
+ *
+ * Un visiteur aurait lu des CGU en apparence definitives, qui renvoient a des
+ * mentions legales portant « ce document est un projet ». Et surtout : des
+ * conditions opposables auraient ete publiees sans que l'editeur soit
+ * identifiable, ce qui est exactement le manquement que les mentions legales
+ * existent pour empecher.
+ *
+ * ── POURQUOI TOUT OU RIEN, PLUTOT QU'UN GRAPHE DE DEPENDANCES ──────────────
+ *
+ * On aurait pu declarer que les CGU dependent des mentions legales, les CGV
+ * des CGU, et ainsi de suite. Mais les cinq documents se citent
+ * mutuellement — la politique renvoie aux CGU pour l'instruction permanente,
+ * les CGU renvoient a la politique pour les donnees — et un graphe qu'il faut
+ * tenir a jour a la main finit par mentir.
+ *
+ * Ces cinq documents sont UN dossier. Il se relit d'un bloc, se fait valider
+ * d'un bloc, et se publie d'un bloc.
+ */
+export async function dossierComplet(): Promise<boolean> {
   const états = await Promise.all(
-    DOCUMENTS_LEGAUX.map(async (doc) => ({
-      doc,
-      publiable: (await lireDocument(doc)).publiable,
-    })),
+    DOCUMENTS_LEGAUX.map(async (doc) => (await lireDocument(doc)).publiable),
   );
-  return états.filter((e) => e.publiable).map((e) => e.doc);
+  return états.every(Boolean);
+}
+
+/** Les documents a lier et a soumettre aux moteurs — les cinq, ou aucun. */
+export async function documentsPubliables(): Promise<DocumentLegal[]> {
+  return (await dossierComplet()) ? DOCUMENTS_LEGAUX : [];
 }

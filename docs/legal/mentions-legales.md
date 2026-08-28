@@ -1,22 +1,21 @@
 # Mentions légales
 
-**Dernière mise à jour : [À COMPLÉTER : date de mise en ligne]**
+**Dernière mise à jour : 5 septembre 2026**
 
 ## 1. Éditeur du service
 
 Le service DjiguiFlow, accessible à l'adresse <https://www.djiguiflow.com>, est édité par :
 
-- **Exploitant** : [À COMPLÉTER : nom et prénoms de l'exploitant]
+- **Exploitant** : OULAÏ Jean Paul
 - **Forme** : entreprise individuelle
-- **Adresse** : [À COMPLÉTER : adresse complète — commune, quartier, Abidjan / Côte d'Ivoire]
-- **Numéro de registre** : [À COMPLÉTER : RCCM, ou « immatriculation en cours »]
-- **Numéro de compte contribuable** : [À COMPLÉTER, ou supprimer cette ligne]
-- **Téléphone** : [À COMPLÉTER]
+- **Adresse** : Akouédo Synacassci, Rue G11 — Abidjan, Côte d'Ivoire
+- **Numéro de registre** : RCCM CI-AGB-2021-A-307
+- **Téléphone** : +225 01 02 91 88 86
 - **Courriel** : contact@djiguiflow.com
 
 ## 2. Directeur de la publication
 
-[À COMPLÉTER : nom et prénoms], en qualité d'exploitant.
+OULAÏ Jean Paul, en qualité d'exploitant.
 
 ## 3. Hébergement
 
@@ -26,7 +25,7 @@ Le service est hébergé et exploité au moyen des prestataires suivants :
 |---|---|
 | Hébergement de l'application web | Vercel Inc. — 440 N Barranca Ave #4133, Covina, CA 91723, États-Unis |
 | Base de données et authentification | Supabase Inc. — 970 Toa Payoh North, Singapour |
-| Automatisation des traitements | Serveur privé virtuel exploité par [À COMPLÉTER : hébergeur du VPS n8n et pays d'implantation] |
+| Automatisation des traitements | Serveur privé virtuel — Hostinger International Limited, Paris, France |
 
 La liste complète des prestataires qui traitent des données personnelles, et les garanties associées, figure dans la [Politique de confidentialité](politique-confidentialite.md).
 
@@ -34,7 +33,7 @@ La liste complète des prestataires qui traitent des données personnelles, et l
 
 - Questions générales et commerciales : contact@djiguiflow.com
 - Support technique : support@djiguiflow.com
-- Protection des données : [À COMPLÉTER : adresse dédiée, par exemple donnees@djiguiflow.com]
+- Protection des données : donnees@djiguiflow.com
 
 ## 5. Propriété intellectuelle
 

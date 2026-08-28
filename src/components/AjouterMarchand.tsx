@@ -10,12 +10,9 @@ import { Bouton } from '@/components/ui/Bouton';
 type Succes = {
   slug: string;
   invite: boolean;
-  sheetCommandes: string;
-  sheetMenu: string;
-  ongletsCrees: string[];
 };
 
-/** « ROSE MonDE » -> « rosemonde » : miroir client de genererSlug (provisioning.ts). */
+/** « ROSE MonDE » -> « rosemonde » : miroir client de genererSlug (slug.ts). */
 function apercuSlug(nom: string): string {
   return nom
     .normalize('NFD')
@@ -43,7 +40,6 @@ export default function AjouterMarchand() {
   const [telephone, setTelephone] = useState('');
   const [emoji, setEmoji] = useState('🏪');
   const [groupeLivreurs, setGroupeLivreurs] = useState('');
-  const [creerOnglets, setCreerOnglets] = useState(true);
 
   useEffect(() => {
     let annule = false;
@@ -84,7 +80,6 @@ export default function AjouterMarchand() {
           nom, email, categorie, zone, telephone, emoji,
           whatsapp: telephone,
           groupe_livreurs: groupeLivreurs,
-          creer_onglets: creerOnglets,
         }),
       });
       const d = await r.json();
@@ -153,12 +148,6 @@ export default function AjouterMarchand() {
                         ? '📧 Invitation envoyée : le marchand reçoit un lien pour activer son compte.'
                         : '👤 Compte existant rattaché à cette boutique.'}
                     </li>
-                    <li>📄 Onglets : {succes.sheetCommandes} · {succes.sheetMenu}</li>
-                    <li>
-                      {succes.ongletsCrees.length
-                        ? `🆕 Créés : ${succes.ongletsCrees.join(', ')}`
-                        : '↩️ Onglets déjà présents, laissés intacts.'}
-                    </li>
                   </ul>
                 </div>
                 <Bouton onClick={fermer} className="w-full">
@@ -174,8 +163,7 @@ export default function AjouterMarchand() {
                 />
                 {slug && (
                   <p className="px-1 text-xs text-chaux-600">
-                    Identifiant : <span className="font-mono font-semibold">{slug}</span> · onglets{' '}
-                    <span className="font-mono">Commandes_{slug.replace(/-/g, '').replace(/^./, c => c.toUpperCase())}</span>
+                    Identifiant : <span className="font-mono font-semibold">{slug}</span>
                   </p>
                 )}
                 <input
@@ -212,15 +200,6 @@ export default function AjouterMarchand() {
                   placeholder="Groupe livreurs (JID WhatsApp / chat Telegram)"
                   className="w-full border border-[var(--hairline)] px-4 py-3 text-sm focus:border-mangue-400 focus:outline-none"
                 />
-
-                <label className="flex items-center gap-2 px-1 text-sm text-nuit-700">
-                  <input
-                    type="checkbox" checked={creerOnglets}
-                    onChange={e => setCreerOnglets(e.target.checked)}
-                    className="h-4 w-4 accent-mangue-600"
-                  />
-                  Créer les onglets Google Sheets
-                </label>
 
                 {erreur && (
                   <p className=" border border-bissap-200 bg-bissap-50 p-3 text-sm text-bissap-700">

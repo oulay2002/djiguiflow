@@ -4,6 +4,7 @@ import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import {
   CHAMPS_A_EFFACER,
   JOURS_PANIER_ABANDONNE,
+  JOURS_POSITION_GPS,
   JOURS_TRACE_RELANCE,
   MOIS_AVANT_ANONYMISATION,
   NOM_ANONYME,
@@ -63,11 +64,12 @@ export async function POST(req: Request) {
 
   const seuilPanier = iso(maintenant - JOURS_PANIER_ABANDONNE * 86_400_000);
   const seuilRelance = iso(maintenant - JOURS_TRACE_RELANCE * 86_400_000);
+  const seuilPosition = iso(maintenant - JOURS_POSITION_GPS * 86_400_000);
 
   const limiteCommande = new Date(maintenant);
   limiteCommande.setMonth(limiteCommande.getMonth() - MOIS_AVANT_ANONYMISATION);
 
-  const fait = { paniers: 0, commandes: 0, relances: 0, effacements: 0 };
+  const fait = { paniers: 0, commandes: 0, positions: 0, relances: 0, effacements: 0 };
   const erreurs: string[] = [];
 
   // ── 1. Paniers jamais convertis ────────────────────────────────────────
@@ -183,6 +185,46 @@ export async function POST(req: Request) {
     }
   }
 
+  // ── 3 bis. Positions GPS de plus de trente jours ───────────────────────
+  //
+  // ELLES NE SUIVENT PLUS LES DOUZE MOIS DE LA COMMANDE, et c'est le point de
+  // cette étape. Une position sert au livreur à trouver la porte ; le lendemain
+  // elle ne sert plus à personne, et la garder onze mois de plus revient à
+  // détenir le point exact du domicile de quelqu'un sans raison.
+  //
+  // L'ADRESSE EN TOUTES LETTRES RESTE : le marchand garde de quoi comprendre
+  // une livraison contestée. Seul le point GPS s'en va.
+  //
+  // On exige un statut CLOS, comme pour l'anonymisation : une commande encore
+  // en route a besoin de sa position.
+  {
+    const { data, error } = await sb
+      .from('commandes')
+      .select('id')
+      .in('statut', [...STATUTS_CLOS])
+      .lt('created_at', seuilPosition)
+      .or('latitude.not.is.null,longitude.not.is.null,position_livreur.not.is.null')
+      .limit(500);
+
+    if (error) erreurs.push(`positions illisibles : ${error.message}`);
+    else if (data?.length) {
+      fait.positions = data.length;
+      if (!essai) {
+        // Écrites en toutes lettres, comme l'anonymisation : une clé calculée
+        // élargirait le type de `update()` à n'importe quelle colonne, et sur
+        // une route qui efface, une faute de frappe efface la mauvaise chose.
+        const { error: errMaj } = await sb
+          .from('commandes')
+          .update({ latitude: null, longitude: null, position_livreur: null })
+          .in('id', data.map((c) => c.id));
+        if (errMaj) {
+          erreurs.push(`positions non effacees : ${errMaj.message}`);
+          fait.positions = 0;
+        }
+      }
+    }
+  }
+
   // ── 4. Les effacements demandés et pas encore achevés ──────────────────
   //
   // POURQUOI ILS REVIENNENT ICI. Une personne peut demander l'effacement alors
@@ -259,6 +301,7 @@ export async function POST(req: Request) {
     regles: {
       paniersJours: JOURS_PANIER_ABANDONNE,
       commandesMois: MOIS_AVANT_ANONYMISATION,
+      positionsJours: JOURS_POSITION_GPS,
       relancesJours: JOURS_TRACE_RELANCE,
       stop: 'jamais efface — un refus exerce ne se supprime pas',
     },

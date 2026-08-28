@@ -1,6 +1,6 @@
 # Politique livreurs
 
-**Dernière mise à jour : [À COMPLÉTER : date de mise en ligne]**
+**Dernière mise à jour : 5 septembre 2026**
 **Version : 1.0**
 
 Ce document s'adresse aux personnes qui assurent les livraisons pour une boutique utilisant DjiguiFlow, et aux marchands qui les rattachent à leur boutique.
@@ -68,9 +68,13 @@ Le partage de position est facultatif du point de vue de la Plateforme : refuser
 
 ### 4.4 Combien de temps
 
-La position rattachée à une commande est effacée **au plus tard lors de l'anonymisation de cette commande, douze (12) mois après sa clôture**, en même temps que les coordonnées du client final.
+La position rattachée à une commande est effacée **trente (30) jours après la clôture de cette commande**. Ce délai est appliqué automatiquement, chaque nuit, par un traitement de la Plateforme.
 
-> **[À COMPLÉTER — décision à prendre]** Douze mois est la durée héritée de la commande. Une position géographique n'a aucune utilité passé la livraison : envisager de l'effacer beaucoup plus tôt (par exemple 30 jours après la clôture de la commande) et de l'appliquer dans `src/lib/conservation.ts`. Ce serait la mesure la plus protectrice du dossier, et elle ne coûte rien aujourd'hui.
+Cette durée est plus courte que celle des autres données de la commande, et c'est délibéré : une position géographique sert à trouver une porte le jour de la livraison ; passé ce jour, elle ne sert plus à personne. La conserver douze mois, comme le reste de la commande, reviendrait à détenir sans raison le point exact d'un domicile.
+
+L'**adresse en toutes lettres** demeure jusqu'à l'anonymisation de la commande, à douze mois : le Marchand conserve de quoi comprendre une livraison contestée. Seul le point GPS disparaît.
+
+La même règle s'applique à la position que le Client final aurait partagée.
 
 ## Article 5 — Frais de livraison
 
@@ -86,7 +90,7 @@ Vous disposez des droits d'**accès**, de **rectification**, d'**effacement**, d
 
 ### 6.1 Comment les exercer
 
-Adressez-vous **au marchand auquel vous êtes rattaché**, qui est responsable de vos données. Vous pouvez également écrire à [À COMPLÉTER : donnees@djiguiflow.com] ; l'éditeur transmettra votre demande au marchand et vous accompagnera.
+Adressez-vous **au marchand auquel vous êtes rattaché**, qui est responsable de vos données. Vous pouvez également écrire à donnees@djiguiflow.com ; l'éditeur transmettra votre demande au marchand et vous accompagnera.
 
 Une réponse vous est due dans un délai de **trente (30) jours**.
 

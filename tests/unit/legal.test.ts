@@ -4,6 +4,7 @@ import {
   DOCUMENTS_LEGAUX,
   lireDocument,
   trouverDocument,
+  dossierComplet,
 } from '@/lib/legal';
 
 /**
@@ -104,6 +105,36 @@ describe('legal — la note de rédaction ne va pas à l écran', () => {
   });
 
   /**
+   * LE MÊME DOCUMENT DOIT DONNER LE MÊME RÉSULTAT SOUS WINDOWS ET SOUS LINUX.
+   *
+   * En JavaScript, `.` ne franchit aucun terminateur de ligne — `\n`, mais
+   * AUSSI `\r`. Sur un fichier en CRLF, `(?:>.*\n?)+` s'arrêtait donc après la
+   * première ligne de la note, l'ancre `$` échouait, et la note restait
+   * entière dans le document.
+   *
+   * Git stocke ces fichiers en LF et les rend en CRLF dans une copie de
+   * travail Windows : la production allait bien — elle se construit sous
+   * Linux — mais le poste de développement comptait un marqueur de plus, celui
+   * qui vit dans la note. On croyait attendre une information qu'on possédait
+   * déjà.
+   *
+   * Ce test échoue sur l'ancienne expression et passe sur la nouvelle. Sans
+   * lui, la correction se déferait au premier remaniement, et personne ne le
+   * verrait avant de publier une note « à supprimer avant publication ».
+   */
+  it('retire la note quelles que soient les fins de ligne', () => {
+    const lf = '# Titre\n\nLe texte.\n\n---\n\n> **Note.**\n> Vérifier [À COMPLÉTER : le RCCM].\n> Et la relire.\n';
+    const crlf = lf.replace(/\n/g, '\r\n');
+
+    for (const [nom, brut] of [['LF', lf], ['CRLF', crlf]] as const) {
+      const r = analyserDocument(brut);
+      expect(r.markdown, `${nom} : la note n’a pas été retirée`).not.toContain('Vérifier');
+      expect(r.marqueursRestants, `${nom} : marqueur de la note compté à tort`).toBe(0);
+      expect(r.publiable, `${nom} : document tenu pour incomplet à tort`).toBe(true);
+    }
+  });
+
+  /**
    * Une règle horizontale au MILIEU du document sépare deux sections ; elle ne
    * doit pas emporter tout ce qui la suit. Seule la note finale part.
    */
@@ -143,16 +174,50 @@ describe('legal — le registre des documents', () => {
   /**
    * L'ÉTAT DU JOUR, ET IL DOIT ÊTRE FAUX.
    *
-   * Les cinq documents portent aujourd'hui des marqueurs. Le jour où ce test
-   * échoue, c'est que les trous ont été comblés : les pages deviennent alors
-   * publiques d'elles-mêmes, et il faudra remplacer ce test par la vérification
-   * inverse. Ce n'est pas un test à supprimer sans y penser — c'est le moment
-   * de relire les cinq documents une dernière fois.
+   * Le jour où ce test échoue, c'est que les trous ont été comblés : les cinq
+   * pages deviennent alors publiques d'elles-mêmes, et il faudra le remplacer
+   * par la vérification inverse. Ce n'est pas un test à supprimer sans y
+   * penser — c'est le moment de relire les cinq documents une dernière fois.
+   *
+   * ── IL A DÉJÀ SERVI UNE FOIS, LE 28 AOÛT 2026 ──────────────────────────────
+   *
+   * Il portait alors sur CHAQUE document pris isolément. Renseigner la date de
+   * mise en ligne a retiré le dernier marqueur des CGU, et ce test est tombé
+   * en disant « cgu.md est devenu publiable » — exactement ce qu'il devait
+   * faire.
+   *
+   * Ce que la chute a révélé n'était pas une erreur de saisie : des CGU
+   * complètes seraient parties à l'indexation alors que les mentions légales
+   * attendaient toujours l'adresse de l'exploitant. Des conditions opposables
+   * publiées sans éditeur identifiable — le manquement même que les mentions
+   * légales existent pour empêcher.
+   *
+   * D'où `dossierComplet()` : les cinq se publient d'un bloc, ou aucun. Ce test
+   * porte donc désormais sur le dossier, et non plus sur chaque pièce.
    */
-  it('aucun document n est encore publiable — ils sont tous des projets', async () => {
-    for (const doc of DOCUMENTS_LEGAUX) {
-      const contenu = await lireDocument(doc);
-      expect(contenu.publiable, `${doc.fichier} est devenu publiable`).toBe(false);
-    }
+  it('le dossier n est pas encore publiable — il se publie d un bloc', async () => {
+    expect(await dossierComplet(), 'le dossier est devenu publiable').toBe(false);
+  });
+
+  /**
+   * ET IL FAUT QUE CE SOIT POUR UNE VRAIE RAISON.
+   *
+   * Sans ce second contrôle, `dossierComplet()` pourrait rendre `false` par
+   * accident — un fichier illisible, un chemin faux — et l'on croirait le
+   * dossier retenu par un trou à combler alors qu'il serait retenu par une
+   * panne. Au moins un document doit porter un marqueur, et l'on veut savoir
+   * lequel.
+   */
+  it('ce qui retient la publication est bien un marqueur, pas une panne', async () => {
+    const restants = await Promise.all(
+      DOCUMENTS_LEGAUX.map(async (doc) => ({
+        fichier: doc.fichier,
+        marqueurs: (await lireDocument(doc)).marqueursRestants,
+      })),
+    );
+    const total = restants.reduce((s, r) => s + r.marqueurs, 0);
+    const detail = restants.map((r) => `${r.fichier}=${r.marqueurs}`).join(', ');
+
+    expect(total, `aucun marqueur nulle part (${detail})`).toBeGreaterThan(0);
   });
 });

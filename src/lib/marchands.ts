@@ -1,5 +1,31 @@
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
-import { nomsOngletsParDefaut } from '@/lib/provisioning';
+
+/*
+  CETTE CONVENTION DE NOMMAGE A SURVECU A GOOGLE SHEETS, ET C'EST VOULU.
+
+  Elle vivait dans `provisioning.ts`, qui creait les onglets. Le 28 aout 2026
+  l'app a cesse d'appeler Google : plus une seule ligne n'est ecrite ni lue
+  dans un classeur. Restent les champs `sheet_commandes` et `sheet_menu` de la
+  fiche, que les workflows n8n se passent encore de noeud en noeud — sans
+  jamais s'en servir pour appeler Google, puisqu'ils n'ont plus un seul noeud
+  Google (verifie : 23 workflows actifs, 0 noeud).
+
+  On ne les retire donc PAS d'ici : rendre `undefined` la ou une chaine etait
+  attendue casserait une expression n8n en silence, et c'est du nettoyage
+  cote n8n, pas cote application. Ce commentaire dit pourquoi ce code a l'air
+  mort et ne l'est pas encore tout a fait.
+*/
+
+/** « rosemonde » -> « Rosemonde », pour composer un nom d'onglet lisible. */
+function capitaliser(slug: string): string {
+  const compact = slug.replace(/-/g, '');
+  return compact.charAt(0).toUpperCase() + compact.slice(1);
+}
+
+export function nomsOngletsParDefaut(slug: string) {
+  const suffixe = capitaliser(slug);
+  return { sheetCommandes: `Commandes_${suffixe}`, sheetMenu: `Menu_${suffixe}` };
+}
 
 export type Marchand = {
   id: string;
@@ -17,9 +43,13 @@ export type Marchand = {
    * l'oubliait, et la fiche n'avait donc rien a afficher.
    */
   logo: string;
-  sheetId: string;
+  /*
+    `sheetId` ET `sheetMenu` SONT PARTIS le 28 aout 2026 : plus personne ne
+    les lisait une fois Google Sheets retire. `sheetCommandes` reste, seul,
+    parce que la route de commande le transmet encore a n8n — voir la note en
+    tete de ce fichier.
+  */
   sheetCommandes: string;
-  sheetMenu: string;
   groupeLivreurs: string;
   whatsapp: string;
   /** Chat Telegram du gerant, pour lui adresser ses alertes. */
@@ -55,7 +85,6 @@ export type Marchand = {
  * table d'alias a tenir.
  */
 
-const SHEET_ID = process.env.SHEET_ID!;
 
 let cache: Record<string, Marchand> | null = null;
 let cacheTime = 0;
@@ -102,7 +131,7 @@ async function depuisSupabase(): Promise<Marchand[]> {
   const { data, error } = await sb
     .from('boutiques')
     .select(
-      'id, slug, nom, categorie, emoji, logo_url, sheet_document_id, sheet_commandes, sheet_menu, groupe_livreurs, telephone, telegram_marchand, actif',
+      'id, slug, nom, categorie, emoji, logo_url, sheet_commandes, groupe_livreurs, telephone, telegram_marchand, actif',
     );
 
   if (error) {
@@ -126,20 +155,7 @@ async function depuisSupabase(): Promise<Marchand[]> {
       secteur: String(b.categorie ?? ''),
       emoji: String(b.emoji || '🏪'),
       logo: String(b.logo_url ?? '').trim(),
-      // LE DOCUMENT DU MARCHAND, PAS UN SEUL POUR TOUT LE MONDE.
-      //
-      // Ce registre imposait `SHEET_ID` a tous, alors que n8n lit
-      // `sheet_document_id` de la fiche. Tant qu'il n'y avait qu'un marchand,
-      // les deux designaient le meme classeur et rien ne le revelait. Au
-      // deuxieme marchand ayant son propre document, l'application ecrivait sa
-      // commande dans le classeur global pendant que n8n la cherchait dans le
-      // sien : commande introuvable, aucun livreur lance, et pas un message
-      // d'erreur — les deux cotes travaillaient sans se douter de rien.
-      //
-      // Le repli sur `SHEET_ID` garde les marchands existants a l'identique.
-      sheetId: String(b.sheet_document_id || SHEET_ID || ''),
       sheetCommandes: String(b.sheet_commandes || parDefaut.sheetCommandes),
-      sheetMenu: String(b.sheet_menu || parDefaut.sheetMenu),
       groupeLivreurs: String(b.groupe_livreurs || ''),
       whatsapp: String(b.telephone || ''),
       telegramMarchand: String(b.telegram_marchand || ''),

@@ -1,6 +1,6 @@
 # Politique de confidentialité
 
-**Dernière mise à jour : [À COMPLÉTER : date de mise en ligne]**
+**Dernière mise à jour : 5 septembre 2026**
 **Version : 1.0**
 
 ## Préambule
@@ -29,8 +29,8 @@ Chaque Marchand demeure responsable de la licéité de la collecte auprès de se
 
 ## Article 2 — Coordonnées
 
-- **Éditeur** : [À COMPLÉTER : nom de l'exploitant], entreprise individuelle — voir [Mentions légales](mentions-legales.md)
-- **Contact protection des données** : [À COMPLÉTER : par exemple donnees@djiguiflow.com]
+- **Éditeur** : OULAÏ Jean Paul, entreprise individuelle — voir [Mentions légales](mentions-legales.md)
+- **Contact protection des données** : donnees@djiguiflow.com
 - **Autorité de contrôle** : ARTCI — Abidjan, Côte d'Ivoire
 
 > **[À COMPLÉTER avant publication]** — Statut de la déclaration des traitements auprès de l'ARTCI (numéro et date de récépissé, ou mention « déclaration en cours »).
@@ -63,7 +63,7 @@ Chaque Marchand demeure responsable de la licéité de la collecte auprès de se
 
 **L'identifiant de conversation est une donnée personnelle.** Ce n'est pas un nom, mais c'est l'adresse par laquelle une personne peut être jointe : il est traité comme telle, et anonymisé au même titre que le nom.
 
-**Où vit le contenu des messages.** Les messages échangés ne sont pas conservés dans la base de la Plateforme. Ils demeurent chez le fournisseur du canal — WhatsApp ou Telegram — et le texte de ceux qui ont été **envoyés** au Client final est consigné, avec son destinataire, dans la feuille de calcul du Marchand (article 5.3).
+**Où vit le contenu des messages.** Les messages échangés ne sont **pas conservés par la Plateforme** — ni dans sa base, ni ailleurs. Ils demeurent chez le fournisseur du canal, WhatsApp ou Telegram, et sur le téléphone de la personne.
 
 **Aucune donnée bancaire n'est traitée.** Le prix des commandes est réglé directement entre le Client final et le Marchand ; il ne transite jamais par la Plateforme, qui n'enregistre aucune donnée de paiement des commandes.
 
@@ -112,11 +112,12 @@ Ces durées sont appliquées automatiquement par un traitement périodique de la
 |---|---|---|
 | **Panier non converti** | 30 jours | **Suppression complète** |
 | **Commande close** | 12 mois | **Anonymisation** |
+| **Position GPS** (client et livreur) | 30 jours après clôture | Effacement du point ; l’adresse en toutes lettres demeure |
 | **Trace de relance** | 90 jours | Suppression |
 | **Refus de relance (« STOP »)** | **Sans limite** | **Jamais effacé** |
 | Compte du Marchand | Durée du contrat + 30 jours | Suppression ou anonymisation |
 | Pièces comptables et de facturation | Durée légale de conservation | Conservation |
-| Journaux techniques et de sécurité | [À COMPLÉTER : 12 mois ?] | Suppression |
+| Journaux techniques et de sécurité | Durée propre à chaque hébergeur | Suppression par l'hébergeur |
 
 ### 5.1 Pourquoi le panier est supprimé et la commande anonymisée
 
@@ -130,13 +131,13 @@ L'anonymisation est irréversible.
 
 Une commande n'est anonymisée que si elle est **close** — livrée, annulée ou abandonnée. Une commande de treize mois encore « en attente » n'est pas une donnée à effacer : c'est une anomalie à examiner.
 
-### 5.3 Ce que le traitement périodique n'atteint pas
+### 5.3 Ces durées valent pour la totalité des données
 
-Les durées ci-dessus s'appliquent à la **base de données** de la Plateforme.
+Les durées ci-dessus s'appliquent à l'ensemble des données personnelles détenues par la Plateforme, sans exception.
 
-Elles ne s'appliquent pas à la **feuille de calcul du Marchand** : chaque commande y est également écrite, avec le nom, le numéro de téléphone, l'adresse et l'identifiant de conversation du Client final, ainsi que le texte des messages qui lui ont été envoyés. Cette copie relève du Marchand, qui en est le responsable de traitement, et aucune purge automatique ne s'y applique aujourd'hui.
+Jusqu'au 28 août 2026, elles ne valaient que pour la base de données : une copie de chaque commande — nom, téléphone, adresse, identifiant de conversation — ainsi que le texte des messages envoyés étaient également écrits dans une feuille de calcul externe, qu'aucune purge n'atteignait. **Cette écriture a été supprimée, et les colonnes correspondantes retirées de la feuille.** Plus aucune donnée personnelle n'y est enregistrée.
 
-Ce point figure ici, à l'endroit même où les durées sont annoncées, et non en note de fin : une durée énoncée sans sa limite vaudrait engagement sur une donnée dont la Plateforme ne se sépare pas. Il est également indiqué au Client final sur la page « Mes données », avant qu'il ne demande un effacement.
+Ce point figure ici, à l'endroit même où les durées sont annoncées : une durée énoncée sans son périmètre réel vaudrait engagement sur une donnée dont la Plateforme ne se sépare pas.
 
 ## Article 6 — Destinataires et sous-traitants
 
@@ -152,12 +153,11 @@ Les données ne sont ni vendues, ni louées, ni cédées à des tiers à des fin
 
 | Sous-traitant | Rôle | Données concernées | Implantation |
 |---|---|---|---|
-| **Vercel Inc.** | Hébergement de l'application | Données transitant par le service | États-Unis |
-| **Supabase Inc.** | Base de données, authentification | Ensemble des données stockées | [À COMPLÉTER : région d'hébergement du projet] |
-| **n8n** (auto-hébergé) | Automatisation des traitements | Commandes, messages, notifications | [À COMPLÉTER : pays du serveur] |
-| **Google LLC** (Sheets) | Feuille de suivi du Marchand, alimentée automatiquement | **Nom, téléphone, adresse, identifiant de messagerie, articles et montant** de chaque commande ; nom et appréciations laissées après livraison | États-Unis |
+| **Vercel Inc.** | Hébergement de l'application | Données transitant par le service | Société de droit américain ; **traitement en France** (Paris, `cdg1`) |
+| **Supabase Inc.** | Base de données, authentification | Ensemble des données stockées | **France** (Paris, `eu-west-3`) |
+| **n8n** (auto-hébergé) | Automatisation des traitements | Commandes, messages, notifications | **France** (Paris, Hostinger) |
 | **Mistral AI** | Modèle de langage de l'Assistante | Contenu des messages échangés | Union européenne |
-| **wasenderapi** | Passerelle WhatsApp | Messages et identifiants de conversation | [À COMPLÉTER] |
+| **wasenderapi** | Passerelle WhatsApp | Messages et identifiants de conversation | Royaume-Uni (siège) ; localisation des serveurs non publiée |
 | **Telegram** | Canal de conversation | Messages et identifiants de conversation | Selon les conditions de Telegram |
 | **GeniusPay** | Encaissement des abonnements | Données de paiement du **Marchand uniquement** | Côte d'Ivoire |
 
@@ -165,7 +165,11 @@ Les données ne sont ni vendues, ni louées, ni cédées à des tiers à des fin
 
 Certains sous-traitants sont établis hors de Côte d'Ivoire. Ces transferts sont nécessaires à l'exécution du service et encadrés par les engagements contractuels de ces prestataires.
 
-> **[À COMPLÉTER avant publication]** — La loi n° 2013-450 encadre les transferts vers les pays n'assurant pas un niveau de protection suffisant. Vérifier avec un conseil si une autorisation préalable de l'ARTCI est requise pour les transferts vers les États-Unis, et documenter les garanties obtenues de chaque sous-traitant.
+**Les données sont traitées et stockées en France.** La base de données, le serveur d'automatisation et l'exécution de l'application se trouvent tous à Paris. Le modèle de langage de l'Assistante est établi dans l'Union européenne. Deux prestataires font exception : la passerelle WhatsApp, dont le siège est au Royaume-Uni et dont la localisation des serveurs n'est pas publiée, et Telegram, selon ses propres conditions.
+
+Vercel et Supabase sont des sociétés de droit américain, mais **le traitement lui-même n'a pas lieu aux États-Unis** : il a été délibérément fixé en France. Cette distinction — nationalité du prestataire d'une part, lieu du traitement d'autre part — est le point à soumettre au conseil ci-dessous.
+
+> **[À COMPLÉTER avant publication]** — La loi n° 2013-450 encadre les transferts vers les pays n'assurant pas un niveau de protection suffisant. Vérifier avec un conseil si une autorisation préalable de l'ARTCI est requise, sachant que le traitement a lieu en France mais que deux prestataires sont de nationalité américaine, et obtenir de la passerelle WhatsApp la localisation de ses serveurs.
 
 ### 6.4 Autorités
 
@@ -195,7 +199,7 @@ Toute personne dispose des droits d'**accès**, de **rectification**, d'**efface
 
 | Vous êtes | Adressez-vous à |
 |---|---|
-| **Marchand** | [À COMPLÉTER : donnees@djiguiflow.com] |
+| **Marchand** | donnees@djiguiflow.com |
 | **Client final d'une boutique** | **En autonomie sur la page « Mes données »** (article 8.3), pour consulter vos données et en demander l'effacement. Pour toute autre demande — rectification, limitation — adressez-vous **au Marchand concerné**, dont les coordonnées figurent sur la vitrine de sa boutique, ou à l'Éditeur, qui transmettra. |
 | **Livreur** | Au Marchand auquel vous êtes rattaché, ou à l'Éditeur |
 
@@ -213,7 +217,9 @@ La page **« Mes données »** permet à tout Client final de consulter l'intég
 
 **Ce que l'effacement recouvre.** Les commandes terminées perdent le nom, le téléphone, l'adresse, les instructions de livraison, la position et l'identifiant de messagerie ; le montant, la date et les articles subsistent, sans lien avec une personne, au titre de la comptabilité du Marchand. Les paniers non validés, les traces de relance et les commentaires de livraison sont supprimés.
 
-**Ce que l'effacement ne recouvre pas**, et qui est indiqué à la personne avant qu'elle ne décide : une commande encore en cours n'est pas modifiée — elle le sera automatiquement dès sa clôture ; les messages déjà reçus sur le téléphone de la personne relèvent de sa messagerie ; la copie des commandes figurant dans le tableur du Marchand relève du Marchand ; les sauvegardes de sécurité conservent les données jusqu'à leur remplacement.
+**Ce que l'effacement ne recouvre pas**, et qui est indiqué à la personne avant qu'elle ne décide : une commande encore en cours n'est pas modifiée — elle le sera automatiquement dès sa clôture ; les messages déjà reçus sur le téléphone de la personne relèvent de sa messagerie ; les sauvegardes de sécurité conservent les données jusqu'à leur remplacement.
+
+Cette liste comptait une quatrième réserve — la copie des commandes dans le tableur du Marchand — jusqu'au 28 août 2026. Elle a été levée en supprimant la copie elle-même, plutôt qu'en la formulant mieux (article 5.3).
 
 **Le numéro est conservé sur la liste des refus**, et sur elle seule. Sans cette trace, plus rien n'empêcherait de solliciter à nouveau la personne qui vient de demander l'effacement.
 
@@ -227,10 +233,9 @@ Toute personne estimant que ses droits ne sont pas respectés peut saisir l'**AR
 
 ## Article 9 — Témoins de connexion (cookies)
 
-Le service utilise :
+Le service n'utilise que des **témoins strictement nécessaires** à son fonctionnement — maintien de la session et sécurité. Ceux-là ne requièrent pas de consentement.
 
-- des **témoins strictement nécessaires** au fonctionnement — maintien de la session, sécurité — qui ne requièrent pas de consentement ;
-- [À COMPLÉTER : décrire les éventuels témoins de mesure d'audience et le mécanisme de recueil du consentement, ou supprimer cette ligne si aucun n'est utilisé].
+**Aucun témoin de mesure d'audience, de publicité ou de suivi comportemental n'est déposé**, et aucun outil d'analytique n'est installé sur le service. Il n'y a donc pas de bandeau de consentement, parce qu'il n'y a rien à consentir.
 
 ## Article 10 — Mineurs
 
@@ -247,7 +252,7 @@ Toute modification substantielle de la présente politique est notifiée aux Mar
 > 1. **Déclaration ARTCI** (article 2) — statut à renseigner. C'est la question qui a motivé ce document.
 > 2. **Transferts hors Côte d'Ivoire** (article 6.3) — régime d'autorisation à vérifier ; c'est le point le plus exposé du dossier.
 > 3. **Régions d'hébergement** (article 6.2) — à renseigner précisément pour Supabase, le VPS n8n et wasenderapi.
-> 4. **Durée des journaux techniques** (article 5) — à fixer, puis à appliquer réellement dans le code.
-> 5. **La copie Google Sheets** (article 6.2) — constatée le 27 août 2026 sur les workflows en production : chaque commande y est écrite avec nom, téléphone et adresse, et **rien ne l'y efface**. Les durées de conservation de l'article 5 ne s'appliquent donc qu'à la base de données. Deux issues : cesser d'y écrire l'identité du Client final, ou y porter la purge. Tant que ce n'est pas tranché, l'article 8.3 le déclare franchement au Client, mais c'est le trou le plus concret de ce dossier.
+> 4. **Durée des journaux techniques** (article 5) — l'Éditeur ne conserve aucun journal en propre : ils vivent chez Vercel et sur le serveur d'automatisation, selon les durées de ceux-ci. Mesuré le 28 août 2026 : le serveur n8n détenait 5 374 exécutions, la plus ancienne du 16 août — soit douze jours, mais c'est aussi la date de sa mise en service, ce qui ne permet pas de conclure qu'une purge s'applique. **Pour transformer cette ligne en engagement**, fixer explicitement `EXECUTIONS_DATA_MAX_AGE` sur le serveur (l'accès à sa configuration est requis), puis l'écrire ici. Le point compte : une exécution conserve les données qui l'ont traversée, donc le texte des messages d'un client.
+> 5. ~~**La copie Google Sheets**~~ — **FERMÉ le 28 août 2026.** Constaté le 27 : chaque commande partait dans une feuille de calcul avec nom, téléphone et adresse, ainsi que le texte de chaque message envoyé, et rien ne l'y effaçait. Mesuré avant de trancher — treize nœuds Google Sheets dont neuf déjà morts, et aucun qui relise jamais ces colonnes. L'écriture a été débranchée, les workflows auxiliaires archivés, la credential Google supprimée, et **quarante-quatre colonnes d'identité retirées du classeur** (670 lignes conservées, sans personne dedans). Reste, hors de notre portée, l'historique des versions du document Google, qui garde trace des valeurs supprimées jusqu'à son expiration ou la suppression du fichier.
 >
 > Les durées de l'article 5 correspondent à ce qu'applique `src/lib/conservation.ts`. Toute modification de ce document doit être répercutée dans le code, et inversement : un document qui décrit une durée que le code n'applique pas est pire que pas de document.
