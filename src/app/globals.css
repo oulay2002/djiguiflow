@@ -113,6 +113,32 @@ body {
   font-feature-settings: "ss01", "cv01";
 }
 
+/* LES GRANDS TITRES DOIVENT POUVOIR SE COUPER, SINON C'EST LA PAGE QUI CEDE.
+ *
+ * Le barème d'affichage monte jusqu'à 4,25 rem. Quand quelqu'un règle son
+ * système sur un texte deux fois plus grand — pas le zoom du navigateur, le
+ * réglage d'accessibilité —, le mot le plus long d'un titre dépasse toute
+ * colonne étroite. Un mot insécable ne se contente pas de déborder : il impose
+ * sa largeur à son conteneur, qui l'impose au document. Mesuré le 28 août
+ * 2026 : la vitrine réclamait 483 px pour une fenêtre de 360, et TOUTE la
+ * page défilait latéralement, corps de texte compris.
+ *
+ * `anywhere` plutôt que `break-word` : les deux coupent au même endroit à
+ * l'écran, mais seul `anywhere` réduit la largeur minimale intrinsèque — or
+ * c'est précisément elle qui poussait le document. `break-word` n'aurait rien
+ * changé ici.
+ *
+ * À 100 %, le rendu est identique au caractère près : aucune coupure n'est
+ * nécessaire, donc aucune n'est posée. `hyphens` pose un tiret propre là où le
+ * navigateur embarque le dictionnaire français ; il ne le fait pas partout,
+ * d'où la ceinture ET les bretelles. */
+h1,
+h2,
+h3 {
+  overflow-wrap: anywhere;
+  hyphens: auto;
+}
+
 ::selection {
   background: var(--color-mangue-200);
   color: var(--color-nuit-900);

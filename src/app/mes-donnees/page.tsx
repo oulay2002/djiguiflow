@@ -433,7 +433,7 @@ function Ecran() {
                 autoComplete="off"
                 spellCheck={false}
                 aria-describedby="ou-trouver-reference"
-                className="mt-1 w-full border border-nuit-900/20 bg-white px-3 py-2 font-mono text-sm text-nuit-900"
+                className="mt-1 min-h-11 w-full border border-nuit-900/20 bg-white px-3 py-2.5 font-mono text-sm text-nuit-900"
               />
               <span id="ou-trouver-reference" className="mt-1 block text-xs text-chaux-600">
                 Elle est en haut du message que la boutique vous a envoyé.
@@ -451,7 +451,7 @@ function Ecran() {
                 autoComplete="off"
                 placeholder="0405"
                 aria-describedby="pourquoi-quatre-chiffres"
-                className="mt-1 w-full border border-nuit-900/20 bg-white px-3 py-2 font-mono text-sm text-nuit-900"
+                className="mt-1 min-h-11 w-full border border-nuit-900/20 bg-white px-3 py-2.5 font-mono text-sm text-nuit-900"
               />
               {/*
                 « DU NUMERO QUI A COMMANDE », ET PAS « DE VOTRE NUMERO ».
