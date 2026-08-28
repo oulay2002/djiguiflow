@@ -3,7 +3,7 @@
 import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { Loader2, ShieldCheck, Trash2, TriangleAlert } from 'lucide-react';
+import { ChevronDown, Loader2, ShieldCheck, Trash2, TriangleAlert } from 'lucide-react';
 import { Bouton, LienRetour } from '@/components/ui/Bouton';
 
 /**
@@ -46,8 +46,6 @@ type Commande = {
   reference: string;
   date: string | null;
   boutique: string;
-  total: number | null;
-  statut: string | null;
   close: boolean;
   detenu: string[];
 };
@@ -552,11 +550,50 @@ function Ecran() {
                 restera : c’est lui qui nous empêche de vous écrire à nouveau.
               </p>
             )}
+
+            {/*
+              LA DEMANDE DEJA FAITE, DITE ICI OU NULLE PART.
+              `demandesAnterieures` etait collecte, type, transmis a chaque
+              ouverture — et jamais affiche. Quelqu'un dont l'effacement attend
+              la cloture d'une commande revenait, ne voyait aucune trace de sa
+              demande, et la refaisait. On payait le reseau pour l'information
+              qui aurait evite le second passage.
+            */}
+            {dossier.demandesAnterieures.length > 0 && (
+              <p className="mt-4 text-sm text-nuit-900">
+                Vous avez déjà demandé un effacement
+                {dateLisible(dossier.demandesAnterieures[0].date)
+                  ? ` le ${dateLisible(dossier.demandesAnterieures[0].date)}`
+                  : ''}
+                . Il est enregistré et s’applique dès que vos commandes en cours seront
+                terminées — vous n’avez rien à redemander.
+              </p>
+            )}
+
+            {/*
+              LE RACCOURCI VERS LA DECISION.
+              La personne qui vient POUR effacer n'a pas a traverser tout le
+              registre pour trouver le bouton. Ce lien n'enleve rien a ceux qui
+              lisent : il ouvre une seconde porte, plus haut.
+            */}
+            <p className="mt-4">
+              <a
+                href="#effacement"
+                className="inline-flex min-h-11 items-center text-sm font-medium text-bissap-600 underline underline-offset-4 transition hover:text-bissap-700"
+              >
+                Aller directement à la demande d’effacement
+              </a>
+            </p>
           </section>
 
           {dossier.commandes.length > 0 && (
             <section className={`mt-6 ${CADRE}`}>
-              <h2 className="font-display text-xl text-nuit-900">Vos commandes</h2>
+              {/* « chez ce marchand » : le traitement de la section suivante
+                  s'appelle aussi « Vos commandes ». Deux entrees identiques
+                  dans la navigation par titres d'un lecteur d'ecran ne
+                  designent pas la meme chose — l'une est la liste, l'autre
+                  la regle de conservation. */}
+              <h2 className="font-display text-xl text-nuit-900">Vos commandes chez ce marchand</h2>
               <ul className="mt-4 divide-y divide-nuit-900/10">
                 {dossier.commandes.map((c) => (
                   <li key={c.reference} className="py-3">
@@ -582,23 +619,58 @@ function Ecran() {
             <h2 className="font-display text-xl text-nuit-900">
               Ce que nous gardons, et pendant combien de temps
             </h2>
-            <ul className="mt-4 space-y-5">
+            {/*
+              CE QU'ON MONTRE FERMÉ, ET CE QU'ON N'A PAS LE DROIT DE REPLIER.
+              Les huit traitements dépliés faisaient 5 097 px et 1 114 mots à
+              360 px — six écrans de défilement AVANT le bouton d'effacement.
+              Conséquence mesurable : les limites qu'on a pris tant de soin à
+              placer au-dessus du bouton n'étaient jamais lues, parce qu'on
+              saute un mur.
+              Restent visibles sans ouvrir : le nom, la DURÉE — la seule
+              réponse à « pendant combien de temps ? », qui est la question du
+              titre — et l'avertissement « conservé même après un effacement ».
+              Ce dernier ne se replie pas : il contredit ce que la personne
+              s'apprête à faire, le cacher derrière un clic le ferait manquer
+              exactement à qui il s'adresse.
+              Finalité, données et destinataires s'ouvrent à la demande : ils
+              répondent à « pourquoi » et « qui », questions qu'on se pose
+              traitement par traitement, jamais sur les huit d'un coup.
+            */}
+            <ul className="mt-4 space-y-3">
               {dossier.traitements.map((t) => (
-                <li key={t.cle}>
-                  <h3 className="font-medium text-nuit-900">{t.nom}</h3>
-                  <p className="mt-1 text-sm text-chaux-600">{t.finalite}</p>
-                  <p className="mt-1 text-sm text-chaux-600">
-                    <strong className="font-medium text-nuit-900">Données :</strong>{' '}
-                    {t.donnees.join(' · ')}
-                  </p>
-                  <p className="mt-1 text-sm text-chaux-600">
-                    <strong className="font-medium text-nuit-900">Durée :</strong>{' '}
-                    {t.conservation}
-                  </p>
-                  <p className="mt-1 text-sm text-chaux-600">
-                    <strong className="font-medium text-nuit-900">Qui y a accès :</strong>{' '}
-                    {t.destinataires.join(' · ')}
-                  </p>
+                <li key={t.cle} className="border-t border-nuit-900/10 pt-3 first:border-0 first:pt-0">
+                  <details className="group">
+                    {/* Le nom reste un `h3` A L'INTERIEUR du `summary` : le
+                        replier ne doit pas le retirer de la navigation par
+                        titres, qui est la facon dont un lecteur d'ecran
+                        parcourt un registre de huit entrees. */}
+                    <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3">
+                      <h3 className="text-sm font-medium text-nuit-900">{t.nom}</h3>
+                      <span className="flex shrink-0 items-center gap-2 text-xs text-chaux-600">
+                        {t.conservation}
+                        <ChevronDown
+                          className="size-4 transition-transform group-open:rotate-180"
+                          aria-hidden
+                        />
+                      </span>
+                    </summary>
+
+                    <p className="mt-2 text-sm text-chaux-600">{t.finalite}</p>
+
+                    <p className="mt-2 text-xs font-semibold uppercase tracking-[0.12em] text-chaux-600">
+                      Données
+                    </p>
+                    <ul className="mt-1 space-y-0.5 text-sm text-chaux-600">
+                      {t.donnees.map((d) => (
+                        <li key={d}>{d}</li>
+                      ))}
+                    </ul>
+                    <p className="mt-2 text-sm text-chaux-600">
+                      <strong className="font-medium text-nuit-900">Qui y a accès :</strong>{' '}
+                      {t.destinataires.join(', ')}
+                    </p>
+                  </details>
+
                   {t.effacement === 'garde' && t.pourquoi && (
                     <p className="mt-1 text-sm text-mangue-700">
                       Conservé même après un effacement — {t.pourquoi}
@@ -609,7 +681,14 @@ function Ecran() {
             </ul>
           </section>
 
-          <section className="mt-6 border border-bissap-200 bg-bissap-50 p-5">
+          <section
+            id="effacement"
+            /* `scroll-mt-6` : arriver par l'ancre ne doit pas coller le titre
+               au bord haut de l'ecran — on veut voir qu'on est entre dans une
+               section, pas atterrir dessus. Meme reglage que `.etape` du
+               guide. */
+            className="mt-6 scroll-mt-6 border border-bissap-200 bg-bissap-50 p-5"
+          >
             <h2 className="font-display text-xl text-nuit-900">Demander l’effacement</h2>
 
             <p className="mt-2 text-sm text-nuit-900">
