@@ -6,17 +6,17 @@
 
 Le service DjiguiFlow, accessible à l'adresse <https://www.djiguiflow.com>, est édité par :
 
-- **Exploitant** : [À COMPLÉTER : nom et prénoms de l'exploitant]
+- **Exploitant** : OULAÏ Jean Paul
 - **Forme** : entreprise individuelle
 - **Adresse** : [À COMPLÉTER : adresse complète — commune, quartier, Abidjan / Côte d'Ivoire]
-- **Numéro de registre** : [À COMPLÉTER : RCCM, ou « immatriculation en cours »]
+- **Numéro de registre** : RCCM CI-AGB-2021-A-307
 - **Numéro de compte contribuable** : [À COMPLÉTER, ou supprimer cette ligne]
-- **Téléphone** : [À COMPLÉTER]
+- **Téléphone** : +225 01 02 91 88 86
 - **Courriel** : contact@djiguiflow.com
 
 ## 2. Directeur de la publication
 
-[À COMPLÉTER : nom et prénoms], en qualité d'exploitant.
+OULAÏ Jean Paul, en qualité d'exploitant.
 
 ## 3. Hébergement
 

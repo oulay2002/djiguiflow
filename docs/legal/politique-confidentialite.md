@@ -29,7 +29,7 @@ Chaque Marchand demeure responsable de la licéité de la collecte auprès de se
 
 ## Article 2 — Coordonnées
 
-- **Éditeur** : [À COMPLÉTER : nom de l'exploitant], entreprise individuelle — voir [Mentions légales](mentions-legales.md)
+- **Éditeur** : OULAÏ Jean Paul, entreprise individuelle — voir [Mentions légales](mentions-legales.md)
 - **Contact protection des données** : [À COMPLÉTER : par exemple donnees@djiguiflow.com]
 - **Autorité de contrôle** : ARTCI — Abidjan, Côte d'Ivoire
 
