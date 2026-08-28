@@ -72,13 +72,32 @@ function texte(v: unknown): string | null {
 }
 
 /**
- * Combien de fois une même adresse peut demander une preuve.
+ * Combien de fois une même adresse peut demander une preuve, en dix minutes.
  *
- * Plus sévère que la lecture d'un suivi (30) : on ne consulte pas ses droits
- * trente fois en dix minutes, et chaque tentative ici vise un ensemble de
- * données plus large.
+ * ── CE CHIFFRE A ÉTÉ CORRIGÉ APRÈS MESURE ──────────────────────────────────
+ *
+ * Il valait 8, « puisqu'on ne consulte pas ses droits huit fois de suite ».
+ * Le banc l'a heurté à sa première relance — et surtout, le raisonnement
+ * oubliait le pays : les opérateurs mobiles ivoiriens partagent massivement
+ * leurs adresses, et un cybercafé en présente une seule. Huit appels, c'est un
+ * quartier entier qui se bloque lui-même sur l'écran de ses droits.
+ *
+ * ── POURQUOI L'ÉLARGIR NE COÛTE RIEN EN SÉCURITÉ ───────────────────────────
+ *
+ * Ce n'est pas ce plafond-ci qui protège du balayage. Deux autres le font, et
+ * ils ne dépendent pas de l'adresse :
+ *
+ *   - une demande SANS preuve rend toujours 404, avec le MÊME texte qu'une
+ *     référence inexistante : la balayer n'apprend rien, jamais ;
+ *   - une demande AVEC quatre chiffres consomme le plafond PAR COMMANDE — dix
+ *     par jour, soit mille jours pour balayer dix mille possibilités — et ce
+ *     compteur-là porte la commande, donc une attaque répartie sur cent
+ *     adresses n'y gagne rien.
+ *
+ * Ce plafond ne borne donc que le coût : il empêche un client de marteler la
+ * route, pas un attaquant d'apprendre quelque chose.
  */
-const DEMANDES_PAR_APPELANT = 8;
+const DEMANDES_PAR_APPELANT = 20;
 
 /**
  * Vérifie la preuve et rend le numéro du client.

@@ -1,5 +1,5 @@
 import { HORS_DE_PORTEE } from '@/lib/donneesPersonnelles';
-import { effacerDossier } from '@/lib/dossierClient';
+import { dejaEfface, effacerDossier } from '@/lib/dossierClient';
 import { normaliserTelephone } from '@/lib/telephone';
 import { prouverClient } from '@/lib/preuveClient';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
@@ -54,6 +54,14 @@ export async function POST(req: Request) {
 
   const sb = getSupabaseAdmin();
   if (!sb) return Response.json({ error: 'Service temporairement indisponible.' }, { status: 503 });
+
+  // Deja anonymisee : il n y a rien a effacer, et surtout rien a inscrire. Une
+  // seconde ligne dans le registre des demandes laisserait croire a une seconde
+  // demande, et gonflerait le compte de ce qu on detient sur quelqu un qui a
+  // justement demande qu on n en detienne plus.
+  if (dejaEfface(preuve.telephone)) {
+    return Response.json({ ok: true, dejaEfface: true, horsDePortee: HORS_DE_PORTEE });
+  }
 
   // Le numéro sous sa forme normalisée : c'est lui qui figurera dans la trace
   // et dans la liste des refus, pour qu'une même personne y soit reconnaissable

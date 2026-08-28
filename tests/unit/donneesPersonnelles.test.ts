@@ -6,6 +6,7 @@ import {
   sortsAttendus,
   traitementsDuClient,
 } from '@/lib/donneesPersonnelles';
+import { dejaEfface } from '@/lib/dossierClient';
 import { memeNumero } from '@/lib/telephone';
 
 /**
@@ -173,5 +174,28 @@ describe('memeNumero — retrouver une personne sans en confondre deux', () => {
    */
   it('deux numéros vides ne désignent personne', () => {
     expect(memeNumero('', '')).toBe(false);
+  });
+});
+
+describe('dejaEfface — le geste qui suit immédiatement un effacement', () => {
+  /**
+   * TROUVÉ EN VÉRIFIANT, PAS EN RELISANT.
+   *
+   * Après un effacement, l'écran répondait « Vos données n'ont pas pu être
+   * rassemblées, réessayez dans un instant » — un message FAUX sur l'état du
+   * service, servi à la personne dont les données venaient d'être effacées, et
+   * qui l'invitait à recommencer sans fin.
+   *
+   * Or rouvrir le lien qu'on garde dans son message est le geste qui suit un
+   * effacement. Le cas n'était pas rare : c'était le plus probable.
+   */
+  it('un téléphone vidé par l’anonymisation est reconnu comme déjà effacé', () => {
+    expect(dejaEfface('')).toBe(true);
+    expect(dejaEfface(null)).toBe(true);
+  });
+
+  it('un numéro réel n’est jamais pris pour un dossier effacé', () => {
+    expect(dejaEfface('0102130443')).toBe(false);
+    expect(dejaEfface('2250102130443')).toBe(false);
   });
 });

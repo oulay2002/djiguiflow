@@ -1,6 +1,6 @@
 import { HORS_DE_PORTEE, traitementsDuClient } from '@/lib/donneesPersonnelles';
 import { numeroMasque, prouverClient } from '@/lib/preuveClient';
-import { rassemblerDossier } from '@/lib/dossierClient';
+import { dejaEfface, rassemblerDossier } from '@/lib/dossierClient';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 
 export const dynamic = 'force-dynamic';
@@ -42,6 +42,28 @@ export async function POST(req: Request) {
 
   const sb = getSupabaseAdmin();
   if (!sb) return Response.json({ error: 'Service temporairement indisponible.' }, { status: 503 });
+
+  /**
+   * LA COMMANDE EST DÉJÀ ANONYMISÉE.
+   *
+   * C'est le cas le plus probable après un effacement : la personne rouvre le
+   * lien qu'elle a dans son message. On le lui dit clairement, au lieu de
+   * l'inviter à réessayer un service qui marche très bien.
+   */
+  if (dejaEfface(preuve.telephone)) {
+    return Response.json({
+      efface: true,
+      numero: null,
+      commandes: [],
+      paniers: 0,
+      relances: 0,
+      avisLivraison: 0,
+      refusDemarchage: [],
+      demandesAnterieures: [],
+      traitements: traitementsDuClient(),
+      horsDePortee: HORS_DE_PORTEE,
+    });
+  }
 
   try {
     const dossier = await rassemblerDossier(sb, preuve.telephone);

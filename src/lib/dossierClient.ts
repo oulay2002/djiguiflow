@@ -58,6 +58,24 @@ export type Dossier = {
   demandesAnterieures: { type: string; date: string | null; statut: string }[];
 };
 
+/**
+ * Cette commande a-t-elle DÉJÀ été anonymisée ?
+ *
+ * ── LE DÉFAUT QUE CETTE FONCTION FERME ─────────────────────────────────────
+ *
+ * Une commande anonymisée porte un téléphone VIDE. Sans ce contrôle,
+ * `rassemblerDossier` refusait de constituer un dossier et la route rendait
+ * « Vos données n'ont pas pu être rassemblées, réessayez dans un instant » —
+ * un message FAUX, sur l'écran d'une personne dont les données venaient
+ * précisément d'être effacées, et qui l'invitait à réessayer sans fin.
+ *
+ * Or rouvrir son lien est le geste qui suit immédiatement un effacement. Le
+ * cas n'était donc pas rare : c'était le plus probable.
+ */
+export function dejaEfface(telephone: unknown): boolean {
+  return !cleAppariement(telephone);
+}
+
 /** Une commande est-elle close ? */
 export function commandeClose(statut: unknown): boolean {
   return (STATUTS_CLOS as readonly string[]).includes(

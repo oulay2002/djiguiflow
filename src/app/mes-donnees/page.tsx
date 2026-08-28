@@ -52,7 +52,16 @@ type Commande = {
 };
 
 type Dossier = {
-  numero: string;
+  /**
+   * Vrai quand la commande qui a servi de preuve est DÉJÀ anonymisée.
+   *
+   * C'est le geste le plus probable après un effacement : la personne rouvre
+   * le lien qu'elle garde dans son message. Lui répondre « réessayez dans un
+   * instant » serait lui mentir sur l'état du service, et l'inviter à
+   * recommencer sans fin.
+   */
+  efface?: boolean;
+  numero: string | null;
   commandes: Commande[];
   paniers: number;
   relances: number;
@@ -232,7 +241,20 @@ function Ecran() {
         </section>
       )}
 
-      {dossier && (
+      {dossier?.efface && (
+        <section className="mt-8 border border-accent-200 bg-accent-50 p-5">
+          <h2 className="flex items-center gap-2 font-display text-xl text-nuit-900">
+            <ShieldCheck className="size-5 text-accent-600" aria-hidden />
+            Ces données ont déjà été effacées
+          </h2>
+          <p className="mt-2 text-sm text-nuit-900">
+            Cette commande ne porte plus ni nom, ni téléphone, ni adresse. Seuls le montant
+            et la date subsistent, sans lien avec vous, pour la comptabilité du marchand.
+          </p>
+        </section>
+      )}
+
+      {dossier && !dossier.efface && (
         <>
           <section className={`mt-8 ${CADRE}`}>
             <p className="flex items-center gap-2 text-sm text-chaux-600">
