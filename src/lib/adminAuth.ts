@@ -66,9 +66,25 @@ export function estAdmin(
     // vient de fermer, et le ferait en silence.
     const cible = String(userId ?? '').trim().toLowerCase();
     if (!cible) {
+      /*
+        CE MESSAGE N'EST VRAI QUE SI SES APPELANTS NE MENTENT PAS PAR OMISSION.
+
+        Le 28 aout 2026 il est paru sur `/api/internal/veille/chaines` en
+        accusant « un defaut d'appel » — a tort. `etatQuota` resolvait un
+        compte par `getUserById`, n'obtenait rien, et passait ici deux
+        `undefined` : l'appel etait correct, c'est la RESOLUTION qui avait
+        echoue. Cette fonction ne peut pas faire la difference, elle ne voit
+        que l'absence.
+
+        Le correctif est donc chez l'appelant, qui LUI sait ce qu'il cherchait
+        — voir `etatQuota` dans billing/quota.ts. La regle a retenir : quand
+        une fonction ne peut pas connaitre une cause, elle ne doit pas la
+        nommer ; c'est celui qui la connait qui parle.
+      */
       console.error(
         'estAdmin — ADMIN_USER_IDS est posee mais l appelant n a pas transmis'
-        + " d identifiant : refuse. C'est un defaut d'appel, pas de configuration.",
+        + " d identifiant : refuse. C'est un defaut d'appel, pas de"
+        + ' configuration.',
       );
       return false;
     }

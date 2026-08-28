@@ -93,8 +93,33 @@ export async function etatQuota(userId: string): Promise<EtatQuota | null> {
   // Elle ne dispense que du BLOCAGE : le comptage reste fait et rendu tel
   // quel. Un compte interne qui verrait « 0 commande » lirait un chiffre faux,
   // et c'est precisement sur ce tableau qu'on juge la consommation reelle.
+  /*
+    UN COMPTE INTROUVABLE N'EST PAS UN APPEL FAUTIF, ET ON LE DIT ICI.
+
+    Ce code appelait `estAdmin(u?.user?.email, u?.user?.id)` sans regarder si
+    la resolution avait abouti. Quand `getUserById` ne rend rien — une fiche
+    boutique qui pointe un compte disparu de `auth`, ce que les boutiques du
+    banc produisent —, `estAdmin` recevait deux `undefined` et journalisait
+    « C'est un defaut d'appel, pas de configuration. » C'etait faux : l'appel
+    etait juste. Constate le 28 aout 2026 a 16:00:00 sur la veille des chaines,
+    ou ce message envoyait verifier `ADMIN_USER_IDS` pendant que la vraie cause
+    — un `user_id` orphelin — restait invisible.
+
+    Le verdict ne change pas d'un iota : compte introuvable, donc pas exempt.
+    Seul le diagnostic devient vrai. Une ligne de journal qui nomme une cause
+    qu'elle n'a pas verifiee coute le temps de celui qui la croit.
+  */
   const { data: utilisateur } = await sb.auth.admin.getUserById(userId);
-  const exempt = estAdmin(utilisateur?.user?.email, utilisateur?.user?.id);
+  const compte = utilisateur?.user;
+
+  if (!compte) {
+    console.error(
+      `etatQuota — aucun compte auth pour user_id ${userId} : quota calcule`
+      + ' sans exemption. Verifier la fiche boutique, pas ADMIN_USER_IDS.',
+    );
+  }
+
+  const exempt = compte ? estAdmin(compte.email, compte.id) : false;
 
   const { data: abonnement } = await sb
     .from('subscriptions')
