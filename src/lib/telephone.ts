@@ -87,6 +87,43 @@ export function cleAppariement(saisie: unknown): string {
   return d.slice(-8);
 }
 
+/**
+ * Deux valeurs désignent-elles LA MÊME PERSONNE ?
+ *
+ * ── POURQUOI `cleAppariement` NE SUFFIT PAS ICI ────────────────────────────
+ *
+ * Les huit derniers chiffres réunissent bien les trois formes du même numéro
+ * (`2250102918886`, `22502918886`, `0102918886`), et c'est ce qu'on veut. Mais
+ * ils réunissent AUSSI `0102918886` et `0702918886`, qui sont deux abonnés
+ * différents. Ailleurs ce risque est borné par le filtre boutique ; l'écran
+ * des droits, lui, rassemble les données de TOUTES les boutiques et montre une
+ * adresse de domicile. La confusion n'y serait plus une gêne, ce serait une
+ * fuite.
+ *
+ * ── LA RÈGLE ───────────────────────────────────────────────────────────────
+ *
+ * Les huit chiffres stables doivent concorder — c'est nécessaire. Et quand les
+ * DEUX valeurs se laissent normaliser en un numéro national à dix chiffres,
+ * ces dix chiffres doivent concorder aussi : c'est ce second contrôle qui
+ * sépare `01…` de `07…`.
+ *
+ * Quand l'une des deux ne se normalise pas — une forme d'avant 2021, à laquelle
+ * il manque le préfixe d'opérateur — on s'en tient aux huit chiffres. Il n'y a
+ * alors aucune preuve du contraire, et refuser reviendrait à priver de ses
+ * droits le client dont le numéro a été enregistré sous une vieille forme.
+ */
+export function memeNumero(a: unknown, b: unknown): boolean {
+  const cleA = cleAppariement(a);
+  const cleB = cleAppariement(b);
+  if (!cleA || cleA !== cleB) return false;
+
+  const natA = normaliserTelephone(a);
+  const natB = normaliserTelephone(b);
+  if (natA.ok && natB.ok) return natA.national === natB.national;
+
+  return true;
+}
+
 /** Formatage lisible pendant la saisie : 01 02 03 04 05. */
 export function formaterTelephone(saisie: string): string {
   const d = String(saisie ?? '').replace(/\D/g, '').slice(0, LONGUEUR_NATIONALE);
