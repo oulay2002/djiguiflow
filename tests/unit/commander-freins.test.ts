@@ -55,22 +55,13 @@ vi.mock('@/lib/limiteur', () => ({
   secondesAvantMinuitAbidjan: () => 3600,
 }));
 
-// Le catalogue ne doit jamais etre lu sur un appel refuse : ces doublures
-// levent un drapeau si on les touche.
-vi.mock('@/lib/googleSheets', () => ({
-  readSheet: async () => {
-    etats.catalogueLu = true;
-    return [];
-  },
-  readHeaders: async () => {
-    etats.catalogueLu = true;
-    return [];
-  },
-  appendRow: async () => {
-    etats.catalogueLu = true;
-  },
-}));
-
+// Le catalogue ne doit jamais etre lu sur un appel refuse : cette doublure
+// leve un drapeau si on la touche.
+//
+// Il y en avait une seconde, sur `@/lib/googleSheets` : la route lisait le
+// menu dans la feuille en repli. Le module a disparu le 28 aout 2026 avec le
+// reste de Google Sheets ; Supabase est desormais le seul catalogue, donc le
+// seul drapeau a lever.
 vi.mock('@/lib/supabaseAdmin', () => ({
   getSupabaseAdmin: () => {
     etats.catalogueLu = true;

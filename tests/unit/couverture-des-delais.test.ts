@@ -34,8 +34,6 @@ function fichiersServeur(racine: string): string[] {
  * laissee ouverte par habitude.
  */
 const DISPENSES: Record<string, string> = {
-  'src/lib/googleSheets.ts':
-    "miroir jamais bloquant : ses appelants n'attendent pas son verdict. A borner quand meme, mais ce n'est pas ce qui retient un client.",
   'src/lib/billing/cinetpay.ts':
     "prestataire INACTIF : `prestataireActif()` prend GeniusPay des qu'il est configure. Ce code ne s'execute pas aujourd'hui.",
   'src/lib/apiClient.ts':

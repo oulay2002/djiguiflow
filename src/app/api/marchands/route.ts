@@ -63,9 +63,6 @@ export async function POST(req: Request) {
       emoji: corps.emoji ? String(corps.emoji) : undefined,
       whatsapp: corps.whatsapp ? String(corps.whatsapp) : undefined,
       groupeLivreurs: corps.groupe_livreurs ? String(corps.groupe_livreurs) : undefined,
-      sheetCommandes: corps.sheet_commandes ? String(corps.sheet_commandes) : undefined,
-      sheetMenu: corps.sheet_menu ? String(corps.sheet_menu) : undefined,
-      creerOnglets: corps.creer_onglets !== false,
     });
 
     console.info(`Provisioning marchand « ${resultat.slug} » par ${admin.email}`);

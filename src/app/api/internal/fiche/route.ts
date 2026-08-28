@@ -2,7 +2,7 @@ import { etatBoutique } from '@/lib/horaires';
 import { createHash, timingSafeEqual } from 'node:crypto';
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
-import { nomsOngletsParDefaut } from '@/lib/provisioning';
+import { nomsOngletsParDefaut } from '@/lib/marchands';
 
 export const dynamic = 'force-dynamic';
 

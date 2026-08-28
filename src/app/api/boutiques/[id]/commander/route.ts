@@ -1,4 +1,3 @@
-import { readSheet, readHeaders, appendRow } from '@/lib/googleSheets';
 import { getMarchand, prefixeReference, type Marchand } from '@/lib/marchands';
 import { resoudreBoutiqueUuid } from '@/lib/boutiques';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
@@ -34,8 +33,16 @@ import { DELAI_WEBHOOK, delai } from '@/lib/reseau';
  * client qui voit une erreur et recommence coute moins cher qu'un client qui
  * croit avoir commande et que personne ne livre.
  *
- * La feuille reste ecrite, en miroir et sans pouvoir bloquer : les workflows
- * n8n la lisent encore.
+ * LA FEUILLE N'EST PLUS ECRITE DU TOUT — 28 aout 2026. Le miroir survivait par
+ * son commentaire : « les workflows n8n la lisent encore ». C'etait vrai
+ * jusqu'au debranchement de la veille, apres quoi les 23 workflows actifs
+ * n'ont plus contenu un seul noeud Google. Verifie sur l'API du VPS avant ce
+ * retrait, pas de memoire.
+ *
+ * Une ecriture que plus personne ne lit n'est pas neutre : elle recopiait nom,
+ * telephone et adresse dans un classeur que la purge de conservation n'atteint
+ * pas, et elle echouait six fois par jour sur les boutiques de banc — du bruit
+ * dans la surveillance de production, precisement la ou il faut du silence.
  */
 
 type LigneCommande = {
@@ -63,10 +70,10 @@ type Admin = NonNullable<ReturnType<typeof getSupabaseAdmin>>;
 /**
  * Donne un prix et un nom a chaque ligne du panier.
  *
- * Supabase d'abord, la feuille en repli pour ce qui n'y est pas encore : la
- * table `produits` n'est pas garantie complete pour tous les marchands tant
- * que la migration n'est pas finie, et un plat introuvable disparaitrait
- * silencieusement du panier.
+ * SUPABASE EST LA SEULE SOURCE. La feuille servait de repli « tant que la
+ * migration n'est pas finie » ; elle l'est, et la vitrine ne publie de toute
+ * facon que ce que `produits` contient. Le prix vient donc toujours de la
+ * base, jamais d'un texte comme « 2 500 FCFA » qu'il fallait re-analyser.
  */
 async function tariferPanier(
   m: Marchand,
@@ -134,32 +141,16 @@ async function tariferPanier(
     }
   }
 
-  const manquants = demandes.filter((d) => !resolues.has(clef(d)));
-  if (manquants.length) {
-    try {
-      const menu = await readSheet(`${m.sheetMenu}!A:I`, m.sheetId);
-      for (const d of manquants) {
-        const p = menu.find((x) => x.id === d.id);
-        if (!p) continue;
-        resolues.set(clef(d), {
-          produitId: null,
-          plat: String(p.nom ?? ''),
-          variante: d.variante,
-          quantite: d.quantite,
-          // La feuille est un repli pour les marchands pas encore migres : on
-          // n'y cherche pas de stock, et on ne refuse donc pas leurs commandes
-          // faute d'une information qu'ils ne tiennent pas.
-          stock: null,
-          disponible: true,
-          // La feuille ecrit les prix en « 2 500 FCFA » : on ne garde que les
-          // chiffres.
-          prixUnitaire: Number(String(p.prix).replace(/\D/g, '')) || 0,
-        });
-      }
-    } catch (e) {
-      console.error(`Panier — repli menu ${m.sheetMenu} impossible :`, e);
-    }
-  }
+  /*
+    LE REPLI PAR LA FEUILLE EST RETIRE, ET IL NE POUVAIT PLUS SE DECLENCHER.
+    Il rattrapait « les marchands pas encore migres » : un article absent de
+    Supabase etait cherche dans l'onglet Menu. Or la vitrine ne propose que ce
+    que Supabase contient — un identifiant qui n'y est pas n'a jamais pu etre
+    mis dans un panier. Verifie avant le retrait : les trois boutiques ont leur
+    catalogue en base (3, 5 et 6 articles), aucune n'a zero.
+    Un article introuvable est desormais simplement absent du panier, ce que
+    faisait deja ce code quand la feuille ne le connaissait pas non plus.
+  */
 
   /**
    * L'ordre du panier du client est conserve.
@@ -767,8 +758,12 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     );
   }
 
-  // ---- 2. Miroir Google Sheets, jamais bloquant.
-  const articlesFeuille = lignes.map((l) => ({
+  // ---- 2. Les articles, tels qu'un humain doit les lire.
+  //
+  // Ce tableau a servi au miroir Google Sheets jusqu'au 28 aout 2026. Le
+  // miroir est parti ; lui reste, parce que c'est LE champ `items` que n8n
+  // recoit et que le marchand comme le livreur lisent dans leur message.
+  const articlesLisibles = lignes.map((l) => ({
     // LE CHOIX REJOINT LE NOM **ICI SEULEMENT**, parce que ce texte n'est pas
     // apparie : il est LU par un marchand et par un livreur. C'est le seul
     // endroit ou la pointure doit se voir sans que personne n'ait a la
@@ -778,45 +773,6 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     quantité: l.quantite,
     prix_unitaire: l.prixUnitaire,
   }));
-
-  const payload: Record<string, string> = {
-    chat_id: phone,
-    customer_name: String(nom || 'Client'),
-    phone,
-    // Vide en retrait, comme en base : une adresse dans la colonne que relit
-    // « Acceptation Livraison » ferait croire a une course a faire.
-    address: modeRetenu === 'retrait' ? '' : String(adresse || ''),
-    instruction: String(instructions || ''),
-    // Ces deux colonnes n'existent pas encore dans les feuilles des marchands.
-    // `payload[h] ?? ''` n'ecrit que les en-tetes presentes : les ajouter ici
-    // ne casse rien et les remplira le jour ou un marchand cree la colonne.
-    mode_recuperation: modeRetenu,
-    heure_retrait: heureRetraitIso ?? '',
-    items: JSON.stringify(articlesFeuille),
-    total_price: String(total),
-    status: 'validee',
-    order_id,
-    timestamp: new Date().toISOString(),
-    nom_livreur: '',
-    heure_prise_en_charge: '',
-    statut_livraison: '',
-    position_livreur: '',
-    heure_livraison: '',
-    // Meme valeur qu'en base, et pour la meme raison : c'est cette colonne que
-    // « Acceptation Livraison » relit pour savoir ou joindre le client, et son
-    // aiguillage compare a 'whatsapp'. Les deux ecritures doivent rester
-    // d'accord, sinon la feuille et Supabase racontent deux histoires.
-    canal: 'whatsapp',
-  };
-
-  try {
-    const headers = await readHeaders(`${m.sheetCommandes}!A1:Z1`, m.sheetId);
-    await appendRow(`${m.sheetCommandes}!A:Z`, headers.map((h) => payload[h] ?? ''), m.sheetId);
-  } catch (e) {
-    // La commande est deja en base : le miroir peut echouer sans consequence
-    // pour le marchand, qui la voit dans son tableau de bord.
-    console.error(`Commande ${order_id} — miroir ${m.sheetCommandes} impossible :`, e);
-  }
 
   // ---- 3. Webhook generique (avec boutique_id pour n8n)
   // UNE BOUTIQUE D'ESSAI NE REVEILLE PERSONNE.
@@ -846,7 +802,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
           customer_name: String(nom || 'Client'),
           phone,
           address: modeRetenu === 'retrait' ? '' : String(adresse || ''),
-          items: JSON.stringify(articlesFeuille),
+          items: JSON.stringify(articlesLisibles),
           /**
            * CE QUI EMPECHE D'ENVOYER UN LIVREUR CHERCHER UNE COMMANDE A
            * EMPORTER.

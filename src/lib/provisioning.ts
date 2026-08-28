@@ -1,46 +1,16 @@
-import { creerOnglet } from '@/lib/googleSheets';
 import { invaliderCacheMarchands } from '@/lib/marchands';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 
-/**
- * En-tetes des onglets crees pour un nouveau marchand.
- *
- * Ils doivent rester alignes sur les payloads ecrits par l'app, qui mappent
- * les colonnes PAR NOM (`headers.map(h => payload[h])`) :
- * - commandes : src/app/api/boutiques/[id]/commander/route.ts
- * - menu      : src/app/api/dashboard/produits/route.ts
- * Un nom de colonne qui derive ici produit une colonne vide en production,
- * sans aucune erreur visible.
- */
-export const ENTETES_COMMANDES = [
-  'chat_id', 'customer_name', 'phone', 'address', 'instructions', 'items',
-  'total_price', 'status', 'order_id', 'timestamp', 'nom_livreur',
-  'heure_prise_en_charge', 'statut_livraison', 'position_livreur',
-  'heure_livraison', 'canal',
-];
-
-export const ENTETES_MENU = [
-  'id', 'nom', 'categorie', 'prix', 'description', 'disponible', 'image',
-];
-
-// La fonction vit desormais dans `@/lib/slug` : c'est une fonction de chaine,
-// et ce module-ci tire `google-auth-library`, ce qui interdit de l'importer
-// depuis un composant client. Reexportee pour ne rien casser chez ses appelants.
+// La fonction vit dans `@/lib/slug` : c'est une fonction de chaine, et ce
+// module-ci tirait `google-auth-library` — ce qui interdisait de l'importer
+// depuis un composant client. La dependance Google est partie le 28 aout 2026 ;
+// la separation reste, parce qu'elle etait juste pour une autre raison : ce
+// module parle a Supabase avec la cle de service, un composant client n'a rien
+// a y prendre. Reexportee pour ne rien casser chez ses appelants.
 export { genererSlug } from '@/lib/slug';
 // Reexporter ne met pas le symbole dans la portee de CE module, qui s'en sert
 // plus bas. Les deux lignes sont donc necessaires.
 import { genererSlug } from '@/lib/slug';
-
-/** « rosemonde » -> « Rosemonde », pour composer un nom d'onglet lisible. */
-function capitaliser(slug: string): string {
-  const compact = slug.replace(/-/g, '');
-  return compact.charAt(0).toUpperCase() + compact.slice(1);
-}
-
-export function nomsOngletsParDefaut(slug: string) {
-  const suffixe = capitaliser(slug);
-  return { sheetCommandes: `Commandes_${suffixe}`, sheetMenu: `Menu_${suffixe}` };
-}
 
 export type DemandeProvisioning = {
   nom: string;
@@ -52,10 +22,6 @@ export type DemandeProvisioning = {
   emoji?: string;
   whatsapp?: string;
   groupeLivreurs?: string;
-  sheetCommandes?: string;
-  sheetMenu?: string;
-  /** false pour provisionner sans toucher a Google Sheets (canal App seul). */
-  creerOnglets?: boolean;
 };
 
 export type ResultatProvisioning = {
@@ -64,9 +30,6 @@ export type ResultatProvisioning = {
   userId: string;
   /** true si le compte marchand vient d'etre cree et invite par email. */
   invite: boolean;
-  sheetCommandes: string;
-  sheetMenu: string;
-  ongletsCrees: string[];
 };
 
 export class ErreurProvisioning extends Error {
@@ -139,10 +102,6 @@ export async function provisionnerMarchand(d: DemandeProvisioning): Promise<Resu
   const slug = await slugDisponible(sb, genererSlug(d.slug?.trim() || nom));
   if (!slug) throw new ErreurProvisioning('Nom de boutique inexploitable comme slug.', 400);
 
-  const parDefaut = nomsOngletsParDefaut(slug);
-  const sheetCommandes = d.sheetCommandes?.trim() || parDefaut.sheetCommandes;
-  const sheetMenu = d.sheetMenu?.trim() || parDefaut.sheetMenu;
-
   // 1. Compte marchand : on reutilise un compte existant, sinon on invite.
   const existant = await trouverUtilisateurParEmail(sb, email);
   let userId = existant?.id ?? '';
@@ -159,21 +118,15 @@ export async function provisionnerMarchand(d: DemandeProvisioning): Promise<Resu
     invite = true;
   }
 
-  // 2. Onglets Google Sheets, avant toute ecriture en base.
-  const ongletsCrees: string[] = [];
-  if (d.creerOnglets !== false) {
-    try {
-      if (await creerOnglet(sheetCommandes, ENTETES_COMMANDES)) ongletsCrees.push(sheetCommandes);
-      if (await creerOnglet(sheetMenu, ENTETES_MENU)) ongletsCrees.push(sheetMenu);
-    } catch (e) {
-      throw new ErreurProvisioning(
-        `Creation des onglets impossible : ${e instanceof Error ? e.message : 'erreur inconnue'}`,
-        502,
-      );
-    }
-  }
+  /*
+    L'ETAPE 2 ETAIT « ONGLETS GOOGLE SHEETS, AVANT TOUTE ECRITURE EN BASE ».
+    Elle est retiree le 28 aout 2026 : plus rien ne lit ces onglets. Elle
+    LEVAIT en 502 quand Google refusait — un quota Google pouvait donc empecher
+    la creation d'un marchand, alors que rien de ce qu'on lui construisait n'en
+    dependait.
+  */
 
-  // 3. Fiche boutique.
+  // 2. Fiche boutique.
   const { data: boutique, error: erreurBoutique } = await sb
     .from('boutiques')
     .insert({
@@ -187,13 +140,17 @@ export async function provisionnerMarchand(d: DemandeProvisioning): Promise<Resu
       zone: d.zone?.trim() || null,
       telephone: d.telephone?.trim() || null,
       emoji: d.emoji?.trim() || '🏪',
-      // Les onglets viennent d'etre crees dans CE classeur : la fiche doit le
-      // dire. n8n lit `sheet_document_id` sur la fiche pour construire chacun
-      // de ses appels Google Sheets — le laisser vide donne un documentId vide,
-      // donc un 404 sur le premier message recu par le marchand.
-      sheet_document_id: process.env.SHEET_ID ?? null,
-      sheet_commandes: sheetCommandes,
-      sheet_menu: sheetMenu,
+      /*
+        `sheet_document_id`, `sheet_commandes` et `sheet_menu` NE SONT PLUS
+        POSES. Le commentaire qui les justifiait disait « n8n lit
+        `sheet_document_id` pour construire chacun de ses appels Google Sheets » :
+        il n'y a plus un seul appel Google Sheets a construire.
+
+        Les colonnes restent en base — les vider est une migration, et les
+        anciennes fiches les portent encore. Un nouveau marchand nait
+        simplement sans, ce que la voie « sans classeur » faisait deja pour
+        toute boutique creee depuis le tableau de bord.
+      */
       groupe_livreurs: d.groupeLivreurs?.trim() || null,
     })
     .select('id')
@@ -248,5 +205,5 @@ export async function provisionnerMarchand(d: DemandeProvisioning): Promise<Resu
 
   invaliderCacheMarchands();
 
-  return { boutiqueId: boutique.id, slug, userId, invite, sheetCommandes, sheetMenu, ongletsCrees };
+  return { boutiqueId: boutique.id, slug, userId, invite };
 }
