@@ -336,8 +336,27 @@ function Ecran() {
     <main id="contenu" className="mx-auto max-w-3xl px-5 py-10">
       <LienRetour href="/">Retour à l’accueil</LienRetour>
 
-      <h1 className="mt-6 font-display text-3xl text-nuit-900">Vos données</h1>
-      <p className="mt-2 text-chaux-600" style={{ fontSize: 'var(--text-chapeau)' }}>
+      {/*
+        LA GRAISSE MANQUAIT, ET AVEC ELLE TOUT LE CARACTERE.
+        `font-display` ne pose que la famille : le titre heritait de 400, sur
+        une grotesque a contraste variable dessinee pour vivre a 800. « Vos
+        données » ne se lisait pas comme un tampon mais comme une phrase un peu
+        grande, et rien ne le separait du chapeau qui le suit. 800 est dans le
+        fichier variable deja charge — le corriger ne coute pas un octet.
+        `font-extrabold` et non `font-black` : la variable s'arrete a 800, et
+        demander 900 ferait synthetiser au trait ce qu'on vient de reparer.
+      */}
+      <h1 className="mt-6 font-display text-3xl font-extrabold leading-[1.05] tracking-[-0.02em] text-nuit-900 sm:text-4xl">
+        Vos données
+      </h1>
+      {/*
+        `text-chapeau` ET PAS `style={{ fontSize: var(--text-chapeau) }}`.
+        Le jeton porte DEUX valeurs — la taille et son interligne de 1,625. Une
+        valeur litterale n'en transporte qu'une : le chapeau rendait a 1,5,
+        l'interligne du corps, et perdait 2,125 px de plomb par ligne. C'est ce
+        dommage-la que la regle de DESIGN.md existe pour empecher.
+      */}
+      <p className="mt-2 text-chapeau text-chaux-600">
         Voyez ce que DjiguiFlow détient à votre sujet, pourquoi, et pendant combien de
         temps. Vous pouvez en demander l’effacement.
       </p>
@@ -377,7 +396,7 @@ function Ecran() {
 
       {!dossier && !efface && !ouvertureParLien && (
         <section className={`mt-8 ${CADRE}`}>
-          <h2 className="font-display text-xl text-nuit-900">
+          <h2 className="font-display text-2xl font-bold tracking-[-0.01em] text-nuit-900">
             {lienEchoue ? 'Ouvrons-le autrement' : 'Prouvez que c’est bien vous'}
           </h2>
           {/*
@@ -513,7 +532,7 @@ function Ecran() {
 
       {dossier?.efface && (
         <section className="mt-8 border border-accent-200 bg-accent-50 p-5">
-          <h2 className="flex items-center gap-2 font-display text-xl text-nuit-900">
+          <h2 className="flex items-center gap-2 font-display text-2xl font-bold tracking-[-0.01em] text-nuit-900">
             <ShieldCheck className="size-5 text-accent-600" aria-hidden />
             Ces données ont déjà été effacées
           </h2>
@@ -533,7 +552,21 @@ function Ecran() {
               className="flex items-center gap-2 text-sm text-chaux-600"
             >
               <ShieldCheck className="size-4 text-accent-600" aria-hidden />
-              Dossier de la personne joignable au <strong className="font-mono">{dossier.numero}</strong>
+              Dossier de la personne joignable au{' '}
+              {/*
+                PAS DE `whitespace-nowrap` ICI, ET C'EST UN ARBITRAGE.
+                « 01 •• •• •• 05 » se coupe en deux au milieu du masque a
+                360 px, ce qui est laid. Le rendre insecable le repare — et
+                coute 200 px de defilement lateral a 200 % de texte (382 → 583
+                px mesures), parce qu'un mot de quatorze signes en mono a 28 px
+                ne rentre plus nulle part. Une coupure disgracieuse pour tout
+                le monde vaut mieux qu'une page qui defile de travers pour qui
+                grossit son texte.
+                `font-semibold` et non `<strong>` nu : celui-ci vaut 700, et
+                600 suffit — le numero n'est pas le sujet de la phrase, il en
+                est la preuve.
+              */}
+              <strong className="font-mono font-semibold">{dossier.numero}</strong>
             </p>
 
             <dl className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
@@ -593,7 +626,7 @@ function Ecran() {
                   dans la navigation par titres d'un lecteur d'ecran ne
                   designent pas la meme chose — l'une est la liste, l'autre
                   la regle de conservation. */}
-              <h2 className="font-display text-xl text-nuit-900">Vos commandes chez ce marchand</h2>
+              <h2 className="font-display text-2xl font-bold tracking-[-0.01em] text-nuit-900">Vos commandes chez ce marchand</h2>
               <ul className="mt-4 divide-y divide-nuit-900/10">
                 {dossier.commandes.map((c) => (
                   <li key={c.reference} className="py-3">
@@ -616,7 +649,7 @@ function Ecran() {
           )}
 
           <section className={`mt-6 ${CADRE}`}>
-            <h2 className="font-display text-xl text-nuit-900">
+            <h2 className="font-display text-2xl font-bold tracking-[-0.01em] text-nuit-900">
               Ce que nous gardons, et pendant combien de temps
             </h2>
             {/*
@@ -644,12 +677,41 @@ function Ecran() {
                         replier ne doit pas le retirer de la navigation par
                         titres, qui est la facon dont un lecteur d'ecran
                         parcourt un registre de huit entrees. */}
-                    <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3">
-                      <h3 className="text-sm font-medium text-nuit-900">{t.nom}</h3>
-                      <span className="flex shrink-0 items-center gap-2 text-xs text-chaux-600">
+                    {/* `flex-wrap` : a 100 % le nom et la duree tiennent sur
+                        une ligne ; a 200 % de texte, la duree et son chevron
+                        descendent sous le nom au lieu de pousser le document.
+                        Meme traitement que les quatre autres rangees de la
+                        coque — une rangee qui ne peut pas ceder impose sa
+                        largeur a toute la page. */}
+                    <summary className="flex min-h-11 cursor-pointer list-none flex-wrap items-center justify-between gap-3">
+                      {/* 600 et pas 500 : a 14 px, 500 contre le 400 du corps
+                          ne fait pas un titre — et quatre roles differents de
+                          l'ecran portaient deja ce meme 14/500. */}
+                      <h3 className="min-w-0 text-sm font-semibold text-nuit-900">{t.nom}</h3>
+                      {/*
+                        `min-w-0` ET PAS `shrink-0` — c'est un correctif de
+                        regression, introduite par le repliage lui-meme.
+                        `shrink-0` interdisait a la duree de ceder : a 200 % de
+                        texte, « 3 ans apres la derniere commande » reclamait
+                        423 px dans un `summary` qui en fait 322, ecrasait le
+                        titre voisin a 26 px, et poussait le document a 554 px
+                        pour une fenetre de 360. Le retrait du seul
+                        `flex-shrink` le ramene a 386.
+                        `font-mono` : ces durees se comparent d'une ligne a
+                        l'autre — c'est la regle du chiffre en mono, et elles
+                        ne s'alignaient pas.
+                      */}
+                      <span className="flex min-w-0 items-center gap-2 font-mono text-xs text-chaux-600">
                         {t.conservation}
+                        {/* `shrink-0` SUR L'ICONE, `min-w-0` sur le texte :
+                            c'est le texte qui doit ceder, jamais le chevron.
+                            Sans lui, a 200 % l'icone s'ecrasait a une largeur
+                            de ZERO tandis que son trace continuait de peindre
+                            12 px hors de sa boite — un debordement invisible a
+                            la bissection, puisque plus aucune BOITE ne
+                            depassait. */}
                         <ChevronDown
-                          className="size-4 transition-transform group-open:rotate-180"
+                          className="size-4 shrink-0 transition-transform group-open:rotate-180"
                           aria-hidden
                         />
                       </span>
@@ -689,9 +751,13 @@ function Ecran() {
                guide. */
             className="mt-6 scroll-mt-6 border border-bissap-200 bg-bissap-50 p-5"
           >
-            <h2 className="font-display text-xl text-nuit-900">Demander l’effacement</h2>
+            <h2 className="font-display text-2xl font-bold tracking-[-0.01em] text-nuit-900">Demander l’effacement</h2>
 
-            <p className="mt-2 text-sm text-nuit-900">
+            {/* `max-w-[62ch]` : a 1280 px, ce paragraphe composait 88 signes
+                par ligne — bien au-dela des 75 ou l'oeil retrouve encore le
+                debut de la ligne suivante. Et c'est celui qu'il faut le moins
+                mal lire : il dit ce que l'effacement laisse en place. */}
+            <p className="mt-2 max-w-[62ch] text-sm text-nuit-900">
               Vos commandes terminées perdent votre nom, votre téléphone et votre adresse.
               Le montant et la date restent, sans vous : c’est la comptabilité du marchand,
               qu’il doit conserver.
@@ -802,11 +868,45 @@ function Ecran() {
   );
 }
 
+/**
+ * La tuile de comptage de la maison, enfin conforme.
+ *
+ * DEUX REGLES NOMMEES ETAIENT PRISES A L'ENVERS.
+ *
+ * 1. « LA REGLE DU CHIFFRE EN MONO ». Ces quatre nombres sont le seul endroit
+ *    de l'ecran ou l'oeil compare d'une tuile a l'autre. Ils rendaient en
+ *    Bricolage, une proportionnelle : le « 1 » n'y a pas la chasse du « 0 »,
+ *    donc les quatre chiffres ne s'alignaient pas et dansaient quand ils
+ *    changeaient. `tabular-nums` par-dessus le mono : la regle vaut aussi
+ *    entre deux etats du meme compteur, pas seulement entre deux tuiles.
+ *
+ * 2. « LE CHIFFRE EN HAUT, L'INTITULE EN DESSOUS ». DESIGN.md declare
+ *    l'inversion deliberee, et c'est bien le chiffre qu'on compare : il doit
+ *    rester sur la meme ligne quelle que soit la longueur de l'intitule. Or
+ *    « Paniers non validés » passe sur deux lignes a 360 px, et les quatre
+ *    nombres se decalaient.
+ *
+ * `flex-col-reverse` fait l'inversion A L'ECRAN SEULEMENT : le `dl` garde son
+ * ordre `dt` puis `dd`, qui est celui qu'un lecteur d'ecran doit entendre —
+ * l'intitule avant sa valeur. Inverser la source aurait corrige l'oeil en
+ * cassant l'oreille.
+ *
+ * `font-bold` et non `font-black` : 700 est la graisse que DESIGN.md donne au
+ * role `donnee`, et desormais la plus haute face mono reellement chargee.
+ */
 function Compteur({ libelle, valeur }: { libelle: string; valeur: number }) {
+  // `justify-end` : en `col-reverse`, le debut de l'axe est EN BAS. Sans lui,
+  // les tuiles se tassaient vers le bas de leur cellule de grille, et « 2 » se
+  // retrouvait 16 px sous « 12 » des que l'intitule voisin passait sur deux
+  // lignes — ce que le renversement etait justement cense empecher.
   return (
-    <div>
-      <dt className="text-sm text-chaux-600">{libelle}</dt>
-      <dd className="font-display text-2xl text-nuit-900">{valeur}</dd>
+    <div className="flex flex-col-reverse justify-end">
+      <dt className="mt-1 text-xs font-semibold uppercase tracking-[0.12em] text-chaux-600">
+        {libelle}
+      </dt>
+      <dd className="font-mono text-3xl font-bold leading-none tracking-[-0.01em] tabular-nums text-nuit-900">
+        {valeur}
+      </dd>
     </div>
   );
 }
@@ -815,7 +915,7 @@ function ApresEffacement({ etat }: { etat: { complet: boolean; bilan: Bilan } })
   const { bilan, complet } = etat;
   return (
     <section className="mt-8 border border-accent-200 bg-accent-50 p-5">
-      <h2 className="flex items-center gap-2 font-display text-xl text-nuit-900">
+      <h2 className="flex items-center gap-2 font-display text-2xl font-bold tracking-[-0.01em] text-nuit-900">
         <ShieldCheck className="size-5 text-accent-600" aria-hidden />
         C’est fait
       </h2>

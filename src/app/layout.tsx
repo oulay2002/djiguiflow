@@ -23,10 +23,27 @@ const instrumentSans = Instrument_Sans({
   display: "swap",
 });
 
+/**
+ * LES GRAISSES DEMANDÉES, ET ELLES SEULES.
+ *
+ * La déclaration se trompait des deux côtés. Elle chargeait la 500, réclamée
+ * par UN seul endroit du site ; et elle omettait la 700, réclamée par
+ * TRENTE-SIX — dont le rôle `donnee` de DESIGN.md, qui est du mono 700.
+ *
+ * Une graisse absente ne fait pas échouer le rendu, elle le dégrade en
+ * silence : le navigateur prend la face la plus proche et l'épaissit au trait.
+ * Ce faux gras se voyait sur seize fichiers, et il coûtait déjà le
+ * téléchargement de la 600 — tirée comme base de synthèse alors qu'aucune
+ * classe de ces pages ne la demandait. On paie donc le même poids qu'avant
+ * pour un vrai dessin au lieu d'un dessin épaissi.
+ *
+ * La 500 restante retombe sur la 400 : le navigateur descend avant de monter,
+ * il n'y a pas de synthèse et l'écart d'un cran est invisible.
+ */
 const plexMono = IBM_Plex_Mono({
   variable: "--font-plex-mono",
   subsets: ["latin"],
-  weight: ["400", "500", "600"],
+  weight: ["400", "600", "700"],
   display: "swap",
 });
 
