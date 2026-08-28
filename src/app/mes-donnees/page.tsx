@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { ChevronDown, Loader2, ShieldCheck, Trash2, TriangleAlert } from 'lucide-react';
 import { Bouton, LienRetour } from '@/components/ui/Bouton';
-import { lireReponseEffacement, type Bilan } from '@/lib/reponseEffacement';
+import { lignesDuBilan, lireReponseEffacement, type Bilan } from '@/lib/reponseEffacement';
 
 /**
  * L'écran des droits : ce qu'on détient sur vous, et comment le faire partir.
@@ -996,25 +996,92 @@ function Compteur({ libelle, valeur }: { libelle: string; valeur: number }) {
   );
 }
 
+/**
+ * La dernière image d'un acte irréversible.
+ *
+ * ── POURQUOI CE BLOC MERITE AUTANT DE SOIN QUE LE BOUTON ROUGE ─────────────
+ *
+ * Regle du pic-fin : c'est ce que garde en memoire quelqu'un qui vient
+ * d'exercer un droit definitif. Il ecrivait « 0 commande(s) : votre identite
+ * en a ete retiree » — le gabarit a parentheses ET l'affichage d'un zero, que
+ * la docstring de `porteeDuGeste` interdit tous les deux, huit cents lignes
+ * plus haut dans ce meme fichier. La composition des lignes est donc sortie
+ * dans `lignesDuBilan`, ou un test la tient.
+ *
+ * ── LE FOCUS, PARCE QUE LA PAGE CHANGE ENTIEREMENT ─────────────────────────
+ *
+ * Le dossier disparait, ce panneau le remplace. Sans deplacement de focus,
+ * l'utilisateur au lecteur d'ecran entend le silence et reste sur `<body>` :
+ * il vient d'effacer ses donnees et rien ne le lui confirme. Meme motif que
+ * l'ouverture du dossier et que la zone de confirmation — c'est la troisieme
+ * fois que cet ecran en a besoin, et la premiere ou il l'avait oublie.
+ *
+ * ── PAS DE LIEN DE SORTIE, ET C'EST MESURE ────────────────────────────────
+ *
+ * J'en avais ajoute un — « Relire ce que la plateforme conserve » — au nom
+ * d'un bloc « qui ne propose plus rien ». Le navigateur a dit le contraire :
+ * `setDossier(null)` fait retomber la page a 844 px, un seul ecran, ou tout
+ * ce qui reste focalisable tient a cinq elements. « Retour a l'accueil » y
+ * est a 40 px et « Lire la politique de confidentialite » a 239 px — la meme
+ * destination que mon lien, sous un autre nom, 470 px plus bas et visible en
+ * meme temps. Deux libelles differents pour une meme URL, c'est deux
+ * destinations pour qui parcourt la liste des liens d'un lecteur d'ecran.
+ *
+ * Une sortie qu'on ajoute sans mesurer l'ecran ou elle atterrit est une
+ * repetition. Celles qui existent sont AU-DESSUS du panneau, ce qui est leur
+ * place : on ne quitte pas un accuse de reception par le bas.
+ */
 function ApresEffacement({ etat }: { etat: { complet: boolean; bilan: Bilan } }) {
   const { bilan, complet } = etat;
+  const titre = useRef<HTMLHeadingElement | null>(null);
+  useEffect(() => { titre.current?.focus(); }, []);
+
+  const lignes = lignesDuBilan(bilan);
+
   return (
-    <section className="mt-8 border border-accent-200 bg-accent-50 p-5">
-      <h2 className="flex items-center gap-2 font-display text-2xl font-bold tracking-[-0.01em] text-nuit-900">
-        <ShieldCheck className="size-5 text-accent-600" aria-hidden />
+    /*
+      `wrap-anywhere` : c'est « automatiquement » qui faisait defiler la page.
+      La regle posee sur h1/h2/h3 dans globals.css ne couvre que le bareme
+      d'affichage ; ce panneau est du CORPS DE TEXTE, et son mot le plus long
+      mesure 266 px a 200 % de texte systeme. Un mot insecable impose sa
+      largeur a son conteneur, qui l'impose au document : mesure a 320 px, le
+      document reclamait 395 px et TOUT defilait lateralement. Avec la regle,
+      307 px, sous la fenetre.
+    */
+    <section className="mt-8 border border-accent-200 bg-accent-50 p-5 wrap-anywhere">
+      <h2
+        ref={titre}
+        tabIndex={-1}
+        className="flex items-center gap-2 font-display text-2xl font-bold tracking-[-0.01em] text-nuit-900"
+      >
+        <ShieldCheck className="size-5 shrink-0 text-accent-600" aria-hidden />
         C’est fait
       </h2>
-      <ul className="mt-3 space-y-1 text-sm text-nuit-900">
-        <li>{bilan.commandesAnonymisees} commande(s) : votre identité en a été retirée.</li>
-        <li>{bilan.paniersSupprimes} panier(s) supprimé(s).</li>
-        <li>{bilan.relancesSupprimees} trace(s) de relance supprimée(s).</li>
-        {bilan.avisRetires > 0 && <li>{bilan.avisRetires} commentaire(s) de livraison retiré(s).</li>}
-      </ul>
 
+      {lignes.length > 0 ? (
+        <ul className="mt-3 space-y-1 text-sm text-nuit-900">
+          {lignes.map((l) => <li key={l}>{l}</li>)}
+        </ul>
+      ) : (
+        /*
+          AUCUNE LIGNE N'EST UN CAS LEGITIME, PAS UN BILAN VIDE A AFFICHER.
+          Quelqu'un dont toutes les commandes sont en cours a exerce son droit :
+          il n'y avait rien a retirer aujourd'hui. Lui montrer une liste de
+          zeros lui dirait que son geste n'a servi a rien.
+        */
+        <p className="mt-3 text-sm text-nuit-900">
+          Il n’y avait rien à retirer aujourd’hui — mais votre demande est enregistrée.
+        </p>
+      )}
+
+      {/* Deux phrases entieres plutot qu'une phrase a trous : une conjugaison
+          assemblee par cinq ternaires est le meme gabarit que « commande(s) »,
+          simplement plus difficile a relire. */}
       {!complet && (
         <p className="mt-3 text-sm text-mangue-700">
-          {bilan.commandesEnCours} commande(s) sont encore en cours et n’ont pas été
-          touchées. Elles le seront automatiquement dès qu’elles seront terminées.
+          {bilan.commandesEnCours === 1
+            ? 'Une commande est encore en cours et n’a pas été touchée. Elle le sera automatiquement dès qu’elle sera terminée — vous n’aurez rien à redemander.'
+            : `${bilan.commandesEnCours} commandes sont encore en cours et n’ont pas été touchées. Elles le seront automatiquement dès qu’elles seront terminées — vous n’aurez rien à redemander.`}
         </p>
       )}
 

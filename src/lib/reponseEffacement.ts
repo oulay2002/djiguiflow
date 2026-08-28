@@ -55,6 +55,84 @@ export type IssueEffacement =
 
 const ECHEC_PAR_DEFAUT = 'L’effacement n’a pas abouti.';
 
+/**
+ * Ce qui a été retiré, dit au passé, une ligne par catégorie touchée.
+ *
+ * ── POURQUOI CETTE FONCTION EXISTE, ET PAS UN TROISIÈME GABARIT ────────────
+ *
+ * L'écran des droits porte déjà `porteeDuGeste`, qui compose la même liste au
+ * FUTUR pour la confirmation, en écrivant les accords en toutes lettres et en
+ * omettant les catégories vides. Sa docstring déclare les deux règles :
+ * « un commande(s) à l'écran est un gabarit qu'on lit, pas une phrase qu'on
+ * écrit », et « afficher 0 laisserait croire que le geste n'a servi à rien ».
+ *
+ * Huit cents lignes plus bas, le bloc d'après-effacement faisait les deux :
+ * « 0 commande(s) : votre identité en a été retirée. » Une règle écrite dans
+ * un fichier ne s'applique pas toute seule à l'autre bout du même fichier —
+ * c'est le motif que cette session a payé trois fois. Elle est donc sortie
+ * ici, où un test la tient.
+ *
+ * ── POURQUOI LE PASSÉ ET LE FUTUR NE PARTAGENT PAS UNE MÊME FONCTION ───────
+ *
+ * On pourrait croire à une seule liste conjuguée deux fois. Ce n'en est pas
+ * une : la confirmation annonce ce qui VA être touché, d'après le dossier
+ * affiché ; le bilan rapporte ce que le SERVEUR a effectivement fait, et les
+ * deux peuvent différer — une commande close entre-temps, un panier expiré.
+ * Fusionner les deux ferait dire à l'écran ce qu'il croyait plutôt que ce qui
+ * s'est passé.
+ *
+ * ── POURQUOI `refusEnregistres` N'EST PAS UNE LIGNE, APRÈS L'AVOIR ÉTÉ ─────
+ *
+ * Ma première version en faisait une : « c'est la seule ligne qui dit qu'on a
+ * AJOUTÉ quelque chose, la taire laisserait croire que tout est parti alors
+ * qu'un numéro reste ». Le raisonnement était juste et la prémisse fausse — le
+ * panneau ferme DÉJÀ sur « nous gardons uniquement votre numéro sur une liste
+ * de refus, pour ne plus jamais vous démarcher », et il le disait avant moi.
+ *
+ * Mesuré dans le navigateur : la ligne et ce paragraphe se lisaient à 250 px
+ * l'un de l'autre, dans le même écran, disant la même chose deux fois. Le
+ * compteur ne rachète pas la répétition : il compte des LIGNES en base, une
+ * par boutique, et `relances_stop` est upserté pour chaque boutique du dossier
+ * — donc il vaut au moins 1 à chaque effacement. La ligne serait apparue
+ * toujours, et la répétition avec elle.
+ *
+ * Un bilan de RETRAITS ne mélange pas un ajout à ses lignes. Le paragraphe le
+ * dit mieux, et il le dit déjà.
+ */
+export function lignesDuBilan(bilan: Bilan): string[] {
+  const lignes: string[] = [];
+
+  if (bilan.commandesAnonymisees > 0) {
+    lignes.push(
+      bilan.commandesAnonymisees === 1
+        ? 'Votre identité a été retirée d’une commande terminée.'
+        : `Votre identité a été retirée de ${bilan.commandesAnonymisees} commandes terminées.`,
+    );
+  }
+  if (bilan.paniersSupprimes > 0) {
+    lignes.push(
+      bilan.paniersSupprimes === 1
+        ? 'Un panier non validé a été supprimé.'
+        : `${bilan.paniersSupprimes} paniers non validés ont été supprimés.`,
+    );
+  }
+  if (bilan.relancesSupprimees > 0) {
+    lignes.push(
+      bilan.relancesSupprimees === 1
+        ? 'Une trace de relance a été supprimée.'
+        : `${bilan.relancesSupprimees} traces de relance ont été supprimées.`,
+    );
+  }
+  if (bilan.avisRetires > 0) {
+    lignes.push(
+      bilan.avisRetires === 1
+        ? 'Un commentaire de livraison a été retiré.'
+        : `${bilan.avisRetires} commentaires de livraison ont été retirés.`,
+    );
+  }
+  return lignes;
+}
+
 function estBilan(v: unknown): v is Bilan {
   if (typeof v !== 'object' || v === null) return false;
   const b = v as Record<string, unknown>;

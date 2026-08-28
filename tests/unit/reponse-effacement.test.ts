@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { lireReponseEffacement } from '@/lib/reponseEffacement';
+import { lignesDuBilan, lireReponseEffacement } from '@/lib/reponseEffacement';
 
 /**
  * La table de vérité entre les formes rendues par
@@ -77,5 +77,73 @@ describe('lireReponseEffacement', () => {
   it('« déjà effacé » l’emporte sur un bilan, si la route rendait les deux', () => {
     const issue = lireReponseEffacement(true, { ok: true, dejaEfface: true, bilan: BILAN });
     expect(issue.sorte).toBe('dejaEfface');
+  });
+});
+
+/**
+ * Les deux règles que la docstring de `porteeDuGeste` déclare, et que le bloc
+ * d'après-effacement enfreignait huit cents lignes plus bas :
+ *   1. aucun gabarit à parenthèses — les accords s'écrivent ;
+ *   2. aucune ligne à zéro — « 0 commande » laisse croire que rien n'a servi.
+ * Une règle écrite dans un commentaire ne s'applique pas toute seule.
+ */
+const VIDE = {
+  commandesAnonymisees: 0,
+  paniersSupprimes: 0,
+  relancesSupprimees: 0,
+  avisRetires: 0,
+  commandesEnCours: 0,
+  refusEnregistres: 0,
+};
+
+describe('lignesDuBilan', () => {
+  it('n’écrit jamais un gabarit à parenthèses', () => {
+    const lignes = lignesDuBilan({ ...VIDE, commandesAnonymisees: 3, paniersSupprimes: 1, relancesSupprimees: 2, avisRetires: 1, refusEnregistres: 1 });
+    expect(lignes.join(' ')).not.toMatch(/\(s\)|\(e\)|\(es\)/);
+  });
+
+  it('omet toute catégorie à zéro', () => {
+    const lignes = lignesDuBilan({ ...VIDE, paniersSupprimes: 2 });
+    expect(lignes).toHaveLength(1);
+    expect(lignes[0]).toBe('2 paniers non validés ont été supprimés.');
+    expect(lignes.join(' ')).not.toContain('0 ');
+  });
+
+  it('accorde le singulier sans afficher le chiffre 1', () => {
+    const l = lignesDuBilan({ ...VIDE, commandesAnonymisees: 1, paniersSupprimes: 1, relancesSupprimees: 1, avisRetires: 1, refusEnregistres: 1 });
+    expect(l).toEqual([
+      'Votre identité a été retirée d’une commande terminée.',
+      'Un panier non validé a été supprimé.',
+      'Une trace de relance a été supprimée.',
+      'Un commentaire de livraison a été retiré.',
+    ]);
+  });
+
+  it('accorde le pluriel et affiche le compte', () => {
+    const l = lignesDuBilan({ ...VIDE, commandesAnonymisees: 2, relancesSupprimees: 4 });
+    expect(l).toEqual([
+      'Votre identité a été retirée de 2 commandes terminées.',
+      '4 traces de relance ont été supprimées.',
+    ]);
+  });
+
+  /*
+    `refusEnregistres` A ETE UNE LIGNE, PENDANT UNE PASSE. Le panneau ferme
+    deja sur « nous gardons uniquement votre numero sur une liste de refus » :
+    la ligne et ce paragraphe se lisaient a 250 px l'un de l'autre. Et comme
+    `relances_stop` est upserte pour chaque boutique du dossier, le compteur
+    vaut au moins 1 a chaque effacement — la repetition aurait ete permanente,
+    jamais occasionnelle. Ce test la tient dehors.
+  */
+  it('n’ajoute pas le refus de démarchage — le paragraphe de clôture le dit déjà', () => {
+    expect(lignesDuBilan({ ...VIDE, refusEnregistres: 2 })).toEqual([]);
+  });
+
+  it('un bilan entièrement vide ne rend aucune ligne, pas des zéros', () => {
+    expect(lignesDuBilan(VIDE)).toEqual([]);
+  });
+
+  it('`commandesEnCours` n’est pas une ligne du bilan : rien n’a été fait sur elles', () => {
+    expect(lignesDuBilan({ ...VIDE, commandesEnCours: 3 })).toEqual([]);
   });
 });
