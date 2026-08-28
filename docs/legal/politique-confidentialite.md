@@ -30,7 +30,7 @@ Chaque Marchand demeure responsable de la licéité de la collecte auprès de se
 ## Article 2 — Coordonnées
 
 - **Éditeur** : OULAÏ Jean Paul, entreprise individuelle — voir [Mentions légales](mentions-legales.md)
-- **Contact protection des données** : [À COMPLÉTER : par exemple donnees@djiguiflow.com]
+- **Contact protection des données** : donnees@djiguiflow.com
 - **Autorité de contrôle** : ARTCI — Abidjan, Côte d'Ivoire
 
 > **[À COMPLÉTER avant publication]** — Statut de la déclaration des traitements auprès de l'ARTCI (numéro et date de récépissé, ou mention « déclaration en cours »).
@@ -199,7 +199,7 @@ Toute personne dispose des droits d'**accès**, de **rectification**, d'**efface
 
 | Vous êtes | Adressez-vous à |
 |---|---|
-| **Marchand** | [À COMPLÉTER : donnees@djiguiflow.com] |
+| **Marchand** | donnees@djiguiflow.com |
 | **Client final d'une boutique** | **En autonomie sur la page « Mes données »** (article 8.3), pour consulter vos données et en demander l'effacement. Pour toute autre demande — rectification, limitation — adressez-vous **au Marchand concerné**, dont les coordonnées figurent sur la vitrine de sa boutique, ou à l'Éditeur, qui transmettra. |
 | **Livreur** | Au Marchand auquel vous êtes rattaché, ou à l'Éditeur |
 

@@ -90,7 +90,7 @@ Vous disposez des droits d'**accès**, de **rectification**, d'**effacement**, d
 
 ### 6.1 Comment les exercer
 
-Adressez-vous **au marchand auquel vous êtes rattaché**, qui est responsable de vos données. Vous pouvez également écrire à [À COMPLÉTER : donnees@djiguiflow.com] ; l'éditeur transmettra votre demande au marchand et vous accompagnera.
+Adressez-vous **au marchand auquel vous êtes rattaché**, qui est responsable de vos données. Vous pouvez également écrire à donnees@djiguiflow.com ; l'éditeur transmettra votre demande au marchand et vous accompagnera.
 
 Une réponse vous est due dans un délai de **trente (30) jours**.
 

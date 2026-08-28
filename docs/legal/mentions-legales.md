@@ -33,7 +33,7 @@ La liste complète des prestataires qui traitent des données personnelles, et l
 
 - Questions générales et commerciales : contact@djiguiflow.com
 - Support technique : support@djiguiflow.com
-- Protection des données : [À COMPLÉTER : adresse dédiée, par exemple donnees@djiguiflow.com]
+- Protection des données : donnees@djiguiflow.com
 
 ## 5. Propriété intellectuelle
 

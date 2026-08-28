@@ -105,6 +105,36 @@ describe('legal — la note de rédaction ne va pas à l écran', () => {
   });
 
   /**
+   * LE MÊME DOCUMENT DOIT DONNER LE MÊME RÉSULTAT SOUS WINDOWS ET SOUS LINUX.
+   *
+   * En JavaScript, `.` ne franchit aucun terminateur de ligne — `\n`, mais
+   * AUSSI `\r`. Sur un fichier en CRLF, `(?:>.*\n?)+` s'arrêtait donc après la
+   * première ligne de la note, l'ancre `$` échouait, et la note restait
+   * entière dans le document.
+   *
+   * Git stocke ces fichiers en LF et les rend en CRLF dans une copie de
+   * travail Windows : la production allait bien — elle se construit sous
+   * Linux — mais le poste de développement comptait un marqueur de plus, celui
+   * qui vit dans la note. On croyait attendre une information qu'on possédait
+   * déjà.
+   *
+   * Ce test échoue sur l'ancienne expression et passe sur la nouvelle. Sans
+   * lui, la correction se déferait au premier remaniement, et personne ne le
+   * verrait avant de publier une note « à supprimer avant publication ».
+   */
+  it('retire la note quelles que soient les fins de ligne', () => {
+    const lf = '# Titre\n\nLe texte.\n\n---\n\n> **Note.**\n> Vérifier [À COMPLÉTER : le RCCM].\n> Et la relire.\n';
+    const crlf = lf.replace(/\n/g, '\r\n');
+
+    for (const [nom, brut] of [['LF', lf], ['CRLF', crlf]] as const) {
+      const r = analyserDocument(brut);
+      expect(r.markdown, `${nom} : la note n’a pas été retirée`).not.toContain('Vérifier');
+      expect(r.marqueursRestants, `${nom} : marqueur de la note compté à tort`).toBe(0);
+      expect(r.publiable, `${nom} : document tenu pour incomplet à tort`).toBe(true);
+    }
+  });
+
+  /**
    * Une règle horizontale au MILIEU du document sépare deux sections ; elle ne
    * doit pas emporter tout ce qui la suit. Seule la note finale part.
    */

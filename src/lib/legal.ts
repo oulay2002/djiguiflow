@@ -131,7 +131,32 @@ export type ContenuLegal = {
  * Separee de la lecture disque pour etre testable sans fichier.
  */
 export function analyserDocument(brut: string): ContenuLegal {
-  const markdown = brut.replace(NOTE_REDACTION, '\n').trimEnd();
+  /**
+   * LES FINS DE LIGNE SONT NORMALISÉES AVANT TOUT, ET CE N'EST PAS COSMÉTIQUE.
+   *
+   * En JavaScript, `.` ne franchit AUCUN terminateur de ligne — `\n`, mais
+   * aussi `\r`. Sur un fichier en CRLF, `(?:>.*\n?)+` s'arrête donc après la
+   * PREMIÈRE ligne de la note, l'ancre `$` échoue, et la note entière reste
+   * dans le document.
+   *
+   * Git stocke ces fichiers en LF et les rend en CRLF dans une copie de
+   * travail Windows. Le même code se comportait donc différemment sur le poste
+   * de développement et en production — où tout allait bien, la construction
+   * se faisant sous Linux.
+   *
+   * ── POURQUOI CORRIGER UN DÉFAUT QUI N'ATTEINT PAS LA PRODUCTION ────────────
+   *
+   * Parce qu'il fausse le COMPTAGE. Le 28 août 2026, le marqueur vivant dans
+   * la note des mentions légales — celui qui dit « les mentions à compléter
+   * doivent être renseignées », et qui disparaîtra à la publication — était
+   * compté localement comme un trou à combler. On croyait attendre une
+   * information qu'on possédait déjà.
+   *
+   * Et le jour où un `.gitattributes` figerait le CRLF, ou qu'on construirait
+   * sous Windows, la note partirait en ligne. Un défaut qui ne se voit que
+   * d'un côté finit toujours par passer de l'autre.
+   */
+  const markdown = brut.replace(/\r\n/g, '\n').replace(NOTE_REDACTION, '\n').trimEnd();
 
   // `matchAll` sur une copie globale : `MARQUEUR` n'est pas globale, et lui
   // ajouter le drapeau `g` la rendrait porteuse d'un `lastIndex` partage entre
