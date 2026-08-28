@@ -4,6 +4,7 @@ import {
   DOCUMENTS_LEGAUX,
   lireDocument,
   trouverDocument,
+  dossierComplet,
 } from '@/lib/legal';
 
 /**
@@ -143,16 +144,50 @@ describe('legal — le registre des documents', () => {
   /**
    * L'ÉTAT DU JOUR, ET IL DOIT ÊTRE FAUX.
    *
-   * Les cinq documents portent aujourd'hui des marqueurs. Le jour où ce test
-   * échoue, c'est que les trous ont été comblés : les pages deviennent alors
-   * publiques d'elles-mêmes, et il faudra remplacer ce test par la vérification
-   * inverse. Ce n'est pas un test à supprimer sans y penser — c'est le moment
-   * de relire les cinq documents une dernière fois.
+   * Le jour où ce test échoue, c'est que les trous ont été comblés : les cinq
+   * pages deviennent alors publiques d'elles-mêmes, et il faudra le remplacer
+   * par la vérification inverse. Ce n'est pas un test à supprimer sans y
+   * penser — c'est le moment de relire les cinq documents une dernière fois.
+   *
+   * ── IL A DÉJÀ SERVI UNE FOIS, LE 28 AOÛT 2026 ──────────────────────────────
+   *
+   * Il portait alors sur CHAQUE document pris isolément. Renseigner la date de
+   * mise en ligne a retiré le dernier marqueur des CGU, et ce test est tombé
+   * en disant « cgu.md est devenu publiable » — exactement ce qu'il devait
+   * faire.
+   *
+   * Ce que la chute a révélé n'était pas une erreur de saisie : des CGU
+   * complètes seraient parties à l'indexation alors que les mentions légales
+   * attendaient toujours l'adresse de l'exploitant. Des conditions opposables
+   * publiées sans éditeur identifiable — le manquement même que les mentions
+   * légales existent pour empêcher.
+   *
+   * D'où `dossierComplet()` : les cinq se publient d'un bloc, ou aucun. Ce test
+   * porte donc désormais sur le dossier, et non plus sur chaque pièce.
    */
-  it('aucun document n est encore publiable — ils sont tous des projets', async () => {
-    for (const doc of DOCUMENTS_LEGAUX) {
-      const contenu = await lireDocument(doc);
-      expect(contenu.publiable, `${doc.fichier} est devenu publiable`).toBe(false);
-    }
+  it('le dossier n est pas encore publiable — il se publie d un bloc', async () => {
+    expect(await dossierComplet(), 'le dossier est devenu publiable').toBe(false);
+  });
+
+  /**
+   * ET IL FAUT QUE CE SOIT POUR UNE VRAIE RAISON.
+   *
+   * Sans ce second contrôle, `dossierComplet()` pourrait rendre `false` par
+   * accident — un fichier illisible, un chemin faux — et l'on croirait le
+   * dossier retenu par un trou à combler alors qu'il serait retenu par une
+   * panne. Au moins un document doit porter un marqueur, et l'on veut savoir
+   * lequel.
+   */
+  it('ce qui retient la publication est bien un marqueur, pas une panne', async () => {
+    const restants = await Promise.all(
+      DOCUMENTS_LEGAUX.map(async (doc) => ({
+        fichier: doc.fichier,
+        marqueurs: (await lireDocument(doc)).marqueursRestants,
+      })),
+    );
+    const total = restants.reduce((s, r) => s + r.marqueurs, 0);
+    const detail = restants.map((r) => `${r.fichier}=${r.marqueurs}`).join(', ');
+
+    expect(total, `aucun marqueur nulle part (${detail})`).toBeGreaterThan(0);
   });
 });

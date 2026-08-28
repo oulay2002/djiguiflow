@@ -160,13 +160,41 @@ export async function lireDocument(doc: DocumentLegal): Promise<ContenuLegal> {
   return analyserDocument(await fs.readFile(chemin, 'utf8'));
 }
 
-/** Les documents sans marqueur : les seuls a lier et a soumettre aux moteurs. */
-export async function documentsPubliables(): Promise<DocumentLegal[]> {
+/**
+ * Le dossier est-il complet ? TOUS les documents, ou aucun.
+ *
+ * ── POURQUOI CETTE REGLE EXISTE, ET CE QUI L'A REVELEE ─────────────────────
+ *
+ * Le 28 aout 2026, remplir la date de mise en ligne a retire le DERNIER
+ * marqueur des CGU. Elles sont donc devenues publiables a elles seules —
+ * indexees, au sitemap, sans bandeau — alors que les mentions legales, elles,
+ * attendaient toujours l'adresse de l'exploitant.
+ *
+ * Un visiteur aurait lu des CGU en apparence definitives, qui renvoient a des
+ * mentions legales portant « ce document est un projet ». Et surtout : des
+ * conditions opposables auraient ete publiees sans que l'editeur soit
+ * identifiable, ce qui est exactement le manquement que les mentions legales
+ * existent pour empecher.
+ *
+ * ── POURQUOI TOUT OU RIEN, PLUTOT QU'UN GRAPHE DE DEPENDANCES ──────────────
+ *
+ * On aurait pu declarer que les CGU dependent des mentions legales, les CGV
+ * des CGU, et ainsi de suite. Mais les cinq documents se citent
+ * mutuellement — la politique renvoie aux CGU pour l'instruction permanente,
+ * les CGU renvoient a la politique pour les donnees — et un graphe qu'il faut
+ * tenir a jour a la main finit par mentir.
+ *
+ * Ces cinq documents sont UN dossier. Il se relit d'un bloc, se fait valider
+ * d'un bloc, et se publie d'un bloc.
+ */
+export async function dossierComplet(): Promise<boolean> {
   const états = await Promise.all(
-    DOCUMENTS_LEGAUX.map(async (doc) => ({
-      doc,
-      publiable: (await lireDocument(doc)).publiable,
-    })),
+    DOCUMENTS_LEGAUX.map(async (doc) => (await lireDocument(doc)).publiable),
   );
-  return états.filter((e) => e.publiable).map((e) => e.doc);
+  return états.every(Boolean);
+}
+
+/** Les documents a lier et a soumettre aux moteurs — les cinq, ou aucun. */
+export async function documentsPubliables(): Promise<DocumentLegal[]> {
+  return (await dossierComplet()) ? DOCUMENTS_LEGAUX : [];
 }

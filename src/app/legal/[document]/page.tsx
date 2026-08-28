@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import DocumentMarkdown from '@/components/legal/DocumentMarkdown';
-import { DOCUMENTS_LEGAUX, lireDocument, trouverDocument } from '@/lib/legal';
+import { DOCUMENTS_LEGAUX, dossierComplet, lireDocument, trouverDocument } from '@/lib/legal';
 
 /**
  * Une page par document juridique.
@@ -35,7 +35,9 @@ export async function generateMetadata({
   const doc = trouverDocument(document);
   if (!doc) return {};
 
-  const { publiable } = await lireDocument(doc);
+  // Le dossier fait foi, pas le document seul : des CGU completes ne
+  // s'indexent pas tant que les mentions legales sont un projet.
+  const publiable = await dossierComplet();
 
   return {
     title: doc.titre,
@@ -58,7 +60,8 @@ export default async function PageDocumentLegal({
   const doc = trouverDocument(document);
   if (!doc) notFound();
 
-  const { markdown, publiable, marqueursRestants } = await lireDocument(doc);
+  const { markdown, marqueursRestants } = await lireDocument(doc);
+  const publiable = await dossierComplet();
 
   return (
     <article>
@@ -73,11 +76,29 @@ export default async function PageDocumentLegal({
           <b className="block font-display font-semibold text-nuit-900">
             Projet — document non contractuel
           </b>
+          {/*
+            DEUX PHRASES, PARCE QU'IL Y A DEUX SITUATIONS.
+
+            Un document peut etre complet alors que le dossier ne l'est pas —
+            c'est arrive aux CGU le 28 aout, dont le dernier marqueur est parti
+            avant que les mentions legales n'aient leur adresse. Afficher
+            « comporte 0 mention a completer » aurait ete absurde, et laisser
+            croire que ce texte-ci retient la publication, faux.
+          */}
           <p className="mt-1.5 max-w-[70ch] text-sm leading-relaxed text-nuit-800">
-            Ce texte comporte {marqueursRestants}{' '}
-            {marqueursRestants > 1 ? 'mentions' : 'mention'} à compléter et n’a pas
-            été relu par un conseil juridique. Il est publié ici pour relecture et
-            n’engage pas DjiguiFlow.
+            {marqueursRestants > 0 ? (
+              <>
+                Ce texte comporte {marqueursRestants}{' '}
+                {marqueursRestants > 1 ? 'mentions' : 'mention'} à compléter et n’a
+                pas été relu par un conseil juridique.
+              </>
+            ) : (
+              <>
+                Ce texte est complet, mais d’autres documents du dossier ne le sont
+                pas encore, et il n’a pas été relu par un conseil juridique.
+              </>
+            )}{' '}
+            Il est publié ici pour relecture et n’engage pas DjiguiFlow.
           </p>
         </aside>
       )}
