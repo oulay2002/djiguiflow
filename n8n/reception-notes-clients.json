@@ -1,7 +1,7 @@
 {
   "active": true,
   "activeVersion": {
-    "authors": "JEAN PAUL OULAI",
+    "authors": "JEAN PAUL OULAI (via MCP)",
     "autosaved": false,
     "connections": {
       "Alerte gérant - mauvaise note": {
@@ -168,106 +168,6 @@
         ],
         "type": "n8n-nodes-base.filter",
         "typeVersion": 2.2
-      },
-      {
-        "credentials": {
-          "googleSheetsOAuth2Api": {
-            "id": "9Q14ADLSkwfm2Y5H",
-            "name": "Google Sheets account"
-          }
-        },
-        "disabled": true,
-        "id": "b5e53893-46f3-4d87-a8dc-7f758ebe11b7",
-        "maxTries": 3,
-        "name": "Enregistrer note",
-        "notes": "HORS CHEMIN CRITIQUE. Ce miroir ajoutait la note dans l onglet du marchand et gouvernait pourtant l alerte au gerant, la confirmation au client ET la copie dans Supabase : un marchand sans classeur perdait les trois. Les noeuds suivants lisent les memes champs, produits par « Extraire note ».",
-        "parameters": {
-          "columns": {
-            "attemptToConvertTypes": false,
-            "convertFieldsToString": false,
-            "mappingMode": "defineBelow",
-            "matchingColumns": [],
-            "schema": [
-              {
-                "canBeUsedToMatch": true,
-                "defaultMatch": false,
-                "display": true,
-                "displayName": "order_id",
-                "id": "order_id",
-                "removed": false,
-                "required": false,
-                "type": "string"
-              },
-              {
-                "canBeUsedToMatch": true,
-                "defaultMatch": false,
-                "display": true,
-                "displayName": "client_chat_id",
-                "id": "client_chat_id",
-                "removed": false,
-                "required": false,
-                "type": "string"
-              },
-              {
-                "canBeUsedToMatch": true,
-                "defaultMatch": false,
-                "display": true,
-                "displayName": "client_name",
-                "id": "client_name",
-                "removed": false,
-                "required": false,
-                "type": "string"
-              },
-              {
-                "canBeUsedToMatch": true,
-                "defaultMatch": false,
-                "display": true,
-                "displayName": "note",
-                "id": "note",
-                "removed": false,
-                "required": false,
-                "type": "string"
-              },
-              {
-                "canBeUsedToMatch": true,
-                "defaultMatch": false,
-                "display": true,
-                "displayName": "timestamp",
-                "id": "timestamp",
-                "removed": false,
-                "required": false,
-                "type": "string"
-              }
-            ],
-            "value": {
-              "client_chat_id": "={{ $json.client_chat_id }}",
-              "client_name": "={{ $json.client_name }}",
-              "note": "={{ $json.note }}",
-              "order_id": "={{ $json.order_id }}",
-              "timestamp": "={{ $json.timestamp }}"
-            }
-          },
-          "documentId": {
-            "__rl": true,
-            "mode": "id",
-            "value": "={{ $('When Executed by Another Workflow').first().json.sheet_document_id }}"
-          },
-          "operation": "append",
-          "options": {},
-          "sheetName": {
-            "__rl": true,
-            "mode": "name",
-            "value": "={{ $('When Executed by Another Workflow').first().json.sheet_notes || 'Notes' }}"
-          }
-        },
-        "position": [
-          672,
-          96
-        ],
-        "retryOnFail": true,
-        "type": "n8n-nodes-base.googleSheets",
-        "typeVersion": 4.7,
-        "waitBetweenTries": 2000
       },
       {
         "id": "a35a8ca3-4e60-48ba-8c44-63d1d8b59519",
@@ -661,25 +561,7 @@
     "workflowPublishHistory": [
       {
         "event": "activated",
-        "id": 216,
-        "userId": "81519f6f-0887-498a-ad83-5ffd6d591e9a",
-        "workflowId": "y9h71eo0sZzgLSCE"
-      },
-      {
-        "event": "activated",
-        "id": 218,
-        "userId": "81519f6f-0887-498a-ad83-5ffd6d591e9a",
-        "workflowId": "y9h71eo0sZzgLSCE"
-      },
-      {
-        "event": "deactivated",
-        "id": 215,
-        "userId": "81519f6f-0887-498a-ad83-5ffd6d591e9a",
-        "workflowId": "y9h71eo0sZzgLSCE"
-      },
-      {
-        "event": "deactivated",
-        "id": 217,
+        "id": 325,
         "userId": "81519f6f-0887-498a-ad83-5ffd6d591e9a",
         "workflowId": "y9h71eo0sZzgLSCE"
       }
@@ -852,106 +734,6 @@
       ],
       "type": "n8n-nodes-base.filter",
       "typeVersion": 2.2
-    },
-    {
-      "credentials": {
-        "googleSheetsOAuth2Api": {
-          "id": "9Q14ADLSkwfm2Y5H",
-          "name": "Google Sheets account"
-        }
-      },
-      "disabled": true,
-      "id": "b5e53893-46f3-4d87-a8dc-7f758ebe11b7",
-      "maxTries": 3,
-      "name": "Enregistrer note",
-      "notes": "HORS CHEMIN CRITIQUE. Ce miroir ajoutait la note dans l onglet du marchand et gouvernait pourtant l alerte au gerant, la confirmation au client ET la copie dans Supabase : un marchand sans classeur perdait les trois. Les noeuds suivants lisent les memes champs, produits par « Extraire note ».",
-      "parameters": {
-        "columns": {
-          "attemptToConvertTypes": false,
-          "convertFieldsToString": false,
-          "mappingMode": "defineBelow",
-          "matchingColumns": [],
-          "schema": [
-            {
-              "canBeUsedToMatch": true,
-              "defaultMatch": false,
-              "display": true,
-              "displayName": "order_id",
-              "id": "order_id",
-              "removed": false,
-              "required": false,
-              "type": "string"
-            },
-            {
-              "canBeUsedToMatch": true,
-              "defaultMatch": false,
-              "display": true,
-              "displayName": "client_chat_id",
-              "id": "client_chat_id",
-              "removed": false,
-              "required": false,
-              "type": "string"
-            },
-            {
-              "canBeUsedToMatch": true,
-              "defaultMatch": false,
-              "display": true,
-              "displayName": "client_name",
-              "id": "client_name",
-              "removed": false,
-              "required": false,
-              "type": "string"
-            },
-            {
-              "canBeUsedToMatch": true,
-              "defaultMatch": false,
-              "display": true,
-              "displayName": "note",
-              "id": "note",
-              "removed": false,
-              "required": false,
-              "type": "string"
-            },
-            {
-              "canBeUsedToMatch": true,
-              "defaultMatch": false,
-              "display": true,
-              "displayName": "timestamp",
-              "id": "timestamp",
-              "removed": false,
-              "required": false,
-              "type": "string"
-            }
-          ],
-          "value": {
-            "client_chat_id": "={{ $json.client_chat_id }}",
-            "client_name": "={{ $json.client_name }}",
-            "note": "={{ $json.note }}",
-            "order_id": "={{ $json.order_id }}",
-            "timestamp": "={{ $json.timestamp }}"
-          }
-        },
-        "documentId": {
-          "__rl": true,
-          "mode": "id",
-          "value": "={{ $('When Executed by Another Workflow').first().json.sheet_document_id }}"
-        },
-        "operation": "append",
-        "options": {},
-        "sheetName": {
-          "__rl": true,
-          "mode": "name",
-          "value": "={{ $('When Executed by Another Workflow').first().json.sheet_notes || 'Notes' }}"
-        }
-      },
-      "position": [
-        672,
-        96
-      ],
-      "retryOnFail": true,
-      "type": "n8n-nodes-base.googleSheets",
-      "typeVersion": 4.7,
-      "waitBetweenTries": 2000
     },
     {
       "id": "a35a8ca3-4e60-48ba-8c44-63d1d8b59519",
@@ -1348,5 +1130,5 @@
   },
   "sourceWorkflowId": null,
   "tags": [],
-  "versionCounter": 7
+  "versionCounter": 8
 }

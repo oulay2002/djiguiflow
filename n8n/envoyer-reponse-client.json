@@ -58,30 +58,12 @@
           ]
         ]
       },
-      "Journal possible ?": {
-        "main": [
-          [
-            {
-              "index": 0,
-              "node": "Écrire log",
-              "type": "main"
-            }
-          ],
-          [
-            {
-              "index": 0,
-              "node": "Verdict",
-              "type": "main"
-            }
-          ]
-        ]
-      },
       "Log envoi invalide": {
         "main": [
           [
             {
               "index": 0,
-              "node": "Journal possible ?",
+              "node": "Verdict",
               "type": "main"
             }
           ]
@@ -92,7 +74,7 @@
           [
             {
               "index": 0,
-              "node": "Journal possible ?",
+              "node": "Verdict",
               "type": "main"
             }
           ]
@@ -103,7 +85,7 @@
           [
             {
               "index": 0,
-              "node": "Journal possible ?",
+              "node": "Verdict",
               "type": "main"
             }
           ]
@@ -114,7 +96,7 @@
           [
             {
               "index": 0,
-              "node": "Journal possible ?",
+              "node": "Verdict",
               "type": "main"
             }
           ]
@@ -125,7 +107,7 @@
           [
             {
               "index": 0,
-              "node": "Journal possible ?",
+              "node": "Verdict",
               "type": "main"
             }
           ]
@@ -198,17 +180,6 @@
             {
               "index": 0,
               "node": "Boutique fournie ?",
-              "type": "main"
-            }
-          ]
-        ]
-      },
-      "Écrire log": {
-        "main": [
-          [
-            {
-              "index": 0,
-              "node": "Verdict",
               "type": "main"
             }
           ]
@@ -388,110 +359,6 @@
         ],
         "type": "n8n-nodes-base.code",
         "typeVersion": 2
-      },
-      {
-        "credentials": {
-          "googleSheetsOAuth2Api": {
-            "id": "9Q14ADLSkwfm2Y5H",
-            "name": "Google Sheets account"
-          }
-        },
-        "id": "fd6c2fe6-2d28-4981-873a-16aa6678f6ef",
-        "maxTries": 2,
-        "name": "Écrire log",
-        "onError": "continueRegularOutput",
-        "parameters": {
-          "columns": {
-            "attemptToConvertTypes": false,
-            "convertFieldsToString": false,
-            "mappingMode": "defineBelow",
-            "matchingColumns": [],
-            "schema": [
-              {
-                "canBeUsedToMatch": true,
-                "defaultMatch": false,
-                "display": true,
-                "displayName": "timestamp",
-                "id": "timestamp",
-                "required": false,
-                "type": "string"
-              },
-              {
-                "canBeUsedToMatch": true,
-                "defaultMatch": false,
-                "display": true,
-                "displayName": "canal",
-                "id": "canal",
-                "required": false,
-                "type": "string"
-              },
-              {
-                "canBeUsedToMatch": true,
-                "defaultMatch": false,
-                "display": true,
-                "displayName": "destinataire",
-                "id": "destinataire",
-                "required": false,
-                "type": "string"
-              },
-              {
-                "canBeUsedToMatch": true,
-                "defaultMatch": false,
-                "display": true,
-                "displayName": "message",
-                "id": "message",
-                "required": false,
-                "type": "string"
-              },
-              {
-                "canBeUsedToMatch": true,
-                "defaultMatch": false,
-                "display": true,
-                "displayName": " statut",
-                "id": " statut",
-                "required": false,
-                "type": "string"
-              },
-              {
-                "canBeUsedToMatch": true,
-                "defaultMatch": false,
-                "display": true,
-                "displayName": "erreur",
-                "id": "erreur",
-                "required": false,
-                "type": "string"
-              }
-            ],
-            "value": {
-              " statut": "={{ $json.statut }}",
-              "canal": "={{ $json.canal }}",
-              "destinataire": "={{ $json.destinataire }}",
-              "erreur": "={{ $json.erreur }}",
-              "message": "={{ $json.message }}",
-              "timestamp": "={{ $json.timestamp }}"
-            }
-          },
-          "documentId": {
-            "__rl": true,
-            "mode": "id",
-            "value": "={{ $('When Executed by Another Workflow').first().json.sheet_document_id }}"
-          },
-          "operation": "append",
-          "options": {},
-          "sheetName": {
-            "__rl": true,
-            "mode": "name",
-            "value": "Logs_Envois"
-          }
-        },
-        "position": [
-          1136,
-          128
-        ],
-        "retryOnFail": true,
-        "type": "n8n-nodes-base.googleSheets",
-        "typeVersion": 4.7,
-        "waitBetweenTries": 1000
       },
       {
         "id": "e050b941-af21-4a89-98fb-fbc84a4fb62d",
@@ -710,42 +577,6 @@
         "waitBetweenTries": 2000
       },
       {
-        "id": "df51c2d6-c855-4d7d-991d-1804a1b51401",
-        "name": "Journal possible ?",
-        "notes": "Sans classeur fourni par l'appelant, on n'ecrit nulle part. Ecrire « quelque part par defaut » est ce qui a fait atterrir la clientele de chaque marchand dans le classeur de Zahara.",
-        "parameters": {
-          "conditions": {
-            "combinator": "and",
-            "conditions": [
-              {
-                "id": "classeur-fourni",
-                "leftValue": "={{ $('When Executed by Another Workflow').first().json.sheet_document_id }}",
-                "operator": {
-                  "operation": "notEmpty",
-                  "singleValue": true,
-                  "type": "string"
-                },
-                "rightValue": ""
-              }
-            ],
-            "options": {
-              "caseSensitive": true,
-              "leftValue": "",
-              "typeValidation": "loose",
-              "version": 2
-            }
-          },
-          "looseTypeValidation": true,
-          "options": {}
-        },
-        "position": [
-          912,
-          128
-        ],
-        "type": "n8n-nodes-base.if",
-        "typeVersion": 2.3
-      },
-      {
         "id": "c81c5484-979b-4166-ba52-b77dbe8faa2b",
         "name": "Verdict",
         "notes": "Le seul moyen, pour un appelant, de savoir si le message est reellement parti.",
@@ -793,7 +624,7 @@
     "workflowPublishHistory": [
       {
         "event": "activated",
-        "id": 240,
+        "id": 315,
         "userId": "81519f6f-0887-498a-ad83-5ffd6d591e9a",
         "workflowId": "JkNvcqsZaY22dfk5"
       }
@@ -854,30 +685,12 @@
         ]
       ]
     },
-    "Journal possible ?": {
-      "main": [
-        [
-          {
-            "index": 0,
-            "node": "Écrire log",
-            "type": "main"
-          }
-        ],
-        [
-          {
-            "index": 0,
-            "node": "Verdict",
-            "type": "main"
-          }
-        ]
-      ]
-    },
     "Log envoi invalide": {
       "main": [
         [
           {
             "index": 0,
-            "node": "Journal possible ?",
+            "node": "Verdict",
             "type": "main"
           }
         ]
@@ -888,7 +701,7 @@
         [
           {
             "index": 0,
-            "node": "Journal possible ?",
+            "node": "Verdict",
             "type": "main"
           }
         ]
@@ -899,7 +712,7 @@
         [
           {
             "index": 0,
-            "node": "Journal possible ?",
+            "node": "Verdict",
             "type": "main"
           }
         ]
@@ -910,7 +723,7 @@
         [
           {
             "index": 0,
-            "node": "Journal possible ?",
+            "node": "Verdict",
             "type": "main"
           }
         ]
@@ -921,7 +734,7 @@
         [
           {
             "index": 0,
-            "node": "Journal possible ?",
+            "node": "Verdict",
             "type": "main"
           }
         ]
@@ -994,17 +807,6 @@
           {
             "index": 0,
             "node": "Boutique fournie ?",
-            "type": "main"
-          }
-        ]
-      ]
-    },
-    "Écrire log": {
-      "main": [
-        [
-          {
-            "index": 0,
-            "node": "Verdict",
             "type": "main"
           }
         ]
@@ -1186,110 +988,6 @@
       ],
       "type": "n8n-nodes-base.code",
       "typeVersion": 2
-    },
-    {
-      "credentials": {
-        "googleSheetsOAuth2Api": {
-          "id": "9Q14ADLSkwfm2Y5H",
-          "name": "Google Sheets account"
-        }
-      },
-      "id": "fd6c2fe6-2d28-4981-873a-16aa6678f6ef",
-      "maxTries": 2,
-      "name": "Écrire log",
-      "onError": "continueRegularOutput",
-      "parameters": {
-        "columns": {
-          "attemptToConvertTypes": false,
-          "convertFieldsToString": false,
-          "mappingMode": "defineBelow",
-          "matchingColumns": [],
-          "schema": [
-            {
-              "canBeUsedToMatch": true,
-              "defaultMatch": false,
-              "display": true,
-              "displayName": "timestamp",
-              "id": "timestamp",
-              "required": false,
-              "type": "string"
-            },
-            {
-              "canBeUsedToMatch": true,
-              "defaultMatch": false,
-              "display": true,
-              "displayName": "canal",
-              "id": "canal",
-              "required": false,
-              "type": "string"
-            },
-            {
-              "canBeUsedToMatch": true,
-              "defaultMatch": false,
-              "display": true,
-              "displayName": "destinataire",
-              "id": "destinataire",
-              "required": false,
-              "type": "string"
-            },
-            {
-              "canBeUsedToMatch": true,
-              "defaultMatch": false,
-              "display": true,
-              "displayName": "message",
-              "id": "message",
-              "required": false,
-              "type": "string"
-            },
-            {
-              "canBeUsedToMatch": true,
-              "defaultMatch": false,
-              "display": true,
-              "displayName": " statut",
-              "id": " statut",
-              "required": false,
-              "type": "string"
-            },
-            {
-              "canBeUsedToMatch": true,
-              "defaultMatch": false,
-              "display": true,
-              "displayName": "erreur",
-              "id": "erreur",
-              "required": false,
-              "type": "string"
-            }
-          ],
-          "value": {
-            " statut": "={{ $json.statut }}",
-            "canal": "={{ $json.canal }}",
-            "destinataire": "={{ $json.destinataire }}",
-            "erreur": "={{ $json.erreur }}",
-            "message": "={{ $json.message }}",
-            "timestamp": "={{ $json.timestamp }}"
-          }
-        },
-        "documentId": {
-          "__rl": true,
-          "mode": "id",
-          "value": "={{ $('When Executed by Another Workflow').first().json.sheet_document_id }}"
-        },
-        "operation": "append",
-        "options": {},
-        "sheetName": {
-          "__rl": true,
-          "mode": "name",
-          "value": "Logs_Envois"
-        }
-      },
-      "position": [
-        1136,
-        128
-      ],
-      "retryOnFail": true,
-      "type": "n8n-nodes-base.googleSheets",
-      "typeVersion": 4.7,
-      "waitBetweenTries": 1000
     },
     {
       "id": "e050b941-af21-4a89-98fb-fbc84a4fb62d",
@@ -1508,42 +1206,6 @@
       "waitBetweenTries": 2000
     },
     {
-      "id": "df51c2d6-c855-4d7d-991d-1804a1b51401",
-      "name": "Journal possible ?",
-      "notes": "Sans classeur fourni par l'appelant, on n'ecrit nulle part. Ecrire « quelque part par defaut » est ce qui a fait atterrir la clientele de chaque marchand dans le classeur de Zahara.",
-      "parameters": {
-        "conditions": {
-          "combinator": "and",
-          "conditions": [
-            {
-              "id": "classeur-fourni",
-              "leftValue": "={{ $('When Executed by Another Workflow').first().json.sheet_document_id }}",
-              "operator": {
-                "operation": "notEmpty",
-                "singleValue": true,
-                "type": "string"
-              },
-              "rightValue": ""
-            }
-          ],
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "loose",
-            "version": 2
-          }
-        },
-        "looseTypeValidation": true,
-        "options": {}
-      },
-      "position": [
-        912,
-        128
-      ],
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.3
-    },
-    {
       "id": "c81c5484-979b-4166-ba52-b77dbe8faa2b",
       "name": "Verdict",
       "notes": "Le seul moyen, pour un appelant, de savoir si le message est reellement parti.",
@@ -1595,5 +1257,5 @@
   },
   "sourceWorkflowId": null,
   "tags": [],
-  "versionCounter": 13
+  "versionCounter": 14
 }

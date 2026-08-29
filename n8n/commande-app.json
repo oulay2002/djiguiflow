@@ -4,29 +4,6 @@
     "authors": "JEAN PAUL OULAI (via MCP)",
     "autosaved": false,
     "connections": {
-      "A un classeur ?": {
-        "main": [
-          [
-            {
-              "index": 0,
-              "node": "Enregistrer commande",
-              "type": "main"
-            }
-          ],
-          [
-            {
-              "index": 0,
-              "node": "Notifier client app",
-              "type": "main"
-            },
-            {
-              "index": 0,
-              "node": "Livraison ?",
-              "type": "main"
-            }
-          ]
-        ]
-      },
       "Boutique renseignée ?": {
         "main": [
           [
@@ -56,7 +33,7 @@
           ]
         ]
       },
-      "Enregistrer commande": {
+      "Fiche boutique": {
         "main": [
           [
             {
@@ -67,17 +44,6 @@
             {
               "index": 0,
               "node": "Livraison ?",
-              "type": "main"
-            }
-          ]
-        ]
-      },
-      "Fiche boutique": {
-        "main": [
-          [
-            {
-              "index": 0,
-              "node": "A un classeur ?",
               "type": "main"
             }
           ]
@@ -445,225 +411,6 @@
         "typeVersion": 3.4
       },
       {
-        "credentials": {
-          "googleSheetsOAuth2Api": {
-            "id": "9Q14ADLSkwfm2Y5H",
-            "name": "Google Sheets account"
-          }
-        },
-        "disabled": false,
-        "id": "e21fc9a0-ad3f-4c7e-9ea1-9de678cc4088",
-        "maxTries": 3,
-        "name": "Enregistrer commande",
-        "onError": "continueRegularOutput",
-        "parameters": {
-          "columns": {
-            "attemptToConvertTypes": false,
-            "convertFieldsToString": true,
-            "mappingMode": "defineBelow",
-            "matchingColumns": [
-              "order_id"
-            ],
-            "schema": [
-              {
-                "canBeUsedToMatch": true,
-                "defaultMatch": false,
-                "display": true,
-                "displayName": "chat_id",
-                "id": "chat_id",
-                "removed": false,
-                "required": false,
-                "type": "string"
-              },
-              {
-                "canBeUsedToMatch": true,
-                "defaultMatch": false,
-                "display": true,
-                "displayName": "customer_name",
-                "id": "customer_name",
-                "removed": false,
-                "required": false,
-                "type": "string"
-              },
-              {
-                "canBeUsedToMatch": true,
-                "defaultMatch": false,
-                "display": true,
-                "displayName": "phone",
-                "id": "phone",
-                "removed": false,
-                "required": false,
-                "type": "string"
-              },
-              {
-                "canBeUsedToMatch": true,
-                "defaultMatch": false,
-                "display": true,
-                "displayName": "address",
-                "id": "address",
-                "removed": false,
-                "required": false,
-                "type": "string"
-              },
-              {
-                "canBeUsedToMatch": true,
-                "defaultMatch": false,
-                "display": true,
-                "displayName": "instructions",
-                "id": "instructions",
-                "removed": false,
-                "required": false,
-                "type": "string"
-              },
-              {
-                "canBeUsedToMatch": true,
-                "defaultMatch": false,
-                "display": true,
-                "displayName": "items",
-                "id": "items",
-                "removed": false,
-                "required": false,
-                "type": "string"
-              },
-              {
-                "canBeUsedToMatch": true,
-                "defaultMatch": false,
-                "display": true,
-                "displayName": "total_price",
-                "id": "total_price",
-                "removed": false,
-                "required": false,
-                "type": "string"
-              },
-              {
-                "canBeUsedToMatch": true,
-                "defaultMatch": false,
-                "display": true,
-                "displayName": "status",
-                "id": "status",
-                "removed": false,
-                "required": false,
-                "type": "string"
-              },
-              {
-                "canBeUsedToMatch": true,
-                "defaultMatch": false,
-                "display": true,
-                "displayName": "order_id",
-                "id": "order_id",
-                "removed": false,
-                "required": false,
-                "type": "string"
-              },
-              {
-                "canBeUsedToMatch": true,
-                "defaultMatch": false,
-                "display": true,
-                "displayName": "canal",
-                "id": "canal",
-                "removed": false,
-                "required": false,
-                "type": "string"
-              },
-              {
-                "canBeUsedToMatch": true,
-                "defaultMatch": false,
-                "display": true,
-                "displayName": "timestamp",
-                "id": "timestamp",
-                "removed": false,
-                "required": false,
-                "type": "string"
-              },
-              {
-                "canBeUsedToMatch": true,
-                "defaultMatch": false,
-                "display": true,
-                "displayName": "nom_livreur",
-                "id": "nom_livreur",
-                "removed": false,
-                "required": false,
-                "type": "string"
-              },
-              {
-                "canBeUsedToMatch": true,
-                "defaultMatch": false,
-                "display": true,
-                "displayName": "heure_prise_en_charge",
-                "id": "heure_prise_en_charge",
-                "removed": false,
-                "required": false,
-                "type": "string"
-              },
-              {
-                "canBeUsedToMatch": true,
-                "defaultMatch": false,
-                "display": true,
-                "displayName": "statut_livraison",
-                "id": "statut_livraison",
-                "removed": false,
-                "required": false,
-                "type": "string"
-              },
-              {
-                "canBeUsedToMatch": true,
-                "defaultMatch": false,
-                "display": true,
-                "displayName": "position_livreur",
-                "id": "position_livreur",
-                "removed": false,
-                "required": false,
-                "type": "string"
-              },
-              {
-                "canBeUsedToMatch": true,
-                "defaultMatch": false,
-                "display": true,
-                "displayName": "heure_livraison",
-                "id": "heure_livraison",
-                "removed": false,
-                "required": false,
-                "type": "string"
-              }
-            ],
-            "value": {
-              "address": "={{ $('Données commande').first().json.address }}",
-              "canal": "whatsapp",
-              "chat_id": "={{ $('Données commande').first().json.chat_id }}",
-              "customer_name": "={{ $('Données commande').first().json.customer_name }}",
-              "items": "={{ $('Données commande').first().json.items }}",
-              "order_id": "={{ $('Données commande').first().json.order_id }}",
-              "phone": "={{ $('Données commande').first().json.phone }}",
-              "status": "validee",
-              "timestamp": "={{ $now.toISO() }}",
-              "total_price": "={{ $('Données commande').first().json.total_price }}"
-            }
-          },
-          "documentId": {
-            "__rl": true,
-            "mode": "id",
-            "value": "={{ $json.sheet_document_id }}"
-          },
-          "operation": "appendOrUpdate",
-          "options": {
-            "cellFormat": "RAW"
-          },
-          "sheetName": {
-            "__rl": true,
-            "mode": "name",
-            "value": "={{ $('Données commande').first().json.sheetCommandes }}"
-          }
-        },
-        "position": [
-          336,
-          16
-        ],
-        "retryOnFail": true,
-        "type": "n8n-nodes-base.googleSheets",
-        "typeVersion": 4.7,
-        "waitBetweenTries": 2000
-      },
-      {
         "id": "b85bc5a3-e6eb-4295-a94b-aaabe32cfcf9",
         "name": "Boutique renseignée ?",
         "notes": "Sans identite de boutique complete, la commande irait chez le mauvais marchand. On prefere refuser.",
@@ -680,16 +427,6 @@
                   "type": "string"
                 },
                 "rightValue": ""
-              },
-              {
-                "id": "a1000000-0000-4000-8000-000000000002",
-                "leftValue": "={{ $json.sheetCommandes }}",
-                "operator": {
-                  "operation": "notEmpty",
-                  "singleValue": true,
-                  "type": "string"
-                },
-                "rightValue": ""
               }
             ],
             "options": {
@@ -699,6 +436,7 @@
               "version": 3
             }
           },
+          "notes": "Elle ne teste QUE `boutique_id`, et c est le point.\n\nElle exigeait AUSSI que `sheetCommandes` soit non vide, sans quoi la commande partait vers « Boutique inconnue » — donc etait refusee. Cela passait par accident : le registre de l app remplit toujours ce champ avec un nom par defaut.\n\nMais `sheetCommandes` est un VESTIGE. Plus un seul noeud Google n existe (verifie le 28 aout 2026), et le code de l app porte la consigne de le retirer. Le jour ou quelqu un l aurait fait, TOUTE commande passee depuis la vitrine aurait ete refusee — par un aiguillage dont le nom promet de verifier la boutique, pas un nom d onglet.\n\nUn verrou doit tester ce qu il annonce.",
           "options": {}
         },
         "position": [
@@ -771,40 +509,6 @@
         ],
         "type": "n8n-nodes-base.stickyNote",
         "typeVersion": 1
-      },
-      {
-        "id": "a5c504ac-d949-4463-8671-95c6829a4fb9",
-        "name": "A un classeur ?",
-        "notes": "Un marchand fraichement inscrit n'a pas de sheet_document_id. Sans ce test, le noeud Google Sheets levait « Can not get sheet By ID with a value of null » et TOUTE la suite tombait : ni client prevenu, ni livreur alerte.",
-        "parameters": {
-          "conditions": {
-            "combinator": "and",
-            "conditions": [
-              {
-                "id": "a-un-classeur",
-                "leftValue": "={{ String($json.sheet_document_id || '').trim() !== '' }}",
-                "operator": {
-                  "operation": "true",
-                  "singleValue": true,
-                  "type": "boolean"
-                },
-                "rightValue": ""
-              }
-            ],
-            "options": {
-              "caseSensitive": true,
-              "leftValue": "",
-              "typeValidation": "loose",
-              "version": 2
-            }
-          }
-        },
-        "position": [
-          640,
-          0
-        ],
-        "type": "n8n-nodes-base.if",
-        "typeVersion": 2.2
       },
       {
         "id": "9c89be1c-2b28-43cd-a291-834803c91a90",
@@ -890,36 +594,13 @@
     "workflowPublishHistory": [
       {
         "event": "activated",
-        "id": 292,
+        "id": 327,
         "userId": "81519f6f-0887-498a-ad83-5ffd6d591e9a",
         "workflowId": "McPXBAfBRAmaUfEF"
       }
     ]
   },
   "connections": {
-    "A un classeur ?": {
-      "main": [
-        [
-          {
-            "index": 0,
-            "node": "Enregistrer commande",
-            "type": "main"
-          }
-        ],
-        [
-          {
-            "index": 0,
-            "node": "Notifier client app",
-            "type": "main"
-          },
-          {
-            "index": 0,
-            "node": "Livraison ?",
-            "type": "main"
-          }
-        ]
-      ]
-    },
     "Boutique renseignée ?": {
       "main": [
         [
@@ -949,7 +630,7 @@
         ]
       ]
     },
-    "Enregistrer commande": {
+    "Fiche boutique": {
       "main": [
         [
           {
@@ -960,17 +641,6 @@
           {
             "index": 0,
             "node": "Livraison ?",
-            "type": "main"
-          }
-        ]
-      ]
-    },
-    "Fiche boutique": {
-      "main": [
-        [
-          {
-            "index": 0,
-            "node": "A un classeur ?",
             "type": "main"
           }
         ]
@@ -1340,225 +1010,6 @@
       "typeVersion": 3.4
     },
     {
-      "credentials": {
-        "googleSheetsOAuth2Api": {
-          "id": "9Q14ADLSkwfm2Y5H",
-          "name": "Google Sheets account"
-        }
-      },
-      "disabled": false,
-      "id": "e21fc9a0-ad3f-4c7e-9ea1-9de678cc4088",
-      "maxTries": 3,
-      "name": "Enregistrer commande",
-      "onError": "continueRegularOutput",
-      "parameters": {
-        "columns": {
-          "attemptToConvertTypes": false,
-          "convertFieldsToString": true,
-          "mappingMode": "defineBelow",
-          "matchingColumns": [
-            "order_id"
-          ],
-          "schema": [
-            {
-              "canBeUsedToMatch": true,
-              "defaultMatch": false,
-              "display": true,
-              "displayName": "chat_id",
-              "id": "chat_id",
-              "removed": false,
-              "required": false,
-              "type": "string"
-            },
-            {
-              "canBeUsedToMatch": true,
-              "defaultMatch": false,
-              "display": true,
-              "displayName": "customer_name",
-              "id": "customer_name",
-              "removed": false,
-              "required": false,
-              "type": "string"
-            },
-            {
-              "canBeUsedToMatch": true,
-              "defaultMatch": false,
-              "display": true,
-              "displayName": "phone",
-              "id": "phone",
-              "removed": false,
-              "required": false,
-              "type": "string"
-            },
-            {
-              "canBeUsedToMatch": true,
-              "defaultMatch": false,
-              "display": true,
-              "displayName": "address",
-              "id": "address",
-              "removed": false,
-              "required": false,
-              "type": "string"
-            },
-            {
-              "canBeUsedToMatch": true,
-              "defaultMatch": false,
-              "display": true,
-              "displayName": "instructions",
-              "id": "instructions",
-              "removed": false,
-              "required": false,
-              "type": "string"
-            },
-            {
-              "canBeUsedToMatch": true,
-              "defaultMatch": false,
-              "display": true,
-              "displayName": "items",
-              "id": "items",
-              "removed": false,
-              "required": false,
-              "type": "string"
-            },
-            {
-              "canBeUsedToMatch": true,
-              "defaultMatch": false,
-              "display": true,
-              "displayName": "total_price",
-              "id": "total_price",
-              "removed": false,
-              "required": false,
-              "type": "string"
-            },
-            {
-              "canBeUsedToMatch": true,
-              "defaultMatch": false,
-              "display": true,
-              "displayName": "status",
-              "id": "status",
-              "removed": false,
-              "required": false,
-              "type": "string"
-            },
-            {
-              "canBeUsedToMatch": true,
-              "defaultMatch": false,
-              "display": true,
-              "displayName": "order_id",
-              "id": "order_id",
-              "removed": false,
-              "required": false,
-              "type": "string"
-            },
-            {
-              "canBeUsedToMatch": true,
-              "defaultMatch": false,
-              "display": true,
-              "displayName": "canal",
-              "id": "canal",
-              "removed": false,
-              "required": false,
-              "type": "string"
-            },
-            {
-              "canBeUsedToMatch": true,
-              "defaultMatch": false,
-              "display": true,
-              "displayName": "timestamp",
-              "id": "timestamp",
-              "removed": false,
-              "required": false,
-              "type": "string"
-            },
-            {
-              "canBeUsedToMatch": true,
-              "defaultMatch": false,
-              "display": true,
-              "displayName": "nom_livreur",
-              "id": "nom_livreur",
-              "removed": false,
-              "required": false,
-              "type": "string"
-            },
-            {
-              "canBeUsedToMatch": true,
-              "defaultMatch": false,
-              "display": true,
-              "displayName": "heure_prise_en_charge",
-              "id": "heure_prise_en_charge",
-              "removed": false,
-              "required": false,
-              "type": "string"
-            },
-            {
-              "canBeUsedToMatch": true,
-              "defaultMatch": false,
-              "display": true,
-              "displayName": "statut_livraison",
-              "id": "statut_livraison",
-              "removed": false,
-              "required": false,
-              "type": "string"
-            },
-            {
-              "canBeUsedToMatch": true,
-              "defaultMatch": false,
-              "display": true,
-              "displayName": "position_livreur",
-              "id": "position_livreur",
-              "removed": false,
-              "required": false,
-              "type": "string"
-            },
-            {
-              "canBeUsedToMatch": true,
-              "defaultMatch": false,
-              "display": true,
-              "displayName": "heure_livraison",
-              "id": "heure_livraison",
-              "removed": false,
-              "required": false,
-              "type": "string"
-            }
-          ],
-          "value": {
-            "address": "={{ $('Données commande').first().json.address }}",
-            "canal": "whatsapp",
-            "chat_id": "={{ $('Données commande').first().json.chat_id }}",
-            "customer_name": "={{ $('Données commande').first().json.customer_name }}",
-            "items": "={{ $('Données commande').first().json.items }}",
-            "order_id": "={{ $('Données commande').first().json.order_id }}",
-            "phone": "={{ $('Données commande').first().json.phone }}",
-            "status": "validee",
-            "timestamp": "={{ $now.toISO() }}",
-            "total_price": "={{ $('Données commande').first().json.total_price }}"
-          }
-        },
-        "documentId": {
-          "__rl": true,
-          "mode": "id",
-          "value": "={{ $json.sheet_document_id }}"
-        },
-        "operation": "appendOrUpdate",
-        "options": {
-          "cellFormat": "RAW"
-        },
-        "sheetName": {
-          "__rl": true,
-          "mode": "name",
-          "value": "={{ $('Données commande').first().json.sheetCommandes }}"
-        }
-      },
-      "position": [
-        336,
-        16
-      ],
-      "retryOnFail": true,
-      "type": "n8n-nodes-base.googleSheets",
-      "typeVersion": 4.7,
-      "waitBetweenTries": 2000
-    },
-    {
       "id": "b85bc5a3-e6eb-4295-a94b-aaabe32cfcf9",
       "name": "Boutique renseignée ?",
       "notes": "Sans identite de boutique complete, la commande irait chez le mauvais marchand. On prefere refuser.",
@@ -1575,16 +1026,6 @@
                 "type": "string"
               },
               "rightValue": ""
-            },
-            {
-              "id": "a1000000-0000-4000-8000-000000000002",
-              "leftValue": "={{ $json.sheetCommandes }}",
-              "operator": {
-                "operation": "notEmpty",
-                "singleValue": true,
-                "type": "string"
-              },
-              "rightValue": ""
             }
           ],
           "options": {
@@ -1594,6 +1035,7 @@
             "version": 3
           }
         },
+        "notes": "Elle ne teste QUE `boutique_id`, et c est le point.\n\nElle exigeait AUSSI que `sheetCommandes` soit non vide, sans quoi la commande partait vers « Boutique inconnue » — donc etait refusee. Cela passait par accident : le registre de l app remplit toujours ce champ avec un nom par defaut.\n\nMais `sheetCommandes` est un VESTIGE. Plus un seul noeud Google n existe (verifie le 28 aout 2026), et le code de l app porte la consigne de le retirer. Le jour ou quelqu un l aurait fait, TOUTE commande passee depuis la vitrine aurait ete refusee — par un aiguillage dont le nom promet de verifier la boutique, pas un nom d onglet.\n\nUn verrou doit tester ce qu il annonce.",
         "options": {}
       },
       "position": [
@@ -1666,40 +1108,6 @@
       ],
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1
-    },
-    {
-      "id": "a5c504ac-d949-4463-8671-95c6829a4fb9",
-      "name": "A un classeur ?",
-      "notes": "Un marchand fraichement inscrit n'a pas de sheet_document_id. Sans ce test, le noeud Google Sheets levait « Can not get sheet By ID with a value of null » et TOUTE la suite tombait : ni client prevenu, ni livreur alerte.",
-      "parameters": {
-        "conditions": {
-          "combinator": "and",
-          "conditions": [
-            {
-              "id": "a-un-classeur",
-              "leftValue": "={{ String($json.sheet_document_id || '').trim() !== '' }}",
-              "operator": {
-                "operation": "true",
-                "singleValue": true,
-                "type": "boolean"
-              },
-              "rightValue": ""
-            }
-          ],
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "loose",
-            "version": 2
-          }
-        }
-      },
-      "position": [
-        640,
-        0
-      ],
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2
     },
     {
       "id": "9c89be1c-2b28-43cd-a291-834803c91a90",
@@ -1789,5 +1197,5 @@
   },
   "sourceWorkflowId": null,
   "tags": [],
-  "versionCounter": 18
+  "versionCounter": 21
 }

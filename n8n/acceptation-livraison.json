@@ -841,55 +841,6 @@
         "waitBetweenTries": 2000
       },
       {
-        "credentials": {
-          "googleSheetsOAuth2Api": {
-            "id": "9Q14ADLSkwfm2Y5H",
-            "name": "Google Sheets account"
-          }
-        },
-        "disabled": true,
-        "id": "f4c51586-efa3-4258-858b-34455e463728",
-        "maxTries": 3,
-        "name": "Update statut - parti",
-        "notes": "HORS CHEMIN CRITIQUE. Ce miroir ecrivait le statut dans l onglet du marchand. Depuis que la prise de commande n ecrit plus dans la feuille, son `update` ne trouve aucune ligne : il ne LEVE pas, il ne rend simplement AUCUN ITEM — et n8n saute alors tout ce qui suit. Le client ne recevait plus ni « parti », ni « en route », ni « livree ». La verite est dans Supabase, ecrite par « Refleter dans Supabase ».",
-        "onError": "continueRegularOutput",
-        "parameters": {
-          "columns": {
-            "attemptToConvertTypes": false,
-            "convertFieldsToString": true,
-            "mappingMode": "defineBelow",
-            "matchingColumns": [
-              "order_id"
-            ],
-            "value": {
-              "order_id": "={{ $('Trouver la commande').first().json.order_id }}",
-              "position_livreur": "={{ $json.position }}",
-              "statut_livraison": "={{ $json.statut_livraison }}"
-            }
-          },
-          "documentId": {
-            "__rl": true,
-            "mode": "id",
-            "value": "={{ $('When Executed by Another Workflow').first().json.sheet_document_id }}"
-          },
-          "operation": "update",
-          "options": {},
-          "sheetName": {
-            "__rl": true,
-            "mode": "name",
-            "value": "={{ $('Config marchand').first().json.sheetCommandes }}"
-          }
-        },
-        "position": [
-          2016,
-          384
-        ],
-        "retryOnFail": true,
-        "type": "n8n-nodes-base.googleSheets",
-        "typeVersion": 4.7,
-        "waitBetweenTries": 2000
-      },
-      {
         "id": "a3134154-c648-44be-829c-6f3035ae34a3",
         "maxTries": 3,
         "name": "Notifier client-commande parti",
@@ -958,55 +909,6 @@
         "waitBetweenTries": 2000
       },
       {
-        "credentials": {
-          "googleSheetsOAuth2Api": {
-            "id": "9Q14ADLSkwfm2Y5H",
-            "name": "Google Sheets account"
-          }
-        },
-        "disabled": true,
-        "id": "da274ab6-3de5-445b-87ab-abfdd3e40b4d",
-        "maxTries": 3,
-        "name": "Update statut - en_route",
-        "notes": "HORS CHEMIN CRITIQUE. Ce miroir ecrivait le statut dans l onglet du marchand. Depuis que la prise de commande n ecrit plus dans la feuille, son `update` ne trouve aucune ligne : il ne LEVE pas, il ne rend simplement AUCUN ITEM — et n8n saute alors tout ce qui suit. Le client ne recevait plus ni « parti », ni « en route », ni « livree ». La verite est dans Supabase, ecrite par « Refleter dans Supabase ».",
-        "onError": "continueRegularOutput",
-        "parameters": {
-          "columns": {
-            "attemptToConvertTypes": false,
-            "convertFieldsToString": true,
-            "mappingMode": "defineBelow",
-            "matchingColumns": [
-              "order_id"
-            ],
-            "value": {
-              "order_id": "={{ $('Trouver la commande').first().json.order_id }}",
-              "position_livreur": "={{ $json.position }}",
-              "statut_livraison": "={{ $json.statut_livraison }}"
-            }
-          },
-          "documentId": {
-            "__rl": true,
-            "mode": "id",
-            "value": "={{ $('When Executed by Another Workflow').first().json.sheet_document_id }}"
-          },
-          "operation": "update",
-          "options": {},
-          "sheetName": {
-            "__rl": true,
-            "mode": "name",
-            "value": "={{ $('Config marchand').first().json.sheetCommandes }}"
-          }
-        },
-        "position": [
-          2016,
-          576
-        ],
-        "retryOnFail": true,
-        "type": "n8n-nodes-base.googleSheets",
-        "typeVersion": 4.7,
-        "waitBetweenTries": 2000
-      },
-      {
         "id": "ee93ed8d-7f3a-49ca-996d-b56f0557a570",
         "maxTries": 3,
         "name": "Notifier client-commande en route",
@@ -1072,56 +974,6 @@
         "retryOnFail": false,
         "type": "n8n-nodes-base.executeWorkflow",
         "typeVersion": 1.3,
-        "waitBetweenTries": 2000
-      },
-      {
-        "credentials": {
-          "googleSheetsOAuth2Api": {
-            "id": "9Q14ADLSkwfm2Y5H",
-            "name": "Google Sheets account"
-          }
-        },
-        "disabled": true,
-        "id": "b60fff65-68cc-4b27-bca0-2ca2b1dcef7a",
-        "maxTries": 3,
-        "name": "Update statut - livre",
-        "notes": "HORS CHEMIN CRITIQUE. Ce miroir ecrivait le statut dans l onglet du marchand. Depuis que la prise de commande n ecrit plus dans la feuille, son `update` ne trouve aucune ligne : il ne LEVE pas, il ne rend simplement AUCUN ITEM — et n8n saute alors tout ce qui suit. Le client ne recevait plus ni « parti », ni « en route », ni « livree ». La verite est dans Supabase, ecrite par « Refleter dans Supabase ».",
-        "onError": "continueRegularOutput",
-        "parameters": {
-          "columns": {
-            "attemptToConvertTypes": false,
-            "convertFieldsToString": true,
-            "mappingMode": "defineBelow",
-            "matchingColumns": [
-              "order_id"
-            ],
-            "value": {
-              "heure_livraison": "={{ $now.toISO() }}",
-              "order_id": "={{ $('Trouver la commande').first().json.order_id }}",
-              "position_livreur": "={{ $json.position }}",
-              "statut_livraison": "={{ $json.statut_livraison }}"
-            }
-          },
-          "documentId": {
-            "__rl": true,
-            "mode": "id",
-            "value": "={{ $('When Executed by Another Workflow').first().json.sheet_document_id }}"
-          },
-          "operation": "update",
-          "options": {},
-          "sheetName": {
-            "__rl": true,
-            "mode": "name",
-            "value": "={{ $('Config marchand').first().json.sheetCommandes }}"
-          }
-        },
-        "position": [
-          2016,
-          768
-        ],
-        "retryOnFail": true,
-        "type": "n8n-nodes-base.googleSheets",
-        "typeVersion": 4.7,
         "waitBetweenTries": 2000
       },
       {
@@ -1292,57 +1144,6 @@
         "retryOnFail": false,
         "type": "n8n-nodes-base.executeWorkflow",
         "typeVersion": 1.3,
-        "waitBetweenTries": 2000
-      },
-      {
-        "credentials": {
-          "googleSheetsOAuth2Api": {
-            "id": "9Q14ADLSkwfm2Y5H",
-            "name": "Google Sheets account"
-          }
-        },
-        "disabled": true,
-        "id": "d8466d69-e42d-4ba6-986e-3d4685963826",
-        "maxTries": 3,
-        "name": "Update statut - accepte",
-        "notes": "HORS CHEMIN CRITIQUE. Ce miroir ecrivait le statut dans l onglet du marchand. Depuis que la prise de commande n ecrit plus dans la feuille, son `update` ne trouve aucune ligne : il ne LEVE pas, il ne rend simplement AUCUN ITEM — et n8n saute alors tout ce qui suit. Le client ne recevait plus ni « parti », ni « en route », ni « livree ». La verite est dans Supabase, ecrite par « Refleter dans Supabase ».",
-        "onError": "continueRegularOutput",
-        "parameters": {
-          "columns": {
-            "attemptToConvertTypes": false,
-            "convertFieldsToString": true,
-            "mappingMode": "defineBelow",
-            "matchingColumns": [
-              "order_id"
-            ],
-            "value": {
-              "heure_prise_en_charge": "={{ $now.toISO() }}",
-              "nom_livreur": "={{ $json.livreur_name }}",
-              "order_id": "={{ $('Trouver la commande').first().json.order_id }}",
-              "position_livreur": "={{ $json.position }}",
-              "statut_livraison": "={{ $json.statut_livraison }}"
-            }
-          },
-          "documentId": {
-            "__rl": true,
-            "mode": "id",
-            "value": "={{ $('When Executed by Another Workflow').first().json.sheet_document_id }}"
-          },
-          "operation": "update",
-          "options": {},
-          "sheetName": {
-            "__rl": true,
-            "mode": "name",
-            "value": "={{ $('Config marchand').first().json.sheetCommandes }}"
-          }
-        },
-        "position": [
-          1872,
-          0
-        ],
-        "retryOnFail": true,
-        "type": "n8n-nodes-base.googleSheets",
-        "typeVersion": 4.7,
         "waitBetweenTries": 2000
       },
       {
@@ -1919,7 +1720,7 @@
     "workflowPublishHistory": [
       {
         "event": "activated",
-        "id": 298,
+        "id": 319,
         "userId": "81519f6f-0887-498a-ad83-5ffd6d591e9a",
         "workflowId": "LqBgRvLeeKUwZhB5"
       }
@@ -2765,55 +2566,6 @@
       "waitBetweenTries": 2000
     },
     {
-      "credentials": {
-        "googleSheetsOAuth2Api": {
-          "id": "9Q14ADLSkwfm2Y5H",
-          "name": "Google Sheets account"
-        }
-      },
-      "disabled": true,
-      "id": "f4c51586-efa3-4258-858b-34455e463728",
-      "maxTries": 3,
-      "name": "Update statut - parti",
-      "notes": "HORS CHEMIN CRITIQUE. Ce miroir ecrivait le statut dans l onglet du marchand. Depuis que la prise de commande n ecrit plus dans la feuille, son `update` ne trouve aucune ligne : il ne LEVE pas, il ne rend simplement AUCUN ITEM — et n8n saute alors tout ce qui suit. Le client ne recevait plus ni « parti », ni « en route », ni « livree ». La verite est dans Supabase, ecrite par « Refleter dans Supabase ».",
-      "onError": "continueRegularOutput",
-      "parameters": {
-        "columns": {
-          "attemptToConvertTypes": false,
-          "convertFieldsToString": true,
-          "mappingMode": "defineBelow",
-          "matchingColumns": [
-            "order_id"
-          ],
-          "value": {
-            "order_id": "={{ $('Trouver la commande').first().json.order_id }}",
-            "position_livreur": "={{ $json.position }}",
-            "statut_livraison": "={{ $json.statut_livraison }}"
-          }
-        },
-        "documentId": {
-          "__rl": true,
-          "mode": "id",
-          "value": "={{ $('When Executed by Another Workflow').first().json.sheet_document_id }}"
-        },
-        "operation": "update",
-        "options": {},
-        "sheetName": {
-          "__rl": true,
-          "mode": "name",
-          "value": "={{ $('Config marchand').first().json.sheetCommandes }}"
-        }
-      },
-      "position": [
-        2016,
-        384
-      ],
-      "retryOnFail": true,
-      "type": "n8n-nodes-base.googleSheets",
-      "typeVersion": 4.7,
-      "waitBetweenTries": 2000
-    },
-    {
       "id": "a3134154-c648-44be-829c-6f3035ae34a3",
       "maxTries": 3,
       "name": "Notifier client-commande parti",
@@ -2882,55 +2634,6 @@
       "waitBetweenTries": 2000
     },
     {
-      "credentials": {
-        "googleSheetsOAuth2Api": {
-          "id": "9Q14ADLSkwfm2Y5H",
-          "name": "Google Sheets account"
-        }
-      },
-      "disabled": true,
-      "id": "da274ab6-3de5-445b-87ab-abfdd3e40b4d",
-      "maxTries": 3,
-      "name": "Update statut - en_route",
-      "notes": "HORS CHEMIN CRITIQUE. Ce miroir ecrivait le statut dans l onglet du marchand. Depuis que la prise de commande n ecrit plus dans la feuille, son `update` ne trouve aucune ligne : il ne LEVE pas, il ne rend simplement AUCUN ITEM — et n8n saute alors tout ce qui suit. Le client ne recevait plus ni « parti », ni « en route », ni « livree ». La verite est dans Supabase, ecrite par « Refleter dans Supabase ».",
-      "onError": "continueRegularOutput",
-      "parameters": {
-        "columns": {
-          "attemptToConvertTypes": false,
-          "convertFieldsToString": true,
-          "mappingMode": "defineBelow",
-          "matchingColumns": [
-            "order_id"
-          ],
-          "value": {
-            "order_id": "={{ $('Trouver la commande').first().json.order_id }}",
-            "position_livreur": "={{ $json.position }}",
-            "statut_livraison": "={{ $json.statut_livraison }}"
-          }
-        },
-        "documentId": {
-          "__rl": true,
-          "mode": "id",
-          "value": "={{ $('When Executed by Another Workflow').first().json.sheet_document_id }}"
-        },
-        "operation": "update",
-        "options": {},
-        "sheetName": {
-          "__rl": true,
-          "mode": "name",
-          "value": "={{ $('Config marchand').first().json.sheetCommandes }}"
-        }
-      },
-      "position": [
-        2016,
-        576
-      ],
-      "retryOnFail": true,
-      "type": "n8n-nodes-base.googleSheets",
-      "typeVersion": 4.7,
-      "waitBetweenTries": 2000
-    },
-    {
       "id": "ee93ed8d-7f3a-49ca-996d-b56f0557a570",
       "maxTries": 3,
       "name": "Notifier client-commande en route",
@@ -2996,56 +2699,6 @@
       "retryOnFail": false,
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
-      "waitBetweenTries": 2000
-    },
-    {
-      "credentials": {
-        "googleSheetsOAuth2Api": {
-          "id": "9Q14ADLSkwfm2Y5H",
-          "name": "Google Sheets account"
-        }
-      },
-      "disabled": true,
-      "id": "b60fff65-68cc-4b27-bca0-2ca2b1dcef7a",
-      "maxTries": 3,
-      "name": "Update statut - livre",
-      "notes": "HORS CHEMIN CRITIQUE. Ce miroir ecrivait le statut dans l onglet du marchand. Depuis que la prise de commande n ecrit plus dans la feuille, son `update` ne trouve aucune ligne : il ne LEVE pas, il ne rend simplement AUCUN ITEM — et n8n saute alors tout ce qui suit. Le client ne recevait plus ni « parti », ni « en route », ni « livree ». La verite est dans Supabase, ecrite par « Refleter dans Supabase ».",
-      "onError": "continueRegularOutput",
-      "parameters": {
-        "columns": {
-          "attemptToConvertTypes": false,
-          "convertFieldsToString": true,
-          "mappingMode": "defineBelow",
-          "matchingColumns": [
-            "order_id"
-          ],
-          "value": {
-            "heure_livraison": "={{ $now.toISO() }}",
-            "order_id": "={{ $('Trouver la commande').first().json.order_id }}",
-            "position_livreur": "={{ $json.position }}",
-            "statut_livraison": "={{ $json.statut_livraison }}"
-          }
-        },
-        "documentId": {
-          "__rl": true,
-          "mode": "id",
-          "value": "={{ $('When Executed by Another Workflow').first().json.sheet_document_id }}"
-        },
-        "operation": "update",
-        "options": {},
-        "sheetName": {
-          "__rl": true,
-          "mode": "name",
-          "value": "={{ $('Config marchand').first().json.sheetCommandes }}"
-        }
-      },
-      "position": [
-        2016,
-        768
-      ],
-      "retryOnFail": true,
-      "type": "n8n-nodes-base.googleSheets",
-      "typeVersion": 4.7,
       "waitBetweenTries": 2000
     },
     {
@@ -3216,57 +2869,6 @@
       "retryOnFail": false,
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
-      "waitBetweenTries": 2000
-    },
-    {
-      "credentials": {
-        "googleSheetsOAuth2Api": {
-          "id": "9Q14ADLSkwfm2Y5H",
-          "name": "Google Sheets account"
-        }
-      },
-      "disabled": true,
-      "id": "d8466d69-e42d-4ba6-986e-3d4685963826",
-      "maxTries": 3,
-      "name": "Update statut - accepte",
-      "notes": "HORS CHEMIN CRITIQUE. Ce miroir ecrivait le statut dans l onglet du marchand. Depuis que la prise de commande n ecrit plus dans la feuille, son `update` ne trouve aucune ligne : il ne LEVE pas, il ne rend simplement AUCUN ITEM — et n8n saute alors tout ce qui suit. Le client ne recevait plus ni « parti », ni « en route », ni « livree ». La verite est dans Supabase, ecrite par « Refleter dans Supabase ».",
-      "onError": "continueRegularOutput",
-      "parameters": {
-        "columns": {
-          "attemptToConvertTypes": false,
-          "convertFieldsToString": true,
-          "mappingMode": "defineBelow",
-          "matchingColumns": [
-            "order_id"
-          ],
-          "value": {
-            "heure_prise_en_charge": "={{ $now.toISO() }}",
-            "nom_livreur": "={{ $json.livreur_name }}",
-            "order_id": "={{ $('Trouver la commande').first().json.order_id }}",
-            "position_livreur": "={{ $json.position }}",
-            "statut_livraison": "={{ $json.statut_livraison }}"
-          }
-        },
-        "documentId": {
-          "__rl": true,
-          "mode": "id",
-          "value": "={{ $('When Executed by Another Workflow').first().json.sheet_document_id }}"
-        },
-        "operation": "update",
-        "options": {},
-        "sheetName": {
-          "__rl": true,
-          "mode": "name",
-          "value": "={{ $('Config marchand').first().json.sheetCommandes }}"
-        }
-      },
-      "position": [
-        1872,
-        0
-      ],
-      "retryOnFail": true,
-      "type": "n8n-nodes-base.googleSheets",
-      "typeVersion": 4.7,
       "waitBetweenTries": 2000
     },
     {
@@ -3847,5 +3449,5 @@
   },
   "sourceWorkflowId": null,
   "tags": [],
-  "versionCounter": 31
+  "versionCounter": 32
 }
