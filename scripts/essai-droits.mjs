@@ -107,10 +107,32 @@ if (avecJeton.statut === 200) {
   cas.push(masque);
   console.log(`${masque ? '  OK  ' : ' ECHEC'} le numero est masque (${d.numero})`);
 
-  const complet = (d.traitements?.length ?? 0) >= 5 && (d.horsDePortee?.length ?? 0) >= 3;
+  // ON EPROUVE LA FORME, PAS LE NOMBRE.
+  //
+  // Ce controle exigeait « au moins 5 traitements et 3 limites ». C'etaient les
+  // chiffres du jour ou il a ete ecrit. Le 28 aout 2026, retirer Google a fait
+  // tomber les limites a 2 — legitimement : la copie chez un tiers n'existe
+  // plus — et le banc a crie a la regression sur un inventaire devenu JUSTE.
+  //
+  // Un seuil fige sur un instantane se retourne contre le premier changement
+  // volontaire. Ce qui doit tenir, c'est que chaque entree soit UTILISABLE par
+  // l'ecran : une entree sans finalite ou sans duree ne dit rien a la personne
+  // qui la lit, et c'est cela qu'on veut interdire.
+  const SORTS = ['anonymise', 'supprime', 'garde'];
+  const traitements = Array.isArray(d.traitements) ? d.traitements : [];
+  const limites = Array.isArray(d.horsDePortee) ? d.horsDePortee : [];
+
+  const incomplets = traitements.filter((t) => !t?.nom || !t?.finalite || !t?.conservation
+    || !Array.isArray(t?.donnees) || t.donnees.length === 0 || !SORTS.includes(t?.effacement));
+  const limitesMuettes = limites.filter((l) => !l?.quoi || !l?.pourquoi);
+
+  const complet = traitements.length > 0 && limites.length > 0
+    && incomplets.length === 0 && limitesMuettes.length === 0;
   cas.push(complet);
-  console.log(`${complet ? '  OK  ' : ' ECHEC'} l inventaire (${d.traitements?.length}) et les`
-    + ` limites (${d.horsDePortee?.length}) accompagnent le dossier`);
+  console.log(`${complet ? '  OK  ' : ' ECHEC'} l inventaire (${traitements.length}) et les`
+    + ` limites (${limites.length}) sont exploitables`
+    + (incomplets.length ? ` — incomplets : ${incomplets.map((t) => t.cle || t.nom).join(', ')}` : '')
+    + (limitesMuettes.length ? ` — limites sans motif : ${limitesMuettes.length}` : ''));
 
   // LE CONTROLE QUI COMPTE LE PLUS. Un dossier qui ramasserait les commandes
   // d'un autre serait la fuite meme que cet ecran existe pour empecher.

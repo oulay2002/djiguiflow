@@ -166,9 +166,19 @@ async function depuisSupabase(): Promise<Marchand[]> {
     });
 }
 
-async function chargerMarchands(): Promise<Record<string, Marchand>> {
+/**
+ * Charge le registre, depuis le cache tant qu'il est frais.
+ *
+ * `forcer` saute le TTL sans rien detruire. C'est la nuance qui compte : une
+ * premiere version de la relecture appelait `invaliderCacheMarchands()`, donc
+ * posait `cache = null` AVANT de relire. Si la base etait muette a cet
+ * instant, le repli ci-dessous n'avait plus rien a garder et rendait `{}` :
+ * un seul slug mal tape pendant une panne aurait rendu TOUTES les boutiques
+ * introuvables sur cette instance. Le remede aurait ete pire que le mal.
+ */
+async function chargerMarchands(forcer = false): Promise<Record<string, Marchand>> {
   const now = Date.now();
-  if (cache && now - cacheTime < TTL) return cache;
+  if (!forcer && cache && now - cacheTime < TTL) return cache;
 
   const base = await depuisSupabase();
 
@@ -216,10 +226,58 @@ export function prefixeReference(slug: string): string {
   return (lettres || 'dj').toUpperCase();
 }
 
+/**
+ * Délai minimal entre deux relectures FORCÉES du registre.
+ *
+ * Il ne protège pas le cache — il protège la base. Sans lui, une rafale de
+ * slugs inconnus provoquerait une lecture par appel. Cinq secondes bornent
+ * cela à une lecture toutes les cinq secondes et par instance, tout en
+ * laissant une boutique neuve devenir joignable presque aussitôt.
+ */
+const PLANCHER_RELECTURE_MS = 5_000;
+
+/**
+ * Le marchand derrière un slug — et une absence n'est PAS une réponse.
+ *
+ * ── LE DÉFAUT QUE CETTE FONCTION A PORTÉ ───────────────────────────────────
+ *
+ * Elle lisait le cache et rendait `null` si la clé n'y était pas. La route
+ * publique traduisait ce `null` en **404 « Marchand introuvable »**.
+ *
+ * Or le cache vit trente secondes et par INSTANCE. Une boutique créée à
+ * l'instant est donc absente du cache de toute instance chargée avant elle —
+ * et `provisioning.ts` a beau invalider le sien, il ne peut rien pour les
+ * autres. Pendant une demi-minute, la vitrine d'un marchand qui vient de
+ * s'inscrire répondait « cette boutique n'existe pas » à qui suivait son lien.
+ *
+ * Un 404 n'est pas « je ne sais pas », c'est « cela n'existe pas ». Rendre une
+ * certitude fausse à partir d'une ignorance est le défaut que ce dépôt passe
+ * son temps à fermer — c'est le même que le banc qui concluait « un livreur est
+ * parti » d'une lecture ratée.
+ *
+ * ── CE QU'ELLE FAIT MAINTENANT ─────────────────────────────────────────────
+ *
+ * Sur une clé absente, elle RELIT la base une fois avant de conclure. Le coût
+ * ne se paie que sur les clés réellement inconnues, et `PLANCHER_RELECTURE_MS`
+ * empêche qu'une énumération ne le transforme en charge.
+ *
+ * Trouvé le 29 août 2026 par le banc multi-marchand, qui échouait un tour sur
+ * deux à son premier contrôle — l'intermittence était le symptôme, pas le
+ * problème.
+ */
 export async function getMarchand(id: string | null | undefined): Promise<Marchand | null> {
   if (!id) return null;
+  const cle = String(id).trim();
+
   const dict = await chargerMarchands();
-  return dict[String(id).trim()] || null;
+  const trouve = dict[cle];
+  if (trouve) return trouve;
+
+  // Le cache vient d'être relu : insister n'apprendrait rien de plus, et
+  // ouvrirait la porte à une rafale de slugs inconnus.
+  if (Date.now() - cacheTime < PLANCHER_RELECTURE_MS) return null;
+
+  return (await chargerMarchands(true))[cle] || null;
 }
 
 export async function resoudreMarchand(id: string | null | undefined): Promise<Marchand | null> {

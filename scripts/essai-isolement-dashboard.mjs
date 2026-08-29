@@ -170,11 +170,6 @@ const ROUTES = [
   { nom: 'statistiques', chemin: (s) => `/api/dashboard/stats?boutique_id=${s}` },
   { nom: 'clients', chemin: (s) => `/api/dashboard/clients?boutique_id=${s}` },
   {
-    nom: 'onglets',
-    chemin: (s) => `/api/dashboard/boutique/onglets?boutique_id=${s}`,
-    options: { method: 'POST', body: JSON.stringify({}) },
-  },
-  {
     nom: 'abonnement push',
     chemin: () => '/api/push/abonner',
     corpsAvecSlug: (s) => ({ boutique_id: s, subscription: { endpoint: 'https://example.invalid/x' } }),
