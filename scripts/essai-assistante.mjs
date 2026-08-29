@@ -144,8 +144,8 @@ async function installer() {
     'les articles du banc',
     await sb.from('produits').insert([
       {
-        boutique_id: UUID, nom: 'Article du banc', categorie: 'Essai',
-        prix: 3000, disponible: true, stock: 10, menu_du_jour: true,
+        boutique_id: UUID, nom: 'Café du banc', categorie: 'Essai',
+        prix: 500, disponible: true, stock: 10, menu_du_jour: true,
       },
     ]),
   );
@@ -327,6 +327,107 @@ async function derouler() {
     const attendu = ('225' + TEL.replace(/^0/, '')).slice(-8);
     const vu = String(stops[0].telephone ?? '').replace(/\D/g, '');
     verifier('il porte le numero du client, pas un autre', vu.endsWith(attendu), vu);
+  }
+
+
+  console.log('\n--- la commande, creee pour de vrai ---');
+
+  /**
+   * CE QUE LE MODELE DECIDE N'EST PAS EPROUVABLE. CE QU'IL DECLENCHE L'EST.
+   *
+   * On pourrait tenir une vraie conversation — « je veux deux articles »,
+   * « oui c'est bon » — et attendre qu'une commande naisse. Ce serait un banc
+   * INSTABLE : le modele peut demander l'adresse d'abord, reformuler, ou juger
+   * qu'il manque une information. Un banc qui echoue une fois sur trois pour
+   * une raison legitime finit par n'etre plus lance, et ne garde alors rien.
+   *
+   * On separe donc les deux moities :
+   *
+   *   - LA DECISION du modele est gardee plus haut, par le verrou de
+   *     consentement : un « bonjour » ne commande rien. C'est le seul aspect de
+   *     son jugement qu'on puisse figer.
+   *   - LA MACHINERIE qu'il declenche est appelee ici DIRECTEMENT, exactement
+   *     comme il l'appelle : meme route, meme secret, meme forme de corps.
+   *     Tout ce qui suit sa decision est deterministe, et c'est la que vivent
+   *     les defauts qu'on a payes.
+   */
+  const SYNC = env('SYNC_SECRET');
+  if (!SYNC) {
+    verifier('la commande est creee', false,
+      'INDETERMINE — SYNC_SECRET absent, la route de creation ne peut pas etre appelee.');
+    return;
+  }
+
+  const REFERENCE = `BANCA-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
+
+  /**
+   * LE NOM EST ECRIT SANS ACCENT, ET C'EST LE POINT.
+   *
+   * Le catalogue porte « Café du banc ». L'assistante recopie ce que le client
+   * a tape, et un client tape rarement les accents. L'ancienne regle
+   * (`toLowerCase()` seul) ne rapprochait pas les deux et enregistrait la ligne
+   * a ZERO FRANC. Ce banc echouerait donc sur la version d'avant.
+   */
+  const creation = await fetch(`${BASE}/api/commandes/sync`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-sync-secret': SYNC },
+    body: JSON.stringify({
+      reference: REFERENCE,
+      boutique_id: UUID,
+      customer_name: 'Client du banc',
+      phone: TEL,
+      address: 'Rue du banc, Abidjan',
+      chat_id: '225' + TEL.replace(/^0/, ''),
+      canal: 'whatsapp',
+      // LA FORME QUE L'ASSISTANTE ENVOIE : un tableau d'objets. Le texte
+      // « 2x Cafe du banc » marcherait aussi — quantite d'abord, c'est la
+      // regle du parseur — mais l'outil du modele rend du JSON, et un banc
+      // doit emprunter le meme chemin que ce qu'il eprouve.
+      items: [{ nom: 'Cafe du banc', quantite: 2 }],
+      total_price: 1000,
+    }),
+    signal: AbortSignal.timeout(30000),
+  });
+
+  const corpsCreation = await creation.json().catch(() => ({}));
+  const creee = verifier('la commande est acceptee', creation.status === 200,
+    `HTTP ${creation.status}${corpsCreation.error ? ' — ' + corpsCreation.error : ''}`);
+
+  if (creee) {
+    verifier('elle rend un jeton de suivi', String(corpsCreation.jeton_suivi ?? '').length > 10,
+      corpsCreation.jeton_suivi ? 'present' : 'ABSENT');
+
+    const { data: enBase } = await sb
+      .from('commandes')
+      .select('reference, boutique_id, total, client_nom, statut')
+      .eq('reference', corpsCreation.reference ?? REFERENCE)
+      .maybeSingle();
+
+    verifier('elle existe en base, chez LA BONNE boutique',
+      enBase?.boutique_id === UUID, String(enBase?.boutique_id ?? 'introuvable'));
+
+    verifier('elle porte le total annonce', Number(enBase?.total) === 1000,
+      `${enBase?.total} F`);
+
+    /**
+     * LE CONTROLE QUI TIENT LE CORRECTIF DU JOUR.
+     *
+     * « Cafe du banc » sans accent doit retrouver « Café du banc » et son prix.
+     * S'il vaut zero, c'est que l'appariement est retombe sur `?? 0` — et un
+     * marchand livrerait gratuitement sans le savoir.
+     */
+    const { data: lignes } = await sb
+      .from('commande_items')
+      .select('nom_produit, quantite, prix_unitaire')
+      .eq('commande_id', (await sb.from('commandes').select('id')
+        .eq('reference', corpsCreation.reference ?? REFERENCE).maybeSingle()).data?.id ?? '');
+
+    const ligne = (lignes ?? [])[0];
+    verifier('l article est enregistre', Boolean(ligne), ligne?.nom_produit ?? 'aucune ligne');
+    verifier('son prix vient du catalogue, PAS de zero',
+      Number(ligne?.prix_unitaire) === 500, `${ligne?.prix_unitaire} F l unite`);
+    verifier('sa quantite est celle demandee', Number(ligne?.quantite) === 2,
+      String(ligne?.quantite));
   }
 
   // ---- Rien n'a debordé chez un autre marchand.
