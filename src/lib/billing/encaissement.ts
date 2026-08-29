@@ -144,10 +144,32 @@ export async function honorerPaiement(params: {
     return { etat: 'refuse', motif: 'statut', statutBrut: verdict.statutBrut };
   }
 
+  /**
+   * UN MONTANT INCONNU N'EST PAS UN MONTANT CONFORME.
+   *
+   * Le controle ci-dessous ne s'appliquait que `si verdict.montant !== null` :
+   * un montant absent le faisait SAUTER, et l'acces s'ouvrait sans qu'aucune
+   * somme n'ait ete confrontee.
+   *
+   * Or ce montant est lu d'un champ du prestataire — `data.amount`. Le jour ou
+   * GeniusPay le renomme, ou l'omet pour un moyen de paiement, `nombre()` rend
+   * `null` : le garde le plus cher du systeme cesserait de proteger SANS RIEN
+   * DIRE, et une transaction de 200 F ouvrirait un plan a 25 000.
+   *
+   * On classe donc ce cas en INDETERMINE, jamais en refus : l'argent a pu etre
+   * preleve, et le rejeter enterrerait un paiement encaisse. Le paiement reste
+   * en attente, le prestataire rejoue, l'alerte part. C'est la meme doctrine
+   * que partout ailleurs ici — un doute ne devient jamais une certitude, et
+   * surtout pas celle qui ouvre un acces payant.
+   */
+  if (verdict.montant === null) {
+    return { etat: 'indetermine', statutBrut: verdict.statutBrut };
+  }
+
   // Le montant encaisse doit etre celui qu'on a demande. Sans ce controle, une
   // transaction de 200 FCFA ouvrirait les droits d'un plan a 25 000 : il
   // suffirait de savoir forger une reference et de payer une piece.
-  if (verdict.montant !== null && verdict.montant !== paiement.montant_fcfa) {
+  if (verdict.montant !== paiement.montant_fcfa) {
     await marquer(sb, paiement.reference, { statut: 'echoue', operateur: verdict.operateur });
     return { etat: 'refuse', motif: 'montant', statutBrut: verdict.statutBrut };
   }

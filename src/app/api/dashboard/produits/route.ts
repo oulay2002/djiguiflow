@@ -1,4 +1,5 @@
 import { exigerAccesMarchand } from '@/lib/dashboardAuth';
+import { prixRecevable } from '@/lib/prixArticle';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 
 export const dynamic = 'force-dynamic';
@@ -109,6 +110,15 @@ export async function POST(req: Request) {
   const carac = caracteristique(corps.attribut_nom, corps.attribut_valeurs);
   if (!carac.ok) return Response.json({ error: carac.message }, { status: 400 });
 
+  // LE PRIX EST EXIGE, ET LU STRICTEMENT.
+  //
+  // Il s'ecrivait `Number(prix) || 0` : une chaine vide, un texte, « 12 000 »
+  // avec l'espace des milliers — tout devenait ZERO, et l'article partait
+  // gratuit sur la vitrine. Le champ du tableau de bord porte pourtant une
+  // etoile depuis toujours.
+  const lu = prixRecevable(prix);
+  if (!lu.ok) return Response.json({ error: lu.message }, { status: 400 });
+
   const { searchParams } = new URL(req.url);
   const acces = await exigerAccesMarchand(req, searchParams.get('boutique_id'));
   if (!acces.ok) return Response.json({ error: acces.message }, { status: acces.statut });
@@ -141,7 +151,7 @@ export async function POST(req: Request) {
       reference,
       nom: String(nom),
       categorie: String(categorie || 'Divers'),
-      prix: Number(prix) || 0,
+      prix: lu.prix,
       description: String(description || ''),
       disponible: Boolean(disponible),
       photo_url: String(image || '') || null,
@@ -256,7 +266,19 @@ export async function PATCH(req: Request) {
   if (couleur !== undefined) patch.couleur = String(couleur).trim() || null;
   if (nom !== undefined) patch.nom = String(nom).trim();
   if (categorie !== undefined) patch.categorie = String(categorie || 'Divers');
-  if (prix !== undefined) patch.prix = Number(prix) || 0;
+  /**
+   * `undefined` VEUT DIRE « ON N'Y TOUCHE PAS », et c'est la nuance à garder.
+   *
+   * Mais dès que le prix est fourni, il est lu strictement : `Number(prix) || 0`
+   * transformait en zéro un champ vidé par mégarde, et l'article déjà en
+   * vitrine devenait gratuit sans qu'aucun message ne le dise. La modification
+   * est même plus dangereuse que la création — l'article a déjà des clients.
+   */
+  if (prix !== undefined) {
+    const luPatch = prixRecevable(prix);
+    if (!luPatch.ok) return Response.json({ error: luPatch.message }, { status: 400 });
+    patch.prix = luPatch.prix;
+  }
   if (description !== undefined) patch.description = String(description || '');
   if (image !== undefined) patch.photo_url = String(image || '') || null;
 

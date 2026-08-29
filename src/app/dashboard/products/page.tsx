@@ -210,7 +210,13 @@ export default function Page() {
       };
 
       const commun = {
-        categorie: fCat, prix: Number(fPrix) || 0,
+        categorie: fCat,
+        // ON ENVOIE LA SAISIE TELLE QUELLE, ET C'EST VOULU.
+        //
+        // C'etait `Number(fPrix) || 0` : un champ vide devenait zero AVANT de
+        // partir, et le serveur ne pouvait plus distinguer « offert » de
+        // « oublie ». L'article se creait gratuit, en silence.
+        prix: fPrix,
         description: fDesc, disponible: fDispo,
         seuil_alerte: fSeuil === '' ? null : Number(fSeuil),
         // La caracteristique est COMMUNE aux coloris : le meme modele existe
@@ -351,7 +357,7 @@ export default function Page() {
           reference: fiche.id,
           nom: gNom.trim(),
           categorie: gCat,
-          prix: Number(gPrix) || 0,
+          prix: gPrix,
           description: gDesc,
           marque: gMarque.trim(),
           public_vise: gPublic.trim(),
