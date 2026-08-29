@@ -21,7 +21,8 @@
     "verifier:palette": "node scripts/palette-maison.mjs",
     "verifier:etats": "node scripts/collisions-couleur.mjs",
     "verifier:production": "node scripts/verifier-production.mjs",
-    "essai:droits": "node scripts/essai-droits.mjs"
+    "essai:droits": "node scripts/essai-droits.mjs",
+    "essai:assistante": "node scripts/essai-assistante.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.4",

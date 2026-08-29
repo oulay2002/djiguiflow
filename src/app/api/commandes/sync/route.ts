@@ -2,6 +2,7 @@ import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import { filtreAppariementChat } from '@/lib/appariementChat';
 import type { Database } from '@/lib/database.types';
 import { normaliserTelephone } from '@/lib/telephone';
+import { aplatir } from '@/lib/relances';
 import { prefixeReference } from '@/lib/marchands';
 import {
   heureRetraitLisible,
@@ -727,23 +728,65 @@ export async function POST(req: Request) {
         .select('nom, prix')
         .eq('boutique_id', boutique_id);
 
+      /**
+       * L'APPARIEMENT SE FAIT SUR UN NOM APLATI, PAS SUR `toLowerCase()`.
+       *
+       * Les noms d'articles arrivent ici en TEXTE LIBRE, écrits par
+       * l'assistante d'après ce que le client a dit. Une simple mise en
+       * minuscules ne rapproche pas « Café touba » de « cafe touba », ni
+       * « Poulet  DG » de « Poulet DG » : la ligne tombait alors dans le `?? 0`
+       * plus bas et s'enregistrait à ZÉRO FRANC, en silence.
+       *
+       * `aplatir` retire les accents, met en minuscules et réduit toute
+       * ponctuation à un espace. Elle vient de la détection des « stop », où
+       * elle rend le même service : reconnaître ce qu'une personne a écrit
+       * sans exiger qu'elle l'écrive parfaitement.
+       *
+       * Elle ne devine PAS les pluriels, et c'est voulu : « poulet » et
+       * « poulets » peuvent être deux articles d'un même marchand.
+       */
       priceMap = new Map(
-        (prods ?? []).map((p) => [
-          String(p.nom || '').toLowerCase(),
-          Number(p.prix ?? 0) || 0,
-        ])
+        (prods ?? []).map((p) => [aplatir(p.nom), Number(p.prix ?? 0) || 0]),
       );
-    } catch { /* prix inconnus → 0 */ }
+    } catch (e) {
+      // ON NE PERD PLUS CE CAS EN SILENCE. Le commentaire disait « prix
+      // inconnus → 0 » : une lecture ratée du catalogue mettait donc TOUTES
+      // les lignes de la commande à zéro, sans que rien ne le dise — ni au
+      // marchand, ni au journal.
+      console.error(
+        `Commande ${reference} — catalogue illisible, toutes les lignes seront a 0 F :`,
+        e instanceof Error ? e.message : e,
+      );
+    }
 
     // idempotence : on remplace les anciens articles
     await sb.from('commande_items').delete().eq('commande_id', cmd.id);
 
-    const rows = parsed.map((p) => ({
-      commande_id: cmd.id,
-      nom_produit: p.nom,
-      quantite: p.qte,
-      prix_unitaire: priceMap.get(p.nom.toLowerCase()) ?? 0,
-    }));
+    const rows = parsed.map((p) => {
+      const prix = priceMap.get(aplatir(p.nom));
+
+      /**
+       * UN ARTICLE INTROUVABLE S'ENREGISTRE À ZÉRO — ET DOIT SE VOIR.
+       *
+       * `prix_unitaire` est NOT NULL en base : on ne peut pas écrire « je ne
+       * sais pas ». Le zéro reste donc, mais il cesse d'être muet. Sans cette
+       * ligne, un marchand découvrait dans son tableau de bord une commande
+       * dont le détail annonce 0 F, sans aucun moyen de savoir pourquoi.
+       */
+      if (prix === undefined) {
+        console.error(
+          `Commande ${reference} — article « ${p.nom} » absent du catalogue`
+          + ` (boutique ${boutique_id}) : ligne enregistree a 0 F.`,
+        );
+      }
+
+      return {
+        commande_id: cmd.id,
+        nom_produit: p.nom,
+        quantite: p.qte,
+        prix_unitaire: prix ?? 0,
+      };
+    });
 
     const { error: errItems } = await sb.from('commande_items').insert(rows);
     if (errItems) return Response.json({ error: 'ITEMS: ' + errItems.message }, { status: 500 });
