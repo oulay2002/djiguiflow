@@ -18,92 +18,60 @@ Il s'inscrit, puis suit `/onboarding` :
    L'application branche le webhook toute seule. **Rien à faire de votre côté.**
 3. **Son catalogue**, ses horaires, ses zones de livraison.
 
-**WhatsApp n'est pas automatisé.** L'écran le lui dit :
+**WhatsApp est automatisé depuis le 29 août 2026.** L'écran lui montre un
+bouton **« Connecter mon WhatsApp »**, puis un QR code. Il le scanne depuis
+WhatsApp → *Appareils connectés*. L'écran passe au vert tout seul.
 
-> « C'est nous qui ouvrons la session et la relions à votre boutique. Vous
-> n'avez qu'un QR code à scanner, aucune clé à manipuler. »
-> — *écrivez-nous pour recevoir votre QR*
-
-Il vous écrit donc. La suite vous revient.
+**Vous n'intervenez plus.**
 
 ---
 
-## Ce que vous faites, dans l'ordre
+## Ce qui se passe sous le bouton
 
-### 1. Ouvrir la session wasender
+Pour votre information — il n'y a rien à faire, mais il faut savoir où
+regarder si un jour ça coince.
 
-Dans votre tableau de bord wasender, créez une session pour **son** numéro.
-Vous en ressortez avec une **clé d'API propre à cette session**.
+1. La plateforme appelle `POST /api/whatsapp-sessions` chez wasender, avec le
+   numéro du marchand et **l'adresse du webhook dans la même requête**.
+2. wasender rend `api_key` (la clé d'envoi) et `webhook_secret` (le secret
+   d'entrée) — les deux valeurs qu'on collait autrefois à la main.
+3. Elles partent directement dans le coffre, par `definir_jeton_canal` et
+   `definir_secret_webhook`. **Elles ne traversent jamais l'écran.**
+4. L'identifiant de session est gardé dans `wasender_session_id`, pour afficher
+   le QR, suivre la connexion, et **libérer la place** si le marchand s'en va.
 
-> ⚠ **La session coûte ~6 USD par mois dès qu'elle est ouverte**, essai gratuit
-> compris — soit environ **3 600 F par inscrit**, à votre charge tant qu'il n'a
-> pas payé. Ne l'ouvrez pas avant qu'il ait fini son catalogue : une session
-> ouverte pour quelqu'un qui ne revient pas est de l'argent perdu tous les mois.
+### Ce que le marchand peut lire, et ce que ça veut dire
 
-### 2. Poser la clé dans le coffre
+| Ce qu'il voit | Ce qui s'est passé |
+|---|---|
+| « Nous vous rappelons très vite » | **Le forfait est plein.** Ce n'est pas une panne : à vous d'ouvrir un second forfait, ou de libérer une place. |
+| « Le service WhatsApp ne répond pas » | wasender est injoignable. Réessayer suffit. |
+| « La ligne a été ouverte mais nous n'avons pas pu la relier » | **Rare et grave** : la session existe — la place est prise — mais le coffre a refusé. L'identifiant est journalisé ; retrouvez-le pour la libérer. |
 
-Dans l'éditeur SQL de Supabase :
+### Recliquer ne coûte rien
+
+La route **refuse de créer une seconde session** dès qu'une existe. C'est
+délibéré : chaque session occupe une place du forfait et se paie tous les mois.
+Un marchand qui clique deux fois remontre simplement son QR.
+
+---
+
+## Libérer une place
+
+Un forfait est plafonné. Une session abandonnée se paie sans rien servir.
+
+Quand un marchand s'en va, récupérez son `wasender_session_id` :
 
 ```sql
-select definir_jeton_canal('<slug-du-marchand>', 'wasender', '<clé API wasender>');
+select nom, slug, wasender_session_id from boutiques where slug = '<slug>';
 ```
 
-La clé part dans Vault. Seul son identifiant reste dans `boutiques` ; la valeur
-ne réapparaîtra sur aucun écran, et personne d'autre ne peut la lire.
+Puis supprimez la session dans le tableau de bord wasender, ou par leur API
+(`DELETE /api/whatsapp-sessions/{id}`).
 
-### 3. Poser le secret d'entrée
-
-C'est le **second facteur** : il prouve qu'un message entrant vient bien de
-*ce* marchand, et pas d'un autre.
-
-```sql
-select definir_secret_webhook('<slug-du-marchand>', '<un secret que vous inventez>');
-```
-
-Vous passez le secret **en clair** ; la fonction n'en garde que l'empreinte.
-Notez-le de votre côté : vous en avez besoin à l'étape suivante, et il ne sera
-plus jamais lisible.
-
-> Une empreinte absente vaut **refus** depuis le 17 août 2026. Un marchand sans
-> ce secret ne recevra aucun message — c'est voulu : le repli précédent
-> acceptait n'importe quel POST forgé.
-
-### 4. Déclarer le webhook chez wasender
-
-Adresse à renseigner :
-
-```
-https://n8n.djiguiflow.com/webhook/1b96720c-e3b3-4638-a351-7f3704bd483e/whatsapp/<slug>
-```
-
-Et un en-tête :
-
-```
-x-webhook-secret: <le secret de l'étape 3>
-```
-
-> ⚠ **Le segment en uuid n'est pas décoratif.** n8n sert un webhook à la fois
-> sous `/webhook/<chemin>` et sous `/webhook/<id du nœud>/<chemin>`. Seule la
-> seconde est enregistrée : l'adresse sans l'uuid répond **404**, et un 404
-> ressemble à un refus poli. `telegramBranchement.ts` porte le même
-> avertissement pour Telegram.
-
-### 5. Lui envoyer le QR
-
-Il le scanne depuis son téléphone, dans WhatsApp → *Appareils connectés*.
-
-### 6. Lui faire cliquer « Tester ma boutique »
-
-Dans son tableau de bord. Le diagnostic envoie un **vrai** message d'essai à son
-propre numéro et vérifie qu'il part **par son jeton à lui**, pas par celui de la
-plateforme.
-
-C'est le piège central : un envoi peut réussir avec le jeton de la plateforme et
-donner l'illusion que tout marche, alors que le marchand n'est pas branché. Le
-diagnostic refuse ce cas explicitement.
-
-L'écran d'onboarding passe alors à **numéro connecté** puis **réception
-sécurisée**.
+> Ce n'est pas encore automatique : rien n'appelle `supprimerSession()`
+> aujourd'hui. La fonction existe et est éprouvée ; il manque le geste qui la
+> déclenche — départ d'un marchand, ou bouton dans l'admin.
 
 ---
 
@@ -126,8 +94,15 @@ pas : sans `webhook_protege`, il peut écrire mais ne reçoit rien.
 
 ## Le jour où les boutiques factices disparaissent
 
-`Chez Zahara` et `Rose Monde` seront supprimées à l'arrivée du premier vrai
-marchand. Deux choses à savoir :
+`Rose Monde` sera supprimée à l'arrivée du premier vrai marchand.
+
+**`Chez Zahara` reste, et ce n'est pas un oubli.** Elle sert de vitrine de
+démonstration pour convaincre de nouveaux marchands : c'est en la montrant
+qu'on explique ce que la plateforme fait. Elle occupe donc une place du forfait
+WhatsApp **de façon durable** — et ce n'est pas une place perdue, c'est le coût
+du démarchage.
+
+Trois choses à savoir :
 
 **Les contrôles ne les nomment plus.** `verifier-production.mjs` les citait en
 dur à quatre endroits ; il demande désormais à l'annuaire quelle boutique
@@ -154,6 +129,12 @@ Monde partagent `2250759486701` aujourd'hui — sans conséquence entre boutique
 factices, mais deux vrais marchands sur un même numéro poseraient un problème
 réel, et la base ne l'interdit pas.
 
-**Le branchement WhatsApp reste manuel.** Il tient tant que les marchands
-arrivent un par un. À dix inscriptions par semaine, il faudra une route de
-branchement comme celle de Telegram — c'est un chantier, pas un réglage.
+**La libération d'une place n'est pas automatique.** `supprimerSession()` existe
+et est éprouvée, mais rien ne l'appelle : il manque le geste qui la déclenche.
+Tant qu'il manque, une session abandonnée se paie tous les mois — et le
+onzième marchand coûterait un forfait entier alors que des places dorment.
+
+**Le premier branchement en libre-service n'a jamais été fait.** Le jeton de
+compte n'existe que dans Vercel : la création de session a été éprouvée par
+quinze tests, mais aucun n'a parlé à wasender. Le premier essai réel devrait se
+faire sur une boutique factice, pas devant un marchand.

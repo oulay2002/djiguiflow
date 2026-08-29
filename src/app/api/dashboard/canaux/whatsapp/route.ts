@@ -3,6 +3,7 @@ import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import { normaliserTelephone } from '@/lib/telephone';
 import { urlWebhookWhatsApp } from '@/lib/routeurWhatsApp';
 import { creerSession, etatSession, qrDeSession } from '@/lib/wasenderSessions';
+import { prevenirExploitant } from '@/lib/alerteExploitant';
 
 export const dynamic = 'force-dynamic';
 
@@ -109,6 +110,38 @@ export async function POST(req: Request) {
   });
 
   if (!creation.ok) {
+    /**
+     * LE MARCHAND LIT « NOUS VOUS RAPPELONS ». ENCORE FAUT-IL QUE QUELQU'UN LE SACHE.
+     *
+     * Un forfait plein n'est pas une panne, et le marchand n'y peut rien : on
+     * lui promet donc un rappel. Mais cette promesse n'engage personne tant
+     * que l'exploitant l'ignore — et le marchand attendrait indéfiniment, en
+     * silence, persuadé qu'on s'occupe de lui.
+     *
+     * C'est le seul cas qu'on remonte : les autres échecs se réessaient
+     * d'eux-mêmes, celui-ci exige une décision — ouvrir un second forfait, ou
+     * libérer une place.
+     *
+     * L'alerte n'attend pas la réponse : un canal technique lent ne doit pas
+     * retenir le marchand devant son écran.
+     */
+    if (creation.motif === 'plafond') {
+      void prevenirExploitant(
+        'wasender-plafond',
+        [
+          '⚠️ Forfait WhatsApp PLEIN',
+          '',
+          `« ${fiche.nom} » (${fiche.slug}) vient de demander son branchement`,
+          'et ne l’a pas obtenu.',
+          '',
+          'Il a lu « nous vous rappelons très vite » :',
+          'cette promesse n’engage que vous.',
+          '',
+          'Ouvrez une place, ou relevez le forfait, puis dites-lui de recliquer.',
+        ].join('\n'),
+      );
+    }
+
     return Response.json(
       { ok: false, etat: 'absente', message: creation.message } satisfies Reponse,
       { status: creation.statut },
