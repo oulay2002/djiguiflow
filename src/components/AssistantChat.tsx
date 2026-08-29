@@ -345,19 +345,51 @@ export default function AssistantChat() {
           </motion.div>
         )}
 
+        {/* LE LANCEUR EST LE ROBOT, ET LA BULLE EST SA PAROLE.
+            Un seul <button> pour les deux : deux zones cliquables cote a cote
+            dedoubleraient le focus clavier et feraient lire deux fois la meme
+            chose au lecteur d'ecran. Le robot est `aria-hidden`, le libelle
+            vit sur le bouton. */}
         <button
           type="button"
           aria-label="Ouvrir l'assistant IA"
           onClick={handleToggleFloating}
-          className="group relative inline-flex items-center gap-2 bg-nuit-900 px-4 py-3 text-sm font-black text-white soft-shadow transition hover:-translate-y-0.5"
+          className="group relative flex flex-col items-center gap-1 transition hover:-translate-y-0.5"
         >
-          <RobotAssistant reflechit={isTyping} ouvert={isFloatingOpen} className="h-6 w-6" />
-          <span className="hidden sm:inline">Assistant IA</span>
-          {showLauncherBadge && !isFloatingOpen && (
-            <span className="absolute -right-1.5 -top-1.5 inline-flex h-6 min-w-6 items-center justify-center border-2 border-white bg-bissap-500 px-1 text-xs font-black text-white soft-shadow animate-pulse">
-              1
-            </span>
-          )}
+          <span className="relative bg-nuit-900 px-3 py-2 text-xs font-black text-white soft-shadow">
+            Une question&nbsp;?
+            {/* La pointe de la bulle : un carre pivote, pour rester dans les
+                classes de la maison plutot que d'inventer une bordure. */}
+            <span
+              aria-hidden="true"
+              className="absolute left-1/2 top-full -ml-1.5 h-3 w-3 -translate-y-1.5 rotate-45 bg-nuit-900"
+            />
+          </span>
+
+          {/* LE ROBOT A SA PROPRE SURFACE, ET CE N'EST PAS DECORATIF.
+              Le lanceur est FIXE au-dessus d'une page qui alterne sections
+              claires et sombres. Mesure faite : un robot en `nuit-900` tombait
+              a 1,00:1 en bas de page — exactement la couleur du fond, donc
+              invisible sur trois positions de defilement sur cinq. Une seule
+              couleur ne peut pas tenir sur les deux fonds ; un panneau clair,
+              lui, garantit le contraste partout. C'est le meme bloc que
+              partout ailleurs : bordure fine, fond chaux, ombre maison. */}
+          <span className="relative border border-[var(--hairline)] bg-chaux-50 p-1 soft-shadow">
+            <RobotAssistant
+              reflechit={isTyping}
+              ouvert={isFloatingOpen}
+              // Plus petit sur telephone : 96 px en coin d'un ecran de 390
+              // mangeraient la barre de commande de la vitrine.
+              className="block h-20 w-20 text-nuit-900 sm:h-24 sm:w-24"
+            />
+            {/* Le badge se pose sur le panneau, pas sur la bulle : sur la bulle
+                il chevauchait le point d'interrogation. */}
+            {showLauncherBadge && !isFloatingOpen && (
+              <span className="absolute -right-2.5 -top-2.5 inline-flex h-6 min-w-6 items-center justify-center border-2 border-white bg-bissap-500 px-1 text-xs font-black text-white soft-shadow animate-pulse">
+                1
+              </span>
+            )}
+          </span>
         </button>
       </div>
     </>
