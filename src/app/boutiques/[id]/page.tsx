@@ -12,6 +12,8 @@ import {
   modeParDefaut,
   type ModeCommande,
 } from '@/lib/retrait';
+import { objectifPanier, phraseObjectif } from '@/lib/objectifsPanier';
+import { suggestionsPanier } from '@/lib/suggestionsPanier';
 import { LienRetour, classesBouton } from '@/components/ui/Bouton';
 import { EMOJI_DEFAUT, Enseigne, initiale } from '@/components/ui/Enseigne';
 
@@ -622,6 +624,43 @@ export default function Page() {
     .filter(Boolean) as { prod: Produit; q: number; variante: string }[];
   const total = lignes.reduce((s, l) => s + l.prod.prix * l.q, 0);
   const articles = lignes.reduce((s, l) => s + l.q, 0);
+
+  /**
+   * CE QU'IL MANQUE, DIT PENDANT QU'IL CHOISIT ENCORE.
+   *
+   * Le minimum de commande n'etait annonce QUE par le refus de la route, apres
+   * que le client a saisi son nom, son telephone et son adresse. Il remplissait
+   * tout pour lire « il vous manque 500 F ». La regle vit dans
+   * `@/lib/objectifsPanier`, avec celle qu'applique le serveur.
+   */
+  const objectif = objectifPanier({
+    mode: modeChoisi,
+    total,
+    minimum: infos.minimum,
+    offerteDes: recuperation.offerteDes,
+  });
+
+  /**
+   * CE QU'ON PROPOSE, ET OU.
+   *
+   * Deux places etaient perdues. Le bon de commande vide occupait une colonne
+   * entiere pour dire « Ajoutez un article, il s'inscrit ici » ; et une fois le
+   * premier article choisi, rien n'invitait jamais au second.
+   *
+   * DEUX quand le panier est vide — le ticket est etroit et la place compte ;
+   * TROIS ensuite, sur toute la largeur sous la grille. La regle de choix vit
+   * dans `@/lib/suggestionsPanier`, avec ses exclusions et ses tests.
+   */
+  // PAS DE `useMemo` ICI. `lignes` est reconstruit a chaque rendu : la
+  // memoisation serait illusoire, et le compilateur React refuse d'ailleurs de
+  // la preserver. Le calcul est un filtre et un tri sur le catalogue d'une
+  // boutique — quelques dizaines d'articles au plus.
+  const suggestions = suggestionsPanier({
+    catalogue: produits,
+    auPanier: lignes.map(l => l.prod.id),
+    categoriesAuPanier: lignes.map(l => l.prod.categorie),
+    combien: lignes.length === 0 ? 2 : 3,
+  });
 
   const mots = useMemo(() => lexique(header.secteur), [header.secteur]);
 
@@ -1489,6 +1528,45 @@ export default function Page() {
             ) : (
               grille(grouperEnArticles(visibles))
             )}
+
+            {/* COMPLETEZ VOTRE COMMANDE.
+                Rien n'invitait jamais au second article : le client qui n'avait
+                pas d'idee s'arretait a un. On propose ce que son panier n'a pas
+                encore — une boisson apres un plat — plutot qu'un second article
+                de la meme categorie, qui ressemblerait a du remplissage.
+
+                Sous la grille et non dans le ticket : le ticket est etroit, et
+                sur telephone il est tout en bas alors que le client vient de
+                cliquer ici meme. */}
+            {lignes.length > 0 && suggestions.length > 0 && (
+              <section className="mt-10 border-t border-[var(--hairline)] pt-6">
+                <h2 className="mb-4 flex items-center gap-3 font-mono text-xs font-bold uppercase tracking-[0.24em] text-chaux-600">
+                  Complétez votre commande
+                  <span className="h-px flex-1 bg-chaux-200" />
+                </h2>
+                <ul className="grid gap-3 sm:grid-cols-3">
+                  {suggestions.map(s => (
+                    <li
+                      key={`complement-${s.id}`}
+                      className="flex items-center justify-between gap-3 border border-[var(--hairline)] bg-chaux-50 p-3 soft-shadow"
+                    >
+                      <span className="min-w-0">
+                        <span className="block truncate text-sm font-semibold text-nuit-900">{s.nom}</span>
+                        <span className="font-mono text-xs text-chaux-600">{fcfa(s.prix)} FCFA</span>
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => ajouter(s.id)}
+                        aria-label={`Ajouter ${s.nom}`}
+                        className="flex h-10 w-10 shrink-0 items-center justify-center bg-bissap-500 text-white transition hover:bg-bissap-600"
+                      >
+                        <Plus className="h-4 w-4" />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
           </div>
 
           {/* Le ticket : bon de commande qui se remplit à mesure. */}
@@ -1513,9 +1591,41 @@ export default function Page() {
               </h2>
 
               {lignes.length === 0 ? (
-                <p className="mt-3 text-sm text-chaux-600">
-                  Ajoutez un article, il s&apos;inscrit ici.
-                </p>
+                <>
+                  <p className="mt-3 text-sm text-chaux-600">
+                    Ajoutez un article, il s&apos;inscrit ici.
+                  </p>
+
+                  {/* LE TICKET VIDE OCCUPAIT UNE COLONNE POUR NE RIEN DIRE.
+                      Il propose maintenant ce que le marchand met en avant —
+                      son menu du jour d'abord. On ne devine pas a sa place :
+                      c'est le seul signal de mise en avant qu'il nous donne. */}
+                  {suggestions.length > 0 && (
+                    <div className="mt-5 border-t border-[var(--hairline)] pt-4">
+                      <p className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-chaux-600">
+                        Pour commencer
+                      </p>
+                      <ul className="mt-3 space-y-2">
+                        {suggestions.map(s => (
+                          <li key={`debut-${s.id}`} className="flex items-center justify-between gap-3">
+                            <span className="min-w-0">
+                              <span className="block truncate text-sm font-semibold text-nuit-900">{s.nom}</span>
+                              <span className="font-mono text-xs text-chaux-600">{fcfa(s.prix)} FCFA</span>
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => ajouter(s.id)}
+                              aria-label={`Ajouter ${s.nom}`}
+                              className="flex h-9 w-9 shrink-0 items-center justify-center bg-bissap-500 text-white transition hover:bg-bissap-600"
+                            >
+                              <Plus className="h-4 w-4" />
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </>
               ) : (
                 <>
                   <ul className="mt-4 space-y-2">
@@ -1553,6 +1663,27 @@ export default function Page() {
                       <span className="ml-1 text-xs font-semibold text-chaux-600">FCFA</span>
                     </span>
                   </div>
+
+                  {/* CE QU'IL MANQUE, TANT QU'IL PEUT ENCORE Y FAIRE QUELQUE
+                      CHOSE. Le minimum arretait la commande au tout dernier
+                      geste, apres le nom, le telephone et l'adresse.
+
+                      Les deux objectifs ne se ressemblent pas et ne doivent pas
+                      se ressembler : le minimum EMPECHE de commander, il est
+                      donc en mangue et porte un role d'alerte ; la livraison
+                      offerte est une occasion, elle reste discrete. */}
+                  {objectif && (
+                    <p
+                      role={objectif.type === 'minimum' ? 'status' : undefined}
+                      className={`mt-3 border px-3 py-2 text-xs font-semibold ${
+                        objectif.type === 'minimum'
+                          ? 'border-mangue-200 bg-mangue-50 text-mangue-700'
+                          : 'border-[var(--hairline)] bg-white text-chaux-600'
+                      }`}
+                    >
+                      {phraseObjectif(objectif)}
+                    </p>
+                  )}
 
                   {/* CE QUE LE TOTAL NE DIT PAS.
                       Les frais de livraison sont annonces par le LIVREUR et se
@@ -1746,6 +1877,19 @@ export default function Page() {
       {/* Barre mobile : le ticket est hors écran, le total doit rester visible. */}
       {articles > 0 && (
         <div className="fixed inset-x-0 bottom-0 z-50 border-t border-[var(--hairline)] bg-chaux-50 p-3 lg:hidden">
+          {/* SUR TELEPHONE, CETTE BARRE EST TOUT CE QUE LE CLIENT VOIT du
+              panier : le ticket est hors ecran. Un objectif qui n'apparaitrait
+              que dans le ticket ne servirait donc qu'aux clients sur
+              ordinateur -- c'est-a-dire presque personne ici. */}
+          {objectif && (
+            <p
+              className={`mb-2 px-1 text-xs font-semibold ${
+                objectif.type === 'minimum' ? 'text-mangue-700' : 'text-chaux-600'
+              }`}
+            >
+              {phraseObjectif(objectif)}
+            </p>
+          )}
           <button
             onClick={() => commandeRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
             className={`${classesBouton('action', 'md', 'carree')} w-full justify-between`}
