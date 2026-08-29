@@ -280,6 +280,78 @@ export default function OnboardingPage() {
    * s'efface quand il annonce un succes, et la liste, elle, doit rester lisible
    * le temps que le marchand reprenne l'etape qu'elle designe.
    */
+  /**
+   * LE BRANCHEMENT WHATSAPP, VU DE L'ECRAN.
+   *
+   * Trois etats seulement, parce que le marchand n'a que trois choses a
+   * comprendre : ce n'est pas branche, voici le code a scanner, c'est fait.
+   * Le vocabulaire du fournisseur — `need_scan`, `disconnected` — ne lui dit
+   * rien et ne monte pas jusqu'ici.
+   */
+  const [etatWa, setEtatWa] = useState<'absente' | 'a_scanner' | 'connectee' | 'inconnu'>('absente');
+  const [qrWa, setQrWa] = useState<string | null>(null);
+  const [brancheEnCours, setBrancheEnCours] = useState(false);
+
+  const lireEtatWa = useCallback(async () => {
+    if (!boutiqueId) return 'absente' as const;
+    try {
+      const r = await fetchDashboard(avecBoutique('/api/dashboard/canaux/whatsapp', boutiqueId));
+      const j = await r.json().catch(() => null);
+      if (!r.ok || !j) return 'inconnu' as const;
+      setEtatWa(j.etat ?? 'inconnu');
+      setQrWa(j.qr ?? null);
+      return (j.etat ?? 'inconnu') as 'absente' | 'a_scanner' | 'connectee' | 'inconnu';
+    } catch {
+      // Une lecture ratee n'est pas un branchement rate : on ne touche a rien.
+      return 'inconnu' as const;
+    }
+  }, [boutiqueId]);
+
+  /**
+   * LA RELANCE S'ARRETE TOUTE SEULE, ET C'EST LE POINT.
+   *
+   * Elle ne tourne QUE pendant qu'un code est affiche. Une boucle qui
+   * continuerait apres la connexion appellerait wasender toutes les cinq
+   * secondes, pour toujours, sur chaque onglet laisse ouvert — et personne ne
+   * s'en apercevrait avant la facture.
+   */
+  useEffect(() => {
+    if (etatWa !== 'a_scanner') return;
+    const minuteur = setInterval(() => { void lireEtatWa(); }, 5000);
+    return () => clearInterval(minuteur);
+  }, [etatWa, lireEtatWa]);
+
+  const brancherWhatsApp = useCallback(async () => {
+    if (!boutiqueId || brancheEnCours) return;
+    setBrancheEnCours(true);
+    annoncer('attente', 'Ouverture de votre ligne WhatsApp…');
+    try {
+      const r = await fetchDashboard(
+        avecBoutique('/api/dashboard/canaux/whatsapp', boutiqueId),
+        { method: 'POST' },
+      );
+      const j = await r.json().catch(() => null);
+
+      if (!r.ok) {
+        annoncer('erreur', j?.message || 'La ligne n’a pas pu être ouverte. Réessayez.');
+        return;
+      }
+
+      setEtatWa(j?.etat ?? 'inconnu');
+      setQrWa(j?.qr ?? null);
+      annoncer(
+        j?.etat === 'connectee' ? 'ok' : 'attente',
+        j?.etat === 'connectee'
+          ? 'Votre WhatsApp est relié.'
+          : 'Scannez le code depuis WhatsApp, menu « Appareils connectés ».',
+      );
+    } catch {
+      annoncer('erreur', 'Connexion impossible. Vérifiez que vous êtes connecté à Internet.');
+    } finally {
+      setBrancheEnCours(false);
+    }
+  }, [boutiqueId, brancheEnCours, annoncer]);
+
   const tester = async () => {
     setEnTest(true);
     annoncer('attente', 'Vérification…');
@@ -404,15 +476,50 @@ export default function OnboardingPage() {
                 <p className="font-mono text-xs uppercase tracking-[0.16em] text-nuit-900">
                   WhatsApp
                 </p>
-                <p className="mt-2 text-sm leading-relaxed text-chaux-600">
-                  C&apos;est nous qui ouvrons la session et la relions à votre boutique. Vous
-                  n&apos;avez qu&apos;un QR code à scanner, aucune clé à manipuler.
-                </p>
+
+                {/*
+                  LE QR REMPLACE « ECRIVEZ-NOUS ».
+                  Le branchement demandait cinq manoeuvres a l exploitant, pour
+                  chaque marchand. La creation de session rend elle-meme la cle
+                  d envoi et le secret d entree : il ne reste qu un QR a
+                  scanner, et le marchand n attend plus personne.
+                */}
+                {etatWa === 'connectee' ? (
+                  <p className="mt-2 text-sm leading-relaxed text-chaux-600">
+                    Votre numéro est relié. Vos clients peuvent vous écrire.
+                  </p>
+                ) : (
+                  <p className="mt-2 text-sm leading-relaxed text-chaux-600">
+                    Nous ouvrons la ligne, vous scannez le QR depuis WhatsApp —{' '}
+                    <b className="font-semibold text-nuit-800">Appareils connectés</b>. Aucune clé à
+                    manipuler.
+                  </p>
+                )}
+
+                {qrWa && etatWa !== 'connectee' && (
+                  <div className="mt-4">
+                    {/*
+                      L image vient de wasender en `data:` : elle ne part sur
+                      aucun reseau tiers, et la CSP n a donc rien a autoriser.
+                      `alt` decrit l ACTION, pas l image — « QR code » ne dit
+                      rien a qui ne le voit pas.
+                    */}
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={qrWa}
+                      alt="Code à scanner depuis WhatsApp, menu Appareils connectés"
+                      className="h-48 w-48 border border-[var(--hairline)] bg-white p-2"
+                    />
+                    <p className="mt-2 text-xs leading-relaxed text-chaux-600">
+                      Le code change toutes les quelques secondes. Gardez cette page ouverte : elle
+                      passe au vert dès que c’est fait.
+                    </p>
+                  </div>
+                )}
+
                 <span className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1">
                   <Voyant ton={boutique.whatsapp_connecte ? 'fait' : 'eteint'}>
-                    {boutique.whatsapp_connecte
-                      ? 'numéro connecté'
-                      : 'écrivez-nous pour recevoir votre QR'}
+                    {boutique.whatsapp_connecte ? 'numéro connecté' : 'pas encore connecté'}
                   </Voyant>
                   {boutique.whatsapp_connecte && (
                     <Voyant ton={boutique.whatsapp_webhook_protege ? 'fait' : 'eteint'}>
@@ -422,8 +529,22 @@ export default function OnboardingPage() {
                     </Voyant>
                   )}
                 </span>
-              </div>
 
+                {etatWa !== 'connectee' && (
+                  <button
+                    type="button"
+                    onClick={brancherWhatsApp}
+                    disabled={brancheEnCours}
+                    className={`mt-3 ${classesBouton('calme', 'sm')}`}
+                  >
+                    {brancheEnCours
+                      ? 'Ouverture de la ligne…'
+                      : qrWa
+                        ? 'Afficher un nouveau code'
+                        : 'Connecter mon WhatsApp'}
+                  </button>
+                )}
+              </div>
               <div className="border border-[var(--hairline)] bg-white p-4">
                 <label
                   htmlFor="jeton-telegram"
