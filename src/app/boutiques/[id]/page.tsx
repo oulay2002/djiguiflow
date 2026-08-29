@@ -12,6 +12,7 @@ import {
   modeParDefaut,
   type ModeCommande,
 } from '@/lib/retrait';
+import { objectifPanier, phraseObjectif } from '@/lib/objectifsPanier';
 import { LienRetour, classesBouton } from '@/components/ui/Bouton';
 import { EMOJI_DEFAUT, Enseigne, initiale } from '@/components/ui/Enseigne';
 
@@ -622,6 +623,21 @@ export default function Page() {
     .filter(Boolean) as { prod: Produit; q: number; variante: string }[];
   const total = lignes.reduce((s, l) => s + l.prod.prix * l.q, 0);
   const articles = lignes.reduce((s, l) => s + l.q, 0);
+
+  /**
+   * CE QU'IL MANQUE, DIT PENDANT QU'IL CHOISIT ENCORE.
+   *
+   * Le minimum de commande n'etait annonce QUE par le refus de la route, apres
+   * que le client a saisi son nom, son telephone et son adresse. Il remplissait
+   * tout pour lire « il vous manque 500 F ». La regle vit dans
+   * `@/lib/objectifsPanier`, avec celle qu'applique le serveur.
+   */
+  const objectif = objectifPanier({
+    mode: modeChoisi,
+    total,
+    minimum: infos.minimum,
+    offerteDes: recuperation.offerteDes,
+  });
 
   const mots = useMemo(() => lexique(header.secteur), [header.secteur]);
 
@@ -1554,6 +1570,27 @@ export default function Page() {
                     </span>
                   </div>
 
+                  {/* CE QU'IL MANQUE, TANT QU'IL PEUT ENCORE Y FAIRE QUELQUE
+                      CHOSE. Le minimum arretait la commande au tout dernier
+                      geste, apres le nom, le telephone et l'adresse.
+
+                      Les deux objectifs ne se ressemblent pas et ne doivent pas
+                      se ressembler : le minimum EMPECHE de commander, il est
+                      donc en mangue et porte un role d'alerte ; la livraison
+                      offerte est une occasion, elle reste discrete. */}
+                  {objectif && (
+                    <p
+                      role={objectif.type === 'minimum' ? 'status' : undefined}
+                      className={`mt-3 border px-3 py-2 text-xs font-semibold ${
+                        objectif.type === 'minimum'
+                          ? 'border-mangue-200 bg-mangue-50 text-mangue-700'
+                          : 'border-[var(--hairline)] bg-white text-chaux-600'
+                      }`}
+                    >
+                      {phraseObjectif(objectif)}
+                    </p>
+                  )}
+
                   {/* CE QUE LE TOTAL NE DIT PAS.
                       Les frais de livraison sont annonces par le LIVREUR et se
                       reglent en plus -- l ecran de suivi le montre bien, la
@@ -1746,6 +1783,19 @@ export default function Page() {
       {/* Barre mobile : le ticket est hors écran, le total doit rester visible. */}
       {articles > 0 && (
         <div className="fixed inset-x-0 bottom-0 z-50 border-t border-[var(--hairline)] bg-chaux-50 p-3 lg:hidden">
+          {/* SUR TELEPHONE, CETTE BARRE EST TOUT CE QUE LE CLIENT VOIT du
+              panier : le ticket est hors ecran. Un objectif qui n'apparaitrait
+              que dans le ticket ne servirait donc qu'aux clients sur
+              ordinateur -- c'est-a-dire presque personne ici. */}
+          {objectif && (
+            <p
+              className={`mb-2 px-1 text-xs font-semibold ${
+                objectif.type === 'minimum' ? 'text-mangue-700' : 'text-chaux-600'
+              }`}
+            >
+              {phraseObjectif(objectif)}
+            </p>
+          )}
           <button
             onClick={() => commandeRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
             className={`${classesBouton('action', 'md', 'carree')} w-full justify-between`}
