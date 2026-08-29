@@ -2,7 +2,8 @@
 
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { MessageSquare, Send, Headset, PhoneCall } from 'lucide-react';
+import RobotAssistant from './RobotAssistant';
+import { Send, Headset, PhoneCall } from 'lucide-react';
 
 type ChatMessage = {
   id: number;
@@ -350,7 +351,7 @@ export default function AssistantChat() {
           onClick={handleToggleFloating}
           className="group relative inline-flex items-center gap-2 bg-nuit-900 px-4 py-3 text-sm font-black text-white soft-shadow transition hover:-translate-y-0.5"
         >
-          <MessageSquare className="h-5 w-5" />
+          <RobotAssistant reflechit={isTyping} ouvert={isFloatingOpen} className="h-6 w-6" />
           <span className="hidden sm:inline">Assistant IA</span>
           {showLauncherBadge && !isFloatingOpen && (
             <span className="absolute -right-1.5 -top-1.5 inline-flex h-6 min-w-6 items-center justify-center border-2 border-white bg-bissap-500 px-1 text-xs font-black text-white soft-shadow animate-pulse">
