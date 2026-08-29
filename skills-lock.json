@@ -324,6 +324,12 @@
       "sourceType": "github",
       "skillPath": "skills/using-n8n-mcp-skills/SKILL.md",
       "computedHash": "f028ee80f3aadbcc172ed600485f18327dab3706cec9d9863f0d068bab7ee0e3"
+    },
+    "webapp-testing": {
+      "source": "anthropics/skills",
+      "sourceType": "github",
+      "skillPath": "skills/webapp-testing/SKILL.md",
+      "computedHash": "3f14af7f5690695209c22fbf8c8d133769a86d64892602c09bb13f135e14e857"
     }
   }
 }
