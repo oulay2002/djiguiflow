@@ -94,8 +94,15 @@ pas : sans `webhook_protege`, il peut écrire mais ne reçoit rien.
 
 ## Le jour où les boutiques factices disparaissent
 
-`Chez Zahara` et `Rose Monde` seront supprimées à l'arrivée du premier vrai
-marchand. Deux choses à savoir :
+`Rose Monde` sera supprimée à l'arrivée du premier vrai marchand.
+
+**`Chez Zahara` reste, et ce n'est pas un oubli.** Elle sert de vitrine de
+démonstration pour convaincre de nouveaux marchands : c'est en la montrant
+qu'on explique ce que la plateforme fait. Elle occupe donc une place du forfait
+WhatsApp **de façon durable** — et ce n'est pas une place perdue, c'est le coût
+du démarchage.
+
+Trois choses à savoir :
 
 **Les contrôles ne les nomment plus.** `verifier-production.mjs` les citait en
 dur à quatre endroits ; il demande désormais à l'annuaire quelle boutique
