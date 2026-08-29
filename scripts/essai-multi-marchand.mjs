@@ -139,10 +139,46 @@ async function installer() {
 }
 
 // ------------------------------------------------------------------ DEROULER
+/**
+ * Attend que la boutique soit VISIBLE, sans masquer son absence definitive.
+ *
+ * ── POURQUOI CETTE ATTENTE EXISTE ──────────────────────────────────────────
+ *
+ * Le registre des marchands est mis en cache par instance. Sur une absence,
+ * `getMarchand` relit la base — mais pas si son cache a moins de cinq
+ * secondes : ce plancher borne le coût d'une rafale de slugs inconnus. Il
+ * reste donc une fenetre de cinq secondes pendant laquelle une boutique creee
+ * a l'instant peut ne pas etre vue par une instance donnee.
+ *
+ * C'est un arbitrage assume cote produit, et il se referme tout seul. Ce banc
+ * eprouve L'ISOLEMENT, pas la fraicheur d'un cache : il n'a pas a echouer
+ * dessus. Il attend donc — mais il n'attend pas indefiniment, et il DIT
+ * combien de temps il a attendu.
+ *
+ * Ce n'est pas un reessai qui masque un defaut : si la boutique n'apparait
+ * jamais, le controle echoue comme avant.
+ */
+async function attendreVisible(secondes = 20) {
+  const limite = Date.now() + secondes * 1000;
+  let derniere = null;
+  let attendu = 0;
+  while (Date.now() < limite) {
+    derniere = await json(`/api/boutiques/${SLUG}`);
+    if (derniere.statut === 200) return { ...derniere, attendu };
+    await new Promise((r) => setTimeout(r, 2000));
+    attendu += 2;
+  }
+  return { ...derniere, attendu };
+}
+
 async function derouler() {
   // ---- 1. La fiche publique est la sienne.
-  const fiche = await json(`/api/boutiques/${SLUG}`);
-  verifier('la fiche publique repond', fiche.statut === 200, `HTTP ${fiche.statut}`);
+  const fiche = await attendreVisible();
+  verifier(
+    'la fiche publique repond',
+    fiche.statut === 200,
+    `HTTP ${fiche.statut}${fiche.attendu ? ` apres ${fiche.attendu} s d attente` : ''}`,
+  );
   verifier('elle porte SON nom', String(fiche.corps?.nom || '').includes(marque));
 
   // ---- 2. Le menu ne rend QUE ses articles.
