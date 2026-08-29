@@ -593,106 +593,6 @@
         "typeVersion": 2.3
       },
       {
-        "credentials": {
-          "googleSheetsOAuth2Api": {
-            "id": "9Q14ADLSkwfm2Y5H",
-            "name": "Google Sheets account"
-          }
-        },
-        "disabled": true,
-        "id": "216c1a01-1e62-4e36-b3f9-2f18519efa4f",
-        "maxTries": 3,
-        "name": "Enregistrer note",
-        "notes": "HORS CHEMIN CRITIQUE. Ce miroir ajoutait la note dans l onglet du marchand, et gouvernait pourtant TROIS choses : l alerte au gerant sur mauvaise note, le remerciement au client, et la copie dans Supabase. Un marchand sans classeur les perdait toutes les trois.",
-        "parameters": {
-          "columns": {
-            "attemptToConvertTypes": false,
-            "convertFieldsToString": false,
-            "mappingMode": "defineBelow",
-            "matchingColumns": [],
-            "schema": [
-              {
-                "canBeUsedToMatch": true,
-                "defaultMatch": false,
-                "display": true,
-                "displayName": "order_id",
-                "id": "order_id",
-                "removed": false,
-                "required": false,
-                "type": "string"
-              },
-              {
-                "canBeUsedToMatch": true,
-                "defaultMatch": false,
-                "display": true,
-                "displayName": "client_chat_id",
-                "id": "client_chat_id",
-                "removed": false,
-                "required": false,
-                "type": "string"
-              },
-              {
-                "canBeUsedToMatch": true,
-                "defaultMatch": false,
-                "display": true,
-                "displayName": "client_name",
-                "id": "client_name",
-                "removed": false,
-                "required": false,
-                "type": "string"
-              },
-              {
-                "canBeUsedToMatch": true,
-                "defaultMatch": false,
-                "display": true,
-                "displayName": "note",
-                "id": "note",
-                "removed": false,
-                "required": false,
-                "type": "string"
-              },
-              {
-                "canBeUsedToMatch": true,
-                "defaultMatch": false,
-                "display": true,
-                "displayName": "timestamp",
-                "id": "timestamp",
-                "removed": false,
-                "required": false,
-                "type": "string"
-              }
-            ],
-            "value": {
-              "client_chat_id": "={{ $json.phone }}",
-              "client_name": "={{ $json.prenom }}",
-              "note": "={{ $json.note }}",
-              "order_id": "={{ $json.order_id }}",
-              "timestamp": "={{ $now.toISO() }}"
-            }
-          },
-          "documentId": {
-            "__rl": true,
-            "mode": "id",
-            "value": "={{ $('Normalisateur WA').first().json.sheet_document_id }}"
-          },
-          "operation": "append",
-          "options": {},
-          "sheetName": {
-            "__rl": true,
-            "mode": "name",
-            "value": "={{ $('Normalisateur WA').first().json.sheet_notes || 'Notes' }}"
-          }
-        },
-        "position": [
-          896,
-          -144
-        ],
-        "retryOnFail": true,
-        "type": "n8n-nodes-base.googleSheets",
-        "typeVersion": 4.7,
-        "waitBetweenTries": 2000
-      },
-      {
         "id": "0fc0a73e-abe7-43d5-8b8a-271bc758673c",
         "maxTries": 3,
         "name": "Call 'Envoyer réponse client'",
@@ -1591,7 +1491,7 @@
     "workflowPublishHistory": [
       {
         "event": "activated",
-        "id": 268,
+        "id": 323,
         "userId": "81519f6f-0887-498a-ad83-5ffd6d591e9a",
         "workflowId": "xGw9MbvqvN3XAPpQ"
       }
@@ -2187,106 +2087,6 @@
       ],
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3
-    },
-    {
-      "credentials": {
-        "googleSheetsOAuth2Api": {
-          "id": "9Q14ADLSkwfm2Y5H",
-          "name": "Google Sheets account"
-        }
-      },
-      "disabled": true,
-      "id": "216c1a01-1e62-4e36-b3f9-2f18519efa4f",
-      "maxTries": 3,
-      "name": "Enregistrer note",
-      "notes": "HORS CHEMIN CRITIQUE. Ce miroir ajoutait la note dans l onglet du marchand, et gouvernait pourtant TROIS choses : l alerte au gerant sur mauvaise note, le remerciement au client, et la copie dans Supabase. Un marchand sans classeur les perdait toutes les trois.",
-      "parameters": {
-        "columns": {
-          "attemptToConvertTypes": false,
-          "convertFieldsToString": false,
-          "mappingMode": "defineBelow",
-          "matchingColumns": [],
-          "schema": [
-            {
-              "canBeUsedToMatch": true,
-              "defaultMatch": false,
-              "display": true,
-              "displayName": "order_id",
-              "id": "order_id",
-              "removed": false,
-              "required": false,
-              "type": "string"
-            },
-            {
-              "canBeUsedToMatch": true,
-              "defaultMatch": false,
-              "display": true,
-              "displayName": "client_chat_id",
-              "id": "client_chat_id",
-              "removed": false,
-              "required": false,
-              "type": "string"
-            },
-            {
-              "canBeUsedToMatch": true,
-              "defaultMatch": false,
-              "display": true,
-              "displayName": "client_name",
-              "id": "client_name",
-              "removed": false,
-              "required": false,
-              "type": "string"
-            },
-            {
-              "canBeUsedToMatch": true,
-              "defaultMatch": false,
-              "display": true,
-              "displayName": "note",
-              "id": "note",
-              "removed": false,
-              "required": false,
-              "type": "string"
-            },
-            {
-              "canBeUsedToMatch": true,
-              "defaultMatch": false,
-              "display": true,
-              "displayName": "timestamp",
-              "id": "timestamp",
-              "removed": false,
-              "required": false,
-              "type": "string"
-            }
-          ],
-          "value": {
-            "client_chat_id": "={{ $json.phone }}",
-            "client_name": "={{ $json.prenom }}",
-            "note": "={{ $json.note }}",
-            "order_id": "={{ $json.order_id }}",
-            "timestamp": "={{ $now.toISO() }}"
-          }
-        },
-        "documentId": {
-          "__rl": true,
-          "mode": "id",
-          "value": "={{ $('Normalisateur WA').first().json.sheet_document_id }}"
-        },
-        "operation": "append",
-        "options": {},
-        "sheetName": {
-          "__rl": true,
-          "mode": "name",
-          "value": "={{ $('Normalisateur WA').first().json.sheet_notes || 'Notes' }}"
-        }
-      },
-      "position": [
-        896,
-        -144
-      ],
-      "retryOnFail": true,
-      "type": "n8n-nodes-base.googleSheets",
-      "typeVersion": 4.7,
-      "waitBetweenTries": 2000
     },
     {
       "id": "0fc0a73e-abe7-43d5-8b8a-271bc758673c",
@@ -3190,5 +2990,5 @@
   },
   "sourceWorkflowId": null,
   "tags": [],
-  "versionCounter": 15
+  "versionCounter": 16
 }

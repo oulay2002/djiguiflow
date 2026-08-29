@@ -545,6 +545,11 @@
     "actif": true
   },
   {
+    "id": "yPQCVDZ52lKE8JtY",
+    "nom": "Conservation des donnees",
+    "actif": true
+  },
+  {
     "id": "CXVWhhXEn3rpDJlC",
     "nom": "Contenus Hebdo",
     "actif": true
@@ -567,7 +572,7 @@
   {
     "id": "rU0SSSpGmJb3K0ja",
     "nom": "Hygiène des feuilles",
-    "actif": true
+    "actif": false
   },
   {
     "id": "pgK6n3dZdubhVVeV",
@@ -632,7 +637,7 @@
   {
     "id": "BJOuGk3GvBdvAv6K",
     "nom": "Sonde identifiants (Google Sheets)",
-    "actif": true
+    "actif": false
   },
   {
     "id": "DmfcYovksJwYSqas",
