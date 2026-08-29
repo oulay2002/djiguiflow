@@ -43,6 +43,49 @@ const lire = async (chemin) => {
 
 console.log(`--- contrôle des livraisons du 26 août — ${BASE} ---\n`);
 
+/**
+ * UNE BOUTIQUE VIVANTE, CHOISIE À L'EXÉCUTION — PLUS JAMAIS UN NOM EN DUR.
+ *
+ * Quatre contrôles nommaient `zahara` et `rose-monde`. Ces deux boutiques sont
+ * factices et seront SUPPRIMÉES à l'arrivée du premier vrai marchand : ce
+ * contrôle serait alors tombé en bloc, un matin de lancement, sur des 404 qui
+ * n'auraient rien dit du produit.
+ *
+ * On demande donc à l'annuaire public quelle boutique existe, et on éprouve
+ * celle-là. Le contrôle survit au changement de catalogue, et il éprouve
+ * toujours quelque chose de réel.
+ *
+ * S'il n'y a AUCUNE boutique, on le dit — et les contrôles qui en dépendent
+ * s'annoncent indéterminés plutôt que de passer au vert sur du vide.
+ */
+/**
+ * ON LA DEMANDE AU SITEMAP, ET C'EST LE BON ENDROIT.
+ *
+ * Deux tentatives ont échoué avant celle-ci, et chacune apprend quelque chose.
+ *
+ * `/api/marchands` rend TOUTES les boutiques, actives ou non, et ne dit ni leur
+ * `slug` ni leur état. Le contrôle est donc tombé sur `atelier-temoin`, qui
+ * porte `actif = false` : sa page ne publie NI type structuré NI indexation —
+ * exactement le comportement voulu depuis qu'une boutique retirée ne doit plus
+ * survivre dans Google. Le contrôle accusait la page ; la faute était dans le
+ * choix.
+ *
+ * Le sitemap, lui, ne contient QUE ce qui est publiable. Demander « quelle
+ * boutique le public peut-il voir » revient exactement à demander « qu'y a-t-il
+ * au sitemap ». Aucune règle n'est recopiée : on lit la réponse que le site
+ * donne déjà à Google.
+ */
+async function boutiqueVivante() {
+  const { texte } = await lire('/sitemap.xml');
+  const trouvees = [...texte.matchAll(/\/boutiques\/([a-z0-9-]+)</gi)].map((m) => m[1]);
+  return trouvees[0] ?? null;
+}
+
+const SLUG = await boutiqueVivante();
+if (!SLUG) {
+  console.log('  (aucune boutique publique : les contrôles de fiche seront indéterminés)\n');
+}
+
 // ── #98 : être trouvé, et être compris pour ce qu'on vend ──────────────────
 console.log('#98  attractivité');
 {
@@ -61,12 +104,37 @@ console.log('#98  attractivité');
     description.slice(0, 60) + '…',
   );
 
-  const { texte: fiche } = await lire('/boutiques/rose-monde');
-  verifier(
-    'une boutique de vêtements se déclare ClothingStore',
-    fiche.includes('"@type":"ClothingStore"'),
-    'Google ne fait presque rien d’un LocalBusiness',
-  );
+  if (SLUG) {
+    const { texte: fiche } = await lire(`/boutiques/${SLUG}`);
+    /**
+     * CE QU'ON EPROUVE ICI, ET CE QU'ON N'EPROUVE PLUS.
+     *
+     * Le controle exigeait `ClothingStore`, ce qui revenait a exiger que Rose
+     * Monde existe. Avec une boutique choisie a l'execution, sa categorie est
+     * inconnue — et reproduire la table de correspondance ici en ferait une
+     * SECONDE copie de la regle, qui finirait par diverger.
+     *
+     * On eprouve donc que la fiche porte SA PROPRE identite structuree : au
+     * moins un `@type` qui ne soit pas l'un de ceux que TOUTES les pages
+     * portent. C'est exactement ce qui avait casse le 26 aout — un bloc mort
+     * pour tout le monde — et c'est verifiable sans savoir ce que vend le
+     * marchand.
+     *
+     * La justesse de la table (mode -> ClothingStore) releve d'un test
+     * unitaire, pas d'un appel reseau.
+     */
+    const PARTOUT = ['Organization', 'WebSite', 'BreadcrumbList', 'ListItem', 'ImageObject'];
+    const types = [...fiche.matchAll(/"@type":"([A-Za-z]+)"/g)].map((m) => m[1]);
+    const propres = types.filter((t) => !PARTOUT.includes(t));
+    verifier(
+      'la fiche d’une boutique porte sa propre identité structurée',
+      propres.length > 0,
+      propres.join(', ') || `aucune — seulement ${[...new Set(types)].join(', ') || 'rien'}`,
+    );
+  } else {
+    verifier('la fiche d’une boutique se declare avec un type structuré', false,
+      'INDETERMINE — aucune boutique publique a eprouver');
+  }
 }
 
 // ── #108 : la politique de sécurité bloque vraiment ────────────────────────
@@ -92,7 +160,7 @@ console.log('\n#108 sécurité');
 // ── #107 : retrait, réservation, livraison offerte ─────────────────────────
 console.log('\n#107 retrait et livraison offerte');
 {
-  const { texte } = await lire('/api/boutiques/zahara');
+  const { texte } = await lire(`/api/boutiques/${SLUG ?? 'aucune'}`);
   let fiche = {};
   try { fiche = JSON.parse(texte).fiche ?? {}; } catch { /* rendu plus bas */ }
 
@@ -110,14 +178,16 @@ console.log('\n#107 retrait et livraison offerte');
 
 // ── Les pages répondent toujours ───────────────────────────────────────────
 console.log('\n     les pages publiques');
-for (const page of ['/', '/boutiques', '/boutiques/zahara', '/aide/brancher', '/suivi']) {
+const pages = ['/', '/boutiques', '/aide/brancher', '/suivi'];
+if (SLUG) pages.splice(2, 0, `/boutiques/${SLUG}`);
+for (const page of pages) {
   const { statut } = await lire(page);
   verifier(`${page} répond`, statut === 200, `HTTP ${statut}`);
 }
 
 // ── La route de test ne doit rien rendre en production ─────────────────────
 {
-  const { statut } = await lire('/api/test-sheets?boutique_id=zahara');
+  const { statut } = await lire(`/api/test-sheets?boutique_id=${SLUG ?? 'aucune'}`);
   verifier('la sonde de test reste muette en production', statut === 404, `HTTP ${statut}`);
 }
 
