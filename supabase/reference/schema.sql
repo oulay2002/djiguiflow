@@ -1,8 +1,8 @@
--- INSTANTANE DU 2026-08-23 05:53 UTC
--- DERNIERE MIGRATION APPLIQUEE : 20260822225555
+-- INSTANTANE DU 2026-08-29 11:43 UTC
+-- DERNIERE MIGRATION APPLIQUEE : 20260827223011
 --
 -- Pour restaurer : rejouer ce fichier, PUIS tous les fichiers de
--- supabase/migrations/ dont l'horodatage est superieur a 20260822225555.
+-- supabase/migrations/ dont l'horodatage est superieur a 20260827223011.
 -- Sauter cette etape ramene le schema jusqu'a vingt-quatre heures en
 -- arriere, verrous compris.
 
@@ -316,6 +316,42 @@ $_$;
 ALTER FUNCTION "public"."jeton_canal"("p_boutique" "text", "p_canal" "text") OWNER TO "postgres";
 
 
+CREATE OR REPLACE FUNCTION "public"."limiter_boutiques_par_plan"() RETURNS "trigger"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO ''
+    AS $$
+declare
+  deja integer;
+  ligne record;
+begin
+  select count(*) into deja from public.boutiques where user_id = new.user_id;
+
+  -- La premiere boutique d'un compte passe toujours. Sans cette ligne, un
+  -- nouvel inscrit ne pourrait rien creer du tout.
+  if deja = 0 then
+    return new;
+  end if;
+
+  select plan_key, status, current_period_end into ligne
+  from public.subscriptions where user_id = new.user_id limit 1;
+
+  if coalesce(ligne.plan_key, '') = 'premium'
+     and coalesce(ligne.status, '') in ('active', 'trialing')
+     and (ligne.current_period_end is null or ligne.current_period_end > now())
+  then
+    return new;
+  end if;
+
+  raise exception
+    'Plusieurs boutiques sur un meme compte sont reservees au forfait Premium.'
+    using errcode = 'check_violation';
+end;
+$$;
+
+
+ALTER FUNCTION "public"."limiter_boutiques_par_plan"() OWNER TO "postgres";
+
+
 CREATE OR REPLACE FUNCTION "public"."notify_n8n_new_commande"() RETURNS "trigger"
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO ''
@@ -362,7 +398,12 @@ begin
     'client_adresse', new.client_adresse,
     'total', new.total,
     'statut', new.statut,
-    'created_at', new.created_at
+    'created_at', new.created_at,
+    -- CE QUE LE MARCHAND DOIT LIRE AVANT TOUT LE RESTE : faut-il porter cette
+    -- commande, ou l'emballer et attendre ?
+    'mode_recuperation', new.mode_recuperation,
+    -- NULL veut dire « des que pret », jamais « on ne sait pas ».
+    'heure_retrait', new.heure_retrait
   );
 
   begin
@@ -724,12 +765,15 @@ $$;
 ALTER FUNCTION "public"."set_boutique_user_id"() OWNER TO "postgres";
 
 
-CREATE OR REPLACE FUNCTION "public"."vitrine_boutique"("p_ref" "text") RETURNS TABLE("id" "uuid", "slug" "text", "nom" "text", "description" "text", "zone" "text", "categorie" "text", "logo_url" "text", "emoji" "text", "telephone" "text")
+CREATE OR REPLACE FUNCTION "public"."vitrine_boutique"("p_ref" "text") RETURNS TABLE("id" "uuid", "slug" "text", "nom" "text", "description" "text", "zone" "text", "categorie" "text", "logo_url" "text", "emoji" "text", "telephone" "text", "delai_livraison" "text", "zones_livrees" "text", "paiements_acceptes" "text"[], "commande_minimum" integer, "mode_recuperation" "text", "delai_preparation_min" integer, "livraison_offerte_des" integer)
     LANGUAGE "sql" STABLE SECURITY DEFINER
     SET "search_path" TO 'public'
     AS $$
   select b.id, b.slug, b.nom, b.description, b.zone, b.categorie, b.logo_url,
-         b.emoji, b.telephone
+         b.emoji, b.telephone,
+         b.delai_livraison, b.zones_livrees,
+         b.paiements_acceptes, b.commande_minimum,
+         b.mode_recuperation, b.delai_preparation_min, b.livraison_offerte_des
     from boutiques b
    where coalesce(b.actif, true)
      and (b.slug = p_ref or b.id::text = p_ref)
@@ -740,7 +784,7 @@ $$;
 ALTER FUNCTION "public"."vitrine_boutique"("p_ref" "text") OWNER TO "postgres";
 
 
-CREATE OR REPLACE FUNCTION "public"."vitrine_boutiques"() RETURNS TABLE("id" "uuid", "slug" "text", "nom" "text", "description" "text", "zone" "text", "categorie" "text", "logo_url" "text", "articles" integer, "note_moyenne" numeric, "avis" integer, "palier_livraisons" integer)
+CREATE OR REPLACE FUNCTION "public"."vitrine_boutiques"() RETURNS TABLE("id" "uuid", "slug" "text", "nom" "text", "description" "text", "zone" "text", "categorie" "text", "logo_url" "text", "articles" integer, "note_moyenne" numeric, "avis" integer, "palier_livraisons" integer, "apercus" "text"[], "prix_min" numeric, "horaires" "jsonb", "pause_jusqua" timestamp with time zone, "vedette" "text", "vedette_commandes" integer)
     LANGUAGE "sql" STABLE SECURITY DEFINER
     SET "search_path" TO 'public'
     AS $$
@@ -769,9 +813,52 @@ CREATE OR REPLACE FUNCTION "public"."vitrine_boutiques"() RETURNS TABLE("id" "uu
                  end
             from commandes c
            where c.boutique_id = b.id
-             and c.statut = 'livree')::int
+             and c.statut = 'livree')::int,
+
+         (select coalesce(array_agg(a.photo_url order by a.rang), '{}'::text[])
+            from (select p.photo_url,
+                         row_number() over (
+                           order by (v.nom_produit is not null and p.nom = v.nom_produit) desc,
+                                    p.created_at nulls last, p.nom
+                         ) as rang
+                    from produits p
+                   where p.boutique_id = b.id
+                     and p.disponible is distinct from false
+                     and coalesce(p.photo_url, '') <> ''
+                   limit 4) a),
+
+         (select min(p.prix)
+            from produits p
+           where p.boutique_id = b.id
+             and p.disponible is distinct from false
+             and coalesce(p.prix, 0) > 0),
+
+         b.horaires,
+         b.pause_jusqua,
+
+         v.nom_produit,
+         v.commandes::int
+
     from boutiques b
+
+    left join lateral (
+      select i.nom_produit, count(distinct c.id) as commandes
+        from commande_items i
+        join commandes c on c.id = i.commande_id
+       where c.boutique_id = b.id
+         and c.statut not in ('panier', 'abandonnee', 'annulee')
+         and c.created_at > now() - interval '30 days'
+       group by i.nom_produit
+      having count(distinct c.id) >= 3
+       order by count(distinct c.id) desc, sum(i.quantite) desc, i.nom_produit
+       limit 1
+    ) v on true
+
    where coalesce(b.actif, true)
+     and coalesce(b.essai, false) is not true
+     -- LE BRANCHEMENT, ajoute le 23 aout 2026.
+     and (b.wasender_secret_id is not null or b.telegram_secret_id is not null)
+     and nullif(btrim(coalesce(b.groupe_livreurs, '')), '') is not null
    order by b.nom;
 $$;
 
@@ -779,12 +866,14 @@ $$;
 ALTER FUNCTION "public"."vitrine_boutiques"() OWNER TO "postgres";
 
 
-CREATE OR REPLACE FUNCTION "public"."vitrine_produits"("p_ref" "text") RETURNS TABLE("id" "uuid", "nom" "text", "categorie" "text", "prix" numeric, "description" "text", "photo_url" "text", "menu_du_jour" boolean)
+CREATE OR REPLACE FUNCTION "public"."vitrine_produits"("p_ref" "text") RETURNS TABLE("id" "uuid", "nom" "text", "categorie" "text", "prix" numeric, "description" "text", "photo_url" "text", "menu_du_jour" boolean, "attribut_nom" "text", "attribut_valeurs" "text"[], "groupe" "text", "couleur" "text", "marque" "text", "public_vise" "text")
     LANGUAGE "sql" STABLE SECURITY DEFINER
     SET "search_path" TO 'public'
     AS $$
   select p.id, p.nom, p.categorie, p.prix, p.description, p.photo_url,
-         p.menu_du_jour
+         p.menu_du_jour, p.attribut_nom, p.attribut_valeurs,
+         p.groupe, p.couleur,
+         p.marque, p.public_vise
     from produits p
     join boutiques b on b.id = p.boutique_id
    where coalesce(b.actif, true)
@@ -843,7 +932,18 @@ CREATE TABLE IF NOT EXISTS "public"."boutiques" (
     "horaires" "jsonb",
     "pause_jusqua" timestamp with time zone,
     "essai" boolean DEFAULT false NOT NULL,
-    "banc_telegram_id" "text"
+    "banc_telegram_id" "text",
+    "delai_livraison" "text",
+    "zones_livrees" "text",
+    "paiements_acceptes" "text"[],
+    "commande_minimum" integer,
+    "mode_recuperation" "text" DEFAULT 'livraison'::"text" NOT NULL,
+    "delai_preparation_min" integer,
+    "livraison_offerte_des" integer,
+    CONSTRAINT "boutiques_commande_minimum_positif" CHECK ((("commande_minimum" IS NULL) OR ("commande_minimum" > 0))),
+    CONSTRAINT "boutiques_delai_preparation_positif" CHECK ((("delai_preparation_min" IS NULL) OR ("delai_preparation_min" > 0))),
+    CONSTRAINT "boutiques_livraison_offerte_positive" CHECK ((("livraison_offerte_des" IS NULL) OR ("livraison_offerte_des" >= 0))),
+    CONSTRAINT "boutiques_mode_recuperation_connu" CHECK (("mode_recuperation" = ANY (ARRAY['livraison'::"text", 'retrait'::"text", 'les_deux'::"text"])))
 );
 
 
@@ -902,17 +1002,50 @@ COMMENT ON COLUMN "public"."boutiques"."banc_telegram_id" IS 'Salon Telegram ver
 
 
 
+COMMENT ON COLUMN "public"."boutiques"."delai_livraison" IS 'Delai habituel annonce par le marchand : « 30 a 45 min ». NULL = non renseigne, la vitrine se tait.';
+
+
+
+COMMENT ON COLUMN "public"."boutiques"."zones_livrees" IS 'Les quartiers livres, tels que le marchand les nomme. NULL = non renseigne.';
+
+
+
+COMMENT ON COLUMN "public"."boutiques"."paiements_acceptes" IS 'Moyens de paiement acceptes a la livraison. NULL ou vide = non renseigne, jamais « aucun ».';
+
+
+
+COMMENT ON COLUMN "public"."boutiques"."commande_minimum" IS 'Montant minimum en FCFA. NULL = pas de minimum, ce qui n est PAS zero.';
+
+
+
+COMMENT ON COLUMN "public"."boutiques"."mode_recuperation" IS 'livraison | retrait | les_deux. Decide si un groupe de livreurs est exige.';
+
+
+
+COMMENT ON COLUMN "public"."boutiques"."delai_preparation_min" IS 'Minutes pour preparer une commande, pour annoncer une heure de retrait. NULL = non renseigne, on n annonce rien.';
+
+
+
+COMMENT ON COLUMN "public"."boutiques"."livraison_offerte_des" IS 'NULL = frais annonces par le livreur. 0 = toujours offerte. N > 0 = offerte a partir de N FCFA.';
+
+
+
 CREATE TABLE IF NOT EXISTS "public"."commande_items" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
     "commande_id" "uuid" NOT NULL,
     "produit_id" "uuid",
     "nom_produit" "text" NOT NULL,
     "quantite" integer NOT NULL,
-    "prix_unitaire" numeric NOT NULL
+    "prix_unitaire" numeric NOT NULL,
+    "variante" "text"
 );
 
 
 ALTER TABLE "public"."commande_items" OWNER TO "postgres";
+
+
+COMMENT ON COLUMN "public"."commande_items"."variante" IS 'Le choix du client sur cette ligne : « Pointure 39 », « Taille M ». NULL = l article n en proposait pas.';
+
 
 
 CREATE TABLE IF NOT EXISTS "public"."commandes" (
@@ -946,6 +1079,15 @@ CREATE TABLE IF NOT EXISTS "public"."commandes" (
     "stock_decremente_le" timestamp with time zone,
     "client_prevenu_le" timestamp with time zone,
     "jeton_suivi" "text" DEFAULT "replace"(("gen_random_uuid"())::"text", '-'::"text", ''::"text") NOT NULL,
+    "livreur_id" "uuid",
+    "chat_cle" "text" GENERATED ALWAYS AS (
+CASE
+    WHEN (("regexp_replace"(COALESCE("chat_id", ''::"text"), '[^0-9]'::"text", ''::"text", 'g'::"text") ~ '^(0|225)'::"text") AND ("length"("regexp_replace"(COALESCE("chat_id", ''::"text"), '[^0-9]'::"text", ''::"text", 'g'::"text")) >= 8)) THEN "right"("regexp_replace"(COALESCE("chat_id", ''::"text"), '[^0-9]'::"text", ''::"text", 'g'::"text"), 8)
+    ELSE NULL::"text"
+END) STORED,
+    "mode_recuperation" "text" DEFAULT 'livraison'::"text" NOT NULL,
+    "heure_retrait" timestamp with time zone,
+    CONSTRAINT "commandes_mode_recuperation_connu" CHECK (("mode_recuperation" = ANY (ARRAY['livraison'::"text", 'retrait'::"text"]))),
     CONSTRAINT "commandes_statut_check" CHECK (("statut" = ANY (ARRAY['panier'::"text", 'en_attente'::"text", 'en_preparation'::"text", 'en_livraison'::"text", 'livree'::"text", 'annulee'::"text", 'abandonnee'::"text"])))
 );
 
@@ -993,6 +1135,22 @@ COMMENT ON COLUMN "public"."commandes"."jeton_suivi" IS 'Jeton imprevisible port
 
 
 
+COMMENT ON COLUMN "public"."commandes"."livreur_id" IS 'Fiche de l''annuaire du livreur qui a pris cette course, resolue depuis son identifiant Telegram a l''acceptation. NULL = on ne sait pas qui a livre : livreur absent de l''annuaire, ou course anterieure a l''attribution. NULL ne veut jamais dire « personne ».';
+
+
+
+COMMENT ON COLUMN "public"."commandes"."chat_cle" IS 'Les 8 derniers chiffres du chat_id quand il a la forme d''un telephone ivoirien, sinon NULL. Sert a APPARIER un client dont le chat_id a ete enregistre sous plusieurs formes. Jamais a lui ecrire : pour cela, seul chat_id fait foi.';
+
+
+
+COMMENT ON COLUMN "public"."commandes"."mode_recuperation" IS 'Ce que le client a choisi POUR CETTE COMMANDE. Un retrait n attend aucun livreur et aucun frais.';
+
+
+
+COMMENT ON COLUMN "public"."commandes"."heure_retrait" IS 'L heure demandee par le client. NULL = des que pret. Ne vaut que pour un retrait.';
+
+
+
 CREATE TABLE IF NOT EXISTS "public"."compteurs_fenetre" (
     "cle" "text" NOT NULL,
     "fenetre" timestamp with time zone NOT NULL,
@@ -1019,6 +1177,29 @@ ALTER TABLE "public"."compteurs_journaliers" OWNER TO "postgres";
 
 
 COMMENT ON TABLE "public"."compteurs_journaliers" IS 'Compteurs partages par cle et par jour, pour plafonner les points d entree publics couteux. Ecrit uniquement par service_role via incrementer_compteur().';
+
+
+
+CREATE TABLE IF NOT EXISTS "public"."demandes_droits" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "telephone" "text" NOT NULL,
+    "type" "text" NOT NULL,
+    "reference" "text",
+    "preuve" "text" NOT NULL,
+    "statut" "text" DEFAULT 'recue'::"text" NOT NULL,
+    "detail" "jsonb",
+    "cree_le" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "traite_le" timestamp with time zone,
+    CONSTRAINT "demandes_droits_preuve_check" CHECK (("preuve" = ANY (ARRAY['jeton'::"text", 'telephone'::"text"]))),
+    CONSTRAINT "demandes_droits_statut_check" CHECK (("statut" = ANY (ARRAY['recue'::"text", 'honoree'::"text", 'refusee'::"text"]))),
+    CONSTRAINT "demandes_droits_type_check" CHECK (("type" = ANY (ARRAY['acces'::"text", 'effacement'::"text"])))
+);
+
+
+ALTER TABLE "public"."demandes_droits" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "public"."demandes_droits" IS 'Trace des demandes d''accès et d''effacement. Jamais purgée : c''est la preuve qu''un droit a été honoré.';
 
 
 
@@ -1054,9 +1235,6 @@ CREATE TABLE IF NOT EXISTS "public"."livreurs" (
     "statut" "text" DEFAULT 'disponible'::"text",
     "latitude" numeric,
     "longitude" numeric,
-    "note_moyenne" numeric DEFAULT 0,
-    "total_livraisons" integer DEFAULT 0,
-    "gain_total" numeric DEFAULT 0,
     "taux_commission" numeric DEFAULT 10,
     "created_at" timestamp with time zone DEFAULT "now"(),
     "telegram_id" "text",
@@ -1107,6 +1285,7 @@ CREATE TABLE IF NOT EXISTS "public"."paiements" (
     "jeton_prestataire" "text",
     "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
     "paye_le" timestamp with time zone,
+    "alerte_envoyee_le" timestamp with time zone,
     CONSTRAINT "paiements_mois_check" CHECK (("mois" > 0)),
     CONSTRAINT "paiements_montant_fcfa_check" CHECK (("montant_fcfa" >= 0)),
     CONSTRAINT "paiements_statut_check" CHECK (("statut" = ANY (ARRAY['en_attente'::"text", 'paye'::"text", 'echoue'::"text"])))
@@ -1114,6 +1293,10 @@ CREATE TABLE IF NOT EXISTS "public"."paiements" (
 
 
 ALTER TABLE "public"."paiements" OWNER TO "postgres";
+
+
+COMMENT ON COLUMN "public"."paiements"."alerte_envoyee_le" IS 'Quand ce paiement bloque a ete signale. NULL = jamais signale. Empeche la repetition : on alerte une fois, puis on se tait.';
+
 
 
 CREATE TABLE IF NOT EXISTS "public"."paniers" (
@@ -1138,6 +1321,28 @@ COMMENT ON TABLE "public"."paniers" IS 'Paniers de la vitrine saisis mais non va
 
 
 
+CREATE TABLE IF NOT EXISTS "public"."pointages" (
+    "cle" "text" NOT NULL,
+    "dernier_le" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "detail" "text"
+);
+
+
+ALTER TABLE "public"."pointages" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "public"."pointages" IS 'Quand une tache s est executee POUR DE BON. Sert a detecter une tache qui NE TOURNE PLUS : une tache qui echoue crie toute seule, une tache qui ne demarre jamais est muette.';
+
+
+
+COMMENT ON COLUMN "public"."pointages"."cle" IS 'Identifiant de la tache : sauvegarde_donnees, sauvegarde_schema…';
+
+
+
+COMMENT ON COLUMN "public"."pointages"."dernier_le" IS 'Fin du dernier passage REUSSI. Ecrit apres coup, jamais avant : un pointage pose au demarrage mentirait sur un echec.';
+
+
+
 CREATE TABLE IF NOT EXISTS "public"."produits" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
     "boutique_id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
@@ -1153,7 +1358,14 @@ CREATE TABLE IF NOT EXISTS "public"."produits" (
     "stock_initial" integer,
     "seuil_alerte" integer,
     "menu_du_jour" boolean DEFAULT false NOT NULL,
-    "quantite_stock" integer DEFAULT 0
+    "quantite_stock" integer DEFAULT 0,
+    "groupe" "text",
+    "couleur" "text",
+    "attribut_nom" "text",
+    "attribut_valeurs" "text"[],
+    "marque" "text",
+    "public_vise" "text",
+    CONSTRAINT "produits_attribut_complet" CHECK (((("attribut_nom" IS NULL) AND (("attribut_valeurs" IS NULL) OR ("cardinality"("attribut_valeurs") = 0))) OR ((NULLIF("btrim"("attribut_nom"), ''::"text") IS NOT NULL) AND ("attribut_valeurs" IS NOT NULL) AND ("cardinality"("attribut_valeurs") > 0))))
 );
 
 
@@ -1165,6 +1377,30 @@ COMMENT ON COLUMN "public"."produits"."reference" IS 'Identifiant du produit dan
 
 
 COMMENT ON COLUMN "public"."produits"."menu_du_jour" IS 'Plat mis en avant par l agent dans le menu du jour.';
+
+
+
+COMMENT ON COLUMN "public"."produits"."groupe" IS 'Articles partageant ce libelle DANS UNE MEME BOUTIQUE = un seul article en plusieurs coloris. NULL = article simple, affiche seul comme avant.';
+
+
+
+COMMENT ON COLUMN "public"."produits"."couleur" IS 'Le coloris de cette declinaison, tel que le client le lira : « blanc », « noir ». Sans groupe, il ne sert a rien.';
+
+
+
+COMMENT ON COLUMN "public"."produits"."attribut_nom" IS 'Le nom que le marchand donne a la caracteristique : Pointure, Taille, Contenance. NULL = cet article n en a pas.';
+
+
+
+COMMENT ON COLUMN "public"."produits"."attribut_valeurs" IS 'Les valeurs disponibles, dans l ordre voulu par le marchand. NULL ou vide = aucune a annoncer.';
+
+
+
+COMMENT ON COLUMN "public"."produits"."marque" IS 'La marque de l article, telle que le client la cherche. NULL = le marchand ne la donne pas, la vitrine se tait.';
+
+
+
+COMMENT ON COLUMN "public"."produits"."public_vise" IS 'Pour qui : Bebe, Enfant, Femme, Homme, Mixte. Texte libre — le marchand nomme son rayon. NULL = non renseigne.';
 
 
 
@@ -1267,6 +1503,11 @@ ALTER TABLE ONLY "public"."compteurs_journaliers"
 
 
 
+ALTER TABLE ONLY "public"."demandes_droits"
+    ADD CONSTRAINT "demandes_droits_pkey" PRIMARY KEY ("id");
+
+
+
 ALTER TABLE ONLY "public"."livraisons"
     ADD CONSTRAINT "livraisons_pkey" PRIMARY KEY ("id");
 
@@ -1299,6 +1540,11 @@ ALTER TABLE ONLY "public"."paniers"
 
 ALTER TABLE ONLY "public"."paniers"
     ADD CONSTRAINT "paniers_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."pointages"
+    ADD CONSTRAINT "pointages_pkey" PRIMARY KEY ("cle");
 
 
 
@@ -1340,6 +1586,10 @@ CREATE UNIQUE INDEX "boutiques_wasender_session_hash_key" ON "public"."boutiques
 
 
 
+CREATE INDEX "commandes_boutique_chat_cle_idx" ON "public"."commandes" USING "btree" ("boutique_id", "chat_cle") WHERE ("chat_cle" IS NOT NULL);
+
+
+
 CREATE INDEX "commandes_confirmation_attente_idx" ON "public"."commandes" USING "btree" ("confirmation_statut", "created_at") WHERE ("confirmation_statut" = 'demandee'::"text");
 
 
@@ -1348,7 +1598,15 @@ CREATE UNIQUE INDEX "commandes_jeton_suivi_key" ON "public"."commandes" USING "b
 
 
 
+CREATE INDEX "commandes_livreur_idx" ON "public"."commandes" USING "btree" ("livreur_id") WHERE ("livreur_id" IS NOT NULL);
+
+
+
 CREATE UNIQUE INDEX "commandes_reference_globale_unique" ON "public"."commandes" USING "btree" ("upper"("reference")) WHERE ("reference" IS NOT NULL);
+
+
+
+CREATE INDEX "commandes_retrait_a_venir_idx" ON "public"."commandes" USING "btree" ("heure_retrait") WHERE (("mode_recuperation" = 'retrait'::"text") AND ("heure_retrait" IS NOT NULL));
 
 
 
@@ -1381,6 +1639,10 @@ CREATE INDEX "commandes_veille_stock_idx" ON "public"."commandes" USING "btree" 
 
 
 CREATE INDEX "compteurs_fenetre_purge_idx" ON "public"."compteurs_fenetre" USING "btree" ("fenetre");
+
+
+
+CREATE INDEX "demandes_droits_telephone_idx" ON "public"."demandes_droits" USING "btree" ("telephone", "cree_le" DESC);
 
 
 
@@ -1452,6 +1714,10 @@ CREATE UNIQUE INDEX "livreurs_telegram_unique" ON "public"."livreurs" USING "btr
 
 
 
+CREATE INDEX "paiements_alerte_envoyee_le_idx" ON "public"."paiements" USING "btree" ("alerte_envoyee_le") WHERE ("alerte_envoyee_le" IS NULL);
+
+
+
 CREATE INDEX "paiements_statut_idx" ON "public"."paiements" USING "btree" ("statut");
 
 
@@ -1461,6 +1727,14 @@ CREATE INDEX "paiements_user_id_idx" ON "public"."paiements" USING "btree" ("use
 
 
 CREATE INDEX "paniers_abandonnes_idx" ON "public"."paniers" USING "btree" ("boutique_id", "maj_le" DESC) WHERE ("converti_le" IS NULL);
+
+
+
+CREATE INDEX "produits_groupe_idx" ON "public"."produits" USING "btree" ("boutique_id", "groupe") WHERE ("groupe" IS NOT NULL);
+
+
+
+CREATE INDEX "produits_marque_idx" ON "public"."produits" USING "btree" ("boutique_id", "marque") WHERE ("marque" IS NOT NULL);
 
 
 
@@ -1488,6 +1762,10 @@ CREATE UNIQUE INDEX "subscriptions_stripe_subscription_id_uidx" ON "public"."sub
 
 
 
+CREATE OR REPLACE TRIGGER "boutiques_limite_par_plan" BEFORE INSERT ON "public"."boutiques" FOR EACH ROW EXECUTE FUNCTION "public"."limiter_boutiques_par_plan"();
+
+
+
 CREATE OR REPLACE TRIGGER "on_new_commande" AFTER INSERT OR UPDATE OF "statut" ON "public"."commandes" FOR EACH ROW EXECUTE FUNCTION "public"."notify_n8n_new_commande"();
 
 
@@ -1508,6 +1786,11 @@ ALTER TABLE ONLY "public"."commande_items"
 
 ALTER TABLE ONLY "public"."commandes"
     ADD CONSTRAINT "commandes_boutique_id_fkey" FOREIGN KEY ("boutique_id") REFERENCES "public"."boutiques"("id");
+
+
+
+ALTER TABLE ONLY "public"."commandes"
+    ADD CONSTRAINT "commandes_livreur_id_fkey" FOREIGN KEY ("livreur_id") REFERENCES "public"."livreurs"("id") ON DELETE SET NULL;
 
 
 
@@ -1721,6 +2004,9 @@ ALTER TABLE "public"."compteurs_fenetre" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "public"."compteurs_journaliers" ENABLE ROW LEVEL SECURITY;
 
 
+ALTER TABLE "public"."demandes_droits" ENABLE ROW LEVEL SECURITY;
+
+
 ALTER TABLE "public"."livraisons" ENABLE ROW LEVEL SECURITY;
 
 
@@ -1733,7 +2019,7 @@ ALTER TABLE "public"."notification_settings" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "public"."paiements" ENABLE ROW LEVEL SECURITY;
 
 
-CREATE POLICY "paiements_select_own" ON "public"."paiements" FOR SELECT USING ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
+CREATE POLICY "paiements_select_own" ON "public"."paiements" FOR SELECT TO "authenticated" USING ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
 
 
 
@@ -1746,21 +2032,16 @@ CREATE POLICY "paniers_lecture_marchand" ON "public"."paniers" FOR SELECT TO "au
 
 
 
+ALTER TABLE "public"."pointages" ENABLE ROW LEVEL SECURITY;
+
+
 ALTER TABLE "public"."produits" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "public_read_boutiques" ON "public"."boutiques" FOR SELECT TO "anon" USING (true);
-
-
-
-CREATE POLICY "public_read_produits" ON "public"."produits" FOR SELECT TO "anon" USING (true);
-
 
 
 ALTER TABLE "public"."push_subscriptions" ENABLE ROW LEVEL SECURITY;
 
 
-CREATE POLICY "push_subscriptions_select_own" ON "public"."push_subscriptions" FOR SELECT USING ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
+CREATE POLICY "push_subscriptions_select_own" ON "public"."push_subscriptions" FOR SELECT TO "authenticated" USING ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
 
 
 
@@ -2036,6 +2317,11 @@ GRANT ALL ON FUNCTION "public"."jeton_canal"("p_boutique" "text", "p_canal" "tex
 
 
 
+REVOKE ALL ON FUNCTION "public"."limiter_boutiques_par_plan"() FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."limiter_boutiques_par_plan"() TO "service_role";
+
+
+
 REVOKE ALL ON FUNCTION "public"."notify_n8n_new_commande"() FROM PUBLIC;
 GRANT ALL ON FUNCTION "public"."notify_n8n_new_commande"() TO "service_role";
 
@@ -2147,42 +2433,6 @@ GRANT ALL ON TABLE "public"."boutiques" TO "service_role";
 
 
 
-GRANT SELECT("id") ON TABLE "public"."boutiques" TO "anon";
-
-
-
-GRANT SELECT("nom") ON TABLE "public"."boutiques" TO "anon";
-
-
-
-GRANT SELECT("description") ON TABLE "public"."boutiques" TO "anon";
-
-
-
-GRANT SELECT("logo_url") ON TABLE "public"."boutiques" TO "anon";
-
-
-
-GRANT SELECT("zone") ON TABLE "public"."boutiques" TO "anon";
-
-
-
-GRANT SELECT("categorie") ON TABLE "public"."boutiques" TO "anon";
-
-
-
-GRANT SELECT("telephone") ON TABLE "public"."boutiques" TO "anon";
-
-
-
-GRANT SELECT("slug") ON TABLE "public"."boutiques" TO "anon";
-
-
-
-GRANT SELECT("emoji") ON TABLE "public"."boutiques" TO "anon";
-
-
-
 GRANT ALL ON TABLE "public"."commande_items" TO "anon";
 GRANT ALL ON TABLE "public"."commande_items" TO "authenticated";
 GRANT ALL ON TABLE "public"."commande_items" TO "service_role";
@@ -2202,6 +2452,12 @@ GRANT ALL ON TABLE "public"."compteurs_fenetre" TO "service_role";
 
 
 GRANT ALL ON TABLE "public"."compteurs_journaliers" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."demandes_droits" TO "anon";
+GRANT ALL ON TABLE "public"."demandes_droits" TO "authenticated";
+GRANT ALL ON TABLE "public"."demandes_droits" TO "service_role";
 
 
 
@@ -2235,45 +2491,13 @@ GRANT ALL ON TABLE "public"."paniers" TO "service_role";
 
 
 
+GRANT ALL ON TABLE "public"."pointages" TO "service_role";
+
+
+
 GRANT INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,MAINTAIN,UPDATE ON TABLE "public"."produits" TO "anon";
 GRANT ALL ON TABLE "public"."produits" TO "authenticated";
 GRANT ALL ON TABLE "public"."produits" TO "service_role";
-
-
-
-GRANT SELECT("id") ON TABLE "public"."produits" TO "anon";
-
-
-
-GRANT SELECT("boutique_id") ON TABLE "public"."produits" TO "anon";
-
-
-
-GRANT SELECT("nom") ON TABLE "public"."produits" TO "anon";
-
-
-
-GRANT SELECT("description") ON TABLE "public"."produits" TO "anon";
-
-
-
-GRANT SELECT("photo_url") ON TABLE "public"."produits" TO "anon";
-
-
-
-GRANT SELECT("prix") ON TABLE "public"."produits" TO "anon";
-
-
-
-GRANT SELECT("categorie") ON TABLE "public"."produits" TO "anon";
-
-
-
-GRANT SELECT("disponible") ON TABLE "public"."produits" TO "anon";
-
-
-
-GRANT SELECT("menu_du_jour") ON TABLE "public"."produits" TO "anon";
 
 
 
