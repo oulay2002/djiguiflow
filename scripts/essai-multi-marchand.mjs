@@ -150,7 +150,16 @@ async function derouler() {
   // C'est le controle d'isolement le plus direct : si un article d'un autre
   // marchand apparait ici, tout le reste est sans valeur.
   const menu = await json(`/api/boutiques/${SLUG}/menu`);
-  const noms = (menu.corps ?? []).map((p) => String(p.nom));
+  // LE BANC DOIT ECHOUER, PAS EXPLOSER.
+  //
+  // `menu.corps` valait `(corps ?? [])`, ce qui protege du nul mais PAS d'un
+  // corps qui n'est pas un tableau — une reponse d'erreur rend un objet, et
+  // `.map` n'existe pas dessus. Le 29 aout 2026 le banc s'est interrompu sur
+  // « (menu.corps ?? []).map is not a function », en cachant la vraie cause :
+  // un 404 deux lignes plus haut. Un banc qui explose est un banc qu'on cesse
+  // de lire.
+  const articles = Array.isArray(menu.corps) ? menu.corps : [];
+  const noms = articles.map((p) => String(p.nom));
   verifier('le menu repond', menu.statut === 200, `HTTP ${menu.statut}`);
   verifier('il rend exactement 2 articles', noms.length === 2, noms.join(', ') || '(vide)');
   verifier(
@@ -160,8 +169,8 @@ async function derouler() {
   );
 
   // ---- 3. Le stock voyage jusqu'a la vitrine.
-  const temoin = (menu.corps ?? []).find((p) => p.nom === 'Article temoin');
-  const epuise = (menu.corps ?? []).find((p) => p.nom === 'Article epuise');
+  const temoin = articles.find((p) => p.nom === 'Article temoin');
+  const epuise = articles.find((p) => p.nom === 'Article epuise');
   verifier('le stock est rendu', temoin?.stock === 5, `stock=${temoin?.stock}`);
   verifier('l’article epuise est a zero', epuise?.stock === 0, `stock=${epuise?.stock}`);
 
