@@ -130,14 +130,30 @@ export default function AssistantChat() {
   const messageIdRef = useRef(2);
   const supportWhatsapp = process.env.NEXT_PUBLIC_SUPPORT_WHATSAPP?.trim() ?? '';
   const supportPhone = process.env.NEXT_PUBLIC_SUPPORT_PHONE?.trim() ?? '';
-  const supportText = encodeURIComponent('Bonjour, je souhaite parler a un conseiller DjiguiFlow.');
+  /**
+   * LE MESSAGE PRÉ-ÉCRIT S'AFFICHE CHEZ LA PERSONNE, PAS CHEZ NOUS.
+   *
+   * Il partait sans accent — « parler a un conseiller ». Ailleurs dans le code
+   * on s'en passe volontiers, mais celui-ci apparaît dans le champ de saisie
+   * de WhatsApp du visiteur : c'est la première phrase qu'il lit de nous, et
+   * il croira l'avoir écrite lui-même.
+   */
+  const supportText = encodeURIComponent('Bonjour, je souhaite parler à un conseiller DjiguiFlow.');
   const cleanedSupportPhone = supportPhone.replace(/[^\d+]/g, '');
   const supportHref = supportWhatsapp
     ? `https://wa.me/${supportWhatsapp.replace(/[^\d]/g, '')}?text=${supportText}`
     : `mailto:${SUPPORT_EMAIL}?subject=Besoin%20d%27un%20conseiller%20DjiguiFlow`;
   const callHref = cleanedSupportPhone ? `tel:${cleanedSupportPhone}` : null;
   const supportPhoneDisplay = supportPhone || cleanedSupportPhone;
-  const supportMiniCtaLabel = supportWhatsapp ? 'WhatsApp' : 'Conseiller';
+  /**
+   * LE LIBELLÉ DIT L'ACTION, PAS LE CANAL.
+   *
+   * Il valait « WhatsApp » — le nom d'une application, pas ce qui va se
+   * passer. Un bouton doit dire exactement ce qu'il fait quand on le presse :
+   * ici, il ouvre une conversation avec une personne. « Nous écrire » le dit,
+   * et tient dans la même largeur.
+   */
+  const supportMiniCtaLabel = supportWhatsapp ? 'Nous écrire' : 'Conseiller';
 
   const getNextMessageId = () => {
     const nextId = messageIdRef.current;
