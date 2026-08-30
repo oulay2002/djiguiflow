@@ -370,15 +370,42 @@ Le Pro garde le script. C'est là que se crée l'écart.
 
 ## Les deux réserves à lever avant d'écrire le rendu
 
-### Le temps d'encodage n'est pas mesuré
+### ~~Le temps d'encodage n'est pas mesuré~~ — LEVÉE le 30 août 2026
 
-Avant toute ligne de `rendu.ts`, une mesure sur une vidéo réelle, avec un
-budget explicite : **60 secondes et 1 Go de mémoire** pour une vidéo.
+Budget fixé : **60 secondes et 1 Go de mémoire** par vidéo. Mesuré par
+`npm run mesurer:video`, sur une photo réelle du catalogue de Zahara — un aplat
+de couleur se compresse en presque rien et aurait donné un chiffre flatteur qui
+ne veut rien dire.
 
-Si 1080×1920 dépasse ce budget, on descend à **720×1280** — TikTok recompresse
-de toute façon à la publication, et le fichier est plus léger à télécharger sur
-une connexion ivoirienne. Cette bascule est une décision de mesure, pas de
-goût.
+| Résolution | Images | Encodage | Total | Poids | Mémoire | |
+|---|---|---|---|---|---|---|
+| **1080×1920** | 27 494 ms | 8 621 ms | **36 115 ms** | 0,88 Mo | 103 Mo | dans le budget |
+| 720×1280 | 12 994 ms | 7 447 ms | 20 441 ms | 0,50 Mo | 104 Mo | dans le budget |
+
+**Décision : 1080×1920.** La marge est de 40 % sur le temps et de 90 % sur la
+mémoire, et `maxDuration` vaut 300 s : même une fonction trois fois plus lente
+que ce poste ne toucherait pas le plafond dur.
+
+**Deux angles morts de cette mesure, à ne pas oublier.**
+
+1. **Le calque de texte n'y figure pas.** La mesure anime la photo mais ne
+   compose aucun texte par-dessus. Le rendu réel ajoutera un calque PNG par
+   image : compter une dizaine de secondes de plus, ce qui reste dans le
+   budget mais en réduit la marge.
+2. **La photo est décodée 360 fois.** Le banc appelle `sharp(source)` à chaque
+   image, ce qui refait le décodage JPEG à chaque fois — 76 ms par image, soit
+   l'essentiel des 27 s. **Le rendu doit décoder une seule fois** vers des
+   pixels bruts et recadrer ensuite. Bien fait, il sera plus rapide que cette
+   mesure, pas plus lent.
+
+Autrement dit : la mesure est **pessimiste sur le décodage** et **optimiste sur
+le texte**, et les deux se compensent à peu près. Elle suffit à trancher la
+résolution ; elle ne dispense pas de mesurer à nouveau le rendu complet.
+
+**Note d'installation.** `ffmpeg-static` télécharge son binaire par un script
+d'installation — 82,8 Mo, ffmpeg 6.1.1. npm peut bloquer ce script sans que
+l'installation échoue : le chemin se résout alors vers un fichier absent.
+Vérifier par `ffmpeg -version`, jamais par l'existence du chemin.
 
 ### La voix off n'a pas été entendue
 

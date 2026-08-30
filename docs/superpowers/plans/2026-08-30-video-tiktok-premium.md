@@ -18,7 +18,7 @@
 - **La voix off ne prononce jamais un nom de produit.** Uniquement des nombres, un prix, des phrases courantes. Le nom du plat reste à l'écran.
 - **Comportement de référence : la vidéo muette.** Tant que la réserve de la tâche 1 n'est pas levée par l'exploitant, `VOIX_OFF_FOURNISSEUR` reste vide et aucune voix n'est produite.
 - **Le forfait se lit par le compte**, jamais par un champ sur la boutique : `boutiques.user_id` → `subscriptions` → `planApplicable()`.
-- **Format cible :** 1080×1920, 24 im/s, 15 s, H.264, audio AAC mono. Bascule à 720×1280 si le budget de la tâche 1 est dépassé.
+- **Format cible :** **1080×1920**, 24 im/s, 15 s, H.264, audio AAC mono. Tranché par la mesure du 30 août : 36,1 s et 103 Mo, contre un budget de 60 s et 1 Go.
 - **Budget de rendu :** 60 s et 1 Go de mémoire par vidéo.
 - **Langue du code :** identifiants et commentaires en français, sans accents dans les identifiants, comme le reste du dépôt. Tests nommés en français.
 - **Commits :** un par tâche minimum, message en français, minuscule, `domaine : description`.
@@ -54,7 +54,7 @@ Rien ne s'écrit avant. Les deux issues changent les tâches 5 et 6.
 - Consumes: rien.
 - Produces: deux décisions écrites dans la spec — la résolution retenue (1080×1920 ou 720×1280), et le fournisseur de voix retenu ou `aucun`.
 
-- [ ] **Step 1: Installer le binaire d'encodage**
+- [x] **Step 1: Installer le binaire d'encodage**
 
 ```bash
 npm install --save ffmpeg-static
@@ -62,7 +62,7 @@ npm install --save ffmpeg-static
 
 `ffmpeg-static` télécharge un binaire statique à l'installation et exporte son chemin en export par défaut. Pas de `fluent-ffmpeg` : on appelle le binaire par `spawn`, ce qui laisse les arguments lisibles et évite une couche de traduction.
 
-- [ ] **Step 2: Écrire le banc de mesure**
+- [x] **Step 2: Écrire le banc de mesure**
 
 Créer `scripts/mesurer-rendu-video.mjs` :
 
@@ -144,7 +144,7 @@ for (const r of RESOLUTIONS) {
 }
 ```
 
-- [ ] **Step 3: Ajouter le script à `package.json`**
+- [x] **Step 3: Ajouter le script à `package.json`**
 
 Dans `"scripts"`, après `"essai:assistante"` :
 
@@ -152,7 +152,7 @@ Dans `"scripts"`, après `"essai:assistante"` :
 "mesurer:video": "node scripts/mesurer-rendu-video.mjs"
 ```
 
-- [ ] **Step 4: Mesurer**
+- [x] **Step 4: Mesurer** — fait le 30 août : 1080×1920 en 36 115 ms / 103 Mo, DANS LE BUDGET
 
 Run: `npm run mesurer:video`
 
@@ -800,7 +800,7 @@ git commit -m "video : un bucket a part, et la purge posee le meme jour"
   - `type Rendu = { donnees: Buffer; octets: number; largeur: number; hauteur: number; dureeMs: number; muette: boolean }`
   - `async function rendreVideo(plan: PlanDeTournage, voix: Buffer | null): Promise<Rendu>`
 
-Utiliser la résolution retenue à la tâche 1.
+Résolution retenue à la tâche 1 : **1080×1920**.
 
 - [ ] **Step 1: Inclure le binaire dans le paquet de fonction**
 
@@ -921,18 +921,30 @@ export async function rendreVideo(plan: PlanDeTournage, voix: Buffer | null): Pr
       const calque = await calqueTexte(prise);
       const brute = prise.photo ? await chargerPhoto(prise.photo) : null;
 
-      // Cadre de depart : la photo recouvrant le format vertical, ou le fond
-      // maison si elle manque.
-      const fond = brute
-        ? await sharp(brute).resize(LARGEUR, HAUTEUR, { fit: 'cover' }).toBuffer()
-        : await sharp({ create: { width: LARGEUR, height: HAUTEUR, channels: 3, background: NUIT } })
-            .png().toBuffer();
+      /**
+       * LE FOND EST AU DOUBLE DU FORMAT, ET DECODE UNE SEULE FOIS.
+       *
+       * Au double, parce que le mouvement recadre DANS l'image : sans cette
+       * marge, un zoom avant agrandirait des pixels et le plan perdrait en
+       * nettete a mesure qu'il avance.
+       *
+       * Decode une seule fois, parce que rappeler `sharp(jpeg)` a chaque image
+       * refait le decodage : mesure du 30 aout, 76 ms par image, soit
+       * l'essentiel des 27 s du banc. En pixels bruts, le recadrage ne coute
+       * presque plus rien.
+       */
+      const source = brute
+        ? sharp(brute).resize(LARGEUR * 2, HAUTEUR * 2, { fit: 'cover' })
+        : sharp({ create: { width: LARGEUR * 2, height: HAUTEUR * 2, channels: 3, background: NUIT } });
+
+      const { data: pixels, info } = await source.raw().toBuffer({ resolveWithObject: true });
+      const cru = { raw: { width: info.width, height: info.height, channels: info.channels } };
 
       const total = Math.round((prise.dureeMs / 1000) * IPS);
 
       for (let i = 0; i < total; i++) {
-        const c = cadrage(prise.photo ? prise.mouvement : 'fixe', i, total, LARGEUR, HAUTEUR);
-        const image = await sharp(fond)
+        const c = cadrage(prise.photo ? prise.mouvement : 'fixe', i, total, info.width, info.height);
+        const image = await sharp(pixels, cru)
           .extract(c)
           .resize(LARGEUR, HAUTEUR)
           .composite([{ input: calque, top: 0, left: 0 }])
