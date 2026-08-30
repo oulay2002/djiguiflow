@@ -366,21 +366,23 @@ export default function AssistantChat() {
             />
           </span>
 
-          {/* LE ROBOT A SA PROPRE SURFACE, ET CE N'EST PAS DECORATIF.
-              Le lanceur est FIXE au-dessus d'une page qui alterne sections
-              claires et sombres. Mesure faite : un robot en `nuit-900` tombait
-              a 1,00:1 en bas de page — exactement la couleur du fond, donc
-              invisible sur trois positions de defilement sur cinq. Une seule
-              couleur ne peut pas tenir sur les deux fonds ; un panneau clair,
-              lui, garantit le contraste partout. C'est le meme bloc que
-              partout ailleurs : bordure fine, fond chaux, ombre maison. */}
-          <span className="relative border border-[var(--hairline)] bg-chaux-50 p-1 soft-shadow">
+          {/* LE PANNEAU CLAIR A DISPARU, ET SA RAISON D'ETRE AVEC LUI.
+              Il rattrapait un defaut : le robot etait dessine d'UNE seule
+              couleur, et un lanceur FIXE traverse une page qui alterne sections
+              claires et sombres. Mesure faite le 29 aout : en `nuit-900` il
+              tombait a 1,00:1 en bas de page — exactement la couleur du fond,
+              donc invisible sur trois positions de defilement sur cinq.
+              La tete porte desormais ses DEUX valeurs : corps clair, contour et
+              visiere sombres. Le contour la detache du fond clair, le corps du
+              fond sombre. Elle n'a plus besoin qu'on lui pose une surface, et
+              elle epouse le fond de la page comme demande. */}
+          <span className="relative">
             <RobotAssistant
               reflechit={isTyping}
               ouvert={isFloatingOpen}
               // Plus petit sur telephone : 96 px en coin d'un ecran de 390
               // mangeraient la barre de commande de la vitrine.
-              className="block h-20 w-20 text-nuit-900 sm:h-24 sm:w-24"
+              className="block h-20 w-20 sm:h-24 sm:w-24"
             />
             {/* Le badge se pose sur le panneau, pas sur la bulle : sur la bulle
                 il chevauchait le point d'interrogation. */}

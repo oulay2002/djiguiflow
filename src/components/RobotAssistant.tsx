@@ -4,51 +4,50 @@ import { useEffect, useRef, useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 
 /**
- * LE ROBOT DE L'ASSISTANT — une tête, cadrée comme un portrait.
+ * LE ROBOT DE L'ASSISTANT — une tête, sans plaque sous elle.
  *
- * ── LES DEUX VERSIONS PRÉCÉDENTES, ET CE QU'ELLES ONT APPRIS ───────────────
+ * ── POURQUOI LA PLAQUE A DISPARU, ET CE QUI LA REMPLACE ────────────────────
  *
- * La première était un robot de 24 px dans un bouton : au rendu, une icône à
- * côté d'un libellé. « Un robot animé » demande une présence, pas un
- * pictogramme mieux dessiné.
+ * Il a d'abord été une icône de 24 px, puis un personnage entier, puis une tête
+ * anguleuse en fil de fer posée sur un panneau clair. Ce panneau n'était pas un
+ * choix esthétique : il rattrapait un défaut. Le trait était en `currentColor`,
+ * donc d'UNE seule valeur — et un élément fixe traverse des fonds qui changent.
+ * Sur le pied de page sombre, il tombait à 1,00:1 : exactement la couleur de
+ * son fond, donc invisible.
  *
- * La seconde lui a donné un corps entier — tête, buste, deux bras, socle — dans
- * 96 px. Le corps a bien fait la présence, mais il a coûté la LISIBILITÉ : à
- * cette taille, chaque membre ne pesait plus que deux pixels de trait, et le
- * regard se posait sur une silhouette avant de trouver un visage.
+ * La tête porte désormais SES DEUX VALEURS : corps clair, visière et contour
+ * sombres. Sur le fond clair du corps de page, ce sont le contour et la visière
+ * qui la détachent ; sur le pied de page sombre, c'est le corps clair. Aucun
+ * fond ne peut plus l'avaler — non par réglage, mais par construction.
  *
- * Une tête occupe le même encombrement et ne dépense ses pixels que sur ce
- * qu'on regarde vraiment. C'est le cadrage d'un portrait : le buste sort du
- * cadre par le bas plutôt que d'être absent — une tête posée dans le vide se
- * lit comme une tête coupée.
+ * C'est la bonne façon de fermer ce défaut : une seule valeur exige un support,
+ * deux valeurs se suffisent.
  *
- * ── LE VISAGE EST UN ÉCRAN, ET C'EST LE PROPOS ─────────────────────────────
+ * ── LES ANGLES SONT ARRONDIS ICI, ET NULLE PART AILLEURS ───────────────────
  *
- * DjiguiFlow est un appareil qui reçoit ce qu'un client écrit et le montre au
- * marchand. Deux points sur une boîte font un jouet ; un cadre avec un panneau
- * en creux, où les yeux vivent, dit « machine qui affiche ». Le sujet dicte le
- * dessin.
+ * La maison n'a pas un seul coin arrondi : ni les boutons, ni les cartes, ni
+ * les champs. La règle vaut pour les BLOCS D'INTERFACE — ce sont des contenants,
+ * et leur franchise fait la tenue de l'ensemble.
  *
- * ── UN SEUL SIGNAL D'ÉTAT ──────────────────────────────────────────────────
+ * Une tête n'est pas un contenant, c'est un personnage. Anguleuse, elle se
+ * lisait comme un écran de plus dans une page qui n'en manque pas. La règle ne
+ * s'applique donc pas ici, et c'est un écart assumé, pas un oubli.
  *
- * L'antenne pulsait pendant que l'assistante composait. Un curseur de saisie
- * qui clignote dans l'écran dit la même chose, mais il dit ce qui se passe
- * VRAIMENT : elle écrit. L'antenne redevient donc de la silhouette, immobile.
- * Deux signaux pour un état, c'est un de trop.
+ * ── LES COULEURS VIENNENT DES VARIABLES, PAS DE CLASSES ────────────────────
+ *
+ * Une classe utilitaire écrite ici et nulle part ailleurs serait purgée à la
+ * compilation, et la tête sortirait sans couleur — c'est le défaut des classes
+ * mortes, déjà payé. Les variables de `globals.css` n'ont pas ce risque.
+ *
+ * Le point d'antenne est le SEUL accent de la figure : le bissap de la maison,
+ * et il ne sert qu'une fois.
  *
  * ── TOUJOURS DU SVG EN LIGNE ───────────────────────────────────────────────
  *
  * Une image, un Lottie ou une scène 3D coûteraient chacun un téléchargement de
- * plus à des clients sur réseau mobile ivoirien. La tête tient en une trentaine
+ * plus à des clients sur réseau mobile ivoirien. La tête tient en une quinzaine
  * de balises et s'anime avec `framer-motion`, déjà dépendance de ce composant.
  * Aucune bibliothèque ajoutée.
- *
- * ── LE FOND N'EST PAS LE SIEN, ET C'EST VOULU ──────────────────────────────
- *
- * Le trait est en `currentColor`. Le panneau clair qui garantit son contraste
- * vit chez l'appelant — le robot a été invisible à 1,00:1 en bas de page le 29
- * août, et c'est là que la correction a été posée. Ne pas la rapatrier ici :
- * un composant qui porte son propre fond ne peut plus se poser ailleurs.
  *
  * MOUVEMENT RÉDUIT : tout se fige, hochement compris. La tête reste
  * parfaitement lisible immobile — condition pour qu'une animation soit un
@@ -56,14 +55,18 @@ import { motion, useReducedMotion } from 'framer-motion';
  */
 
 /** Amplitude du regard, en unités du repère SVG (le viewBox fait 72 de large). */
-const REGARD_MAX = 1.8;
+const REGARD_MAX = 2;
+
+const CLAIR = 'var(--color-chaux-50)';
+const SOMBRE = 'var(--color-nuit-900)';
+const ACCENT = 'var(--color-bissap-500)';
 
 export default function RobotAssistant({
   reflechit = false,
   ouvert = false,
   className = 'h-24 w-24',
 }: {
-  /** L'assistante compose sa réponse : le curseur clignote dans l'écran. */
+  /** L'assistante compose sa réponse : un curseur clignote dans la visière. */
   reflechit?: boolean;
   /** Le panneau est ouvert : la tête se retire un peu, elle a passé la main. */
   ouvert?: boolean;
@@ -138,19 +141,18 @@ export default function RobotAssistant({
     return () => clearTimeout(t);
   }, [reduit]);
 
-  /** Un œil : une pastille pleine, qui se ferme en s'écrasant. */
+  /** Un œil : une pastille claire sur la visière, qui se ferme en s'écrasant. */
   const oeil = (cx: number) => (
-    <motion.rect
-      x={cx - 4}
-      y={35.5}
-      width={8}
-      height={9}
-      fill="currentColor"
+    <motion.circle
+      cx={cx}
+      cy={38}
+      r={4.2}
+      fill={CLAIR}
       animate={
         reduit ? undefined : { x: regard.x, y: regard.y, scaleY: clignote ? 0.1 : 1 }
       }
       transition={{ type: 'spring', stiffness: 220, damping: 20, mass: 0.4 }}
-      style={{ transformOrigin: `${cx}px 40px` }}
+      style={{ transformOrigin: `${cx}px 38px` }}
     />
   );
 
@@ -188,47 +190,40 @@ export default function RobotAssistant({
       }
       style={{ transformOrigin: '36px 62px' }}
     >
-      {/* ---- L'ANTENNE. Silhouette, plus signal : c'est l'écran qui parle
-              maintenant. Un carré plutôt qu'un point — la maison n'a pas de
-              coins arrondis, ni la vitrine ni le tableau de bord. */}
-      {/* Le pied s'arrete SUR le bord de la tete, et sans bout rond : avec
-              `strokeLinecap="round"` il debordait a l'interieur et y laissait
-              un point qu'on lisait comme une vis. */}
-      <line x1="36" y1="10" x2="36" y2="18" stroke="currentColor" strokeWidth="2.4" />
-      <rect x="33" y="4" width="6" height="6" fill="currentColor" />
+      {/* ---- L'ANTENNE. Le pied s'arrête SUR le bord de la tête, et sans bout
+              rond : il débordait à l'intérieur et y laissait un point qu'on
+              lisait comme une vis. */}
+      <line x1="36" y1="11" x2="36" y2="21" stroke={SOMBRE} strokeWidth="2.6" />
+      <circle cx="36" cy="8" r="4" fill={ACCENT} />
 
-      {/* ---- LA TÊTE, et rien d'autre sous elle.
-              DEUX TENTATIVES DE BUSTE ONT ÉCHOUÉ, chacune d'une façon
-              instructive. Un cou court sur une barre horizontale : un
-              téléviseur sur son socle. Deux obliques partant d'un même point :
-              un chevalet sur trépied. Deux traits qui convergent sous un cadre
-              ne peuvent pas dire « épaules » — les épaules sont une masse
-              large, pas deux jambages.
-              Un robot muni d'une antenne est un objet COMPLET : un casque, un
-              masque, une enseigne. Il n'a pas besoin d'un corps, et le panneau
-              clair de l'appelant lui donne déjà son sol. On retire. */}
-      <rect x="12" y="18" width="48" height="44" stroke="currentColor" strokeWidth="2.8" strokeLinejoin="round" />
+      {/* ---- LES OREILLES, posées AVANT la tête pour passer derrière elle.
+              Elles ancrent la silhouette : sans elles, une tête arrondie seule
+              se lit comme une bulle de conversation. */}
+      <rect x="4" y="33" width="8" height="15" rx="4" fill={SOMBRE} />
+      <rect x="60" y="33" width="8" height="15" rx="4" fill={SOMBRE} />
 
-      {/* ---- LA VISIÈRE, centrée dans la face.
-              Un écran pleine face restait à moitié vide : une machine à
-              afficher, pas une tête. Une bande étroite dit la même chose — un
-              appareil qui lit — et laisse au-dessus et au-dessous ce qu'un
-              visage a de front et de menton. */}
+      {/* ---- LA TÊTE. Corps CLAIR, contour SOMBRE : c'est ce couple qui la rend
+              lisible sur le fond clair de la page comme sur le pied de page
+              sombre, sans aucune plaque sous elle. */}
       <rect
-        x="18" y="32" width="36" height="16"
-        stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" opacity="0.45"
+        x="9" y="19" width="54" height="44" rx="19"
+        fill={CLAIR} stroke={SOMBRE} strokeWidth="2.6"
       />
+
+      {/* ---- LA VISIÈRE. Pleine et sombre : c'est elle qui fait l'appareil, et
+              c'est sur elle que le regard s'allume. */}
+      <rect x="17" y="28" width="38" height="20" rx="10" fill={SOMBRE} />
 
       {oeil(29)}
       {oeil(43)}
 
       {/* ---- LE CURSEUR DE SAISIE. Il ne paraît QUE pendant qu'elle écrit, et
               c'est le seul signal d'attente. Il dit ce qui se passe vraiment —
-              elle compose — là où une antenne qui pulse ne dit rien. */}
+              elle compose — là où une antenne qui clignote ne dit rien. */}
       {reflechit && (
         <motion.rect
-          x="50" y="35.5" width="2.4" height="9"
-          fill="currentColor"
+          x="49" y="34.5" width="2.2" height="7" rx="1.1"
+          fill={CLAIR}
           animate={reduit ? { opacity: 1 } : { opacity: [1, 1, 0, 0] }}
           transition={{ duration: 1, repeat: Infinity, ease: 'linear', times: [0, 0.45, 0.5, 1] }}
         />
