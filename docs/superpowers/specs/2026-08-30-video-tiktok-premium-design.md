@@ -104,15 +104,47 @@ pas.
 La vidéo voyage donc comme le visuel voyage déjà : par son adresse, dans le
 message du lundi.
 
-### 4. La vidéo est muette, et c'est délibéré
+### 4. Une voix off, jamais de musique
 
-Y coller une musique que nous ne possédons pas ferait couper le son de la
-publication du marchand par TikTok, ou retirer la vidéo. Or sur TikTok le son
-se choisit **dans l'application**, au moment de publier — c'est même là que se
-joue la portée d'une publication.
+**Aucune musique.** Y coller une piste que nous ne possédons pas ferait couper
+le son de la publication du marchand par TikTok, ou retirer la vidéo. Le
+message du lundi dira au marchand d'ajouter lui-même un son tendance dans
+l'application, où le choix est libre et où se joue la portée.
 
-Le message du lundi le dira explicitement : *« ajoutez un son tendance dans
-TikTok avant de publier »*. Le choix le plus sûr est aussi le plus efficace.
+**Une voix off, en revanche, oui** — elle est produite par nous, elle
+n'appartient à personne d'autre, et elle n'interdit rien : TikTok mélange
+l'audio d'origine avec le son ajouté et laisse régler l'équilibre. Surtout, le
+même fichier sert au **statut WhatsApp**, où aucun son ne peut être ajouté :
+là, muet veut dire muet.
+
+**La voix ne prononce jamais le nom du produit.** Une synthèse vocale française
+lit « attiéké », « garba », « alloco », « kedjenou » avec un accent
+métropolitain et les écorche souvent. Devant un public abidjanais, cela
+s'entend immédiatement — et une voix qui sonne mécanique donnerait à la
+publication du marchand l'air d'avoir été fabriquée par une machine, ce que la
+plateforme refuse partout ailleurs.
+
+Elle ne dit donc que ce qu'une synthèse française lit sans faute : des nombres,
+un prix, une phrase courante. Le nom du plat reste à l'écran, où il est déjà
+écrit correctement.
+
+> « Douze commandes cette semaine. Deux mille cinq cents francs, livré chez
+> vous. Commandez sur WhatsApp. »
+
+Le problème de prononciation est contourné, pas combattu.
+
+**Le coût n'entre pas dans la décision** : environ 200 caractères par vidéo,
+dix Premium sur quatre semaines, soit 8 000 caractères par mois — de l'ordre de
+0,10 $ mensuel chez les fournisseurs courants.
+
+**Ce qui entre dans la décision, c'est la dépendance** : un appel sortant de
+plus sur le chemin du lundi. Il suit la règle générale — synthèse injoignable
+ou en erreur, **la vidéo se fabrique quand même, muette**. Jamais de vidéo
+manquante parce qu'un service de voix était en panne.
+
+**Cette décision est conditionnée à une écoute** : voir « La réserve à lever ».
+Si aucune voix ne convient, la vidéo reste muette et rien d'autre ne change
+dans la présente conception.
 
 ### 5. n8n déclenche, Vercel fabrique, Supabase range
 
@@ -209,15 +241,18 @@ vente, elles restent absentes.
 
 ## Ce qu'on voit à l'écran
 
-Quinze secondes, 1080×1920, 24 images par seconde, H.264, muet. Quatre plans,
-tirés du script qui existe déjà.
+Quinze secondes, 1080×1920, 24 images par seconde, H.264, audio AAC mono.
+Quatre plans, tirés du script qui existe déjà.
 
-| Plan | Durée | Image | Texte incrusté |
-|---|---|---|---|
-| 1 | 0-4 s | Photo du produit vedette, zoom lent avant | L'accroche — avec le chiffre si le seuil est atteint |
-| 2 | 4-8 s | Deuxième photo, panoramique latéral | Le prix, en gros |
-| 3 | 8-12 s | Troisième photo, zoom arrière | « Livré chez vous » |
-| 4 | 12-15 s | Fond `NUIT`, palette maison | Nom de la boutique + « Commandez sur WhatsApp » |
+| Plan | Durée | Image | Texte incrusté | Voix off |
+|---|---|---|---|---|
+| 1 | 0-4 s | Photo du produit vedette, zoom lent avant | L'accroche — avec le chiffre si le seuil est atteint | « Douze commandes cette semaine. » — muette si le seuil n'est pas atteint |
+| 2 | 4-8 s | Deuxième photo, panoramique latéral | Le prix, en gros | Le prix, en toutes lettres |
+| 3 | 8-12 s | Troisième photo, zoom arrière | « Livré chez vous » | « Livré chez vous. » |
+| 4 | 12-15 s | Fond `NUIT`, palette maison | Nom de la boutique + « Commandez sur WhatsApp » | « Commandez sur WhatsApp. » |
+
+Aucune de ces quatre phrases ne contient de nom de produit, et c'est la règle,
+pas un hasard du présent tableau.
 
 S'il n'y a que deux photos, le plan 3 reprend la première sous un autre cadrage.
 
@@ -236,8 +271,13 @@ Sans moteur vidéo, avec ce qui est déjà en dépendance.
 - **Satori**, via le même `ImageResponse` que le visuel, rend les textes en PNG
   transparent — **une fois par plan**, soit quatre rendus, que `sharp` compose
   ensuite sur chaque image. On ne rend pas 360 fois du texte.
-- **`ffmpeg`** ne fait que l'encodage final. Binaire statique d'environ 70 Mo,
-  très en dessous de la limite de 5 Go d'une fonction Vercel.
+- **`ffmpeg`** ne fait que l'encodage final et le mixage de la piste vocale.
+  Binaire statique d'environ 70 Mo, très en dessous de la limite de 5 Go d'une
+  fonction Vercel.
+
+La voix off est demandée **en une seule fois**, pour les quatre phrases mises
+bout à bout avec leurs silences, et non en quatre appels : un seul aller-retour
+réseau, et une diction continue plutôt que quatre fragments recollés.
 
 Même palette, même typographie, même source de vérité que le visuel.
 
@@ -253,6 +293,7 @@ C'est la section qui compte le plus.
 | Rendu ou encodage en échec | Le message du lundi part **exactement comme aujourd'hui** — visuel et script compris. |
 | Dépôt dans le bucket en échec | Idem. |
 | Le nœud vidéo est injoignable | `Composer les envois` continue. La vidéo est un supplément, jamais une dépendance. |
+| **Synthèse vocale injoignable ou en erreur** | **La vidéo est produite muette.** Le son est un supplément du supplément ; il ne fait échouer personne. |
 | Abonnement expiré ou suspendu | Pas de vidéo, sans erreur : ce n'est pas une panne. |
 
 Le marchand ne reçoit jamais moins qu'aujourd'hui. Aucune de ces pannes ne peut
@@ -298,6 +339,9 @@ revue d'août :
    exploitant part.
 3. Abonnement expiré → pas de vidéo, et **pas** d'alerte : ce n'est pas une
    panne.
+4. Synthèse vocale forcée en erreur → la vidéo est produite **et lisible**,
+   sans piste audio. Une vidéo muette, pas une vidéo corrompue : c'est le
+   mixage qui doit être sauté, pas seulement l'appel au fournisseur.
 
 Un garde qu'on n'a jamais vu rouge ne protège de rien. Les trois mutations
 doivent échouer avant que le correctif ne soit écrit.
@@ -324,16 +368,37 @@ Le Pro garde le script. C'est là que se crée l'écart.
 
 ---
 
-## La réserve à lever avant d'écrire le rendu
+## Les deux réserves à lever avant d'écrire le rendu
 
-**Le temps d'encodage n'est pas mesuré.** Avant toute ligne de `rendu.ts`, une
-mesure sur une vidéo réelle, avec un budget explicite : **60 secondes et 1 Go
-de mémoire** pour une vidéo.
+### Le temps d'encodage n'est pas mesuré
+
+Avant toute ligne de `rendu.ts`, une mesure sur une vidéo réelle, avec un
+budget explicite : **60 secondes et 1 Go de mémoire** pour une vidéo.
 
 Si 1080×1920 dépasse ce budget, on descend à **720×1280** — TikTok recompresse
 de toute façon à la publication, et le fichier est plus léger à télécharger sur
 une connexion ivoirienne. Cette bascule est une décision de mesure, pas de
 goût.
+
+### La voix off n'a pas été entendue
+
+Une voix ne se juge pas sur le papier, et une voix qui sonne mécanique
+abîmerait la publication du marchand plus qu'elle ne l'aiderait.
+
+Avant de l'inscrire comme acquise : **le même script généré avec trois voix
+françaises**, chez deux fournisseurs au moins, et une écoute par l'exploitant —
+seul juge de ce qui sonne juste à Abidjan. Le fournisseur retenu devient une
+variable d'environnement, comme les autres clés.
+
+Trois issues, toutes acceptables :
+
+1. une voix convient → elle entre dans la conception telle que décrite ;
+2. aucune ne convient → **la vidéo reste muette**, et rien d'autre ne change ;
+3. une voix convient mais écorche les chiffres ou le prix → on retire la phrase
+   fautive, on garde les autres. La voix off se réduit, elle ne s'abandonne pas.
+
+Tant que cette écoute n'a pas eu lieu, **la vidéo muette est le comportement de
+référence**, et la voix off une option non activée.
 
 ---
 
