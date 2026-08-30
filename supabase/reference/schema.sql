@@ -1,8 +1,8 @@
--- INSTANTANE DU 2026-08-29 11:43 UTC
--- DERNIERE MIGRATION APPLIQUEE : 20260827223011
+-- INSTANTANE DU 2026-08-30 10:34 UTC
+-- DERNIERE MIGRATION APPLIQUEE : 20260829155309
 --
 -- Pour restaurer : rejouer ce fichier, PUIS tous les fichiers de
--- supabase/migrations/ dont l'horodatage est superieur a 20260827223011.
+-- supabase/migrations/ dont l'horodatage est superieur a 20260829155309.
 -- Sauter cette etape ramene le schema jusqu'a vingt-quatre heures en
 -- arriere, verrous compris.
 
@@ -940,6 +940,7 @@ CREATE TABLE IF NOT EXISTS "public"."boutiques" (
     "mode_recuperation" "text" DEFAULT 'livraison'::"text" NOT NULL,
     "delai_preparation_min" integer,
     "livraison_offerte_des" integer,
+    "wasender_session_id" "text",
     CONSTRAINT "boutiques_commande_minimum_positif" CHECK ((("commande_minimum" IS NULL) OR ("commande_minimum" > 0))),
     CONSTRAINT "boutiques_delai_preparation_positif" CHECK ((("delai_preparation_min" IS NULL) OR ("delai_preparation_min" > 0))),
     CONSTRAINT "boutiques_livraison_offerte_positive" CHECK ((("livraison_offerte_des" IS NULL) OR ("livraison_offerte_des" >= 0))),
@@ -1027,6 +1028,10 @@ COMMENT ON COLUMN "public"."boutiques"."delai_preparation_min" IS 'Minutes pour 
 
 
 COMMENT ON COLUMN "public"."boutiques"."livraison_offerte_des" IS 'NULL = frais annonces par le livreur. 0 = toujours offerte. N > 0 = offerte a partir de N FCFA.';
+
+
+
+COMMENT ON COLUMN "public"."boutiques"."wasender_session_id" IS 'Identifiant de la session chez wasender. Sert au QR, au suivi, et a liberer la place. Pas un secret.';
 
 
 
