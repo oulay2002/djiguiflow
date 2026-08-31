@@ -22,7 +22,8 @@
     "verifier:etats": "node scripts/collisions-couleur.mjs",
     "verifier:production": "node scripts/verifier-production.mjs",
     "essai:droits": "node scripts/essai-droits.mjs",
-    "essai:assistante": "node scripts/essai-assistante.mjs"
+    "essai:assistante": "node scripts/essai-assistante.mjs",
+    "entonnoir": "node scripts/entonnoir.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.4",
