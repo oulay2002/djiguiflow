@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { getMarchand } from '@/lib/marchands';
 import { SITE_LOCALE, SITE_NOM, SITE_URL } from '@/lib/site';
 import { jsonLdSur } from '@/lib/jsonLd';
@@ -156,6 +157,50 @@ export default async function BoutiqueLayout({ children, params }: Props) {
         />
       )}
       {children}
+
+      {/**
+        * LA VITRINE DU MARCHAND EST AUSSI LA NOTRE.
+        *
+        * Chaque vitrine est vue par les CLIENTS du marchand — et parmi les
+        * clients d'un commerce d'Abidjan, il y a d'autres commercants. Ce sont
+        * les prospects les mieux qualifies qui existent : ils voient le produit
+        * fonctionner sur un commerce qu'ils connaissent, pas sur une page de
+        * vente. Avant cette bande, rien ne le leur disait : le nom de la
+        * plateforme n'apparaissait que dans la meta-description, que personne
+        * ne lit.
+        *
+        * ELLE S'ADRESSE AU COMMERCANT, PAS A L'ACHETEUR. L'acheteur venu
+        * commander son attieke ne s'y interesse pas, et c'est voulu : la
+        * question en tete filtre d'elle-meme, celui qui n'est pas commercant
+        * passe. C'est ce qui separe une mention utile d'un bandeau
+        * publicitaire pose sur le commerce de quelqu'un d'autre.
+        *
+        * DISCRETE PAR CONSTRUCTION : sous la ligne de flottaison, petit texte,
+        * aucun logo. La marque du marchand doit rester la seule que l'on voit.
+        *
+        * SEULEMENT SI LA BOUTIQUE EST ACTIVE. Meme raison que le `noindex` et
+        * les donnees structurees plus haut : « cette boutique prend ses
+        * commandes » serait faux pour une boutique retiree de l'annuaire.
+        *
+        * LA MARGE BASSE N'EST PAS DECORATIVE. La page pose une barre de panier
+        * `fixed bottom-0` sur telephone des qu'un article est choisi : sans ces
+        * 6 rem, elle recouvrirait cette bande exactement chez les visiteurs les
+        * plus engages — ceux qui ont deja rempli un panier.
+        */}
+      {m?.actif && (
+        <aside className="border-t border-chaux-200 bg-chaux-100 px-4 pb-24 pt-5 text-center lg:pb-5">
+          <p className="mx-auto max-w-xl text-sm leading-relaxed text-chaux-600">
+            <strong className="font-semibold text-nuit-800">Vous tenez un commerce ?</strong>{' '}
+            Cette boutique prend ses commandes sur WhatsApp avec {SITE_NOM}.{' '}
+            <Link
+              href="/"
+              className="font-semibold text-nuit-800 underline underline-offset-2 hover:text-bissap-500"
+            >
+              Ouvrir la mienne
+            </Link>
+          </p>
+        </aside>
+      )}
     </>
   );
 }
