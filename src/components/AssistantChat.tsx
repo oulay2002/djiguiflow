@@ -401,9 +401,14 @@ export default function AssistantChat() {
               className="block h-20 w-20 sm:h-24 sm:w-24"
             />
             {/* Le badge se pose sur le panneau, pas sur la bulle : sur la bulle
-                il chevauchait le point d'interrogation. */}
+                il chevauchait le point d'interrogation.
+
+                ÉCARTÉ DAVANTAGE DEPUIS LES OREILLETTES. À -2.5 il mordait la
+                pointe de l'oreille droite, qui monte bien plus haut que
+                l'ancienne antenne. Un badge est un signal : il doit se détacher
+                du personnage, pas s'accrocher à lui. */}
             {showLauncherBadge && !isFloatingOpen && (
-              <span className="absolute -right-2.5 -top-2.5 inline-flex h-6 min-w-6 items-center justify-center border-2 border-white bg-bissap-500 px-1 text-xs font-black text-white soft-shadow animate-pulse">
+              <span className="absolute -right-4 -top-4 inline-flex h-6 min-w-6 items-center justify-center border-2 border-white bg-bissap-500 px-1 text-xs font-black text-white soft-shadow animate-pulse">
                 1
               </span>
             )}

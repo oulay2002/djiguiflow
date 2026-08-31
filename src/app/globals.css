@@ -64,6 +64,26 @@
   --color-mangue-600: #a76518;
   --color-mangue-700: #7d4b13;
 
+  /* Lagune — la lumière d'un écran, et rien d'autre.
+     Nommée comme les autres d'après une chose d'ici : l'Ébrié, autour de
+     laquelle Abidjan est bâtie.
+
+     UN SEUL NIVEAU, PAS DIX. Les autres familles portent une rampe complète
+     parce qu'elles servent partout — texte, fonds, filets, états. Celle-ci a
+     UN seul emploi : le visage-écran de l'assistante. Une rampe entière
+     laisserait neuf jetons que rien n'appelle, et un jeton mort se relit comme
+     une intention alors qu'il ne fait rien.
+
+     Un `lagune-300` a existé quelques minutes, pour une lueur autour de
+     l'écran. Rendue à l'image, elle se lisait comme un cerclage gris-bleu et
+     salissait le visage à petite taille. La lueur retirée, le jeton est parti
+     avec elle — c'est ainsi qu'on évite d'en accumuler.
+
+     Ce n'est pas une couleur de marque : c'est de la lumière. Elle ne doit
+     jamais servir à un bouton, un lien ou un état — bissap, feuille et mangue
+     tiennent déjà ces rôles. */
+  --color-lagune-400: #3fc9dd;
+
   /* `primary` reste le nom historique des boutons de l'app : il pointe
      désormais sur l'indigo, pour que dashboard, login et boutiques suivent
      la nouvelle identité sans réécriture. */
