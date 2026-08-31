@@ -4,50 +4,58 @@ import { useEffect, useRef, useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 
 /**
- * LE ROBOT DE L'ASSISTANT — une tête, sans plaque sous elle.
+ * LE ROBOT DE L'ASSISTANT — un casque sombre, un visage-écran qui sourit.
  *
- * ── POURQUOI LA PLAQUE A DISPARU, ET CE QUI LA REMPLACE ────────────────────
+ * ── CE QUI A CHANGÉ, ET CE QUI NE DEVAIT SURTOUT PAS CHANGER ───────────────
  *
- * Il a d'abord été une icône de 24 px, puis un personnage entier, puis une tête
- * anguleuse en fil de fer posée sur un panneau clair. Ce panneau n'était pas un
- * choix esthétique : il rattrapait un défaut. Le trait était en `currentColor`,
- * donc d'UNE seule valeur — et un élément fixe traverse des fonds qui changent.
- * Sur le pied de page sombre, il tombait à 1,00:1 : exactement la couleur de
- * son fond, donc invisible.
+ * La tête précédente était claire, avec une visière sombre et une antenne. La
+ * nouvelle inverse les valeurs : casque sombre, écran lumineux. Le dessin est
+ * neuf ; la contrainte qui l'a fait naître ne l'est pas.
  *
- * La tête porte désormais SES DEUX VALEURS : corps clair, visière et contour
- * sombres. Sur le fond clair du corps de page, ce sont le contour et la visière
- * qui la détachent ; sur le pied de page sombre, c'est le corps clair. Aucun
- * fond ne peut plus l'avaler — non par réglage, mais par construction.
+ * ── LA TÊTE PORTE TOUJOURS SES DEUX VALEURS ────────────────────────────────
  *
- * C'est la bonne façon de fermer ce défaut : une seule valeur exige un support,
- * deux valeurs se suffisent.
+ * C'est la seule règle qu'il ne faut jamais assouplir ici. Le robot est un
+ * élément FIXE : il traverse des fonds qui changent au défilement. Quand son
+ * trait était en `currentColor`, donc d'UNE seule valeur, il tombait à 1,00:1
+ * sur le pied de page sombre — exactement la couleur de son fond, invisible.
+ *
+ * Les deux valeurs sont désormais :
+ *   - le casque `nuit-800`, qui le détache du corps de page clair — 15,7:1 ;
+ *   - l'écran `lagune-400`, qui le détache du pied de page sombre — 9,4:1.
+ *
+ * Aucun fond ne peut l'avaler, non par réglage mais par construction. Si un
+ * jour l'un des deux disparaît, le défaut revient — et il ne se verra pas
+ * depuis un poste de développement, seulement en bas d'une vraie page.
+ *
+ * ── LE CYAN EST DE LA LUMIÈRE, PAS UNE COULEUR DE MARQUE ───────────────────
+ *
+ * `lagune` n'existe que pour cet écran. Elle ne doit jamais servir à un bouton,
+ * un lien ou un état : bissap, feuille et mangue tiennent déjà ces rôles, et
+ * une sixième famille qui se mettrait à porter du sens diluerait les cinq
+ * autres. Ici elle ne dit qu'une chose, littérale : cette surface est allumée.
  *
  * ── LES ANGLES SONT ARRONDIS ICI, ET NULLE PART AILLEURS ───────────────────
  *
  * La maison n'a pas un seul coin arrondi : ni les boutons, ni les cartes, ni
- * les champs. La règle vaut pour les BLOCS D'INTERFACE — ce sont des contenants,
- * et leur franchise fait la tenue de l'ensemble.
+ * les champs. La règle vaut pour les BLOCS D'INTERFACE — ce sont des
+ * contenants, et leur franchise fait la tenue de l'ensemble.
  *
- * Une tête n'est pas un contenant, c'est un personnage. Anguleuse, elle se
- * lisait comme un écran de plus dans une page qui n'en manque pas. La règle ne
- * s'applique donc pas ici, et c'est un écart assumé, pas un oubli.
+ * Une tête n'est pas un contenant, c'est un personnage. Écart assumé, pas
+ * oubli.
  *
- * ── LES COULEURS VIENNENT DES VARIABLES, PAS DE CLASSES ────────────────────
+ * ── LES COULEURS VIENNENT DES VARIABLES, PAS DE CLASSES NI DE HEX ──────────
  *
  * Une classe utilitaire écrite ici et nulle part ailleurs serait purgée à la
- * compilation, et la tête sortirait sans couleur — c'est le défaut des classes
- * mortes, déjà payé. Les variables de `globals.css` n'ont pas ce risque.
- *
- * Le point d'antenne est le SEUL accent de la figure : le bissap de la maison,
- * et il ne sert qu'une fois.
+ * compilation, et la tête sortirait sans couleur — le défaut des classes
+ * mortes, déjà payé. Un hex écrit en dur, lui, échapperait au garde de palette
+ * qui ne lit que les classes Tailwind : il passerait la CI en silence et
+ * personne ne saurait qu'une couleur hors maison s'est installée.
  *
  * ── TOUJOURS DU SVG EN LIGNE ───────────────────────────────────────────────
  *
  * Une image, un Lottie ou une scène 3D coûteraient chacun un téléchargement de
  * plus à des clients sur réseau mobile ivoirien. La tête tient en une quinzaine
- * de balises et s'anime avec `framer-motion`, déjà dépendance de ce composant.
- * Aucune bibliothèque ajoutée.
+ * de balises et s'anime avec `framer-motion`, déjà dépendance.
  *
  * MOUVEMENT RÉDUIT : tout se fige, hochement compris. La tête reste
  * parfaitement lisible immobile — condition pour qu'une animation soit un
@@ -57,16 +65,21 @@ import { motion, useReducedMotion } from 'framer-motion';
 /** Amplitude du regard, en unités du repère SVG (le viewBox fait 72 de large). */
 const REGARD_MAX = 2;
 
-const CLAIR = 'var(--color-chaux-50)';
-const SOMBRE = 'var(--color-nuit-900)';
-const ACCENT = 'var(--color-bissap-500)';
+/** Le casque. Première des deux valeurs : il porte la tête sur fond clair. */
+const CASQUE = 'var(--color-nuit-800)';
+/** L'écran allumé. Seconde valeur : il porte la tête sur fond sombre. */
+const ECRAN = 'var(--color-lagune-400)';
+/** Yeux et sourire, tracés SUR l'écran — 9,4:1, le visage reste net. */
+const TRAIT = 'var(--color-nuit-900)';
+/** Les oreillettes. Seul accent de la figure, et il ne sert qu'ici. */
+const OREILLE = 'var(--color-bissap-500)';
 
 export default function RobotAssistant({
   reflechit = false,
   ouvert = false,
   className = 'h-24 w-24',
 }: {
-  /** L'assistante compose sa réponse : un curseur clignote dans la visière. */
+  /** L'assistante compose sa réponse : le sourire cède la place à trois points. */
   reflechit?: boolean;
   /** Le panneau est ouvert : la tête se retire un peu, elle a passé la main. */
   ouvert?: boolean;
@@ -141,18 +154,20 @@ export default function RobotAssistant({
     return () => clearTimeout(t);
   }, [reduit]);
 
-  /** Un œil : une pastille claire sur la visière, qui se ferme en s'écrasant. */
+  const ressort = { type: 'spring' as const, stiffness: 220, damping: 20, mass: 0.4 };
+
+  /** Un œil : une pastille sombre sur l'écran, qui se ferme en s'écrasant. */
   const oeil = (cx: number) => (
     <motion.circle
       cx={cx}
-      cy={38}
-      r={4.2}
-      fill={CLAIR}
+      cy={37}
+      r={4.8}
+      fill={TRAIT}
       animate={
         reduit ? undefined : { x: regard.x, y: regard.y, scaleY: clignote ? 0.1 : 1 }
       }
-      transition={{ type: 'spring', stiffness: 220, damping: 20, mass: 0.4 }}
-      style={{ transformOrigin: `${cx}px 38px` }}
+      transition={ressort}
+      style={{ transformOrigin: `${cx}px 37px` }}
     />
   );
 
@@ -190,42 +205,70 @@ export default function RobotAssistant({
       }
       style={{ transformOrigin: '36px 62px' }}
     >
-      {/* ---- L'ANTENNE. Le pied s'arrête SUR le bord de la tête, et sans bout
-              rond : il débordait à l'intérieur et y laissait un point qu'on
-              lisait comme une vis. */}
-      <line x1="36" y1="11" x2="36" y2="21" stroke={SOMBRE} strokeWidth="2.6" />
-      <circle cx="36" cy="8" r="4" fill={ACCENT} />
-
-      {/* ---- LES OREILLES, posées AVANT la tête pour passer derrière elle.
+      {/* ---- LES OREILLETTES, posées AVANT le casque pour passer derrière lui.
               Elles ancrent la silhouette : sans elles, une tête arrondie seule
-              se lit comme une bulle de conversation. */}
-      <rect x="4" y="33" width="8" height="15" rx="4" fill={SOMBRE} />
-      <rect x="60" y="33" width="8" height="15" rx="4" fill={SOMBRE} />
+              se lit comme une bulle de conversation.
 
-      {/* ---- LA TÊTE. Corps CLAIR, contour SOMBRE : c'est ce couple qui la rend
-              lisible sur le fond clair de la page comme sur le pied de page
-              sombre, sans aucune plaque sous elle. */}
+              COURTES ET ÉPAISSES, ET C'EST MESURÉ. Elles ont d'abord fait 9 de
+              large sur 21 de haut : rendues à l'image, elles se lisaient comme
+              des oreilles de lapin. Plus larges que hautes de peu, et inclinées
+              de 22°, elles redeviennent ce qu'elles doivent être — un casque. */}
       <rect
-        x="9" y="19" width="54" height="44" rx="19"
-        fill={CLAIR} stroke={SOMBRE} strokeWidth="2.6"
+        x="9" y="10" width="11" height="16" rx="5.5"
+        fill={OREILLE} transform="rotate(-22 14.5 18)"
+      />
+      <rect
+        x="52" y="10" width="11" height="16" rx="5.5"
+        fill={OREILLE} transform="rotate(22 57.5 18)"
       />
 
-      {/* ---- LA VISIÈRE. Pleine et sombre : c'est elle qui fait l'appareil, et
-              c'est sur elle que le regard s'allume. */}
-      <rect x="17" y="28" width="38" height="20" rx="10" fill={SOMBRE} />
+      {/* ---- LE CASQUE. Première des deux valeurs : c'est lui qui détache la
+              tête du fond clair du corps de page. */}
+      <rect x="8" y="17" width="56" height="47" rx="17" fill={CASQUE} />
 
-      {oeil(29)}
-      {oeil(43)}
+      {/* ---- L'ÉCRAN. Seconde des deux valeurs : c'est lui qui détache la tête
+              du pied de page sombre, là où le casque seul disparaîtrait.
 
-      {/* ---- LE CURSEUR DE SAISIE. Il ne paraît QUE pendant qu'elle écrit, et
-              c'est le seul signal d'attente. Il dit ce qui se passe vraiment —
-              elle compose — là où une antenne qui clignote ne dit rien. */}
-      {reflechit && (
-        <motion.rect
-          x="49" y="34.5" width="2.2" height="7" rx="1.1"
-          fill={CLAIR}
-          animate={reduit ? { opacity: 1 } : { opacity: [1, 1, 0, 0] }}
-          transition={{ duration: 1, repeat: Infinity, ease: 'linear', times: [0, 0.45, 0.5, 1] }}
+              AUCUNE LUEUR AUTOUR. Une a été essayée — un rectangle translucide
+              débordant l'écran. Elle ne se lisait pas comme de la lumière mais
+              comme un cerclage gris-bleu, et à 48 px elle salissait le visage.
+              L'écran pose donc directement sur le casque. */}
+      <rect x="15.5" y="24" width="41" height="31" rx="12.5" fill={ECRAN} />
+
+      {oeil(28)}
+      {oeil(44)}
+
+      {/* ---- LE SOURIRE, et ce qui le remplace pendant qu'elle écrit.
+              Trois points valent mieux qu'un curseur : c'est le signal d'attente
+              que tout le monde connaît, et il est ici à sa place — sur un
+              écran. Le sourire s'efface pendant ce temps : on ne sourit pas en
+              réfléchissant, et le visage dit alors ce qui se passe vraiment. */}
+      {reflechit ? (
+        [30, 36, 42].map((cx, i) => (
+          <motion.circle
+            key={cx}
+            cx={cx} cy={46.5} r={1.9}
+            fill={TRAIT}
+            animate={reduit ? { opacity: 1 } : { opacity: [0.25, 1, 0.25] }}
+            transition={
+              reduit
+                ? undefined
+                : { duration: 1.2, repeat: Infinity, ease: 'easeInOut', delay: i * 0.18 }
+            }
+          />
+        ))
+      ) : (
+        <motion.path
+          d="M 28.5 45 Q 36 51 43.5 45"
+          stroke={TRAIT}
+          strokeWidth="2.6"
+          strokeLinecap="round"
+          fill="none"
+          // Le sourire suit le regard, mais deux fois moins que les yeux : un
+          // visage dont toutes les pieces bougent d'un bloc se lit comme un
+          // autocollant qu'on deplace, pas comme un regard.
+          animate={reduit ? undefined : { x: regard.x * 0.45, y: regard.y * 0.45 }}
+          transition={ressort}
         />
       )}
     </motion.svg>
