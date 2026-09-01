@@ -1,6 +1,7 @@
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import { etatQuota } from '@/lib/billing/quota';
 import { VALEURS_LIVREE } from '@/lib/livraison';
+import { santeSessionPlateforme } from '@/lib/wasenderSessions';
 
 export const dynamic = 'force-dynamic';
 
@@ -290,6 +291,40 @@ export async function POST(req: Request) {
         detail:
           `${etat.utilise} commandes sur les ${etat.quota} du forfait ${etat.plan}`
           + ' — les commandes continuent de passer, le depassement se regle avec lui',
+      });
+    }
+
+    // ---- 4. LE NUMERO WHATSAPP DE LA PLATEFORME REPOND-IL ENCORE ?
+    //
+    // C'ETAIT L'ANGLE MORT LE PLUS COUTEUX. Aucune boutique ne porte encore de
+    // session a elle : TOUT WhatsApp passe par le numero de la plateforme. Ce
+    // canal — celui que le produit vend — n'avait aucun controle de sante, ni
+    // ici ni ailleurs. Une session tombee ne se serait vue que par un client
+    // reste sans reponse.
+    //
+    // LA REFERENCE PORTE LE JOUR, ET C'EST LE POINT DELICAT. Le verrou de
+    // `anomalies_signalees` n'annonce chaque couple (reference, type) qu'une
+    // fois — parfait pour une commande cassee, piege pour une sante qui dure :
+    // la panne se dirait le premier jour puis se tairait les suivants, et le
+    // silence se lirait comme un retour a la normale. Datee, elle se redit une
+    // fois par jour tant qu'elle dure, et pas toutes les quinze minutes.
+    // Meme motif que `forfait_depasse` juste au-dessus, au mois pres.
+    const sante = await santeSessionPlateforme();
+
+    // `indetermine` NE LEVE RIEN, deliberement : c'est un doute, pas une
+    // panne, et la sonde de veille a deja crie au loup sur un unique `fetch`
+    // manque. Une alerte fausse coute deux fois — le derangement, puis la
+    // defiance envers toutes les suivantes.
+    if (sante.etat === 'deconnectee' || sante.etat === 'sans_jeton') {
+      trouvees.push({
+        type: 'whatsapp_plateforme',
+        reference: `session-plateforme-${new Date().toISOString().slice(0, 10)}`,
+        boutique: 'DjiguiFlow',
+        detail:
+          sante.etat === 'sans_jeton'
+            ? 'WASENDER_API_KEY absente — aucun message WhatsApp ne peut partir.'
+            : `Session WhatsApp de la plateforme deconnectee (${sante.brut}).`
+              + ' Aucun message WhatsApp ne part. Verifier l abonnement wasender.',
       });
     }
   } catch (e) {
