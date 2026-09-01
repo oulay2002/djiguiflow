@@ -1,7 +1,7 @@
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import { etatQuota } from '@/lib/billing/quota';
 import { VALEURS_LIVREE } from '@/lib/livraison';
-import { santeSessionWhatsApp } from '@/lib/wasenderSessions';
+import { inventaireSessions, santeSessionWhatsApp } from '@/lib/wasenderSessions';
 
 export const dynamic = 'force-dynamic';
 
@@ -344,6 +344,52 @@ export async function POST(req: Request) {
         detail:
           `Session WhatsApp deconnectee (${sante.brut}). Les messages ne partent`
           + ' plus. Verifier l abonnement wasender, puis rebrancher le numero.',
+      });
+    }
+
+    // ---- 5. LE COMPTE WASENDER LUI-MEME : L'ABONNEMENT TIENT-IL ?
+    //
+    // Le controle precedent interroge la session d'UN marchand, avec SON
+    // jeton : il dit si ses messages partent. Il ne voit rien du compte — ni
+    // l'abonnement, ni les places payees. Une session abandonnee, rattachee a
+    // aucune boutique, lui est invisible et se facture tous les mois.
+    //
+    // LES DEUX VERDICTS GRAVES SORTENT DU STATUT HTTP, PAS DU CORPS. Ce point
+    // d'entree n'a pas pu etre appele depuis un poste de developpement — le
+    // jeton de compte est « Sensitive » chez Vercel. La forme de la reponse
+    // etait donc inconnue a l'ecriture, et rien d'important n'en depend.
+    const compte = await inventaireSessions();
+
+    // `injoignable` et `reponse_illisible` SE TAISENT : ce sont des doutes.
+    // `sans_jeton` aussi — et c'est la lecon du jour meme : la version
+    // precedente de cette veille alertait sur une variable absente A DESSEIN.
+    // Une configuration manquante n'est pas une panne en cours.
+    if (!compte.ok && (compte.motif === 'refus' || compte.motif === 'plafond')) {
+      trouvees.push({
+        type: 'compte-wasender',
+        reference: `compte-wasender-${jour}`,
+        boutique: 'DjiguiFlow',
+        detail:
+          compte.motif === 'plafond'
+            ? 'Le compte wasender signale une limite ou un abonnement en cause.'
+              + ' Aucune nouvelle ligne ne peut etre branchee. Verifier le forfait.'
+            : 'Le compte wasender refuse l authentification. Abonnement echu,'
+              + ' paiement rejete ou cle revoquee — verifier chez wasender.',
+      });
+    }
+
+    // Une session que le compte declare deconnectee, meme sans savoir a quelle
+    // boutique elle appartient. Le nom sort du corps quand il est lisible ;
+    // sinon la ligne le dit plutot que d'inventer.
+    if (compte.ok && compte.deconnectees.length) {
+      trouvees.push({
+        type: 'ligne-whatsapp-eteinte',
+        reference: `lignes-eteintes-${jour}`,
+        boutique: 'DjiguiFlow',
+        detail:
+          `${compte.deconnectees.length} ligne(s) WhatsApp deconnectee(s) au compte : `
+          + compte.deconnectees.slice(0, 5).join(', ')
+          + '. Elles se facturent sans servir.',
       });
     }
   } catch (e) {
