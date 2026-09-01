@@ -268,3 +268,84 @@ export async function supprimerSession(
   if (!('ok' in r) || r.ok !== true) return r as EchecWasender;
   return { ok: true };
 }
+
+/**
+ * LA SANTÉ DE LA SESSION WHATSAPP DE LA PLATEFORME.
+ *
+ * ── POURQUOI ELLE N'EXISTAIT PAS, ET POURQUOI ELLE MANQUAIT ────────────────
+ *
+ * `etatSession` interroge la session D'UN MARCHAND, par son identifiant et
+ * avec le jeton de COMPTE. Or aucune boutique ne porte encore de session à
+ * elle : tout WhatsApp passe aujourd'hui par le numéro de la plateforme, dont
+ * la clé est `WASENDER_API_KEY` — une clé DE SESSION, pas de compte. Ce numéro
+ * n'avait donc aucun contrôle de santé, nulle part.
+ *
+ * C'est le pire des angles morts : le canal que la plateforme vend, et rien
+ * pour dire s'il répond. Une session tombée — abonnement échu, carte refusée,
+ * WhatsApp qui délie l'appareil — ne se serait vue que par un client sans
+ * réponse.
+ *
+ * ── UN SEUL APPEL RATÉ N'EST PAS UNE PANNE ─────────────────────────────────
+ *
+ * La sonde de veille a déjà crié au loup une fois, en août : elle annonçait
+ * « n8n injoignable » alors qu'il tournait, sur la foi d'un unique `fetch`
+ * manqué. Une alerte fausse coûte deux fois — le dérangement, puis la
+ * défiance envers toutes les suivantes.
+ *
+ * D'où trois verdicts et non deux : `deconnectee` est une panne à crier,
+ * `indetermine` est un doute qui se tait. On ne transforme jamais un doute en
+ * certitude, dans un sens comme dans l'autre.
+ */
+export type SanteSession =
+  | { etat: 'connectee' }
+  | { etat: 'deconnectee'; brut: string }
+  | { etat: 'sans_jeton' }
+  | { etat: 'indetermine'; raison: string };
+
+export async function santeSessionPlateforme(): Promise<SanteSession> {
+  const jeton = process.env.WASENDER_API_KEY?.trim();
+  if (!jeton) return { etat: 'sans_jeton' };
+
+  // Deux tentatives, espacées : un reseau qui hoquette ne doit pas reveiller
+  // qui que ce soit. La seconde tranche.
+  let dernier = '';
+  for (let essai = 0; essai < 2; essai++) {
+    if (essai) await new Promise((r) => setTimeout(r, 2500));
+
+    let res: Response;
+    try {
+      res = await fetch(`${RACINE}/status`, {
+        headers: { Authorization: `Bearer ${jeton}` },
+        signal: AbortSignal.timeout(DELAI_MS),
+      });
+    } catch (e) {
+      dernier = e instanceof Error ? e.message : 'injoignable';
+      continue;
+    }
+
+    // 401 ou 403 : la cle ne vaut plus rien — abonnement echu, session
+    // supprimee. C'est une PANNE, pas un doute, et elle doit se dire.
+    if (res.status === 401 || res.status === 403) {
+      return { etat: 'deconnectee', brut: `HTTP ${res.status}` };
+    }
+
+    if (!res.ok) {
+      dernier = `HTTP ${res.status}`;
+      continue;
+    }
+
+    let corps: unknown;
+    try {
+      corps = await res.json();
+    } catch {
+      dernier = 'reponse illisible';
+      continue;
+    }
+
+    const brut = String(donnees(corps).status ?? '').trim();
+    if (!brut) return { etat: 'indetermine', raison: 'statut absent de la reponse' };
+    return /^connect/i.test(brut) ? { etat: 'connectee' } : { etat: 'deconnectee', brut };
+  }
+
+  return { etat: 'indetermine', raison: dernier || 'injoignable' };
+}
