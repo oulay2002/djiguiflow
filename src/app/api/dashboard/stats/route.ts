@@ -1,4 +1,5 @@
 import { boutiqueLivre } from '@/lib/boutiquePrete';
+import { etatVitrine, type EtatVitrine } from '@/lib/vitrineComplete';
 import { exigerAccesMarchand } from '@/lib/dashboardAuth';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 
@@ -53,7 +54,7 @@ export async function GET(req: Request) {
   const lectureFiche = Promise.resolve(
     sb
       .from('boutiques')
-      .select('wasender_secret_id, telegram_secret_id, groupe_livreurs, horaires, mode_recuperation')
+      .select('wasender_secret_id, telegram_secret_id, groupe_livreurs, horaires, mode_recuperation, description, delai_livraison, delai_preparation_min, zones_livrees, paiements_acceptes')
       .eq('id', m.boutiqueId)
       .maybeSingle(),
   );
@@ -185,6 +186,7 @@ export async function GET(req: Request) {
   // On le lui dit donc chez lui, avec ce qui manque, plutot que de le laisser
   // decouvrir la panne par un client mecontent.
   let configuration: Record<string, boolean> | null = null;
+  let vitrine: EtatVitrine | null = null;
   try {
     const [{ data: fiche }, { count: nbProduits }] = await Promise.all([
       lectureFiche,
@@ -209,11 +211,21 @@ export async function GET(req: Request) {
       livre: boutiqueLivre(fiche?.mode_recuperation),
       // Sans article disponible, la vitrine est vide.
       catalogue: (nbProduits ?? 0) > 0,
-      // NULL veut dire « ouverte a toute heure » -- un choix assume cote
-      // serveur, mais que rien n annoncait au marchand. Il ne le decouvrait
-      // qu en recevant une commande en pleine nuit.
-      horaires: fiche?.horaires !== null && fiche?.horaires !== undefined,
     };
+
+    /**
+     * CE QUE LE CLIENT A BESOIN DE SAVOIR, a cote de ce qui EMPECHE de servir.
+     *
+     * `configuration` dit pourquoi les commandes n'aboutissent pas. Celui-ci
+     * dit pourquoi elles n'arrivent pas : une vitrine qui ne repond a aucune
+     * question du client est techniquement parfaite et commercialement muette.
+     *
+     * LES HORAIRES ONT QUITTE `configuration` POUR VENIR ICI. Ils y etaient
+     * deja, et l'ecran les affichait dans la liste des bloquants alors qu'ils
+     * n'en sont pas un. Deux endroits pour une meme regle, c'est une regle qui
+     * divergera — le depot le paie assez souvent.
+     */
+    vitrine = etatVitrine(fiche ?? {});
   } catch (e) {
     // Un diagnostic illisible ne doit pas priver le marchand de ses chiffres.
     console.error(`Stats — configuration illisible (${m.id}) :`, e);
@@ -224,6 +236,7 @@ export async function GET(req: Request) {
     paniersPerdus,
     confirmationsAttendues,
     configuration,
+    vitrine,
     caTotal, caJour,
     nbCommandes: commandes.length, nbJour: cmdJour.length,
     livrees, enCours: commandes.length - livrees,
