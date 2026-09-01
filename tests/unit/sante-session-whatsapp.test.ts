@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { santeSessionPlateforme } from '@/lib/wasenderSessions';
+import { santeSessionWhatsApp } from '@/lib/wasenderSessions';
 
 /**
  * « Le canal que le produit vend répond-il encore ? »
@@ -50,17 +50,17 @@ afterEach(() => {
 describe('quand la session repond', () => {
   it('« connected » vaut connectee', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => reponse({ status: 'connected' })));
-    expect(await santeSessionPlateforme()).toEqual({ etat: 'connectee' });
+    expect(await santeSessionWhatsApp(CLE)).toEqual({ etat: 'connectee' });
   });
 
   it('la reponse peut etre enveloppee dans `data`', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => reponse({ data: { status: 'CONNECTED' } })));
-    expect(await santeSessionPlateforme()).toEqual({ etat: 'connectee' });
+    expect(await santeSessionWhatsApp(CLE)).toEqual({ etat: 'connectee' });
   });
 
   it('tout autre statut est une deconnexion', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => reponse({ status: 'disconnected' })));
-    expect(await santeSessionPlateforme()).toMatchObject({ etat: 'deconnectee' });
+    expect(await santeSessionWhatsApp(CLE)).toMatchObject({ etat: 'deconnectee' });
   });
 });
 
@@ -69,16 +69,15 @@ describe('quand la cle ne vaut plus rien', () => {
     const appel = vi.fn(async () => reponse({}, 401));
     vi.stubGlobal('fetch', appel);
 
-    expect(await santeSessionPlateforme()).toMatchObject({ etat: 'deconnectee' });
+    expect(await santeSessionWhatsApp(CLE)).toMatchObject({ etat: 'deconnectee' });
     // Et on ne reessaie pas : un refus d authentification ne devient pas un
     // accord au second essai.
     expect(appel).toHaveBeenCalledTimes(1);
   });
 
-  it('une cle absente se dit, au lieu de passer pour une session saine', async () => {
-    delete process.env.WASENDER_API_KEY;
+  it('un jeton vide se dit, au lieu de passer pour une session saine', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => reponse({ status: 'connected' })));
-    expect(await santeSessionPlateforme()).toEqual({ etat: 'sans_jeton' });
+    expect(await santeSessionWhatsApp('  ')).toEqual({ etat: 'sans_jeton' });
   });
 });
 
@@ -91,7 +90,7 @@ describe('quand le reseau tombe', () => {
       });
       vi.stubGlobal('fetch', appel);
 
-      const r = await santeSessionPlateforme();
+      const r = await santeSessionWhatsApp(CLE);
 
       // Le coeur du fichier : on ne transforme pas un doute en certitude.
       expect(r.etat).toBe('indetermine');
@@ -114,7 +113,7 @@ describe('quand le reseau tombe', () => {
         }),
       );
 
-      expect(await santeSessionPlateforme()).toEqual({ etat: 'connectee' });
+      expect(await santeSessionWhatsApp(CLE)).toEqual({ etat: 'connectee' });
       expect(n).toBe(2);
     },
     10_000,

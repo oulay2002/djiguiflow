@@ -1,7 +1,7 @@
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import { etatQuota } from '@/lib/billing/quota';
 import { VALEURS_LIVREE } from '@/lib/livraison';
-import { santeSessionPlateforme } from '@/lib/wasenderSessions';
+import { santeSessionWhatsApp } from '@/lib/wasenderSessions';
 
 export const dynamic = 'force-dynamic';
 
@@ -294,37 +294,56 @@ export async function POST(req: Request) {
       });
     }
 
-    // ---- 4. LE NUMERO WHATSAPP DE LA PLATEFORME REPOND-IL ENCORE ?
+    // ---- 4. LES SESSIONS WHATSAPP DES MARCHANDS REPONDENT-ELLES ENCORE ?
     //
-    // C'ETAIT L'ANGLE MORT LE PLUS COUTEUX. Aucune boutique ne porte encore de
-    // session a elle : TOUT WhatsApp passe par le numero de la plateforme. Ce
-    // canal — celui que le produit vend — n'avait aucun controle de sante, ni
-    // ici ni ailleurs. Une session tombee ne se serait vue que par un client
-    // reste sans reponse.
+    // ON SURVEILLE LE JETON DU MARCHAND, PAS UN REPLI DE PLATEFORME. La
+    // premiere version de ce bloc sondait `WASENDER_API_KEY` et a leve une
+    // FAUSSE ALERTE des son premier passage : cette variable est absente a
+    // dessein. Un repli plateforme ferait partir les messages d'un marchand
+    // par le numero d'un autre — son absence est l'etat correct. Sonder son
+    // absence, c'etait crier au loup sur une porte volontairement fermee.
     //
-    // LA REFERENCE PORTE LE JOUR, ET C'EST LE POINT DELICAT. Le verrou de
-    // `anomalies_signalees` n'annonce chaque couple (reference, type) qu'une
-    // fois — parfait pour une commande cassee, piege pour une sante qui dure :
-    // la panne se dirait le premier jour puis se tairait les suivants, et le
-    // silence se lirait comme un retour a la normale. Datee, elle se redit une
-    // fois par jour tant qu'elle dure, et pas toutes les quinze minutes.
-    // Meme motif que `forfait_depasse` juste au-dessus, au mois pres.
-    const sante = await santeSessionPlateforme();
+    // UNE BOUTIQUE SANS JETON WHATSAPP N'EST PAS EN PANNE : elle vend par
+    // Telegram, et il n'y a rien a surveiller. Confondre « pas branche » et
+    // « casse » remplirait l'alerte de bruit, et le bruit fait cesser de lire.
+    //
+    // LA REFERENCE PORTE LE JOUR. Le verrou de `anomalies_signalees` n'annonce
+    // chaque couple (reference, type) qu'une fois — parfait pour une commande
+    // cassee, piege pour une sante qui dure : la panne se dirait le premier
+    // jour puis se tairait, et ce silence se lirait comme un retour a la
+    // normale. Datee, elle se redit une fois par jour tant qu'elle dure.
+    const { data: aSurveiller } = await sb
+      .from('boutiques')
+      .select('slug, nom, actif, essai');
 
-    // `indetermine` NE LEVE RIEN, deliberement : c'est un doute, pas une
-    // panne, et la sonde de veille a deja crie au loup sur un unique `fetch`
-    // manque. Une alerte fausse coute deux fois — le derangement, puis la
-    // defiance envers toutes les suivantes.
-    if (sante.etat === 'deconnectee' || sante.etat === 'sans_jeton') {
+    const jour = new Date().toISOString().slice(0, 10);
+
+    for (const b of aSurveiller ?? []) {
+      if (b.actif === false || b.essai === true) continue;
+      const slug = String(b.slug ?? '').trim();
+      if (!slug) continue;
+
+      const { data: jeton, error: errJeton } = await sb.rpc('jeton_canal', {
+        p_boutique: slug,
+        p_canal: 'wasender',
+      });
+      if (errJeton || typeof jeton !== 'string' || !jeton.trim()) continue;
+
+      const sante = await santeSessionWhatsApp(jeton);
+
+      // SEULE `deconnectee` LEVE. `indetermine` est un doute — reseau tombe,
+      // reponse illisible — et la sonde de veille a deja annonce « n8n
+      // injoignable » alors qu'il tournait. Une alerte fausse coute deux fois :
+      // le derangement, puis la defiance envers toutes les suivantes.
+      if (sante.etat !== 'deconnectee') continue;
+
       trouvees.push({
-        type: 'whatsapp_plateforme',
-        reference: `session-plateforme-${new Date().toISOString().slice(0, 10)}`,
-        boutique: 'DjiguiFlow',
+        type: 'whatsapp_marchand',
+        reference: `whatsapp-${slug}-${jour}`,
+        boutique: String(b.nom ?? slug),
         detail:
-          sante.etat === 'sans_jeton'
-            ? 'WASENDER_API_KEY absente — aucun message WhatsApp ne peut partir.'
-            : `Session WhatsApp de la plateforme deconnectee (${sante.brut}).`
-              + ' Aucun message WhatsApp ne part. Verifier l abonnement wasender.',
+          `Session WhatsApp deconnectee (${sante.brut}). Les messages ne partent`
+          + ' plus. Verifier l abonnement wasender, puis rebrancher le numero.',
       });
     }
   } catch (e) {
