@@ -272,18 +272,22 @@ export async function supprimerSession(
 /**
  * LA SANTÉ DE LA SESSION WHATSAPP DE LA PLATEFORME.
  *
- * ── POURQUOI ELLE N'EXISTAIT PAS, ET POURQUOI ELLE MANQUAIT ────────────────
+ * ── ELLE PREND LE JETON DU MARCHAND, ET C'EST UNE CORRECTION ───────────────
  *
- * `etatSession` interroge la session D'UN MARCHAND, par son identifiant et
- * avec le jeton de COMPTE. Or aucune boutique ne porte encore de session à
- * elle : tout WhatsApp passe aujourd'hui par le numéro de la plateforme, dont
- * la clé est `WASENDER_API_KEY` — une clé DE SESSION, pas de compte. Ce numéro
- * n'avait donc aucun contrôle de santé, nulle part.
+ * Première version : elle sondait `WASENDER_API_KEY`, le repli de la
+ * plateforme. **Fausse alerte dès le premier passage en production** — cette
+ * variable est absente À DESSEIN. Un repli plateforme fait partir les messages
+ * d'un marchand par le numéro d'un autre : son absence est l'état correct, pas
+ * une panne. Sonder son absence, c'était crier au loup sur une porte
+ * volontairement fermée.
  *
- * C'est le pire des angles morts : le canal que la plateforme vend, et rien
- * pour dire s'il répond. Une session tombée — abonnement échu, carte refusée,
- * WhatsApp qui délie l'appareil — ne se serait vue que par un client sans
- * réponse.
+ * Le vrai chemin est le jeton du marchand, rangé au coffre et lu par
+ * `jeton_canal`. C'est LUI qu'il faut surveiller : c'est par lui que partent
+ * les messages, et c'est lui qui meurt quand un abonnement échoit ou que
+ * WhatsApp délie l'appareil.
+ *
+ * `etatSession` ne convient pas non plus : elle interroge par identifiant de
+ * session AVEC LE JETON DE COMPTE, deux choses qu'on n'a pas ici.
  *
  * ── UN SEUL APPEL RATÉ N'EST PAS UNE PANNE ─────────────────────────────────
  *
@@ -302,9 +306,8 @@ export type SanteSession =
   | { etat: 'sans_jeton' }
   | { etat: 'indetermine'; raison: string };
 
-export async function santeSessionPlateforme(): Promise<SanteSession> {
-  const jeton = process.env.WASENDER_API_KEY?.trim();
-  if (!jeton) return { etat: 'sans_jeton' };
+export async function santeSessionWhatsApp(jeton: string): Promise<SanteSession> {
+  if (!jeton.trim()) return { etat: 'sans_jeton' };
 
   // Deux tentatives, espacées : un reseau qui hoquette ne doit pas reveiller
   // qui que ce soit. La seconde tranche.
