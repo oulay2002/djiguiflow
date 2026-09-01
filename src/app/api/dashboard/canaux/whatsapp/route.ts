@@ -89,6 +89,58 @@ export async function POST(req: Request) {
     return await etatEtQr(String(fiche.wasender_session_id));
   }
 
+  /**
+   * ---- BRANCHÉE AUTREMENT, ET LE GARDE AU-DESSUS NE LA VOYAIT PAS.
+   *
+   * Le contrôle précédent demande « cette colonne est-elle remplie ? ». Ce
+   * n'est pas la bonne question : la bonne est « cette boutique a-t-elle déjà
+   * un jeton WhatsApp qui marche ? ».
+   *
+   * Zahara le prouve. Elle porte un jeton au coffre — ses messages partent —
+   * mais AUCUN `wasender_session_id` : elle a été branchée à la main, avant
+   * que ce libre-service n'existe. Le garde ne la voyait donc pas comme
+   * branchée, et un clic sur « brancher WhatsApp » lui aurait ouvert une
+   * SECONDE session : une place payée en plus, et la première orpheline —
+   * que `supprimerSession()` ne peut pas récupérer puisque rien ne l'appelle.
+   *
+   * On ne découvre ce genre de perte que sur la facture, ou le jour où il
+   * manque une place. C'est exactement le motif que ce dépôt poursuit : une
+   * valeur absente prise pour une absence de fait.
+   *
+   * Pas de QR ici, et c'est normal : sans identifiant de session on ne peut
+   * rien montrer. Le marchand n'en a pas besoin — son WhatsApp fonctionne
+   * déjà. On le lui dit, au lieu de lui vendre un branchement qu'il a.
+   */
+  const sbCoffre = getSupabaseAdmin();
+  if (sbCoffre) {
+    try {
+      const { data: jeton, error } = await sbCoffre.rpc('jeton_canal', {
+        p_boutique: String(fiche.slug ?? ''),
+        p_canal: 'wasender',
+      });
+
+      // UNE LECTURE DU COFFRE QUI ÉCHOUE NE VAUT PAS « PAS BRANCHÉE ». On
+      // laisse passer plutôt que de bloquer un branchement légitime sur une
+      // panne de lecture : le pire cas redevient l'ancien comportement.
+      if (error) {
+        console.error('WhatsApp — lecture du coffre impossible :', error.message);
+      } else if (typeof jeton === 'string' && jeton.trim()) {
+        return Response.json(
+          {
+            ok: true,
+            etat: 'connectee',
+            message:
+              'Votre WhatsApp est déjà branché. Rien à refaire — et nous n’ouvrons '
+              + 'pas de seconde ligne, qui vous serait facturée pour rien.',
+          } satisfies Reponse,
+          { status: 200 },
+        );
+      }
+    } catch (e) {
+      console.error('WhatsApp — accès au coffre impossible :', e);
+    }
+  }
+
   // ---- Le numéro d'abord. Ouvrir une session sur un numéro mal formé
   // consomme une place du forfait pour rien.
   const numero = normaliserTelephone(fiche.telephone);
