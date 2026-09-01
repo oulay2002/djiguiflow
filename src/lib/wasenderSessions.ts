@@ -352,3 +352,60 @@ export async function santeSessionWhatsApp(jeton: string): Promise<SanteSession>
 
   return { etat: 'indetermine', raison: dernier || 'injoignable' };
 }
+
+/**
+ * L'INVENTAIRE DU COMPTE : ce qu'on paie, et ce qui répond.
+ *
+ * ── ELLE COMPLÈTE `santeSessionWhatsApp`, ELLE NE LA REMPLACE PAS ──────────
+ *
+ * L'autre sonde interroge la session d'un marchand AVEC SON PROPRE JETON :
+ * elle répond à « les messages de ce marchand partent-ils ? », et c'est la
+ * seule qui éprouve le chemin réel des envois.
+ *
+ * Celle-ci parle au COMPTE. Elle répond à deux questions que l'autre ne peut
+ * pas voir : l'abonnement tient-il encore, et combien de places est-ce que je
+ * paie ? Une session abandonnée, rattachée à aucune boutique, est invisible à
+ * la première et se facture tous les mois.
+ *
+ * ── LES ALERTES QUI COMPTENT NE LISENT PAS LE CORPS ────────────────────────
+ *
+ * Ce point d'entrée n'a pas pu être appelé depuis un poste de développement —
+ * le jeton de compte est marqué « Sensitive » chez Vercel, donc illisible. La
+ * forme exacte de la réponse est donc INCONNUE au moment d'écrire.
+ *
+ * D'où la construction : les deux verdicts graves — `refus` (le compte ne
+ * s'authentifie plus) et `plafond` (l'abonnement ou la limite parle) — sortent
+ * du STATUT HTTP, que `appeler` classe déjà. Le dénombrement des sessions,
+ * lui, est au mieux : illisible, il rend `total: null` plutôt qu'un zéro.
+ *
+ * UN ZÉRO INVENTÉ SERAIT LE PIRE. « 0 session » se lirait comme « rien à
+ * payer », alors que la vérité serait « je n'ai pas su lire ». C'est le motif
+ * du défaut silencieux, et il ne se paie pas deux fois.
+ */
+export type InventaireSessions =
+  | { ok: true; total: number | null; deconnectees: string[] }
+  | { ok: false; motif: EchecWasender['motif'] };
+
+export async function inventaireSessions(): Promise<InventaireSessions> {
+  const r = await appeler('/whatsapp-sessions');
+  if (!('ok' in r) || r.ok !== true) return { ok: false, motif: (r as EchecWasender).motif };
+
+  const brut = donnees(r.corps);
+  const liste = Array.isArray(brut) ? brut : Array.isArray(brut.sessions) ? brut.sessions : null;
+
+  // Illisible : on le DIT. Voir l'avertissement ci-dessus sur le zero invente.
+  if (!liste) return { ok: true, total: null, deconnectees: [] };
+
+  const deconnectees: string[] = [];
+  for (const s of liste as Record<string, unknown>[]) {
+    const etat = String(s?.status ?? '').trim();
+    if (!etat || /^connect/i.test(etat)) continue;
+    // On nomme la session par ce qu'on trouve, sans supposer un champ : un
+    // libelle absent vaut mieux qu'une alerte qui plante en la composant.
+    const nom =
+      String(s?.phone_number ?? s?.name ?? s?.id ?? '').trim() || 'session sans nom';
+    deconnectees.push(`${nom} (${etat})`);
+  }
+
+  return { ok: true, total: liste.length, deconnectees };
+}
