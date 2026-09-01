@@ -72,20 +72,33 @@ const boutiques = await lire(
  * Zahara est aujourd'hui la seule boutique qui eprouve la chaine en vrai. On
  * casserait un dispositif pour reparer un compteur.
  *
- * Le bon discriminant est la propriete. `ADMIN_USER_IDS` est posee dans Vercel
- * et non dans ce depot : si elle manque ici, le script le DIT au lieu de
- * rendre un chiffre flatteur — un entonnoir qui compte les boutiques de
- * l'exploitant affiche une activation parfaite, puisque c'est lui qui les a
- * remplies.
+ * ── POURQUOI DES SLUGS, ET PAS `ADMIN_USER_IDS` ────────────────────────────
+ *
+ * Ce script a d'abord lu `ADMIN_USER_IDS`, en demandant d'y recopier « la meme
+ * valeur que dans Vercel ». CETTE CONSIGNE ETAIT IMPOSSIBLE A SUIVRE : la
+ * variable y est marquee « Sensitive », donc sa valeur ne peut etre relue ni
+ * par l'interface ni par `vercel env pull`, qui rend `[SENSITIVE]`. Seulement
+ * remplacee.
+ *
+ * Le fond du probleme etait ailleurs : « qui est administrateur » et « quelles
+ * boutiques sont les notres » ne sont pas la meme question, et les confondre
+ * etait une facilite. Un slug se lit, se verifie d'un coup d'oeil dans la
+ * barre d'adresse, et n'est le secret de personne.
+ *
+ * LES COMPTES SE DEDUISENT DES BOUTIQUES : declarer une boutique comme notre
+ * exclut aussi son proprietaire du compte des inscrits. Une seule chose a
+ * tenir a jour, donc une seule qui puisse diverger.
  */
-const ADMINS = new Set(
-  (env.ADMIN_USER_IDS ?? process.env.ADMIN_USER_IDS ?? '')
+const SLUGS_A_NOUS = new Set(
+  (env.BOUTIQUES_EXPLOITANT ?? process.env.BOUTIQUES_EXPLOITANT ?? '')
     .split(',')
-    .map((s) => s.trim())
+    .map((s) => s.trim().toLowerCase())
     .filter(Boolean),
 );
 
-const estANous = (b) => b.essai === true || ADMINS.has(String(b.user_id));
+const estANous = (b) => b.essai === true || SLUGS_A_NOUS.has(String(b.slug ?? '').toLowerCase());
+
+const ADMINS = new Set(boutiques.filter(estANous).map((b) => String(b.user_id)));
 
 const reelles = boutiques.filter((b) => !estANous(b));
 const factices = boutiques.length - reelles.length;
@@ -166,12 +179,13 @@ for (const [nom, valeur] of etapes) {
 
 console.log(`\n  ${factices} boutique(s) a nous, exclue(s) du calcul.`);
 
-if (ADMINS.size === 0) {
+if (SLUGS_A_NOUS.size === 0 && boutiques.some((b) => b.essai !== true)) {
   console.log(
-    "  ⚠ ADMIN_USER_IDS n'est pas lisible ici : seules les boutiques portant\n"
-    + '    `essai` ont ete exclues. Les votres comptent donc comme des clients,\n'
-    + '    et les chiffres ci-dessus sont FLATTEURS. Poser la variable dans\n'
-    + '    .env.local, avec la meme valeur que dans Vercel.',
+    '  ⚠ BOUTIQUES_EXPLOITANT n\'est pas renseignee : seules les boutiques\n'
+    + '    portant `essai` ont ete ecartees. Les votres comptent donc comme des\n'
+    + '    clientes, et les chiffres ci-dessus sont FLATTEURS.\n'
+    + '    Poser dans .env.local, par exemple :\n'
+    + '      BOUTIQUES_EXPLOITANT=zahara,rose-monde',
   );
 }
 
