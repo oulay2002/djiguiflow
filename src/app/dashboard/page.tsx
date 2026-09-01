@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation';
 import {
   AlertTriangle, ArrowRight, Bell, Globe2, Package2, Send, ShoppingCart, ShoppingBag,
   Smartphone, Star, Trophy, Wallet,
+  Store,
 } from 'lucide-react';
 import { utilisateurCourant } from '@/lib/supabase';
 import CompteurQuota from '@/components/dashboard/CompteurQuota';
@@ -31,8 +32,16 @@ type Stats = {
     /** La boutique livre-t-elle ? Faux = retrait seul, aucun livreur attendu. */
     livre: boolean;
     catalogue: boolean;
-    /** Faux = aucun horaire declare, donc ouverte nuit comprise. */
-    horaires: boolean;
+  } | null;
+  /**
+   * Ce que la vitrine ne dit pas encore au CLIENT. Distinct de
+   * `configuration`, qui dit ce qui empeche la boutique de servir : ici la
+   * chaine tourne, mais la page ne repond a aucune question.
+   */
+  vitrine?: {
+    posees: number;
+    total: number;
+    manquantes: { cle: string; question: string; sinon: string }[];
   } | null;
 };
 
@@ -130,16 +139,22 @@ export default function Page() {
           titre: 'Aucun article en vente',
           detail: 'Votre vitrine est visible mais vide.',
         },
-        // UN HORAIRE ABSENT VEUT DIRE « OUVERT 24 H SUR 24 ». C est un choix
-        // assume cote serveur, mais rien ne le disait au marchand : ni le
-        // diagnostic, ni cette liste. Il ne l apprenait qu en recevant une
-        // commande a 3 h du matin.
-        !s.configuration.horaires && {
-          titre: 'Aucun horaire déclaré',
-          detail: 'Votre boutique accepte des commandes à toute heure, nuit comprise.',
-        },
       ].filter(Boolean as unknown as (v: unknown) => v is { titre: string; detail: string })
     : [];
+
+  /**
+   * CE QUI EMPECHE DE VENDRE, A COTE DE CE QUI EMPECHE DE SERVIR.
+   *
+   * `manques` ci-dessus liste ce qui casse la chaine : sans canal, sans
+   * livreur, sans article, rien n'aboutit. Celui-ci est d'une autre nature —
+   * la boutique fonctionne, mais elle ne repond a aucune question du client.
+   *
+   * DEUX BLOCS ET NON UN SEUL, parce que la gravite n'est pas la meme. Les
+   * melanger ferait lire « il manque quatre choses » a un marchand dont la
+   * chaine tourne : il cesserait de distinguer l'urgent du souhaitable, et
+   * finirait par ne plus lire ni l'un ni l'autre.
+   */
+  const aCompleter = s?.vitrine?.manquantes ?? [];
 
   const kpis = s ? [
     { label: 'Ventes du jour', value: `${s.caJour.toLocaleString('fr-FR')} F`, sub: `${s.nbJour} commande(s) aujourd'hui`, icon: Wallet },
@@ -244,6 +259,45 @@ export default function Page() {
               Une boutique peut etre en ligne sans etre branchee : vitrine
               visible, commandes acceptees, et personne au bout. Le marchand
               voyait une commande arriver et croyait tout en ordre. */}
+          {/* CALME, PAS ROUGE. Le bandeau bissap au-dessus annonce une panne :
+              la chaine ne sert pas. Celui-ci annonce un manque a gagner — la
+              boutique tourne, mais elle ne repond pas au client. Lui donner la
+              meme couleur ferait lire deux urgences la ou il n'y en a qu'une,
+              et le marchand finirait par n'en lire aucune. */}
+          {aCompleter.length > 0 && (
+            <section className="border border-chaux-200 bg-chaux-100 p-5">
+              <div className="flex flex-wrap items-start gap-4">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center bg-chaux-200 text-nuit-700">
+                  <Store className="h-6 w-6" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="font-semibold text-nuit-800">
+                    Votre vitrine ne répond pas encore à {aCompleter.length === 1
+                      ? 'une question'
+                      : `${aCompleter.length} questions`} que se pose le client
+                  </p>
+                  <ul className="mt-2 space-y-1.5">
+                    {aCompleter.map(m => (
+                      <li key={m.cle} className="text-sm text-chaux-600">
+                        {/* La QUESTION en avant, jamais le nom du champ : le
+                            marchand ne remplit pas « delai_livraison », il
+                            repond a « en combien de temps livrez-vous ? ». */}
+                        <span className="font-semibold text-nuit-700">{m.question}</span>
+                        {' '}{m.sinon}
+                      </li>
+                    ))}
+                  </ul>
+                  <Link
+                    href="/dashboard/ma-boutique"
+                    className="mt-3 inline-flex items-center gap-2 bg-nuit-800 px-4 py-2 text-sm font-semibold text-chaux-50 hover:bg-nuit-700"
+                  >
+                    Compléter ma vitrine <ArrowRight className="h-4 w-4" />
+                  </Link>
+                </div>
+              </div>
+            </section>
+          )}
+
           {manques.length > 0 && (
             <section className=" border border-bissap-200 bg-bissap-50 p-5">
               <div className="flex flex-wrap items-start gap-4">
