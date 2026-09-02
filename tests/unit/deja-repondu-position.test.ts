@@ -96,7 +96,7 @@ describe('la page « Déjà répondu »', () => {
   it('1. rend le bouton de position et le lien de suivi — la seconde chance', async () => {
     const { statut, html } = await page();
     expect(statut).toBe(200);
-    expect(html).toContain('Déjà répondu');
+    expect(html).toContain('Vous avez déjà confirmé cette commande');
     expect(html).toContain('Indiquer ma position exacte');
     expect(html).toContain('/api/confirmation/position');
     expect(html).toContain('/suivi?ref=');
@@ -162,5 +162,88 @@ describe('la page « Déjà répondu »', () => {
     etats.commande = commande({ confirmation_statut: 'refusee', statut: 'annulee' });
     const { html } = await page();
     expect(html).not.toContain('/suivi?ref=');
+  });
+});
+
+/**
+ * LA COULEUR DIT L'ÉTAT AVANT LE MOT — et elle disait le contraire.
+ *
+ * Les deux issues opposées sortaient sous un même tampon « DÉJÀ RÉPONDU » en
+ * ton `attente`, c'est-à-dire en MANGUE. DESIGN.md réserve la mangue à
+ * « commencé, pas fini » : ni une commande confirmée ni une commande annulée
+ * n'est une attente.
+ *
+ * Le chemin de réponse immédiate les peignait pourtant juste, dans le même
+ * fichier. Le même code disait donc vrai quand on répond et faux quand on
+ * revient — or revenir sur son lien est le geste FRÉQUENT.
+ *
+ * Les teintes sont écrites en dur dans la page : elle est servie hors de
+ * l'application et n'a accès ni à Tailwind ni aux variables. Les tests les
+ * citent donc telles quelles, ce qui est aussi ce qui les tient alignées.
+ */
+/**
+ * Le vert du tampon est `accent-700` et non `ENCRE.feuille`, et ce n'est pas
+ * un detail : le tampon porte `opacity: .85`, et la feuille compositee sur le
+ * papier tombe a 3,75 : 1 — sous le plancher de 4,5 pour du texte de 11 px.
+ * `accent-700` donne 5,11 : 1 en gardant l'opacite. Voir `COULEUR_TON`.
+ */
+const FEUILLE = '#125d49';
+const BISSAP = '#c4123f';
+const MANGUE = '#7d4b13';
+
+/**
+ * ON VISE LE TAMPON, PAS LA PAGE — et c'est une correction de MES tests.
+ *
+ * Mes deux premières assertions cherchaient la mangue et l'emoji n'importe où
+ * dans la page. Elles rougissaient sur du code parfaitement juste : le bloc de
+ * position peint son échec en mangue et annonce son succès par un pictogramme.
+ * Ces deux-là sont voulus — c'est une ligne d'état sans tampon, sur une page
+ * qui ne peut charger aucun jeu d'icônes.
+ *
+ * Une assertion trop large ne prouve pas davantage : elle interdit ce qu'on
+ * n'a jamais voulu interdire, et elle rougit sur du code juste. Le tampon
+ * porte sa teinte sur son propre filet, et c'est LUI qu'on regarde.
+ */
+const filetDuTampon = (teinte: string) => `border:1.5px solid ${teinte}`;
+
+describe('la couleur de l’état, au retour sur le lien', () => {
+  it('une commande CONFIRMÉE porte la feuille, jamais la mangue', async () => {
+    const { html } = await page();
+    expect(html).toContain('CONFIRMÉE');
+    expect(html).toContain(filetDuTampon(FEUILLE));
+    expect(html).not.toContain(filetDuTampon(MANGUE));
+  });
+
+  it('une commande ANNULÉE porte le bissap, jamais la mangue', async () => {
+    etats.commande = commande({ confirmation_statut: 'refusee' });
+    const { html } = await page();
+    expect(html).toContain('ANNULÉE');
+    expect(html).toContain(filetDuTampon(BISSAP));
+    expect(html).not.toContain(filetDuTampon(MANGUE));
+  });
+
+  it('les deux issues ne portent plus le MÊME tampon', async () => {
+    // C'est le coeur du defaut : « DÉJÀ RÉPONDU » couvrait indifféremment une
+    // commande qui se prépare et une commande annulée.
+    const confirmee = (await page()).html;
+    etats.commande = commande({ confirmation_statut: 'refusee' });
+    const annulee = (await page()).html;
+    expect(confirmee).not.toContain('DÉJÀ RÉPONDU');
+    expect(annulee).not.toContain('DÉJÀ RÉPONDU');
+    expect(confirmee.includes('CONFIRMÉE')).toBe(true);
+    expect(annulee.includes('CONFIRMÉE')).toBe(false);
+  });
+
+  it('le mot « déjà » reste : c’est l’information propre à ce chemin', async () => {
+    // Sans lui, la page de retour serait indiscernable de la réponse qu'on
+    // vient de donner, et le client croirait avoir répondu deux fois.
+    expect((await page()).html).toContain('déjà');
+  });
+
+  it('l’état ne se dit plus par un emoji à côté du tampon', async () => {
+    // Le bloc de position garde le sien, à dessein : voir la note plus haut.
+    const { html } = await page();
+    expect(html).not.toContain('confirmée ✅');
+    expect(html).not.toContain('annulée ❌');
   });
 });
