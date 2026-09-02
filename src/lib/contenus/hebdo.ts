@@ -129,11 +129,6 @@ const APPELS = [
 ];
 
 /**
- * Compose la publication d'une boutique. `null` si la semaine ne donne rien a
- * raconter : mieux vaut ne rien publier qu'un post creux, qui coute la
- * credibilite du marchand.
- */
-/**
  * « ABIDJAN » saisi par le marchand devient « Abidjan ».
  *
  * Une zone en capitales dans une phrase donne l'air d'un message automatique,
@@ -149,12 +144,64 @@ function joliZone(brut: unknown): string {
     .join('');
 }
 
-function composer(
+/**
+ * LE LIEU QUE LA PUBLICATION ANNONCE, ET POURQUOI CE N'EST PLUS `zone`.
+ *
+ * L'appel a l'action disait « On livre a {zone} ». Or `zone` est la colonne
+ * dont le placeholder est « Ex: Cocody - Angre » : UN endroit, celui de la
+ * boutique — c'est d'ailleurs elle qui s'affiche en badge dans l'annuaire et
+ * en tete de vitrine. La liste des quartiers reellement desservis vit dans
+ * `zones_livrees` (« Ex : Yopougon, Adjame, Plateau »).
+ *
+ * Une boutique de Cocody qui livre a Yopougon, Adjame et Plateau publiait donc
+ * chaque semaine « On livre a Cocody » : une promesse plus etroite que la
+ * verite, sur le contenu meme qui doit lui amener des clients.
+ *
+ * ── LE REPLI SUR `zone` EST LEGITIME ───────────────────────────────────────
+ *
+ * Le champ a toujours ete intitule « Zone de livraison » : le marchand qui l'a
+ * rempli repondait bien a cette question-la. Tant qu'il n'a pas detaille ses
+ * quartiers, sa reponse reste la meilleure dont on dispose.
+ *
+ * ── UNE LISTE TROP LONGUE NE SE TRONQUE PAS, ELLE SE TAIT ──────────────────
+ *
+ * Couper « Yopougon, Adjame, Plateau, Marcory, Treichville » au milieu
+ * publierait une promesse amputee — un client d'un quartier coupe lirait qu'on
+ * ne va pas chez lui. On rend alors la variante NEUTRE, qui ne nomme aucun
+ * lieu : ne rien dire est honnete, dire faux ne l'est pas.
+ */
+const LONGUEUR_LISIBLE = 48;
+
+export function lieuDeLivraison(zonesLivrees: unknown, zone: unknown): string {
+  const liste = joliZone(zonesLivrees);
+  if (liste) return liste.length <= LONGUEUR_LISIBLE ? liste : '';
+  return joliZone(zone);
+}
+
+/**
+ * Compose la publication d'une boutique. `null` si la semaine ne donne rien a
+ * raconter : mieux vaut ne rien publier qu'un post creux, qui coute la
+ * credibilite du marchand.
+ */
+/**
+ * Exportee POUR ETRE TESTEE, et c'est le seul motif.
+ *
+ * La regle « la liste des quartiers passe avant le lieu de la boutique » vit
+ * dans `lieuDeLivraison`, et elle est eprouvee a part. Mais une fonction pure
+ * parfaite ne sert a rien MAL CABLEE : le premier jet passait toujours `zone`
+ * a l'appel a l'action, et seul un avertissement de lint « livraison defini
+ * mais jamais utilise » l'a revele. Aucun test ne pouvait le voir.
+ *
+ * C'est ce raccordement-la que le banc traverse desormais.
+ */
+export function composer(
   activite: LigneActivite,
   plats: LignePlat[],
   catalogue: Map<string, { prix: number | null; photo: string | null }>,
   baseUrl: string,
   zone: string,
+  /** Le lieu que l'appel a l'action annonce. Voir `lieuDeLivraison`. */
+  livraison: string,
 ): ContenuHebdo | null {
   const slug = String(activite.slug ?? '').trim();
   const nom = String(activite.boutique_nom ?? '').trim();
@@ -211,7 +258,7 @@ function composer(
   const photoVedette = avecPhoto ? { nom: avecPhoto.nom, url: avecPhoto.photo! } : null;
 
   const lien = `${baseUrl}/boutiques/${encodeURIComponent(slug)}`;
-  const appel = `${appelDeLaSemaine(zone)}\n${lien}`;
+  const appel = `${appelDeLaSemaine(livraison)}\n${lien}`;
 
   const legende = `${accroche} 👇\n\n• ${listeCourte}${satisfaction}\n\n${appel}`;
 
@@ -296,13 +343,17 @@ export async function contenusHebdo(baseUrl: string): Promise<ContenuHebdo[]> {
   // `zone` voyage avec : elle nomme la livraison dans l'appel a l'action et
   // fournit le hashtag le plus cible. Aucune requete de plus — elle tient dans
   // celle-ci.
-  const { data: boutiques } = await sb.from('boutiques').select('id, slug, zone');
+  const { data: boutiques } = await sb.from('boutiques').select('id, slug, zone, zones_livrees');
   const idParSlug = new Map<string, string>();
   const zoneParSlug = new Map<string, string>();
+  // Le hashtag veut UN lieu, l'appel a l'action veut les quartiers desservis :
+  // deux besoins, deux valeurs, une seule requete.
+  const livraisonParSlug = new Map<string, string>();
   for (const b of boutiques ?? []) {
     if (!b.slug) continue;
     idParSlug.set(b.slug, b.id);
     zoneParSlug.set(b.slug, joliZone(b.zone));
+    livraisonParSlug.set(b.slug, lieuDeLivraison(b.zones_livrees, b.zone));
   }
 
   const { data: produits } = await sb
@@ -339,6 +390,7 @@ export async function contenusHebdo(baseUrl: string): Promise<ContenuHebdo[]> {
       catalogue,
       baseUrl,
       zoneParSlug.get(slug) ?? '',
+      livraisonParSlug.get(slug) ?? '',
     );
     if (contenu) sorties.push(contenu);
   }
