@@ -476,7 +476,7 @@ export default function Page() {
                         <span className={`flex h-7 w-7 items-center justify-center text-xs font-black ${i === 0 ? 'bg-mangue-400 text-white' : 'bg-chaux-200 text-chaux-600'}`}>{i + 1}</span>
                         <span className="font-semibold text-nuit-800">{nom}</span>
                       </span>
-                      <span className="text-sm font-bold text-chaux-600">{q} vendus</span>
+                      <span className="text-sm font-bold text-chaux-600">{q} vendu{q > 1 ? 's' : ''}</span>
                     </div>
                   ))}
                 </div>

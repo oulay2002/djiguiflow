@@ -84,7 +84,16 @@ export default function Page() {
                 </button>
               </div>
             </div>
-            {maj && <p className="relative z-10 mt-3 text-xs text-mangue-100">Dernière mise à jour : {maj} · source : Google Sheets</p>}
+            {/* IL DISAIT « source : Google Sheets », ET C'ETAIT FAUX depuis le
+                decouplage : `/api/dashboard/stats` lit `commandes`,
+                `commande_items`, `produits`, `paniers` et `boutiques` dans
+                Supabase, et ne touche aucune feuille.
+
+                Sur l'ecran des CHIFFRES, la provenance n'est pas un detail :
+                c'est ce qu'un marchand regarde quand un total le surprend. Le
+                meme mensonge trainait en tete de l'ecran Produits, corrige le
+                meme jour. */}
+            {maj && <p className="relative z-10 mt-3 text-xs text-mangue-100">Dernière mise à jour : {maj}</p>}
           </header>
 
           {!s ? <p className="p-10 text-center text-chaux-600">Chargement…</p> : (
@@ -154,7 +163,7 @@ export default function Page() {
                       <div className="flex-1">
                         <div className="flex justify-between text-sm">
                           <span className="font-semibold text-nuit-800">{nom}</span>
-                          <span className="font-bold text-chaux-600">{q} vendus</span>
+                          <span className="font-bold text-chaux-600">{q} vendu{q > 1 ? 's' : ''}</span>
                         </div>
                         <div className="mt-1.5 h-2.5 overflow-hidden bg-chaux-100">
                           <div className="h-full bg-mangue-500" style={{ width: `${Math.round((q / maxPlat) * 100)}%` }} />

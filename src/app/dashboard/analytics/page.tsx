@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { LienRetour } from '@/components/ui/Bouton';
 import { supabase, utilisateurCourant } from '@/lib/supabase';
 import { useBoutique, uuidBoutiqueCourante } from '@/lib/boutique';
+import { croissanceRevenu, dansLaPeriode, fenetrePeriode } from '@/lib/periodeAnalyse';
 import { useRouter } from 'next/navigation';
 import {
   LineChart,
@@ -83,7 +84,7 @@ export default function AnalyticsPage() {
     totalOrders: 0,
     totalClients: 0,
     avgOrderValue: 0,
-    revenueGrowth: 0,
+    revenueGrowth: null as number | null,
   });
   const [chartData, setChartData] = useState<ChartPoint[]>([]);
   const [topProducts, setTopProducts] = useState<TopProduct[]>([]);
@@ -127,7 +128,21 @@ export default function AnalyticsPage() {
       return;
     }
 
-    const typedCommandes = commandes as CommandeData[];
+    /**
+     * LA PERIODE CHOISIE S'APPLIQUE ICI, ET NULLE PART AILLEURS.
+     *
+     * Le selecteur existait, il etait relie a `useState`, il relancait bien ce
+     * chargement — et AUCUNE requete ni AUCUN calcul ne le lisait. « Cette
+     * semaine », « Ce mois » et « Cette annee » rendaient les memes chiffres.
+     * Un controle qui pretend filtrer et ne filtre pas est pire qu'un controle
+     * absent : le marchand croit avoir mesure sa semaine.
+     *
+     * On garde `toutes` pour la comparaison avec la periode precedente, qui a
+     * besoin de ce qui precede la fenetre.
+     */
+    const toutes = commandes as CommandeData[];
+    const fenetre = fenetrePeriode(period);
+    const typedCommandes = dansLaPeriode(toutes, fenetre);
 
     // Calculer les statistiques
     const totalRevenue = typedCommandes.reduce((sum, c) => sum + (c.total || 0), 0);
@@ -176,17 +191,20 @@ export default function AnalyticsPage() {
 
     setHourlyData(hourlyStats.filter(h => h.orders > 0));
 
-    // Calculer la croissance (comparaison période précédente)
-    const midPoint = Math.floor(typedCommandes.length / 2);
-    const firstHalf = typedCommandes.slice(0, midPoint);
-    const secondHalf = typedCommandes.slice(midPoint);
-    
-    const firstHalfRevenue = firstHalf.reduce((sum, c) => sum + c.total, 0);
-    const secondHalfRevenue = secondHalf.reduce((sum, c) => sum + c.total, 0);
-    
-    const revenueGrowth = firstHalfRevenue > 0 
-      ? ((secondHalfRevenue - firstHalfRevenue) / firstHalfRevenue) * 100 
-      : 0;
+    /**
+     * LA CROISSANCE COMPARE DEUX PERIODES, ET NON DEUX MOITIES DE LISTE.
+     *
+     * L'ancien calcul coupait les commandes EN DEUX PAR LE NOMBRE et comparait
+     * le chiffre d'affaires des N/2 dernieres a celui des N/2 premieres, quelle
+     * que soit leur date. Mesure du 2 septembre 2026 : 7 commandes d'aout,
+     * 11 000 F contre 18 500 F, affiche « +68,2 % » — un artefact de
+     * decoupage. Sur un nombre impair la seconde moitie compte une commande de
+     * plus : le chiffre penchait a la hausse par construction.
+     *
+     * `null` quand la periode precedente est vide : zero se lirait « je
+     * stagne » alors que la verite est « il n'y a rien a comparer ».
+     */
+    const revenueGrowth = croissanceRevenu(toutes, fenetre);
 
     const statusCounts = typedCommandes.reduce<Record<string, number>>((acc, commande) => {
       acc[commande.statut] = (acc[commande.statut] || 0) + 1;
@@ -230,7 +248,16 @@ export default function AnalyticsPage() {
     });
 
     setLoading(false);
-  }, [router, boutiqueSlug]);
+    // `period` EST UNE DEPENDANCE, ET L'OUBLIER ANNULAIT TOUT LE CORRECTIF.
+    //
+    // Sans elle, `loadAnalytics` reste la fermeture creee au premier rendu et
+    // continue de lire la periode INITIALE. L'effet se relance bien a chaque
+    // changement — il en depend — mais rappelle une fonction figee : le
+    // selecteur aurait continue de ne rien changer, exactement comme avant.
+    //
+    // Trouve par un avertissement de lint, pas par un test. Deuxieme fois du
+    // 2 septembre 2026 qu'un correctif juste arrive mal cable.
+  }, [router, boutiqueSlug, period]);
 
   useEffect(() => {
     const timerId = window.setTimeout(() => {
@@ -452,7 +479,7 @@ export default function AnalyticsPage() {
                   </div>
                   <div>
                     <p className="font-semibold text-nuit-900">{driver.name}</p>
-                    <p className="text-xs text-chaux-600">{driver.deliveries} livraisons</p>
+                    <p className="text-xs text-chaux-600">{driver.deliveries} livraison{driver.deliveries > 1 ? 's' : ''}</p>
                   </div>
                 </div>
               </div>
@@ -470,7 +497,12 @@ type KPICardProps = {
   value: string | number;
   /** Detachee du nombre : elle ne doit pas le faire passer a la ligne. */
   unite?: string;
-  growth?: number;
+  /**
+   * `null` VEUT DIRE « RIEN A COMPARER », et se tait — la puce disparait.
+   * Afficher 0 % ferait lire « je stagne » a un marchand dont la periode
+   * precedente etait simplement vide.
+   */
+  growth?: number | null;
   color: 'mangue' | 'nuit' | 'feuille';
 };
 
@@ -492,7 +524,7 @@ function KPICard({ icon: Icon, label, value, unite, growth, color }: KPICardProp
             {value}
             {unite && <span className="ml-1 text-sm font-semibold text-chaux-600">{unite}</span>}
           </p>
-          {growth !== undefined && (
+          {growth !== undefined && growth !== null && (
             <div className={`flex items-center gap-1 mt-2 text-sm font-medium ${
               growth >= 0 ? 'text-accent-600' : 'text-bissap-600'
             }`}>
