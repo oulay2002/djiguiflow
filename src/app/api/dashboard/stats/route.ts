@@ -1,4 +1,5 @@
 import { boutiqueLivre } from '@/lib/boutiquePrete';
+import { serieDesVentes } from '@/lib/serieVentes';
 import { etatVitrine, type EtatVitrine } from '@/lib/vitrineComplete';
 import { exigerAccesMarchand } from '@/lib/dashboardAuth';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
@@ -120,18 +121,10 @@ export async function GET(req: Request) {
   const topPlats = Object.entries(plats).sort((a, b) => b[1] - a[1]).slice(0, 5);
   const produitsVendus = Object.values(plats).reduce((a, b) => a + b, 0);
 
-  const serie7j: { jour: string; ca: number; nb: number }[] = [];
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date();
-    d.setDate(d.getDate() - i);
-    const key = d.toISOString().slice(0, 10);
-    const cmd = commandes.filter(c => jour(c.created_at) === key);
-    serie7j.push({
-      jour: d.toLocaleDateString('fr-FR', { weekday: 'short', day: '2-digit' }),
-      ca: cmd.reduce((s, c) => s + Number(c.total ?? 0), 0),
-      nb: cmd.length,
-    });
-  }
+  // LA SERIE ET SON TOTAL SORTENT DU MEME CALCUL. Le bandeau de l'accueil
+  // affichait `caTotal` — toutes les commandes depuis l'ouverture — dans une
+  // carte titree « 7 jours ». Voir `serieVentes.ts`.
+  const { points: serie7j, total: caSerie7j } = serieDesVentes(commandes);
 
   // ---- CE QU'ON A PERDU EN ROUTE, SUR 7 JOURS.
   //
@@ -241,7 +234,7 @@ export async function GET(req: Request) {
     nbCommandes: commandes.length, nbJour: cmdJour.length,
     livrees, enCours: commandes.length - livrees,
     parCanal, noteMoyenne, nbNotes: notes.length, topPlats,
-    serie7j, produitsVendus,
+    serie7j, caSerie7j, produitsVendus,
     panierMoyen: commandes.length ? Math.round(caTotal / commandes.length) : 0,
   });
 }
