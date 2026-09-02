@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import { ChevronDown, Loader2, ShieldCheck, Trash2, TriangleAlert } from 'lucide-react';
 import { Bouton, LienRetour } from '@/components/ui/Bouton';
 import { lignesDuBilan, lireReponseEffacement, type Bilan } from '@/lib/reponseEffacement';
+import { detenuEnCommun } from '@/lib/dossierClient';
 
 /**
  * L'écran des droits : ce qu'on détient sur vous, et comment le faire partir.
@@ -77,7 +78,20 @@ type Dossier = {
 // que le SERVEUR rend, et deux copies d'une meme forme finissent par diverger
 // sans que rien ne le dise.
 
-const CADRE = 'border border-nuit-900/12 bg-white/70 p-5';
+/**
+ * LE CADRE INVENTAIT SON FILET, ET N'AVAIT PAS D'OMBRE.
+ *
+ * `border-nuit-900/12` est une opacité fabriquée sur place, à côté de
+ * `--hairline` qui vaut 0,14 et qui est le jeton. Trois valeurs voisines pour
+ * une même ligne, c'est le motif que la refonte du 22 août a passé une journée
+ * à solder — quatre rayons à 0,25 rem d'écart, dix-sept ombres, neuf opacités.
+ *
+ * Et DESIGN.md pose l'ombre douce comme permanente sur les surfaces de carte.
+ * Sans elle, les sections de cet écran étaient quatre rectangles posés à plat
+ * sur le fond : mesuré `boxShadow: none` partout, quand `/suivi` porte
+ * `soft-shadow`. La carte doit avoir l'air d'un feuillet posé, pas d'un trait.
+ */
+const CADRE = 'border border-[var(--hairline)] bg-white/70 p-5 soft-shadow';
 
 /**
  * Ce que ce geste-ci va toucher, compte sur le dossier affiche.
@@ -370,6 +384,10 @@ function Ecran() {
   }, [ref, refUrl, jetonUrl, tel4]);
 
   // L'ouverture automatique est en cours : la porte n'a rien a demander.
+  // La phrase que toutes les commandes partagent, ou `null` des qu'elles
+  // divergent. La regle vit dans `dossierClient.ts`, avec son test.
+  const detenuCommun = dossier ? detenuEnCommun(dossier.commandes) : null;
+
   const ouvertureParLien = Boolean(refUrl && jetonUrl) && chargement && !dossier && !efface;
 
   /**
@@ -427,10 +445,21 @@ function Ecran() {
         de l'un a l'autre evite que le second ne soit qu'une page que personne
         n'ouvre.
       */}
+      {/*
+        UNE CIBLE DE 44 PX, MESUREE A 18.
+        Ce lien etait un `<a>` nu dans un paragraphe : 18 px de haut, sur un
+        produit dont PRODUCT.md dit qu'il se consulte « debout, en plein
+        travail, une main libre, parfois en plein soleil », et dont DESIGN.md
+        pose 44 px comme la hauteur des commandes. L'ancre voisine porte deja
+        `min-h-11` ; celle-ci etait la seule a l'ecran sous le plancher.
+
+        `inline-flex` et non `block` : la ligne reste une ligne de texte, elle
+        ne s'etale pas sur toute la largeur du document.
+      */}
       <p className="mt-2 text-sm">
         <Link
           href="/legal/confidentialite"
-          className="text-chaux-600 underline underline-offset-4 transition hover:text-nuit-800"
+          className="inline-flex min-h-11 items-center text-chaux-600 underline underline-offset-4 transition hover:text-nuit-800"
         >
           Lire la politique de confidentialité
         </Link>
@@ -603,7 +632,7 @@ function Ecran() {
       )}
 
       {dossier?.efface && (
-        <section className="mt-8 border border-accent-200 bg-accent-50 p-5">
+        <section className="mt-8 border border-accent-200 bg-accent-50 p-5 soft-shadow">
           <h2 className="flex items-center gap-2 font-display text-2xl font-bold tracking-[-0.01em] text-nuit-900">
             <ShieldCheck className="size-5 text-accent-600" aria-hidden />
             Ces données ont déjà été effacées
@@ -640,6 +669,23 @@ function Ecran() {
               */}
               <strong className="font-mono font-semibold">{dossier.numero}</strong>
             </p>
+
+            {/*
+              UN TITRE, PARCE QUE LA NAVIGATION PAR TITRES SAUTAIT PAR-DESSUS.
+              Les quatre compteurs ouvraient le dossier sans qu'aucun `h2` ne
+              les précède : le premier titre de la page après « Vos données »
+              était « Vos commandes chez ce marchand », cinquante lignes plus
+              bas. Quelqu'un qui parcourt les titres — c'est ainsi qu'on lit une
+              page avec un lecteur d'écran — passait donc directement de
+              l'en-tête au détail des commandes, sans jamais rencontrer le
+              résumé de ce qu'on détient sur lui.
+
+              Il dit « en chiffres » parce que c'est exactement ce que sont ces
+              quatre tuiles, et que le détail suit juste après.
+            */}
+            <h2 className="mt-5 font-display text-2xl font-bold tracking-[-0.01em] text-nuit-900">
+              Votre dossier, en chiffres
+            </h2>
 
             <dl className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
               <Compteur libelle="Commandes" valeur={dossier.commandes.length} />
@@ -699,7 +745,34 @@ function Ecran() {
                   designent pas la meme chose — l'une est la liste, l'autre
                   la regle de conservation. */}
               <h2 className="font-display text-2xl font-bold tracking-[-0.01em] text-nuit-900">Vos commandes chez ce marchand</h2>
-              <ul className="mt-4 divide-y divide-nuit-900/10">
+
+              {/*
+                LA PHRASE COMMUNE SE DIT UNE FOIS, ET SEULEMENT SI ELLE L'EST.
+
+                Mesuré à l'écran le 2 septembre 2026 : six commandes, six fois
+                « Nous y conservons votre nom, votre adresse de livraison,
+                votre identifiant de messagerie. » — mot pour mot. Deux lignes
+                de texte gris répétées six fois occupaient plus de hauteur que
+                les références qu'elles accompagnent, pour zéro information : ce
+                qui se répète à l'identique ne distingue rien.
+
+                MAIS ELLE N'EST PAS TOUJOURS LA MEME. `detenu` est calculé par
+                commande : une commande prise sur la vitrine et une autre par
+                WhatsApp ne retiennent pas les mêmes champs. La hisser
+                inconditionnellement dirait donc parfois faux.
+
+                D'où la règle : on ne remonte la phrase que lorsque les
+                commandes détiennent TOUTES exactement la même chose. Dès
+                qu'un dossier est mixte, chaque ligne reprend la sienne — et
+                elle redevient une information, puisqu'elle distingue.
+              */}
+              {detenuCommun ? (
+                <p className="mt-2 max-w-[62ch] text-sm text-chaux-600">
+                  Pour chacune, nous conservons {detenuCommun}.
+                </p>
+              ) : null}
+
+              <ul className="mt-4 divide-y divide-[var(--hairline)]">
                 {dossier.commandes.map((c) => (
                   <li key={c.reference} className="py-3">
                     <div className="flex flex-wrap items-baseline justify-between gap-2">
@@ -709,7 +782,7 @@ function Ecran() {
                         {!c.close && ' · en cours'}
                       </span>
                     </div>
-                    {c.detenu.length > 0 && (
+                    {!detenuCommun && c.detenu.length > 0 && (
                       <p className="mt-1 text-sm text-chaux-600">
                         Nous y conservons {c.detenu.join(', ')}.
                       </p>
@@ -834,7 +907,7 @@ function Ecran() {
                au bord haut de l'ecran — on veut voir qu'on est entre dans une
                section, pas atterrir dessus. Meme reglage que `.etape` du
                guide. */
-            className="mt-6 scroll-mt-6 border border-bissap-200 bg-bissap-50 p-5"
+            className="mt-6 scroll-mt-6 border border-bissap-200 bg-bissap-50 p-5 soft-shadow"
           >
             <h2 className="font-display text-2xl font-bold tracking-[-0.01em] text-nuit-900">Demander l’effacement</h2>
 
@@ -848,7 +921,16 @@ function Ecran() {
               qu’il doit conserver.
             </p>
 
-            <div className="mt-4 border-t border-bissap-200 pt-4">
+            {/*
+              LA SOUCHE, ET C'EST LE MOT DU SYSTEME POUR CETTE IDEE.
+              `globals.css` la definit comme « la preuve qu'une etape a pris…
+              ce qui reste quand on arrache le feuillet ». C'est exactement ce
+              que ce bloc enonce : ce que l'effacement NE prend PAS.
+              Un filet plein disait « encadre » ; la perforation dit « ce qui
+              se detache ». Le trait pointille est de structure, pas d'accent —
+              c'est le role documente de l'indigo.
+            */}
+            <div className="souche mt-4 pt-4">
               <h3 className="text-sm font-medium text-nuit-900">
                 Ce que cet effacement ne peut pas atteindre
               </h3>
@@ -910,8 +992,18 @@ function Ecran() {
                   bouton rouge.
                 */}
                 <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+                  {/*
+                    `calme` ET NON `fantome`, PARCE QUE LA SURFACE EST TEINTEE.
+                    `fantome` n'a pas de fond au repos — correct — mais son
+                    survol peint `bg-nuit-50`, un rectangle indigo froid sur
+                    une carte rose. DESIGN.md interdit l'indigo en surface
+                    d'accent : c'est une couleur de structure.
+                    `calme` pose un bouton blanc a filet, qui se lit sur le
+                    rose et ne dispute rien au bouton d'action. Meme
+                    arbitrage que la carte vert pale de l'ecran Produits.
+                  */}
                   <Bouton
-                    variante="fantome"
+                    variante="calme"
                     className="w-full sm:w-auto"
                     onClick={() => setDemandeEffacement(false)}
                   >
@@ -1048,7 +1140,7 @@ function ApresEffacement({ etat }: { etat: { complet: boolean; bilan: Bilan } })
       document reclamait 395 px et TOUT defilait lateralement. Avec la regle,
       307 px, sous la fenetre.
     */
-    <section className="mt-8 border border-accent-200 bg-accent-50 p-5 wrap-anywhere">
+    <section className="mt-8 border border-accent-200 bg-accent-50 p-5 soft-shadow wrap-anywhere">
       <h2
         ref={titre}
         tabIndex={-1}
