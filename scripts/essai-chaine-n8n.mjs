@@ -394,6 +394,11 @@ try {
         headers: { 'Content-Type': 'application/json', 'x-sync-secret': secret },
         body: JSON.stringify({
           reference,
+          // EXIGEE DEPUIS LE 2 SEPTEMBRE 2026. `reference` est une cle globale :
+          // sans la boutique, la route refuse en 400 plutot que de basculer la
+          // commande d'un autre marchand en « livree ». Le workflow
+          // « Acceptation Livraison » l'envoie de la meme facon.
+          boutique: SLUG,
           statut_livraison: 'livre',
           nom_livreur: 'Livreur du banc',
           livreur_telegram_id: telegramId,
