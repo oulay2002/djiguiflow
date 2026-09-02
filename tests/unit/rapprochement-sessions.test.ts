@@ -257,3 +257,53 @@ describe('le chemin entrant, vu du rapprochement', () => {
     expect(r.webhooks?.divergents).toEqual([]);
   });
 });
+
+/**
+ * DEUX BOUTIQUES SOUS LE MEME NUMERO — le cas qui a fait crier l'instrument a
+ * tort le 2 septembre 2026, en production, des sa premiere mesure.
+ *
+ * Un compte a le droit de posseder plusieurs enseignes, et le gerant en
+ * exploite deux sous le sien. « La premiere trouvee » attribuait la ligne au
+ * hasard, et l'adresse attendue differait forcement.
+ */
+describe('quand deux boutiques partagent un numero', () => {
+  const attendue = (b: { slug: string }) =>
+    `https://n8n.djiguiflow.com/webhook/1b96720c/whatsapp/${b.slug}`;
+
+  const JUMELLES = [
+    { slug: 'rose-monde', nom: 'Rose Monde', telephone: '0102918886', wasender_session_id: null },
+    { slug: 'zahara', nom: 'Zahara', telephone: '0102918886', wasender_session_id: null },
+  ];
+
+  it('le webhook TRANCHE l ambiguite que le numero laisse', () => {
+    // La ligne est celle de Zahara ; Rose Monde apparait d'abord dans la
+    // liste. Sans cette regle, l'instrument accusait Rose Monde.
+    const r = rapprocherSessions(
+      [{ phone_number: '2250102918886', status: 'connected', webhook_url: attendue({ slug: 'zahara' }) }],
+      JUMELLES,
+      attendue,
+    );
+    expect(r.webhooks?.divergents).toEqual([]);
+    expect(r.webhooks?.conformes).toBe(1);
+  });
+
+  it('aucun pretendant conforme : on se TAIT plutot que d accuser au hasard', () => {
+    const r = rapprocherSessions(
+      [{ phone_number: '2250102918886', status: 'connected', webhook_url: COURTE }],
+      JUMELLES,
+      attendue,
+    );
+    expect(r.webhooks?.divergents).toEqual([]);
+    expect(r.webhooks?.illisibles).toBe(1);
+  });
+
+  it('temoin : avec UN SEUL pretendant, la divergence est bien nommee', () => {
+    // Sans lui, « ne crie pas » serait vrai d'un instrument devenu muet.
+    const r = rapprocherSessions(
+      [{ phone_number: '2250102918886', status: 'connected', webhook_url: COURTE }],
+      [JUMELLES[1]],
+      attendue,
+    );
+    expect(r.webhooks?.divergents).toEqual([`Zahara → ${COURTE}`]);
+  });
+});
