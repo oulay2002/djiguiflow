@@ -62,6 +62,65 @@ export type BoutiqueBranchee = {
   surveillee?: boolean;
 };
 
+/**
+ * LE CHEMIN ENTRANT, QUE PERSONNE NE VERIFIAIT.
+ *
+ * « Connectee » dit que WhatsApp a lie l'appareil du marchand. Cela ne dit
+ * RIEN de la question qui compte : les messages de ses clients nous
+ * parviennent-ils ? Entre les deux il y a un webhook, et sa declaration vit
+ * chez le fournisseur — pas chez nous.
+ *
+ * Le piege est ecrit dans `routeurWhatsApp.ts` : n8n sert le webhook sous
+ * `/webhook/<uuid>/<chemin>` ET sous `/webhook/<chemin>`, mais SEULE la
+ * premiere est enregistree. La seconde rend 404, « et un 404 ressemble a un
+ * refus poli ». Une ligne declaree a la main, avant que ce fichier n'existe,
+ * peut donc etre parfaitement connectee et parfaitement sourde.
+ *
+ * TROIS VERDICTS, PAS DEUX. `illisible` existe parce que rien ne garantit que
+ * le fournisseur rende l'adresse du webhook quand on relit une session. Ne pas
+ * la trouver n'est pas la preuve qu'il n'y en a pas — c'est l'aveu qu'on n'a
+ * pas su lire, et il se compte plutot qu'il ne se tait.
+ */
+export type VerdictWebhook = 'conforme' | 'divergent' | 'illisible';
+
+export function verdictWebhook(
+  session: unknown,
+  attendue: string,
+): { verdict: VerdictWebhook; vue?: string } {
+  // Une barre finale de plus ou de moins ne change pas la destination.
+  const nu = (u: string) => u.trim().replace(/\/+$/, '');
+  const cible = nu(attendue);
+  if (!cible) return { verdict: 'illisible' };
+
+  const adresses = valeursTexte(session).filter((v) => /^https?:\/\//i.test(v));
+  if (adresses.some((a) => nu(a) === cible)) return { verdict: 'conforme' };
+
+  /**
+   * ON NE CRIE QUE SUR CE QUI NOUS DESIGNE. Une session porte parfois d'autres
+   * adresses — un avatar, une documentation. Les compter comme un webhook
+   * divergent ferait une alerte a chaque ligne saine.
+   *
+   * Une adresse qui vise NOTRE hote sans etre la bonne, en revanche, est un
+   * webhook, et il se trompe de porte.
+   */
+  let hote = '';
+  try {
+    hote = new URL(cible).host;
+  } catch {
+    return { verdict: 'illisible' };
+  }
+
+  const suspecte = adresses.find((a) => {
+    try {
+      return new URL(a).host === hote;
+    } catch {
+      return false;
+    }
+  });
+
+  return suspecte ? { verdict: 'divergent', vue: nu(suspecte) } : { verdict: 'illisible' };
+}
+
 export type Rapprochement = {
   /** Lignes facturees qu'aucune boutique ne reclame — a verifier, puis liberer. */
   orphelines: string[];
@@ -74,6 +133,16 @@ export type Rapprochement = {
   illisibles: number;
   /** Lignes rattachees a une boutique. C'est le temoin de l'instrument. */
   rattachees: number;
+  /**
+   * Le chemin ENTRANT des lignes rattachees. Absent quand l'appelant n'a pas
+   * fourni l'adresse attendue — la regle vit chez lui, pas ici.
+   */
+  webhooks?: {
+    conformes: number;
+    /** « boutique → adresse vue », pour que l'alerte soit actionnable. */
+    divergents: string[];
+    illisibles: number;
+  };
 };
 
 /** Au-dela, on ne descend plus : une charge utile pathologique ne doit pas nous retenir. */
@@ -116,6 +185,19 @@ function numerosLisibles(valeurs: string[]): string[] {
 export function rapprocherSessions(
   sessions: unknown[],
   boutiques: BoutiqueBranchee[],
+  /**
+   * L'adresse que le webhook de cette boutique DEVRAIT porter.
+   *
+   * Elle est passee plutot que construite ici : ce module ne connait ni n8n ni
+   * les variables d'environnement, et c'est ce qui le rend eprouvable sans
+   * reseau. Omise, le chemin entrant n'est simplement pas juge.
+   *
+   * ELLE VIT AVEC L'APPARIEMENT, ET NON A COTE. Savoir quelle boutique
+   * reclame quelle ligne est exactement le travail de cette boucle ; le refaire
+   * chez l'appelant, c'est deux exemplaires d'une meme regle, donc deux
+   * regles le jour ou l'une change.
+   */
+  urlAttendue?: (b: BoutiqueBranchee) => string,
 ): Rapprochement {
   const identifiants = new Map<string, BoutiqueBranchee>();
   for (const b of boutiques) {
@@ -129,6 +211,10 @@ export function rapprocherSessions(
 
   /** Les identifiants de session effectivement rencontres au compte. */
   const vusAuCompte = new Set<string>();
+
+  let webhooksConformes = 0;
+  let webhooksIllisibles = 0;
+  const webhooksDivergents: string[] = [];
 
   for (const s of sessions) {
     const valeurs = valeursTexte(s);
@@ -150,6 +236,21 @@ export function rapprocherSessions(
 
     if (parIdentifiant || parNumero) {
       rattachees += 1;
+
+      // La boutique qui reclame cette ligne — par identifiant d'abord, qui est
+      // exact, par numero ensuite.
+      const proprietaire =
+        valeurs.map((v) => identifiants.get(v)).find(Boolean)
+        ?? boutiques.find((b) => b.telephone && numeros.some((n) => memeNumero(n, b.telephone!)));
+
+      if (urlAttendue && proprietaire) {
+        const v = verdictWebhook(s, urlAttendue(proprietaire));
+        if (v.verdict === 'conforme') webhooksConformes += 1;
+        else if (v.verdict === 'divergent') {
+          webhooksDivergents.push(`${proprietaire.nom || proprietaire.slug} → ${v.vue}`);
+        } else webhooksIllisibles += 1;
+      }
+
       continue;
     }
 
@@ -180,5 +281,19 @@ export function rapprocherSessions(
     fantomes.push(String(b.nom || b.slug));
   }
 
-  return { orphelines, fantomes, illisibles, rattachees };
+  return {
+    orphelines,
+    fantomes,
+    illisibles,
+    rattachees,
+    ...(urlAttendue
+      ? {
+          webhooks: {
+            conformes: webhooksConformes,
+            divergents: webhooksDivergents,
+            illisibles: webhooksIllisibles,
+          },
+        }
+      : {}),
+  };
 }

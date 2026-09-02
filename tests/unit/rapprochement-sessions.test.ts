@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { rapprocherSessions, valeursTexte } from '@/lib/rapprochementSessions';
+import { rapprocherSessions, valeursTexte, verdictWebhook } from '@/lib/rapprochementSessions';
+
+/** La forme reelle : n8n n'enregistre QUE celle qui porte l'uuid du noeud. */
+const ATTENDUE = 'https://n8n.djiguiflow.com/webhook/1b96720c/whatsapp/rose-monde';
+/** La forme courte. Elle repond 404, et un 404 ressemble a un refus poli. */
+const COURTE = 'https://n8n.djiguiflow.com/webhook/whatsapp/rose-monde';
 
 /**
  * Ce qu'on paie face a ce que la base reclame.
@@ -155,5 +160,100 @@ describe('le temoin de l instrument', () => {
     expect(r.orphelines).toHaveLength(1);
     // Le total se recompose : rien n'est perdu en route.
     expect(r.rattachees + r.illisibles + r.orphelines.length).toBe(4);
+  });
+});
+
+/**
+ * « Connectee » dit que WhatsApp a lie l'appareil du marchand. Cela ne dit rien
+ * de la question qui compte : les messages de ses clients nous parviennent-ils ?
+ */
+describe('le chemin entrant — connectee ne veut pas dire joignable', () => {
+  it('conforme quand le webhook vise bien le routeur', () => {
+    expect(verdictWebhook({ webhook_url: ATTENDUE }, ATTENDUE).verdict).toBe('conforme');
+  });
+
+  it('une barre finale de plus ne change pas la destination', () => {
+    expect(verdictWebhook({ webhook_url: `${ATTENDUE}/` }, ATTENDUE).verdict).toBe('conforme');
+  });
+
+  it('LE PIEGE DE n8n : la forme courte est DIVERGENTE, pas conforme', () => {
+    // Elle ressemble a la bonne adresse et repond 404. Une ligne declaree a la
+    // main peut donc etre parfaitement connectee et parfaitement sourde.
+    const v = verdictWebhook({ webhook_url: COURTE }, ATTENDUE);
+    expect(v.verdict).toBe('divergent');
+    expect(v.vue).toBe(COURTE);
+  });
+
+  it('une adresse qui ne nous designe pas n est PAS une divergence', () => {
+    // Une session porte parfois un avatar ou une documentation. Les compter
+    // ferait une alerte a chaque ligne saine.
+    expect(verdictWebhook({ avatar: 'https://exemple.test/photo.png' }, ATTENDUE).verdict)
+      .toBe('illisible');
+  });
+
+  it('aucune adresse lisible : illisible, jamais divergent', () => {
+    // Rien ne garantit que le fournisseur rende le webhook quand on relit une
+    // session. Ne pas le trouver n'est pas la preuve qu'il n'y en a pas.
+    expect(verdictWebhook({ status: 'connected' }, ATTENDUE).verdict).toBe('illisible');
+  });
+
+  it('l adresse peut vivre sous n importe quel nom de champ', () => {
+    expect(verdictWebhook({ hooks: { entrant: { cible: ATTENDUE } } }, ATTENDUE).verdict)
+      .toBe('conforme');
+  });
+});
+
+describe('le chemin entrant, vu du rapprochement', () => {
+  const attendue = (b: { slug: string }) =>
+    `https://n8n.djiguiflow.com/webhook/1b96720c/whatsapp/${b.slug}`;
+
+  it('nomme la boutique ET l adresse vue, pour que l alerte soit actionnable', () => {
+    const r = rapprocherSessions(
+      [{ id: 'sess-rose-42', status: 'connected', webhook_url: COURTE }],
+      [ROSE],
+      attendue,
+    );
+    expect(r.rattachees).toBe(1);
+    expect(r.webhooks?.divergents).toEqual([`Rose Monde → ${COURTE}`]);
+    expect(r.webhooks?.conformes).toBe(0);
+  });
+
+  it('juge aussi la ligne rattachee par son NUMERO — le cas Zahara', () => {
+    // C'est justement celle qui a ete declaree a la main, donc la plus
+    // susceptible de viser la mauvaise porte.
+    const r = rapprocherSessions(
+      [{ phone_number: '2250102918886', status: 'connected', webhook_url: attendue(ZAHARA) }],
+      [ZAHARA],
+      attendue,
+    );
+    expect(r.webhooks?.divergents).toEqual([]);
+    expect(r.webhooks?.conformes).toBe(1);
+  });
+
+  it('L ADRESSE EST PROPRE A CHAQUE BOUTIQUE — le slug en fait partie', () => {
+    // Une ligne dont le webhook porte le slug du VOISIN est connectee, et ses
+    // messages atterrissent chez lui. C'est la fuite entre marchands, par le
+    // chemin entrant cette fois.
+    const r = rapprocherSessions(
+      [{ phone_number: '2250102918886', status: 'connected', webhook_url: attendue(ROSE) }],
+      [ZAHARA],
+      attendue,
+    );
+    expect(r.webhooks?.divergents).toEqual([`Zahara → ${attendue(ROSE)}`]);
+  });
+
+  it('sans adresse attendue, le chemin entrant n est PAS juge', () => {
+    // La regle vit chez l'appelant. Un `webhooks` invente a zero se lirait
+    // « tout va bien » alors que rien n'a ete regarde.
+    const r = rapprocherSessions([{ id: 'sess-rose-42' }], [ROSE]);
+    expect(r.webhooks).toBeUndefined();
+  });
+
+  it('une ligne orpheline n est pas jugee sur son webhook', () => {
+    // Elle n'appartient a aucune boutique : il n'y a pas d'adresse attendue.
+    const r = rapprocherSessions([{ phone_number: '2250500000099' }], [ROSE], attendue);
+    expect(r.orphelines).toHaveLength(1);
+    expect(r.webhooks?.conformes).toBe(0);
+    expect(r.webhooks?.divergents).toEqual([]);
   });
 });
