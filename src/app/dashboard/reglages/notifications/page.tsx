@@ -10,8 +10,6 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
   Bell,
-  Phone,
-  MessageCircle,
   Save,
   Loader2,
   CheckCircle,
@@ -163,132 +161,50 @@ export default function NotificationsPage() {
         <ReglagePush />
 
         {/**
-         * CE QUE CET ECRAN COMMANDE, ET CE QU IL NE COMMANDE PAS.
+         * LES DEUX BLOCS DE CANAL ONT ETE RETIRES, ET C'EST LE CORRECTIF.
          *
-         * Les cinq interrupteurs « Types de notifications » sont HONORES depuis
-         * le 23 aout : `/api/canaux/envoyer` les lit avant tout envoi au gerant.
-         * Voir `src/lib/preferencesNotifications.ts`.
+         * Cet ecran portait deux interrupteurs « Recevez les notifications sur
+         * WhatsApp / sur Telegram » et, sous chacun, un champ : un numero
+         * WhatsApp, un identifiant Telegram.
          *
-         * LES DEUX INTERRUPTEURS DE CANAL, EUX, NE SONT PAS LUS -- et c'est
-         * delibere. `telegram_actif` vaut `false` par defaut en base, et une
+         * RIEN DE TOUT CELA N'ETAIT LU. Ni `whatsapp_actif`, ni
+         * `telegram_actif`, ni `whatsapp_numero`, ni `telegram_chat_id` :
+         * ecrits par cet ecran, lus NULLE PART dans l'application. Le marchand
+         * saisissait son identifiant Telegram, enregistrait, et la valeur
+         * dormait en base.
+         *
+         * PIRE QUE DECORATIF : L'ETAPE 3 DE « BRANCHEMENT » DEMANDE LA MEME
+         * CHOSE, et celle-la est utilisee — c'est elle qui porte les alertes du
+         * gerant. Deux ecrans posaient la meme question, un seul s'en servait.
+         * Un marchand qui remplissait celui-ci et pas l'autre ne recevait
+         * aucune alerte, sans aucun moyen de comprendre pourquoi. Meme motif
+         * que les deux champs de livraison de « Ma boutique », ferme le meme
+         * jour.
+         *
+         * ON NE LES A PAS « FAIT MARCHER », ET C'EST DELIBERE. Mesure du
+         * 23 aout 2026 : `telegram_actif` vaut `false` par defaut, et une
          * boutique reelle sur deux le portait a `false` TOUT EN ETANT prevenue
-         * sur Telegram : les honorer aurait coupe ses alertes le soir meme. Ces
-         * colonnes decrivent un etat que personne n'a jamais tenu.
+         * sur Telegram. Les honorer aurait coupe ses alertes le soir meme. Ces
+         * colonnes decrivent un etat que personne n'a jamais tenu ; la source
+         * de verite est le raccordement.
          *
-         * Le canal se regle dans « Branchement », qui est la source de verite.
-         * Tant que ces deux interrupteurs restent a l'ecran, ce bandeau doit y
-         * rester aussi.
+         * Le bandeau d'avertissement disparait avec eux : il n'existait que
+         * pour couvrir ce que l'ecran promettait sans le faire. Ce qui reste
+         * est vrai sans reserve.
          */}
-        <div className="border border-mangue-300 bg-mangue-50 px-4 py-3">
+        <div className="border border-[var(--hairline)] bg-chaux-50 px-4 py-3">
           <p className="text-sm font-bold text-nuit-900">
             Ce que vous choisissez ici est appliqué à vos alertes.
           </p>
           <p className="mt-1 text-sm text-chaux-600">
-            Une seule exception : le <b>canal</b> sur lequel vous êtes prévenu ne se
-            règle pas ici, mais dans{' '}
+            Le <b>canal</b> sur lequel vous êtes prévenu — WhatsApp ou Telegram — se
+            règle dans{' '}
             <Link href="/onboarding" className="font-semibold underline underline-offset-4">
               Branchement
             </Link>
-            . Les deux interrupteurs WhatsApp et Telegram ci-dessous ne le changent
-            pas encore.
+            , avec le reste de votre raccordement.
           </p>
         </div>
-
-        {/* WhatsApp */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-white p-6 border border-chaux-200"
-        >
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
-              <div className="p-3 bg-accent-50">
-                <MessageCircle className="w-6 h-6 text-accent-600" />
-              </div>
-              <div>
-                <h2 className="text-xl font-bold text-nuit-900">WhatsApp</h2>
-                <p className="text-sm text-chaux-600">Recevez les notifications sur WhatsApp</p>
-              </div>
-            </div>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                checked={settings.whatsapp_actif}
-                onChange={() => toggleNotification('whatsapp_actif')}
-                className="sr-only peer"
-              />
-              <div className="w-11 h-6 bg-chaux-200 peer-focus:outline-none peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-chaux-300 after:border after: after:h-5 after:w-5 after:transition-all peer-checked:bg-accent-500"></div>
-            </label>
-          </div>
-
-          {settings.whatsapp_actif && (
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-nuit-700 mb-2">
-                  Numéro WhatsApp
-                </label>
-                <input
-                  type="tel"
-                  value={settings.whatsapp_numero}
-                  onChange={(e) => setSettings({ ...settings, whatsapp_numero: e.target.value })}
-                  placeholder="Ex: 0759486701"
-                  className="w-full px-4 py-3 border border-chaux-200 focus:ring-2 focus:ring-nuit-200"
-                />
-                <p className="text-xs text-chaux-600 mt-1">
-                  Format : numéro local (ex: 0759486701)
-                </p>
-              </div>
-            </div>
-          )}
-        </motion.div>
-
-        {/* Telegram */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-white p-6 border border-chaux-200"
-        >
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
-              <div className="p-3 bg-nuit-50">
-                <Phone className="w-6 h-6 text-nuit-600" />
-              </div>
-              <div>
-                <h2 className="text-xl font-bold text-nuit-900">Telegram</h2>
-                <p className="text-sm text-chaux-600">Recevez les notifications sur Telegram</p>
-              </div>
-            </div>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                checked={settings.telegram_actif}
-                onChange={() => toggleNotification('telegram_actif')}
-                className="sr-only peer"
-              />
-              <div className="w-11 h-6 bg-chaux-200 peer-focus:outline-none peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-chaux-300 after:border after: after:h-5 after:w-5 after:transition-all peer-checked:bg-accent-500"></div>
-            </label>
-          </div>
-
-          {settings.telegram_actif && (
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-nuit-700 mb-2">
-                  Votre identifiant Telegram
-                </label>
-                <input
-                  type="text"
-                  value={settings.telegram_chat_id}
-                  onChange={(e) => setSettings({ ...settings, telegram_chat_id: e.target.value })}
-                  placeholder="Ex: 123456789"
-                  className="w-full px-4 py-3 border border-chaux-200 focus:ring-2 focus:ring-nuit-200"
-                />
-                <p className="text-xs text-chaux-600 mt-1">
-                  Écrivez « ID » à votre propre bot Telegram : il vous répondra votre identifiant.
-                </p>
-              </div>
-            </div>
-          )}
-        </motion.div>
 
         {/* Types de notifications */}
         <motion.div
