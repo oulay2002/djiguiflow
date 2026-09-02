@@ -831,7 +831,7 @@ export default function MaBoutiquePage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-nuit-700 mb-1 flex items-center gap-2">
-                      <MapPin className="w-4 h-4 text-chaux-400" /> Zone de livraison *
+                      <MapPin className="w-4 h-4 text-chaux-400" /> Où se trouve votre boutique *
                     </label>
                     <input
                       type="text"
@@ -841,6 +841,23 @@ export default function MaBoutiquePage() {
                       className="w-full px-4 py-2.5 border border-chaux-200 focus:ring-2 focus:ring-nuit-200 focus:border-nuit-300"
                       placeholder="Ex: Cocody - Angré"
                     />
+                    {/* IL S'APPELAIT « ZONE DE LIVRAISON », ET C'EST CE QUI
+                        EMBROUILLAIT TOUT.
+
+                        Deux champs posaient la meme question — celui-ci,
+                        OBLIGATOIRE, et « Quartiers que vous livrez » plus
+                        haut, facultatif. Le marchand repondait dans le premier
+                        et son tableau de bord lui reprochait ensuite de ne pas
+                        avoir dit ou il livre. Constate le 2 septembre 2026 sur
+                        le compte de banc.
+
+                        Ce champ-ci ne DECRIT PAS la livraison : il s'affiche en
+                        badge a cote du nom, dans l'annuaire et en tete de la
+                        vitrine. Son libelle le dit desormais. */}
+                    <p className="mt-1 text-xs text-chaux-600">
+                      Affiché à côté de votre nom, dans l’annuaire et en tête de votre
+                      vitrine. Les quartiers que vous livrez se renseignent plus haut.
+                    </p>
                   </div>
 
                   <div>
