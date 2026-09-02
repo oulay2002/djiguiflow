@@ -1,8 +1,8 @@
--- INSTANTANE DU 2026-08-30 10:34 UTC
--- DERNIERE MIGRATION APPLIQUEE : 20260829155309
+-- INSTANTANE DU 2026-09-02 17:55 UTC
+-- DERNIERE MIGRATION APPLIQUEE : 20260902151138
 --
 -- Pour restaurer : rejouer ce fichier, PUIS tous les fichiers de
--- supabase/migrations/ dont l'horodatage est superieur a 20260829155309.
+-- supabase/migrations/ dont l'horodatage est superieur a 20260902151138.
 -- Sauter cette etape ramene le schema jusqu'a vingt-quatre heures en
 -- arriere, verrous compris.
 
@@ -1715,10 +1715,6 @@ CREATE INDEX "livreurs_par_telegram" ON "public"."livreurs" USING "btree" ("tele
 
 
 
-CREATE UNIQUE INDEX "livreurs_telegram_unique" ON "public"."livreurs" USING "btree" ("boutique_id", "telegram_id") WHERE ("telegram_id" IS NOT NULL);
-
-
-
 CREATE INDEX "paiements_alerte_envoyee_le_idx" ON "public"."paiements" USING "btree" ("alerte_envoyee_le") WHERE ("alerte_envoyee_le" IS NULL);
 
 
@@ -1732,6 +1728,10 @@ CREATE INDEX "paiements_user_id_idx" ON "public"."paiements" USING "btree" ("use
 
 
 CREATE INDEX "paniers_abandonnes_idx" ON "public"."paniers" USING "btree" ("boutique_id", "maj_le" DESC) WHERE ("converti_le" IS NULL);
+
+
+
+CREATE INDEX "paniers_commande_id_idx" ON "public"."paniers" USING "btree" ("commande_id") WHERE ("commande_id" IS NOT NULL);
 
 
 
@@ -2033,7 +2033,7 @@ ALTER TABLE "public"."paniers" ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "paniers_lecture_marchand" ON "public"."paniers" FOR SELECT TO "authenticated" USING ((EXISTS ( SELECT 1
    FROM "public"."boutiques" "b"
-  WHERE (("b"."id" = "paniers"."boutique_id") AND ("b"."user_id" = "auth"."uid"())))));
+  WHERE (("b"."id" = "paniers"."boutique_id") AND ("b"."user_id" = ( SELECT "auth"."uid"() AS "uid"))))));
 
 
 
@@ -2055,7 +2055,7 @@ ALTER TABLE "public"."relances_envoyees" ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "relances_envoyees_lecture_marchand" ON "public"."relances_envoyees" FOR SELECT TO "authenticated" USING ((EXISTS ( SELECT 1
    FROM "public"."boutiques" "b"
-  WHERE (("b"."slug" = "relances_envoyees"."boutique") AND ("b"."user_id" = "auth"."uid"())))));
+  WHERE (("b"."slug" = "relances_envoyees"."boutique") AND ("b"."user_id" = ( SELECT "auth"."uid"() AS "uid"))))));
 
 
 
@@ -2064,7 +2064,7 @@ ALTER TABLE "public"."relances_stop" ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "relances_stop_lecture_marchand" ON "public"."relances_stop" FOR SELECT TO "authenticated" USING ((EXISTS ( SELECT 1
    FROM "public"."boutiques" "b"
-  WHERE (("b"."slug" = "relances_stop"."boutique") AND ("b"."user_id" = "auth"."uid"())))));
+  WHERE (("b"."slug" = "relances_stop"."boutique") AND ("b"."user_id" = ( SELECT "auth"."uid"() AS "uid"))))));
 
 
 
