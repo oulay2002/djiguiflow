@@ -4,6 +4,7 @@ import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 're
 import { motion } from 'framer-motion';
 import RobotAssistant from './RobotAssistant';
 import { Send, Headset, PhoneCall } from 'lucide-react';
+import { porteSupport } from '@/lib/contactSupport';
 
 type ChatMessage = {
   id: number;
@@ -18,7 +19,6 @@ type AssistantApiResponse = {
 
 const ASSISTANT_BADGE_SEEN_KEY = 'djiguiflow_assistant_badge_seen';
 const ASSISTANT_FLOATING_OPEN_KEY = 'djiguiflow_assistant_floating_open';
-const SUPPORT_EMAIL = 'support@djiguiflow.com';
 
 const quickPrompts = [
   'Comment fonctionne DjiguiFlow ?',
@@ -138,13 +138,26 @@ export default function AssistantChat() {
    * de WhatsApp du visiteur : c'est la première phrase qu'il lit de nous, et
    * il croira l'avoir écrite lui-même.
    */
-  const supportText = encodeURIComponent('Bonjour, je souhaite parler à un conseiller DjiguiFlow.');
-  const cleanedSupportPhone = supportPhone.replace(/[^\d+]/g, '');
-  const supportHref = supportWhatsapp
-    ? `https://wa.me/${supportWhatsapp.replace(/[^\d]/g, '')}?text=${supportText}`
-    : `mailto:${SUPPORT_EMAIL}?subject=Besoin%20d%27un%20conseiller%20DjiguiFlow`;
-  const callHref = cleanedSupportPhone ? `tel:${cleanedSupportPhone}` : null;
-  const supportPhoneDisplay = supportPhone || cleanedSupportPhone;
+  /**
+   * LE REPLI VIT DESORMAIS DANS `porteSupport`, ET IL Y VIT SEUL.
+   *
+   * Cet ecran-ci l'avait — sans numero WhatsApp, il basculait sur un
+   * `mailto:`. `SansBoutique`, lui, ne l'avait pas : son bloc de contact
+   * disparaissait entierement. Deux exemplaires d'une meme regle, dont un seul
+   * avait ete corrige.
+   *
+   * Les LIBELLES restent ici : ils sont propres a cet ecran et leur choix est
+   * argumente juste en dessous.
+   */
+  const support = porteSupport({
+    whatsapp: supportWhatsapp,
+    telephone: supportPhone,
+    message: 'Bonjour, je souhaite parler à un conseiller DjiguiFlow.',
+    objet: 'Besoin d’un conseiller DjiguiFlow',
+  });
+  const supportHref = support.href;
+  const callHref = support.telephone?.href ?? null;
+  const supportPhoneDisplay = supportPhone || (support.telephone?.affichage ?? '');
   /**
    * LE LIBELLÉ DIT L'ACTION, PAS LE CANAL.
    *
