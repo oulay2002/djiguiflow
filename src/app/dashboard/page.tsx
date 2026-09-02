@@ -196,7 +196,12 @@ export default function Page() {
               >
                 <Bell aria-hidden className="h-5 w-5" />
               </Link>
-              <Link href="/boutiques" className="inline-flex items-center gap-2 bg-nuit-900 px-4 py-2.5 text-sm font-semibold text-white soft-shadow hover:bg-nuit-800">
+              {/* `min-h-11` : il mesurait 40 px a cote de la cloche qui en fait
+                  44, dans le meme en-tete. DESIGN.md pose 44 « parce que le
+                  marchand pilote depuis son telephone et que la cible doit se
+                  toucher au pouce sans viser » — deux commandes voisines ne
+                  peuvent pas repondre differemment a la meme main. */}
+              <Link href="/boutiques" className="inline-flex min-h-11 items-center gap-2 bg-nuit-900 px-4 py-2.5 text-sm font-semibold text-white soft-shadow hover:bg-nuit-800">
                 Voir ma boutique <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
@@ -330,7 +335,14 @@ export default function Page() {
                     href="/aide/brancher"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-sm font-semibold text-bissap-800 underline underline-offset-4 hover:text-bissap-900"
+                    /* 20 px de haut, mesures. C'est le second lien de ce
+                       bandeau — celui qui dit au marchand comment brancher sa
+                       boutique — et il etait la plus petite cible de l'ecran,
+                       a cote d'un bouton qui en fait 36. Meme defaut que le
+                       lien de politique de confidentialite sur l'ecran des
+                       droits, corrige le meme jour : un `<a>` nu dans un
+                       paragraphe n'herite d'aucune hauteur. */
+                    className="inline-flex min-h-11 items-center text-sm font-semibold text-bissap-800 underline underline-offset-4 hover:text-bissap-900"
                   >
                     Lire le guide
                   </a>

@@ -228,8 +228,20 @@ function BarreBas({ actif, ouvrir }: { actif: string | null; ouvrir: () => void 
           aria-current={href === actif ? 'page' : undefined}
           // 3.5rem de haut : au-dessus du seuil de 44px sous lequel une cible
           // se rate au pouce.
+          //
+          // ── ET LA COULEUR, QUI AVAIT ETE OUBLIEE ────────────────────────
+          //
+          // Les libelles inactifs etaient en `chaux-500`. Mesure composite sur
+          // le blanc de la barre, le 2 septembre 2026 : 4,05 : 1, sous le
+          // plancher de 4,5 — et le texte fait 10 px, donc le plancher est
+          // bien celui-la. `chaux-600` donne 6,78 : 1, sur la meme rampe.
+          //
+          // Cette barre est la navigation PERMANENTE de l'application, et
+          // PRODUCT.md dit que le marchand la consulte « debout, en plein
+          // travail, parfois en plein soleil ». Le seuil de 44 px avait ete
+          // pense ici ; la lisibilite, non.
           className={`flex min-h-[3.5rem] flex-1 flex-col items-center justify-center gap-1 px-1 py-2 text-[0.65rem] font-semibold transition ${
-            href === actif ? 'text-primary-700' : 'text-chaux-500'
+            href === actif ? 'text-primary-700' : 'text-chaux-600'
           }`}
         >
           <Icon className="h-5 w-5" />
@@ -241,7 +253,7 @@ function BarreBas({ actif, ouvrir }: { actif: string | null; ouvrir: () => void 
         onClick={ouvrir}
         aria-label="Ouvrir le menu"
         className={`flex min-h-[3.5rem] flex-1 flex-col items-center justify-center gap-1 px-1 py-2 text-[0.65rem] font-semibold transition ${
-          dansLeTiroir ? 'text-primary-700' : 'text-chaux-500'
+          dansLeTiroir ? 'text-primary-700' : 'text-chaux-600'
         }`}
       >
         <Menu className="h-5 w-5" />
