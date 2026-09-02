@@ -142,9 +142,12 @@ describe('un brouillon non publie ne doit pas passer pour la production', () => 
  * cru, pendant trois jours, que « y a-t-il un vrai changement ? » repondait a
  * la question qu'il pose.
  */
-function scriptDeLEtape(): string {
-  const yml = readFileSync('.github/workflows/sauvegarde-schema.yml', 'utf8');
-  const depart = yml.indexOf('- name: Y a-t-il un vrai changement ?');
+function scriptDeLEtape(
+  fichier = '.github/workflows/sauvegarde-schema.yml',
+  etape = 'Y a-t-il un vrai changement ?',
+): string {
+  const yml = readFileSync(fichier, 'utf8');
+  const depart = yml.indexOf(`- name: ${etape}`);
   expect(depart, "l'etape a ete renommee : ce test ne garde plus rien").toBeGreaterThan(-1);
 
   const lignes = yml.slice(depart).split(/\r?\n/);
@@ -221,5 +224,56 @@ describe('la reference du schema ne parle que si le schema a bouge', () => {
       `-- INSTANTANE DU 2026-09-02 05:30 UTC\n-- DERNIERE MIGRATION APPLIQUEE : 20260902151138\n\ncreate table commandes (id uuid);\n`,
     );
     expect(r.verdict).toBe('oui');
+  });
+});
+
+/**
+ * ── ET LA PR QU'ON N'AVAIT JAMAIS SU FERMER ────────────────────────────────
+ *
+ * Les deux sauvegardes savaient ouvrir une PR et la mettre a jour. Aucune ne
+ * savait la SOLDER : quand le depot rattrapait la production, l'etape
+ * d'ouverture etait sautee et la PR restait ouverte avec un diff devenu faux.
+ * Deux ont ete fermees a la main le 2 septembre 2026 — et une main est
+ * exactement ce qui manquera la prochaine fois.
+ *
+ * On eprouve l'etape en lui donnant un FAUX `gh` : elle ne doit fermer que
+ * lorsqu'une PR est reellement ouverte, et rester muette sinon. Sans ce test,
+ * c'est le seul morceau de ce chantier qui n'aurait ete verifie qu'a l'oeil.
+ */
+function solder(etatDeLaPr: string, fichier: string): string[] {
+  const bac = mkdtempSync(join(tmpdir(), 'solde-'));
+  try {
+    const journal = join(bac, 'appels.txt').split('\\').join('/');
+    writeFileSync(
+      join(bac, 'gh'),
+      `#!/bin/sh\necho "$@" >> "${journal}"\n[ "$1" = "pr" ] && [ "$2" = "view" ] && echo "${etatDeLaPr}"\nexit 0\n`,
+    );
+    execFileSync('chmod', ['+x', join(bac, 'gh')]);
+    writeFileSync(join(bac, 'appels.txt'), '');
+
+    execFileSync('bash', ['-c', scriptDeLEtape(fichier, 'Solder la PR devenue sans objet')], {
+      cwd: bac,
+      env: { ...process.env, PATH: `${bac}:${process.env.PATH}`, BRANCHE: 'une-branche' },
+      stdio: 'pipe',
+    });
+    return readFileSync(join(bac, 'appels.txt'), 'utf8').trim().split('\n').filter(Boolean);
+  } finally {
+    rmSync(bac, { recursive: true, force: true });
+  }
+}
+
+describe.each([
+  ['export-n8n', '.github/workflows/exporter-n8n.yml'],
+  ['sauvegarde-schema', '.github/workflows/sauvegarde-schema.yml'],
+])('%s solde la PR devenue sans objet', (_nom, fichier) => {
+  it('ferme quand une PR est ouverte', () => {
+    const appels = solder('OPEN', fichier);
+    expect(appels.some((a) => a.startsWith('pr close une-branche'))).toBe(true);
+  });
+
+  it('ne touche a rien quand aucune PR n est ouverte', () => {
+    const appels = solder('MERGED', fichier);
+    expect(appels.some((a) => a.startsWith('pr close'))).toBe(false);
+    expect(appels.some((a) => a.startsWith('pr comment'))).toBe(false);
   });
 });

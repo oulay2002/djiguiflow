@@ -62,6 +62,41 @@ jobs:
       # UNE PR, PAS UNE POUSSEE DIRECTE. `main` est protegee, et surtout : le
       # diff EST la revue. Un changement d'automatisation qui atterrit sans que
       # personne ne le regarde ne vaut pas mieux que pas de trace du tout.
+      # ── UNE PR QUI N'A PLUS RIEN A PROPOSER DOIT SE FERMER ─────────────────
+      #
+      # Ces deux sauvegardes savaient ouvrir une PR et la mettre a jour. Aucune
+      # ne savait la SOLDER : quand le depot rattrapait la production — parce
+      # que la PR avait ete fusionnee autrement, ou parce que le changement
+      # avait ete defait dans l'interface — l'etape « ouvrir ou mettre a jour »
+      # etait simplement sautee, et la PR restait ouverte avec un diff devenu
+      # faux. C'est ce qui s'est passe le 2 septembre 2026 : deux PR fermees a
+      # la main, et une main est exactement ce qui manquera la prochaine fois.
+      #
+      # ELLE NE FERME QUE CE QUE PLUS RIEN NE PROPOSE. `change=non` veut dire
+      # que le depot et la production coincident : il n'y a donc, par
+      # construction, plus rien a relire dans cette PR.
+      #
+      # Elle ne peut pas faire echouer la sauvegarde — ce serait echanger une
+      # PR en trop contre une reference manquante — mais elle ne se tait pas
+      # non plus : un refus laisse un avertissement dans le journal.
+      - name: Solder la PR devenue sans objet
+        if: steps.diff.outputs.change == 'non'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCHE: export-n8n
+        run: |
+          if ! gh pr view "$BRANCHE" --json state --jq .state 2>/dev/null | grep -q OPEN; then
+            echo "Aucune PR ouverte a solder."
+            exit 0
+          fi
+          gh pr comment "$BRANCHE" --body "Le depot et la production coincident de nouveau : cette PR n'a plus rien a proposer. Fermee automatiquement par la sauvegarde."             || echo "::warning::Commentaire refuse."
+          if gh pr close "$BRANCHE" --delete-branch; then
+            echo "PR sans objet fermee."
+          else
+            echo "::warning::Fermeture refusee — la PR reste ouverte avec un diff perime."
+          fi
+
       - name: Ouvrir ou mettre a jour la PR
         if: steps.diff.outputs.change == 'oui'
         env:
