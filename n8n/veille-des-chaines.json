@@ -150,7 +150,7 @@
         "id": "96e2088d-b206-418f-b7a4-66c656cb338e",
         "name": "Rediger l alerte",
         "parameters": {
-          "jsCode": "// L alerte doit se lire d un coup d oeil sur un telephone.\n//\n// ELLE GROUPE PAR MARCHAND, pas par type. Quand une chaine casse, elle casse\n// pour UNE boutique : l exploitant a besoin de savoir chez qui aller, pas\n// combien d anomalies existent au total.\nconst r = $input.first().json || {};\nconst anomalies = r.anomalies || [];\n\nconst LIBELLES = {\n  confirmee_sans_livreur: 'Confirmee, aucun livreur lance',\n  livree_sans_frais:      'Livree sans frais annonces',\n  livree_sans_decompte:   'Livree sans decompte de stock',\n  panier_oublie:          'Panier oublie en collecte',\n};\n\nconst parBoutique = {};\nfor (const a of anomalies) {\n  const b = a.boutique || 'boutique inconnue';\n  (parBoutique[b] = parBoutique[b] || []).push(a);\n}\n\nconst lignes = [];\nfor (const [boutique, liste] of Object.entries(parBoutique)) {\n  lignes.push('');\n  lignes.push('*' + boutique + '*');\n  for (const a of liste) {\n    lignes.push('  • ' + (LIBELLES[a.type] || a.type));\n    lignes.push('    ' + a.reference + ' — ' + a.detail);\n  }\n}\n\nconst titre = anomalies.length === 1\n  ? 'CHAINE ROMPUE'\n  : 'CHAINES ROMPUES (' + anomalies.length + ')';\n\nreturn [{ json: { message: '🔗 ' + titre + lignes.join('\\n') } }];"
+          "jsCode": "// L alerte doit se lire d un coup d oeil sur un telephone.\n//\n// ELLE GROUPE PAR MARCHAND, pas par type. Quand une chaine casse, elle casse\n// pour UNE boutique : l exploitant a besoin de savoir chez qui aller, pas\n// combien d anomalies existent au total.\nconst r = $input.first().json || {};\nconst anomalies = r.anomalies || [];\n\nconst LIBELLES = {\n  confirmee_sans_livreur: 'Confirmee, aucun livreur lance',\n  livree_sans_frais:      'Livree sans frais annonces',\n  livree_sans_decompte:   'Livree sans decompte de stock',\n  panier_oublie:          'Panier oublie en collecte',\n  forfait_depasse:        'Forfait de commandes depasse',\n  whatsapp_marchand:      'Session WhatsApp du marchand deconnectee',\n  'compte-wasender':      'Compte wasender en cause — abonnement ou limite',\n  'ligne-whatsapp-eteinte': 'Ligne WhatsApp payee mais deconnectee',\n};\n\nconst parBoutique = {};\nfor (const a of anomalies) {\n  const b = a.boutique || 'boutique inconnue';\n  (parBoutique[b] = parBoutique[b] || []).push(a);\n}\n\nconst lignes = [];\nfor (const [boutique, liste] of Object.entries(parBoutique)) {\n  lignes.push('');\n  lignes.push('*' + boutique + '*');\n  for (const a of liste) {\n    lignes.push('  • ' + (LIBELLES[a.type] || a.type));\n    lignes.push('    ' + a.reference + ' — ' + a.detail);\n  }\n}\n\nconst titre = anomalies.length === 1\n  ? 'CHAINE ROMPUE'\n  : 'CHAINES ROMPUES (' + anomalies.length + ')';\n\nreturn [{ json: { message: '🔗 ' + titre + lignes.join('\\n') } }];"
         },
         "position": [
           672,
@@ -191,7 +191,25 @@
     "workflowPublishHistory": [
       {
         "event": "activated",
-        "id": 226,
+        "id": 345,
+        "userId": "81519f6f-0887-498a-ad83-5ffd6d591e9a",
+        "workflowId": "v6q3ymV13soFdzja"
+      },
+      {
+        "event": "activated",
+        "id": 347,
+        "userId": "81519f6f-0887-498a-ad83-5ffd6d591e9a",
+        "workflowId": "v6q3ymV13soFdzja"
+      },
+      {
+        "event": "deactivated",
+        "id": 344,
+        "userId": "81519f6f-0887-498a-ad83-5ffd6d591e9a",
+        "workflowId": "v6q3ymV13soFdzja"
+      },
+      {
+        "event": "deactivated",
+        "id": 346,
         "userId": "81519f6f-0887-498a-ad83-5ffd6d591e9a",
         "workflowId": "v6q3ymV13soFdzja"
       }
@@ -346,7 +364,7 @@
       "id": "96e2088d-b206-418f-b7a4-66c656cb338e",
       "name": "Rediger l alerte",
       "parameters": {
-        "jsCode": "// L alerte doit se lire d un coup d oeil sur un telephone.\n//\n// ELLE GROUPE PAR MARCHAND, pas par type. Quand une chaine casse, elle casse\n// pour UNE boutique : l exploitant a besoin de savoir chez qui aller, pas\n// combien d anomalies existent au total.\nconst r = $input.first().json || {};\nconst anomalies = r.anomalies || [];\n\nconst LIBELLES = {\n  confirmee_sans_livreur: 'Confirmee, aucun livreur lance',\n  livree_sans_frais:      'Livree sans frais annonces',\n  livree_sans_decompte:   'Livree sans decompte de stock',\n  panier_oublie:          'Panier oublie en collecte',\n};\n\nconst parBoutique = {};\nfor (const a of anomalies) {\n  const b = a.boutique || 'boutique inconnue';\n  (parBoutique[b] = parBoutique[b] || []).push(a);\n}\n\nconst lignes = [];\nfor (const [boutique, liste] of Object.entries(parBoutique)) {\n  lignes.push('');\n  lignes.push('*' + boutique + '*');\n  for (const a of liste) {\n    lignes.push('  • ' + (LIBELLES[a.type] || a.type));\n    lignes.push('    ' + a.reference + ' — ' + a.detail);\n  }\n}\n\nconst titre = anomalies.length === 1\n  ? 'CHAINE ROMPUE'\n  : 'CHAINES ROMPUES (' + anomalies.length + ')';\n\nreturn [{ json: { message: '🔗 ' + titre + lignes.join('\\n') } }];"
+        "jsCode": "// L alerte doit se lire d un coup d oeil sur un telephone.\n//\n// ELLE GROUPE PAR MARCHAND, pas par type. Quand une chaine casse, elle casse\n// pour UNE boutique : l exploitant a besoin de savoir chez qui aller, pas\n// combien d anomalies existent au total.\nconst r = $input.first().json || {};\nconst anomalies = r.anomalies || [];\n\nconst LIBELLES = {\n  confirmee_sans_livreur: 'Confirmee, aucun livreur lance',\n  livree_sans_frais:      'Livree sans frais annonces',\n  livree_sans_decompte:   'Livree sans decompte de stock',\n  panier_oublie:          'Panier oublie en collecte',\n  forfait_depasse:        'Forfait de commandes depasse',\n  whatsapp_marchand:      'Session WhatsApp du marchand deconnectee',\n  'compte-wasender':      'Compte wasender en cause — abonnement ou limite',\n  'ligne-whatsapp-eteinte': 'Ligne WhatsApp payee mais deconnectee',\n};\n\nconst parBoutique = {};\nfor (const a of anomalies) {\n  const b = a.boutique || 'boutique inconnue';\n  (parBoutique[b] = parBoutique[b] || []).push(a);\n}\n\nconst lignes = [];\nfor (const [boutique, liste] of Object.entries(parBoutique)) {\n  lignes.push('');\n  lignes.push('*' + boutique + '*');\n  for (const a of liste) {\n    lignes.push('  • ' + (LIBELLES[a.type] || a.type));\n    lignes.push('    ' + a.reference + ' — ' + a.detail);\n  }\n}\n\nconst titre = anomalies.length === 1\n  ? 'CHAINE ROMPUE'\n  : 'CHAINES ROMPUES (' + anomalies.length + ')';\n\nreturn [{ json: { message: '🔗 ' + titre + lignes.join('\\n') } }];"
       },
       "position": [
         672,
@@ -390,5 +408,5 @@
   },
   "sourceWorkflowId": null,
   "tags": [],
-  "versionCounter": 2
+  "versionCounter": 5
 }
