@@ -3,6 +3,7 @@ import { etatQuota } from '@/lib/billing/quota';
 import { VALEURS_LIVREE } from '@/lib/livraison';
 import { inventaireSessions, santeSessionWhatsApp } from '@/lib/wasenderSessions';
 import { rapprocherSessions, type Rapprochement } from '@/lib/rapprochementSessions';
+import { urlWebhookWhatsApp } from '@/lib/routeurWhatsApp';
 
 export const dynamic = 'force-dynamic';
 
@@ -432,7 +433,9 @@ export async function POST(req: Request) {
           surveillee: b.actif !== false,
         }));
 
-      const rapp = rapprocherSessions(compte.sessions, reelles);
+      const rapp = rapprocherSessions(compte.sessions, reelles, (b) =>
+        urlWebhookWhatsApp(b.slug),
+      );
       inventaire = { ...rapp, total: compte.total };
 
       if (rapp.orphelines.length) {
@@ -452,6 +455,29 @@ export async function POST(req: Request) {
       // messages ne partiront pas, et aucune autre sonde ne le voit :
       // `santeSessionWhatsApp` interroge le jeton du coffre, pas l'existence
       // de la ligne.
+      /**
+       * LE CHEMIN ENTRANT. « Connectee » dit que WhatsApp a lie l'appareil du
+       * marchand — pas que les messages de ses clients nous parviennent.
+       *
+       * n8n sert son webhook sous deux formes et n'en enregistre qu'une : la
+       * mauvaise rend 404, et un 404 ressemble a un refus poli. Une ligne
+       * declaree a la main peut donc etre parfaitement connectee et
+       * parfaitement sourde, sans que rien ne le dise. Voir
+       * `routeurWhatsApp.ts`.
+       */
+      for (const divergence of rapp.webhooks?.divergents ?? []) {
+        const nom = divergence.split(' → ')[0];
+        trouvees.push({
+          type: 'webhook-whatsapp-devie',
+          reference: `webhook-devie-${nom}-${jour}`,
+          boutique: nom,
+          detail:
+            `Ligne WhatsApp connectee, mais son webhook vise ${divergence.split(' → ')[1]}`
+            + ' au lieu de l adresse du routeur. Les messages des clients ne nous'
+            + ' parviennent pas. Redeclarer le webhook chez wasender.',
+        });
+      }
+
       for (const nom of rapp.fantomes) {
         trouvees.push({
           type: 'boutique-sans-ligne',

@@ -54,6 +54,53 @@ async function ficheDeLaBoutique(boutiqueId: string) {
 }
 
 /**
+ * CETTE BOUTIQUE A-T-ELLE DEJA UN JETON WHATSAPP QUI MARCHE ?
+ *
+ * ── POURQUOI CE N'EST PAS « LA COLONNE EST-ELLE REMPLIE ? » ────────────────
+ *
+ * Zahara le prouve : elle porte un jeton au coffre — ses messages partent —
+ * et AUCUN `wasender_session_id`, ayant ete branchee a la main avant que ce
+ * libre-service n'existe. La colonne dit comment on l'a branchee, pas si elle
+ * l'est.
+ *
+ * ── ELLE EST ICI PARCE QUE LE CORRECTIF N'AVAIT ETE POSE QUE D'UN COTE ─────
+ *
+ * La regle vivait dans le POST seul. Le GET, qui alimente l'ecran ou le
+ * marchand attend, continuait de lire la colonne : une boutique branchee a la
+ * main y lisait « WhatsApp non branche » pour toujours, et le bouton
+ * l'invitait a recliquer — ce que le POST refusait ensuite a juste titre.
+ * L'ecran et l'action se contredisaient.
+ *
+ * Deux exemplaires d'une meme regle, c'est deux regles le jour ou l'une
+ * change. Elle n'en a plus qu'un.
+ *
+ * ── UNE LECTURE RATEE NE VAUT PAS « PAS BRANCHEE » ─────────────────────────
+ *
+ * On rend `false` sur une panne de coffre, et c'est le repli le moins couteux :
+ * le pire cas redevient l'ancien comportement — on propose un branchement — et
+ * l'idempotence du POST reste le vrai garde-fou contre la seconde place.
+ */
+async function aDejaUnJeton(slug: string): Promise<boolean> {
+  const sb = getSupabaseAdmin();
+  if (!sb || !slug) return false;
+
+  try {
+    const { data, error } = await sb.rpc('jeton_canal', {
+      p_boutique: slug,
+      p_canal: 'wasender',
+    });
+    if (error) {
+      console.error('WhatsApp — lecture du coffre impossible :', error.message);
+      return false;
+    }
+    return typeof data === 'string' && data.trim() !== '';
+  } catch (e) {
+    console.error('WhatsApp — acces au coffre impossible :', e);
+    return false;
+  }
+}
+
+/**
  * POST — ouvrir la session.
  *
  * ── L'IDEMPOTENCE EST UNE QUESTION D'ARGENT, PAS DE PROPRETÉ ───────────────
@@ -111,34 +158,17 @@ export async function POST(req: Request) {
    * rien montrer. Le marchand n'en a pas besoin — son WhatsApp fonctionne
    * déjà. On le lui dit, au lieu de lui vendre un branchement qu'il a.
    */
-  const sbCoffre = getSupabaseAdmin();
-  if (sbCoffre) {
-    try {
-      const { data: jeton, error } = await sbCoffre.rpc('jeton_canal', {
-        p_boutique: String(fiche.slug ?? ''),
-        p_canal: 'wasender',
-      });
-
-      // UNE LECTURE DU COFFRE QUI ÉCHOUE NE VAUT PAS « PAS BRANCHÉE ». On
-      // laisse passer plutôt que de bloquer un branchement légitime sur une
-      // panne de lecture : le pire cas redevient l'ancien comportement.
-      if (error) {
-        console.error('WhatsApp — lecture du coffre impossible :', error.message);
-      } else if (typeof jeton === 'string' && jeton.trim()) {
-        return Response.json(
-          {
-            ok: true,
-            etat: 'connectee',
-            message:
-              'Votre WhatsApp est déjà branché. Rien à refaire — et nous n’ouvrons '
-              + 'pas de seconde ligne, qui vous serait facturée pour rien.',
-          } satisfies Reponse,
-          { status: 200 },
-        );
-      }
-    } catch (e) {
-      console.error('WhatsApp — accès au coffre impossible :', e);
-    }
+  if (await aDejaUnJeton(String(fiche.slug ?? ''))) {
+    return Response.json(
+      {
+        ok: true,
+        etat: 'connectee',
+        message:
+          'Votre WhatsApp est déjà branché. Rien à refaire — et nous n’ouvrons '
+          + 'pas de seconde ligne, qui vous serait facturée pour rien.',
+      } satisfies Reponse,
+      { status: 200 },
+    );
   }
 
   // ---- Le numéro d'abord. Ouvrir une session sur un numéro mal formé
@@ -274,11 +304,23 @@ export async function GET(req: Request) {
   }
 
   const fiche = await ficheDeLaBoutique(acces.marchand.boutiqueId);
-  if (!fiche?.wasender_session_id) {
-    return Response.json({ ok: true, etat: 'absente' } satisfies Reponse);
+  if (fiche?.wasender_session_id) {
+    return await etatEtQr(String(fiche.wasender_session_id));
   }
 
-  return await etatEtQr(String(fiche.wasender_session_id));
+  /**
+   * MEME QUESTION QUE DANS LE POST, ET C'EST TOUT L'INTERET.
+   *
+   * Sans ce controle, une boutique branchee a la main lisait « WhatsApp non
+   * branche » sur son ecran pour toujours. Il n'y a pas de QR a lui montrer —
+   * on n'a pas d'identifiant de session — mais il n'y a rien a lui montrer :
+   * son WhatsApp marche.
+   */
+  if (await aDejaUnJeton(String(fiche?.slug ?? ''))) {
+    return Response.json({ ok: true, etat: 'connectee' } satisfies Reponse);
+  }
+
+  return Response.json({ ok: true, etat: 'absente' } satisfies Reponse);
 }
 
 /**
