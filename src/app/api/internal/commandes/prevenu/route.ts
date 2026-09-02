@@ -1,5 +1,6 @@
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import { referenceRecevable } from '@/lib/reference';
+import { resoudreMarchand } from '@/lib/marchands';
 
 export const dynamic = 'force-dynamic';
 
@@ -26,7 +27,7 @@ export const dynamic = 'force-dynamic';
  * le moment ou n8n a reessaye de le dire.
  */
 
-type Corps = { reference?: unknown };
+type Corps = { reference?: unknown; boutique?: unknown; slug?: unknown; boutique_id?: unknown };
 
 export async function POST(req: Request) {
   const secret = req.headers.get('x-sync-secret');
@@ -45,6 +46,19 @@ export async function POST(req: Request) {
     return Response.json({ error: 'reference invalide' }, { status: 400 });
   }
 
+  // ELLE ECRIT, ET `reference` EST UNE CLE GLOBALE. Sans le filtre de boutique
+  // ci-dessous, un appel portant la reference d'un autre marchand marquait SA
+  // commande comme « client prevenu » — alors que personne ne l'avait
+  // prevenu. Le degat n'est pas une fuite mais un mensonge durable : le
+  // marchand voit un client rassure qui ne l'est pas, et la veille cesse de
+  // signaler `client_non_prevenu` pour cette commande. Un filet qu'on
+  // desarme a distance.
+  const boutiqueRef = String(corps?.boutique ?? corps?.slug ?? corps?.boutique_id ?? '').trim();
+  if (!boutiqueRef) return Response.json({ error: 'boutique requise' }, { status: 400 });
+
+  const marchand = await resoudreMarchand(boutiqueRef);
+  if (!marchand) return Response.json({ error: 'Boutique introuvable' }, { status: 404 });
+
   const sb = getSupabaseAdmin();
   if (!sb) return Response.json({ error: 'Base indisponible' }, { status: 503 });
 
@@ -52,6 +66,7 @@ export async function POST(req: Request) {
     .from('commandes')
     .update({ client_prevenu_le: new Date().toISOString() })
     .eq('reference', reference)
+    .eq('boutique_id', marchand.boutiqueId)
     .is('client_prevenu_le', null)
     .select('reference, client_prevenu_le');
 

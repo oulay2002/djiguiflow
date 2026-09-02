@@ -68,6 +68,12 @@ vi.mock('@/lib/supabaseAdmin', () => ({
           return chaine;
         },
         ilike: () => chaine,
+        // La borne de boutique posee le 2 septembre 2026 sur les trois
+        // ecritures de cette route. Elle est ignoree ICI a dessein : ce banc
+        // eprouve l'attribution du livreur, et un filtre qu'il honorerait a
+        // moitie brouillerait son sujet. Le cloisonnement a son propre banc,
+        // `cloisonnement-commandes-internes.test.ts`, qui lui le fait jouer.
+        eq: () => chaine,
         is: () => chaine,
         select: async () => {
           if (etats.attributionCassee && 'livreur_id' in charge) {
@@ -89,6 +95,11 @@ vi.mock('@/lib/supabaseAdmin', () => ({
   }),
 }));
 
+vi.mock('@/lib/marchands', () => ({
+  resoudreMarchand: async (ref: string) =>
+    ref === 'boutique-a' ? { id: 'boutique-a', boutiqueId: 'boutique-A' } : null,
+}));
+
 const { POST } = await import('@/app/api/internal/commandes/livraison/route');
 
 beforeEach(() => {
@@ -106,7 +117,9 @@ const appeler = (corps: Record<string, unknown>) =>
     new Request('https://exemple.test/api/internal/commandes/livraison', {
       method: 'POST',
       headers: { 'content-type': 'application/json', 'x-sync-secret': 'secret-de-test' },
-      body: JSON.stringify(corps),
+      // La boutique est exigee depuis le 2 septembre 2026. Elle est posee en
+      // PREMIER pour qu'un cas puisse encore la surcharger, ou l'oter.
+      body: JSON.stringify({ boutique: 'boutique-a', ...corps }),
     }),
   );
 
