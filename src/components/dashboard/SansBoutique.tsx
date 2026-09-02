@@ -3,6 +3,7 @@
 import type { ReactNode } from 'react';
 import { LifeBuoy, Store } from 'lucide-react';
 import { useBoutique } from '@/lib/boutique';
+import { porteSupport } from '@/lib/contactSupport';
 
 /**
  * La decision, sortie du JSX pour pouvoir etre eprouvee.
@@ -47,8 +48,27 @@ export default function SansBoutique({ children }: { children: ReactNode }) {
 
   if (!afficherEcranSansBoutique(pret, boutiques.length)) return <>{children}</>;
 
-  const whatsapp = process.env.NEXT_PUBLIC_SUPPORT_WHATSAPP?.trim() ?? '';
-  const telephone = process.env.NEXT_PUBLIC_SUPPORT_PHONE?.trim() ?? '';
+  /**
+   * LE BLOC DE CONTACT NE PEUT PLUS DISPARAITRE.
+   *
+   * Il etait enveloppe dans `{(whatsapp || telephone) && …}` : les deux
+   * variables absentes, il ne restait que « Ecrivez-nous […] et nous vous
+   * rappelons » — sans rien a cliquer. Sur le seul ecran dont l'issue depend
+   * ENTIEREMENT de nous, puisque le marchand n'a pas de boutique et ne peut
+   * rien faire d'autre que nous joindre.
+   *
+   * Une variable `NEXT_PUBLIC_` est inlinee AU BUILD : elle se perd sans bruit
+   * sur un nouvel environnement ou une faute de frappe, et rien n'echoue.
+   * `porteSupport` garantit une porte — `mailto:` a defaut de WhatsApp — et
+   * c'est la meme regle que celle de l'accueil public, desormais ecrite une
+   * seule fois.
+   */
+  const support = porteSupport({
+    whatsapp: process.env.NEXT_PUBLIC_SUPPORT_WHATSAPP,
+    telephone: process.env.NEXT_PUBLIC_SUPPORT_PHONE,
+    message: 'Bonjour, je viens de créer mon compte DjiguiFlow et je souhaite ouvrir ma boutique.',
+    objet: 'Ouvrir ma boutique DjiguiFlow',
+  });
 
   return (
     <div className="mx-auto max-w-xl px-4 py-16">
@@ -75,27 +95,23 @@ export default function SansBoutique({ children }: { children: ReactNode }) {
           nous vous rappelons.
         </p>
 
-        {(whatsapp || telephone) && (
-          <div className="mt-6 flex flex-wrap gap-3">
-            {whatsapp && (
-              <a
-                href={`https://wa.me/${whatsapp.replace(/[^0-9]/g, '')}`}
-                className="inline-flex items-center gap-2 bg-bissap-500 px-4 py-3 text-sm font-semibold text-white soft-shadow hover:bg-bissap-600"
-              >
-                <LifeBuoy aria-hidden className="h-4 w-4" />
-                Nous écrire sur WhatsApp
-              </a>
-            )}
-            {telephone && (
-              <a
-                href={`tel:${telephone.replace(/\s/g, '')}`}
-                className="inline-flex items-center gap-2 border border-[var(--hairline)] bg-chaux-50 px-4 py-3 text-sm font-semibold text-nuit-900 hover:bg-chaux-100"
-              >
-                {telephone}
-              </a>
-            )}
-          </div>
-        )}
+        <div className="mt-6 flex flex-wrap gap-3">
+          <a
+            href={support.href}
+            className="inline-flex items-center gap-2 bg-bissap-500 px-4 py-3 text-sm font-semibold text-white soft-shadow hover:bg-bissap-600"
+          >
+            <LifeBuoy aria-hidden className="h-4 w-4" />
+            {support.libelle}
+          </a>
+          {support.telephone && (
+            <a
+              href={support.telephone.href}
+              className="inline-flex items-center gap-2 border border-[var(--hairline)] bg-chaux-50 px-4 py-3 text-sm font-semibold text-nuit-900 hover:bg-chaux-100"
+            >
+              {support.telephone.affichage}
+            </a>
+          )}
+        </div>
       </section>
     </div>
   );
