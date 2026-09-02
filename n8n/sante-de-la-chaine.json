@@ -1,175 +1,5 @@
 {
   "active": true,
-  "activeVersion": {
-    "authors": "JEAN PAUL OULAI",
-    "autosaved": false,
-    "connections": {
-      "Formater la panne de sonde": {
-        "main": [
-          [
-            {
-              "index": 0,
-              "node": "Alerter la veille",
-              "type": "main"
-            }
-          ]
-        ]
-      },
-      "Formater les silences": {
-        "main": [
-          [
-            {
-              "index": 0,
-              "node": "Alerter la veille",
-              "type": "main"
-            }
-          ]
-        ]
-      },
-      "Sonder la sante de la chaine": {
-        "main": [
-          [
-            {
-              "index": 0,
-              "node": "Formater les silences",
-              "type": "main"
-            }
-          ],
-          [
-            {
-              "index": 0,
-              "node": "Formater la panne de sonde",
-              "type": "main"
-            }
-          ]
-        ]
-      },
-      "Toutes les 15 minutes": {
-        "main": [
-          [
-            {
-              "index": 0,
-              "node": "Sonder la sante de la chaine",
-              "type": "main"
-            }
-          ]
-        ]
-      }
-    },
-    "description": null,
-    "name": null,
-    "nodeGroups": [],
-    "nodes": [
-      {
-        "id": "n-schedule",
-        "name": "Toutes les 15 minutes",
-        "parameters": {
-          "rule": {
-            "interval": [
-              {
-                "expression": "*/15 * * * *",
-                "field": "cronExpression"
-              }
-            ]
-          }
-        },
-        "position": [
-          0,
-          0
-        ],
-        "type": "n8n-nodes-base.scheduleTrigger",
-        "typeVersion": 1.2
-      },
-      {
-        "credentials": {
-          "httpHeaderAuth": {
-            "id": "QoKeVRwGrk1YqN9Q",
-            "name": "Header Auth account 2"
-          }
-        },
-        "id": "n-http",
-        "maxTries": 3,
-        "name": "Sonder la sante de la chaine",
-        "onError": "continueErrorOutput",
-        "parameters": {
-          "authentication": "genericCredentialType",
-          "genericAuthType": "httpHeaderAuth",
-          "method": "POST",
-          "options": {},
-          "url": "https://www.djiguiflow.com/api/internal/sante"
-        },
-        "position": [
-          220,
-          0
-        ],
-        "retryOnFail": true,
-        "type": "n8n-nodes-base.httpRequest",
-        "typeVersion": 4.2,
-        "waitBetweenTries": 5000
-      },
-      {
-        "id": "n-code-silences",
-        "name": "Formater les silences",
-        "parameters": {
-          "jsCode": "// Traduit les constats de la route en une alerte lisible d'un coup d'oeil.\n//\n// PAS DE MARKDOWN. Un texte Telegram en Markdown contenant _ ou * fait echouer\n// l'envoi et rend la panne silencieuse — c'est deja arrive. Texte brut.\nconst r = $input.first().json;\n\n// Une reponse qui n'est pas `ok` n'est pas « zero silence » : c'est une\n// anomalie. La taire ferait passer une sonde cassee pour une chaine saine.\nif (!r || r.ok !== true) {\n  return [{ json: { message:\n    'SONDE SANTE - reponse inattendue\\n' +\n    'La route a repondu sans ok:true. Rien ne surveille la chaine tant que ceci dure.\\n\\n' +\n    JSON.stringify(r).slice(0, 300) } }];\n}\n\n// Rien a signaler : on n'envoie rien. Un moniteur qui parle tous les quarts\n// d'heure pour dire « tout va bien » cesse d'etre lu.\nif (!r.total) return [];\n\nconst lisible = (min) => {\n  const h = Math.floor(min / 60), m = min % 60;\n  return h ? h + ' h ' + String(m).padStart(2, '0') : m + ' min';\n};\n\nconst titres = {\n  sans_livreur: 'sans livreur',\n  stock_non_decompte: 'stock non decompte',\n  abandons_en_retard: 'abandons en retard',\n};\n\nconst resume = Object.entries(r.par_type)\n  .filter(([, n]) => n > 0)\n  .map(([k, n]) => n + ' ' + (titres[k] || k))\n  .join(', ');\n\nconst lignes = r.constats.map((c) =>\n  '- ' + c.boutique + ' / ' + c.reference + '\\n  ' + c.detail + ' (depuis ' + lisible(c.age_minutes) + ')');\n\nreturn [{ json: { message:\n  'SANTE DE LA CHAINE - ' + r.total + ' silence(s)\\n' +\n  resume + '\\n' +\n  'Boutiques : ' + r.boutiques.join(', ') + '\\n\\n' +\n  lignes.join('\\n') } }];"
-        },
-        "position": [
-          460,
-          -80
-        ],
-        "type": "n8n-nodes-base.code",
-        "typeVersion": 2
-      },
-      {
-        "id": "n-code-panne",
-        "name": "Formater la panne de sonde",
-        "parameters": {
-          "jsCode": "// LA SONDE ELLE-MEME EST TOMBEE.\n//\n// C'est le cas qu'un moniteur oublie le plus souvent : il se tait quand il est\n// casse, et son silence se lit comme « tout va bien ». Le noeud HTTP reessaie\n// trois fois avant d'arriver ici, pour qu'un seul fetch rate ne crie pas au\n// loup — une sonde qui a deja annonce une panne inexistante n'est plus crue.\nconst e = $input.first().json;\nconst detail = String(e?.error?.message ?? e?.message ?? JSON.stringify(e)).slice(0, 300);\n\nreturn [{ json: { message:\n  'SONDE SANTE INJOIGNABLE\\n' +\n  'La route /api/internal/sante n a pas repondu apres trois essais.\\n' +\n  'Tant que ce message revient, plus rien ne surveille la chaine.\\n\\n' +\n  detail } }];"
-        },
-        "position": [
-          460,
-          120
-        ],
-        "type": "n8n-nodes-base.code",
-        "typeVersion": 2
-      },
-      {
-        "credentials": {
-          "telegramApi": {
-            "id": "6Kq1Zdz8WA4Xftv2",
-            "name": "Telegram Veille DjiguiFlow"
-          }
-        },
-        "id": "n-telegram",
-        "name": "Alerter la veille",
-        "parameters": {
-          "additionalFields": {
-            "appendAttribution": false
-          },
-          "chatId": "-1003994906478",
-          "operation": "sendMessage",
-          "resource": "message",
-          "text": "={{ $json.message }}"
-        },
-        "position": [
-          700,
-          0
-        ],
-        "type": "n8n-nodes-base.telegram",
-        "typeVersion": 1.2,
-        "webhookId": "87239467-4a6c-41b7-b216-2085bda487d2"
-      }
-    ],
-    "workflowId": "II5jnZifXlP6Fs9S",
-    "workflowPublishHistory": [
-      {
-        "event": "activated",
-        "id": 221,
-        "userId": "81519f6f-0887-498a-ad83-5ffd6d591e9a",
-        "workflowId": "II5jnZifXlP6Fs9S"
-      }
-    ]
-  },
   "connections": {
     "Formater la panne de sonde": {
       "main": [
@@ -224,6 +54,7 @@
     }
   },
   "description": null,
+  "etat_publication": "publie",
   "id": "II5jnZifXlP6Fs9S",
   "isArchived": false,
   "name": "Sante de la chaine",
@@ -335,6 +166,5 @@
     "executionOrder": "v1"
   },
   "sourceWorkflowId": null,
-  "tags": [],
-  "versionCounter": 1
+  "tags": []
 }

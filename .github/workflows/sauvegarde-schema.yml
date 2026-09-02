@@ -132,15 +132,55 @@ jobs:
           mv supabase/reference/schema.sql.tmp supabase/reference/schema.sql
           echo "filigrane : $DERNIERE"
 
+      # ── CETTE ETAPE NE POUVAIT PAS REPONDRE « NON » ────────────────────────
+      #
+      # Elle comparait le fichier a sa version committee. Or l'etape d'avant
+      # vient d'ecrire dedans `-- INSTANTANE DU <date> <heure> UTC` : cette
+      # ligne change a CHAQUE passage, donc le fichier etait toujours modifie,
+      # donc la reponse etait toujours « oui ». Une PR partait chaque nuit,
+      # pour toujours.
+      #
+      # CE QUE CA COUTAIT. La PR #135 est restee ouverte du 31 aout au 2
+      # septembre 2026 et son diff entier tenait en une ligne : l'horodatage.
+      # Trois jours sans le moindre changement de schema, et l'instrument
+      # deposait quand meme son rapport. Un garde qui parle chaque nuit
+      # n'apprend qu'une chose : a ne plus etre lu.
+      #
+      # ET IL A UN SEUL TRAVAIL, celui que dit le corps de la PR : reperer ce
+      # qui apparait SANS migration correspondante, c'est-a-dire une base
+      # modifiee a la main en production. Ce signal-la arrivait comme la
+      # soixantieme PR identique, indistinguable des cinquante-neuf autres.
+      #
+      # ON COMPARE DONC LE CONTENU, l'horodatage exclu. Le filigrane
+      # `DERNIERE MIGRATION APPLIQUEE`, lui, reste dans la comparaison : il
+      # borne le rattrapage, et le voir bouger est un vrai evenement.
+      #
+      # QUAND RIEN N'A CHANGE, ON REMET LE FICHIER COMME IL ETAIT. Le laisser
+      # reecrit avec l'heure du jour ferait repartir la PR par la porte d'a
+      # cote — et la date d'un instantane dont le contenu n'a pas bouge n'a
+      # rien a dire de plus. La fraicheur de la tache se lit au pointage, qui
+      # part meme quand le schema est stable ; c'est son role, pas celui-ci.
       - name: Y a-t-il un vrai changement ?
         id: diff
         run: |
-          if [ -z "$(git status --porcelain supabase/reference/)" ]; then
+          set -euo pipefail
+          SANS_DATE="/^-- INSTANTANE DU /d"
+
+          if git cat-file -e HEAD:supabase/reference/schema.sql 2>/dev/null; then
+            git show HEAD:supabase/reference/schema.sql | sed "$SANS_DATE" > /tmp/avant.sql
+          else
+            : > /tmp/avant.sql
+          fi
+          sed "$SANS_DATE" supabase/reference/schema.sql > /tmp/apres.sql
+
+          if cmp -s /tmp/avant.sql /tmp/apres.sql; then
+            git checkout -- supabase/reference/schema.sql
             echo "change=non" >> "$GITHUB_OUTPUT"
             echo "Le schema n'a pas bouge depuis la derniere reference."
           else
             echo "change=oui" >> "$GITHUB_OUTPUT"
-            git status --short supabase/reference/
+            echo "lignes en plus : $(diff /tmp/avant.sql /tmp/apres.sql | grep -c '^>' || true)"
+            echo "lignes en moins : $(diff /tmp/avant.sql /tmp/apres.sql | grep -c '^<' || true)"
           fi
 
       # UNE PR, PAS UNE POUSSEE DIRECTE, pour la meme raison que l'export n8n :

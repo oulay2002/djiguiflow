@@ -1,130 +1,5 @@
 {
   "active": true,
-  "activeVersion": {
-    "authors": "JEAN PAUL OULAI",
-    "autosaved": false,
-    "connections": {
-      "Appliquer les durees": {
-        "main": [
-          [
-            {
-              "index": 0,
-              "node": "Dire ce qui a ete efface",
-              "type": "main"
-            }
-          ]
-        ]
-      },
-      "Chaque nuit a 5h45": {
-        "main": [
-          [
-            {
-              "index": 0,
-              "node": "Appliquer les durees",
-              "type": "main"
-            }
-          ]
-        ]
-      }
-    },
-    "description": null,
-    "name": null,
-    "nodeGroups": [],
-    "nodes": [
-      {
-        "id": "c0000000-0000-4000-8000-000000000001",
-        "name": "Chaque nuit a 5h45",
-        "notes": "APRES LA SAUVEGARDE DES DONNEES, JAMAIS AVANT.\n\nLa nuit se deroule ainsi, tout en UTC (Abidjan est a UTC+0) :\n  4h30  sauvegarde des donnees   (GitHub)\n  5h00  export des workflows n8n (GitHub)\n  5h30  sauvegarde du schema     (GitHub)\n  5h45  CETTE PURGE\n\nPurger avant la sauvegarde effacerait la donnee ET sa copie de la nuit dans\nle meme mouvement. En passant apres, ce que la purge retire figure encore\ndans la sauvegarde de quelques heures plus tot.",
-        "parameters": {
-          "rule": {
-            "interval": [
-              {
-                "expression": "45 5 * * *",
-                "field": "cronExpression"
-              }
-            ]
-          }
-        },
-        "position": [
-          0,
-          0
-        ],
-        "type": "n8n-nodes-base.scheduleTrigger",
-        "typeVersion": 1.3
-      },
-      {
-        "credentials": {
-          "httpHeaderAuth": {
-            "id": "QoKeVRwGrk1YqN9Q",
-            "name": "Header Auth account 2"
-          }
-        },
-        "id": "c0000000-0000-4000-8000-000000000002",
-        "maxTries": 2,
-        "name": "Appliquer les durees",
-        "notes": "Ne jamais lui poser onError. La route rend 503 des qu une lecture echoue, precisement pour que cette execution devienne ROUGE : une purge qui n efface plus rien depuis des semaines, sans que personne ne le sache, est le defaut qu on cherche a eviter. Corps vide = on applique pour de bon ; { essai: true } montrerait ce qui serait efface sans rien effacer.",
-        "parameters": {
-          "authentication": "genericCredentialType",
-          "genericAuthType": "httpHeaderAuth",
-          "jsonBody": "{}",
-          "method": "POST",
-          "options": {},
-          "sendBody": true,
-          "specifyBody": "json",
-          "url": "https://www.djiguiflow.com/api/internal/conservation"
-        },
-        "position": [
-          240,
-          0
-        ],
-        "retryOnFail": true,
-        "type": "n8n-nodes-base.httpRequest",
-        "typeVersion": 4.4,
-        "waitBetweenTries": 5000
-      },
-      {
-        "id": "c0000000-0000-4000-8000-000000000003",
-        "name": "Dire ce qui a ete efface",
-        "notes": "Elle ne leve pas : zero efface est le cas NORMAL sur une plateforme jeune. Ce qui doit crier, c est une lecture impossible — et cela, la route le dit deja en 503.",
-        "parameters": {
-          "jsCode": "// UNE PURGE SILENCIEUSE EST LA PLUS DANGEREUSE DES TACHES : le jour ou\n// elle efface trop, personne ne s en apercoit, et ce qui est parti ne\n// revient que par la sauvegarde. On journalise donc TOUJOURS son bilan,\n// meme quand il vaut zero — zero est une information.\nconst r = $input.first().json || {};\nconst f = r.fait || {};\nconst bilan = \"Conservation — \"\n  + (f.paniers || 0) + \" panier(s) supprime(s), \"\n  + (f.commandes || 0) + \" commande(s) anonymisee(s), \"\n  + (f.relances || 0) + \" trace(s) de relance retiree(s).\";\nconsole.log(bilan);\nreturn [{ json: { bilan, ...r } }];"
-        },
-        "position": [
-          480,
-          0
-        ],
-        "type": "n8n-nodes-base.code",
-        "typeVersion": 2
-      }
-    ],
-    "workflowId": "yPQCVDZ52lKE8JtY",
-    "workflowPublishHistory": [
-      {
-        "event": "activated",
-        "id": 307,
-        "userId": "81519f6f-0887-498a-ad83-5ffd6d591e9a",
-        "workflowId": "yPQCVDZ52lKE8JtY"
-      },
-      {
-        "event": "activated",
-        "id": 309,
-        "userId": "81519f6f-0887-498a-ad83-5ffd6d591e9a",
-        "workflowId": "yPQCVDZ52lKE8JtY"
-      },
-      {
-        "event": "deactivated",
-        "id": 306,
-        "userId": "81519f6f-0887-498a-ad83-5ffd6d591e9a",
-        "workflowId": "yPQCVDZ52lKE8JtY"
-      },
-      {
-        "event": "deactivated",
-        "id": 308,
-        "userId": "81519f6f-0887-498a-ad83-5ffd6d591e9a",
-        "workflowId": "yPQCVDZ52lKE8JtY"
-      }
-    ]
-  },
   "connections": {
     "Appliquer les durees": {
       "main": [
@@ -150,6 +25,7 @@
     }
   },
   "description": null,
+  "etat_publication": "publie",
   "id": "yPQCVDZ52lKE8JtY",
   "isArchived": false,
   "name": "Conservation des donnees",
@@ -228,6 +104,5 @@
     "timezone": "Africa/Abidjan"
   },
   "sourceWorkflowId": null,
-  "tags": [],
-  "versionCounter": 8
+  "tags": []
 }
