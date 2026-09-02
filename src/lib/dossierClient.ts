@@ -105,6 +105,57 @@ function motifNumero(telephone: string): string | null {
   return cle ? `%${cle}` : null;
 }
 
+/**
+ * CE QUE TOUTES LES COMMANDES DÉTIENNENT, quand c'est la même chose.
+ *
+ * Rend la phrase commune — « votre nom, votre adresse de livraison » — dès que
+ * les commandes du dossier retiennent EXACTEMENT les mêmes champs, et `null`
+ * dès qu'elles divergent.
+ *
+ * ── POURQUOI CETTE RÈGLE, ET PAS « ON HISSE TOUJOURS » ─────────────────────
+ *
+ * Mesuré sur un vrai dossier le 2 septembre 2026 : six commandes, six fois la
+ * même phrase, mot pour mot. Deux lignes de texte gris répétées six fois
+ * occupaient plus de hauteur que les références qu'elles accompagnaient — pour
+ * zéro information, puisque ce qui se répète à l'identique ne distingue rien.
+ *
+ * Mais `detenu` est calculé PAR COMMANDE : une commande de la vitrine et une
+ * autre prise sur WhatsApp ne retiennent pas les mêmes champs. Hisser la
+ * phrase sans condition dirait donc parfois faux — et sur cet écran-là, dire
+ * faux sur ce qu'on détient est exactement la faute qu'il ne faut pas
+ * commettre.
+ *
+ * Un dossier mixte garde donc sa phrase par ligne, où elle redevient une
+ * information : elle distingue.
+ *
+ * ── L'ORDRE COMPTE, ET C'EST VOULU ────────────────────────────────────────
+ *
+ * `detenuSurCommande` énumère toujours dans le même ordre. Deux listes de
+ * mêmes champs sortent donc dans le même ordre, et une comparaison position
+ * par position suffit : trier avant de comparer masquerait une divergence
+ * d'ordre qui ne peut pas se produire, au prix d'un tri à chaque rendu.
+ *
+ * ── UNE SEULE COMMANDE NE FAIT PAS UNE RÈGLE ──────────────────────────────
+ *
+ * Avec une seule commande, il n'y a rien à dédupliquer : la phrase reste sur
+ * sa ligne, où elle est lue comme une précision sur CETTE commande — et non
+ * comme une règle qui vaudrait pour un ensemble qui n'existe pas.
+ */
+export function detenuEnCommun(commandes: { detenu: string[] }[]): string | null {
+  if (commandes.length < 2) return null;
+
+  const premier = commandes[0].detenu;
+  if (premier.length === 0) return null;
+
+  // Comparaison element par element : pas de separateur, donc aucune valeur
+  // a choisir qui ne puisse apparaitre dans les chaines — et rien a echapper.
+  for (const c of commandes) {
+    if (c.detenu.length !== premier.length) return null;
+    if (c.detenu.some((v, i) => v !== premier[i])) return null;
+  }
+  return premier.join(', ');
+}
+
 /** Ce qu'on détient sur une commande, énuméré pour l'écran. */
 function detenuSurCommande(c: {
   client_nom: unknown;
