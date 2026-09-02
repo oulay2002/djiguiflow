@@ -75,6 +75,11 @@ vi.mock('@/lib/supabaseAdmin', () => ({
   }),
 }));
 
+vi.mock('@/lib/marchands', () => ({
+  resoudreMarchand: async (ref: string) =>
+    ref === 'zahara' ? { id: 'zahara', boutiqueId: 'b-zahara' } : null,
+}));
+
 async function appeler(corps: Record<string, unknown>, avecSecret = true) {
   const { POST } = await import('@/app/api/internal/commandes/fiche/route');
   const headers: Record<string, string> = { 'content-type': 'application/json' };
@@ -83,7 +88,10 @@ async function appeler(corps: Record<string, unknown>, avecSecret = true) {
     new Request('https://www.djiguiflow.com/api/internal/commandes/fiche', {
       method: 'POST',
       headers,
-      body: JSON.stringify(corps),
+      // La boutique est exigee depuis le 2 septembre 2026 : `reference` est
+      // une cle globale, et cette route rend le jeton de suivi. Posee en
+      // premier pour qu'un cas puisse la surcharger.
+      body: JSON.stringify({ boutique: 'zahara', ...corps }),
     }),
   );
   return { statut: rep.status, corps: await rep.json() };

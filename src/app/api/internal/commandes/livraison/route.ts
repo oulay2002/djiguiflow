@@ -3,6 +3,7 @@ import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import type { Database } from '@/lib/database.types';
 import { canoniserStatutLivraison, estLivree } from '@/lib/livraison';
 import { motifExact, referenceRecevable } from '@/lib/reference';
+import { resoudreMarchand } from '@/lib/marchands';
 
 export const dynamic = 'force-dynamic';
 
@@ -80,6 +81,27 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'reference invalide' }, { status: 400 });
   }
 
+  // ET ELLE ECRIT LE STATUT, ce qui en fait la plus lourde des routes qui
+  // cherchent par reference. Sans le filtre de boutique pose plus bas sur ses
+  // TROIS ecritures, un appel portant la reference d'un autre marchand
+  // basculait sa commande en « livree » — donc hors de l'alerte retard de son
+  // gerant, comptee dans ses livraisons du jour, et son client prevenu d'une
+  // livraison qui n'a pas eu lieu.
+  //
+  // La liste blanche de `referenceRecevable` fermait le motif `*` qui touchait
+  // TOUTE la table ; elle ne dit rien d'une reference parfaitement formee mais
+  // appartenant a quelqu'un d'autre. Les deux controles sont complementaires :
+  // l'un refuse une forme, l'autre refuse une appartenance.
+  const boutiqueRef = String(corps.boutique ?? corps.slug ?? corps.boutique_id ?? '').trim();
+  if (!boutiqueRef) {
+    return NextResponse.json({ error: 'boutique requise' }, { status: 400 });
+  }
+
+  const marchand = await resoudreMarchand(boutiqueRef);
+  if (!marchand) {
+    return NextResponse.json({ error: 'Boutique introuvable' }, { status: 404 });
+  }
+
   // Une chaine vide vaut « pas de changement » : la feuille en envoie pour les
   // colonnes qu'une etape ne renseigne pas.
   const maj: MajCommande = {};
@@ -138,6 +160,7 @@ export async function POST(req: Request) {
     .from('commandes')
     .update(maj)
     .ilike('reference', motifExact(reference))
+    .eq('boutique_id', marchand.boutiqueId)
     .select('id, boutique_id');
 
   if (error) {
@@ -189,7 +212,16 @@ export async function POST(req: Request) {
       const { error: errLien } = await sb
         .from('commandes')
         .update({ livreur_id: fiche.id })
-        .ilike('reference', motifExact(reference));
+        .ilike('reference', motifExact(reference))
+        // CE FILTRE-CI N'EST PAS PORTEUR AUJOURD'HUI, et il faut le dire.
+        // `boutiqueId` est lu sur la ligne rendue par l'ecriture principale,
+        // qui est bornee : cette requete ne peut deja viser que la bonne
+        // boutique. Le retirer ne fait rougir aucun test — verifie par
+        // mutation le 2 septembre 2026.
+        // Il reste parce qu'il coute une ligne et ferme la porte au jour ou
+        // `boutiqueId` viendrait d'ailleurs. Ne pas le confondre avec les six
+        // autres, qui sont eprouves.
+        .eq('boutique_id', marchand.boutiqueId);
 
       // L'attribution est un CONFORT STATISTIQUE. Elle ne doit jamais faire
       // echouer une livraison deja enregistree : la mise a jour principale a
@@ -258,6 +290,7 @@ export async function POST(req: Request) {
       .from('commandes')
       .update(maj)
       .ilike('reference', motifExact(reference))
+      .eq('boutique_id', marchand.boutiqueId)
       .is(champ, null)
       .select('id');
 

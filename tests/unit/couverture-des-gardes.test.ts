@@ -136,6 +136,77 @@ describe('toute route interne exige un secret', () => {
   });
 });
 
+/**
+ * ── LE SECRET DIT QUI APPELLE, PAS POUR QUEL MARCHAND ──────────────────────
+ *
+ * Les trois blocs precedents verifient qu'une route porte un VERROU D'ENTREE.
+ * Celui-ci verifie autre chose, et c'est le defaut ferme le 2 septembre 2026 :
+ * une route interne peut porter le secret et rester ouverte d'un marchand a
+ * l'autre.
+ *
+ * `reference` est une cle GLOBALE. Elle ne dit pas a qui la commande
+ * appartient. Une seule instance n8n sert tous les marchands ; le secret
+ * partage atteste que l'appelant est n8n, jamais POUR QUI il appelle. Quatre
+ * routes cherchaient ainsi — `fiche`, `note`, `prevenu` et `livraison`, cette
+ * derniere sur ses trois ecritures. Le cloisonnement ne tenait qu'a ce
+ * qu'aucun workflow ne se trompe jamais de reference.
+ *
+ * CE QUE CE TEST SAIT FAIRE, ET CE QU'IL NE SAIT PAS. Il COMPTE : autant de
+ * bornes de boutique que de recherches par reference. C'est grossier — il ne
+ * verifie pas que la borne est sur la BONNE requete — et cela ne remplace pas
+ * `cloisonnement-commandes-internes.test.ts`, qui fait tourner les routes
+ * contre une base a deux marchands et regarde ce qui sort.
+ *
+ * Sa valeur est ailleurs : le banc ne parle que des quatre routes du jour,
+ * celui-ci parle de la CINQUIEME, celle qu'on ajoutera un soir de hate. Le
+ * cloisonnement ne se perd pas en cassant un controle, il se perd en ecrivant
+ * a cote.
+ */
+const DISPENSES_CLOISONNEMENT: Record<string, string> = {
+  'src/app/api/internal/commandes/abandons/route.ts':
+    "balayage planifie sans reference en entree : la seule `eq('reference')` marque une ligne "
+    + "que la route vient elle-meme de lire, et chaque message repart par le canal de SA boutique.",
+};
+
+describe('toute recherche interne par reference est bornee a une boutique', () => {
+  const fichiers = routes('src/app/api/internal').filter((f) =>
+    readFileSync(f, 'utf8').includes("from('commandes')"),
+  );
+
+  it('il y a bien des routes a verifier', () => {
+    expect(fichiers.length).toBeGreaterThan(5);
+  });
+
+  it.each(fichiers)('%s', (fichier) => {
+    const source = readFileSync(fichier, 'utf8');
+    const compter = (motif: RegExp) => (source.match(motif) ?? []).length;
+
+    // `ilike` compte autant que `eq` : `commandes/livraison` cherche ainsi,
+    // et c'est la route qui ECRIT le statut.
+    const recherches = compter(/\.(eq|ilike)\('reference'/g);
+    if (recherches === 0) return;
+
+    const bornes = compter(/\.eq\('boutique_id'/g);
+    if (bornes >= recherches) return;
+
+    expect(
+      DISPENSES_CLOISONNEMENT[fichier],
+      [
+        `${fichier} cherche ${recherches} fois par reference et ne borne que ${bornes} fois.`,
+        '`reference` est une cle globale : sans borne, cette route touche la commande',
+        "d'un autre marchand des que l'appelant se trompe de cle.",
+        'Ajoutez `.eq(\'boutique_id\', marchand.boutiqueId)`, ou une dispense argumentee.',
+      ].join('\n'),
+    ).toBeTruthy();
+  });
+
+  it('aucune dispense ne designe une route disparue', () => {
+    for (const chemin of Object.keys(DISPENSES_CLOISONNEMENT)) {
+      expect(fichiers, `${chemin} est dispensee mais n'existe plus`).toContain(chemin);
+    }
+  });
+});
+
 describe('toute route admin exige l administrateur', () => {
   const fichiers = routes('src/app/api/admin');
 

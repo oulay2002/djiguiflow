@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import { referenceRecevable } from '@/lib/reference';
+import { resoudreMarchand } from '@/lib/marchands';
 
 export const dynamic = 'force-dynamic';
 
@@ -65,6 +66,29 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'note attendue entre 1 et 5' }, { status: 400 });
   }
 
+  // LA BOUTIQUE BORNE LES DEUX REQUETES DE CETTE ROUTE, ecriture ET relecture.
+  //
+  // `reference` est une cle globale : sans ce filtre, un appel pouvait ecrire
+  // une note sur la commande d'un autre marchand. Une note est un avis public
+  // sur un commercant — la lui fabriquer depuis l'exterieur est la pire des
+  // ecritures croisees possibles, et elle serait indetectable : rien dans la
+  // ligne ne dit d'ou la note est venue.
+  //
+  // La relecture est bornee elle aussi, et ce n'est pas de la symetrie pour
+  // la forme. Elle rend `note_existante` et `note_heure` ; laissee globale,
+  // elle repondrait « fenetre_close, deja notee 5/5 » sur la commande d'un
+  // autre — c'est-a-dire qu'elle confirmerait son existence et divulguerait
+  // son avis a qui se serait trompe de boutique.
+  const boutiqueRef = String(corps.boutique ?? corps.slug ?? corps.boutique_id ?? '').trim();
+  if (!boutiqueRef) {
+    return NextResponse.json({ error: 'boutique requise' }, { status: 400 });
+  }
+
+  const marchand = await resoudreMarchand(boutiqueRef);
+  if (!marchand) {
+    return NextResponse.json({ error: 'Boutique introuvable' }, { status: 404 });
+  }
+
   const sb = getSupabaseAdmin();
   if (!sb) return NextResponse.json({ error: 'Base indisponible' }, { status: 503 });
 
@@ -78,6 +102,7 @@ export async function POST(req: Request) {
     .from('commandes')
     .update({ note_client: note, note_heure: maintenant.toISOString() })
     .eq('reference', reference)
+    .eq('boutique_id', marchand.boutiqueId)
     .or(`note_client.is.null,note_heure.gte.${limite}`)
     .select('id');
 
@@ -97,6 +122,7 @@ export async function POST(req: Request) {
     .from('commandes')
     .select('note_client, note_heure')
     .eq('reference', reference)
+    .eq('boutique_id', marchand.boutiqueId)
     .limit(1);
 
   if (erreurLecture) {
