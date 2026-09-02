@@ -2,6 +2,7 @@ import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import { etatQuota } from '@/lib/billing/quota';
 import { VALEURS_LIVREE } from '@/lib/livraison';
 import { inventaireSessions, santeSessionWhatsApp } from '@/lib/wasenderSessions';
+import { rapprocherSessions, type Rapprochement } from '@/lib/rapprochementSessions';
 
 export const dynamic = 'force-dynamic';
 
@@ -67,6 +68,19 @@ export async function POST(req: Request) {
   const hier = new Date(maintenant - 24 * 3_600_000).toISOString();
 
   const trouvees: Anomalie[] = [];
+
+  /**
+   * LE TEMOIN DE L'INSTRUMENT, ET C'EST POUR CA QU'IL SORT DANS LA REPONSE.
+   *
+   * Le rapprochement des lignes WhatsApp se tait quand tout va bien — donc la
+   * plupart du temps. Un silence ne prouve rien tant qu'on n'a pas montre que
+   * l'instrument voit quelque chose : `rattachees` dit combien de lignes il a
+   * su relier, `illisibles` combien il n'a pas su lire.
+   *
+   * `null` tant qu'il n'a pas tourne : cette route rend aussi la reponse quand
+   * le compte est injoignable, et un zero invente se lirait « rien a payer ».
+   */
+  let inventaire: (Rapprochement & { total: number | null }) | null = null;
 
   // Le nom lisible de chaque boutique, pour que l'alerte nomme le marchand
   // plutot que de rendre un uuid que personne ne reconnait.
@@ -314,7 +328,7 @@ export async function POST(req: Request) {
     // normale. Datee, elle se redit une fois par jour tant qu'elle dure.
     const { data: aSurveiller } = await sb
       .from('boutiques')
-      .select('slug, nom, actif, essai');
+      .select('slug, nom, actif, essai, telephone, wasender_session_id');
 
     const jour = new Date().toISOString().slice(0, 10);
 
@@ -392,6 +406,64 @@ export async function POST(req: Request) {
           + '. Elles se facturent sans servir.',
       });
     }
+
+    // ---- 6. CE QU'ON PAIE, FACE A CE QUE LA BASE RECLAME.
+    //
+    // Le controle precedent COMPTE les lignes ; celui-ci les RAPPROCHE. Sans
+    // lui, une place abandonnee est invisible jusqu'a la facture — ou, pire,
+    // jusqu'au jour ou il en manque une devant un marchand qui attend.
+    //
+    // ON NE RAPPROCHE QUE SI L'ON A VRAIMENT LU LE COMPTE. `sessions === null`
+    // veut dire « reponse illisible », et le confondre avec « aucune ligne »
+    // ferait declarer fantomes TOUTES les boutiques branchees d'un coup. Un
+    // doute ne devient jamais une certitude.
+    if (compte.ok && compte.sessions) {
+      // Les boutiques d'essai sont exclues : le banc en cree et en supprime,
+      // et elles n'ont jamais de ligne WhatsApp. Les autres comptent TOUTES
+      // pour le rattachement — une enseigne retiree de la vitrine garde sa
+      // ligne, et l'oublier la ferait passer pour orpheline.
+      const reelles = (aSurveiller ?? [])
+        .filter((b) => b.essai !== true)
+        .map((b) => ({
+          slug: String(b.slug ?? ''),
+          nom: b.nom,
+          telephone: b.telephone,
+          wasender_session_id: b.wasender_session_id,
+          surveillee: b.actif !== false,
+        }));
+
+      const rapp = rapprocherSessions(compte.sessions, reelles);
+      inventaire = { ...rapp, total: compte.total };
+
+      if (rapp.orphelines.length) {
+        trouvees.push({
+          type: 'ligne-sans-boutique',
+          reference: `lignes-orphelines-${jour}`,
+          boutique: 'DjiguiFlow',
+          detail:
+            `${rapp.orphelines.length} ligne(s) WhatsApp payee(s) qu aucune boutique ne reclame : `
+            + rapp.orphelines.slice(0, 5).join(', ')
+            + '. Verifier chez wasender avant de liberer la place.',
+        });
+      }
+
+      // L'AUTRE SENS, ET C'EST LE GRAVE. La boutique se croit branchee — son
+      // tableau de bord le dit — et sa ligne n'existe plus au compte. Ses
+      // messages ne partiront pas, et aucune autre sonde ne le voit :
+      // `santeSessionWhatsApp` interroge le jeton du coffre, pas l'existence
+      // de la ligne.
+      for (const nom of rapp.fantomes) {
+        trouvees.push({
+          type: 'boutique-sans-ligne',
+          reference: `ligne-disparue-${nom}-${jour}`,
+          boutique: nom,
+          detail:
+            'Cette boutique porte un identifiant de session WhatsApp que le compte'
+            + ' ne connait plus. Elle se croit branchee ; ses messages ne partiront'
+            + ' pas. Rebrancher son numero.',
+        });
+      }
+    }
   } catch (e) {
     const raison = e instanceof Error ? e.message : 'erreur inconnue';
     console.error('Veille des chaines —', raison);
@@ -399,7 +471,7 @@ export async function POST(req: Request) {
   }
 
   if (!trouvees.length) {
-    return Response.json({ ok: true, nouvelles: 0, anomalies: [] });
+    return Response.json({ ok: true, nouvelles: 0, anomalies: [], inventaire });
   }
 
   // ---- Ne garder que ce qui n'a jamais ete annonce.
@@ -428,5 +500,6 @@ export async function POST(req: Request) {
     nouvelles: anomalies.length,
     vues: trouvees.length,
     anomalies,
+    inventaire,
   });
 }

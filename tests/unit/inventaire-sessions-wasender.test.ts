@@ -63,7 +63,22 @@ describe('ce que le compte declare', () => {
   it('une liste toute connectee ne signale rien', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => reponse({ data: [{ id: 1, status: 'CONNECTED' }] })));
     const r = await inventaireSessions();
-    expect(r).toEqual({ ok: true, total: 1, deconnectees: [] });
+    expect(r).toEqual({
+      ok: true,
+      total: 1,
+      deconnectees: [],
+      sessions: [{ id: 1, status: 'CONNECTED' }],
+    });
+  });
+
+  it('elle rend les sessions telles quelles, pour le rapprochement', async () => {
+    // `rapprochementSessions` balaie leurs valeurs sans parier sur un nom de
+    // champ : elle a donc besoin de l'objet entier, pas d'un resume.
+    vi.stubGlobal('fetch', vi.fn(async () => reponse({
+      data: [{ identifiant: 'x', tel: '2250102030405' }],
+    })));
+    const r = await inventaireSessions();
+    if (r.ok) expect(r.sessions).toEqual([{ identifiant: 'x', tel: '2250102030405' }]);
   });
 });
 
@@ -78,6 +93,16 @@ describe('quand la reponse est illisible', () => {
     // Le coeur du fichier : zero voudrait dire « rien a payer », null dit
     // « je n ai pas su lire ». Les confondre rassure a tort.
     if (r.ok) expect(r.total).not.toBe(0);
+
+    // MEME RAISONNEMENT SUR LA LISTE, ET L'ENJEU EST PLUS GRAND ENCORE.
+    // Un tableau vide se lirait « le compte n a aucune ligne », et le
+    // rapprochement en conclurait que TOUTES les boutiques branchees sont
+    // devenues fantomes — une alerte massive et entierement fausse, batie sur
+    // une ignorance.
+    if (r.ok) {
+      expect(r.sessions).toBeNull();
+      expect(r.sessions).not.toEqual([]);
+    }
   });
 });
 

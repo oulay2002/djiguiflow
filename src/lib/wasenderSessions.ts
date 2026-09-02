@@ -383,7 +383,22 @@ export async function santeSessionWhatsApp(jeton: string): Promise<SanteSession>
  * du défaut silencieux, et il ne se paie pas deux fois.
  */
 export type InventaireSessions =
-  | { ok: true; total: number | null; deconnectees: string[] }
+  | {
+      ok: true;
+      total: number | null;
+      deconnectees: string[];
+      /**
+       * Les sessions telles que le compte les rend, pour le rapprochement avec
+       * la base — voir `rapprochementSessions.ts`.
+       *
+       * `null` QUAND LA REPONSE EST ILLISIBLE, jamais `[]`. Un tableau vide se
+       * lirait « le compte n'a aucune ligne », et le rapprochement en
+       * conclurait que TOUTES les boutiques branchees sont devenues fantomes —
+       * une alerte massive et entierement fausse, batie sur une ignorance.
+       * C'est le meme raisonnement que `total: null` juste au-dessus.
+       */
+      sessions: unknown[] | null;
+    }
   | { ok: false; motif: EchecWasender['motif'] };
 
 export async function inventaireSessions(): Promise<InventaireSessions> {
@@ -394,7 +409,7 @@ export async function inventaireSessions(): Promise<InventaireSessions> {
   const liste = Array.isArray(brut) ? brut : Array.isArray(brut.sessions) ? brut.sessions : null;
 
   // Illisible : on le DIT. Voir l'avertissement ci-dessus sur le zero invente.
-  if (!liste) return { ok: true, total: null, deconnectees: [] };
+  if (!liste) return { ok: true, total: null, deconnectees: [], sessions: null };
 
   const deconnectees: string[] = [];
   for (const s of liste as Record<string, unknown>[]) {
@@ -407,5 +422,5 @@ export async function inventaireSessions(): Promise<InventaireSessions> {
     deconnectees.push(`${nom} (${etat})`);
   }
 
-  return { ok: true, total: liste.length, deconnectees };
+  return { ok: true, total: liste.length, deconnectees, sessions: liste as unknown[] };
 }
