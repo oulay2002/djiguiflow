@@ -237,18 +237,42 @@ export function rapprocherSessions(
     if (parIdentifiant || parNumero) {
       rattachees += 1;
 
-      // La boutique qui reclame cette ligne — par identifiant d'abord, qui est
-      // exact, par numero ensuite.
-      const proprietaire =
-        valeurs.map((v) => identifiants.get(v)).find(Boolean)
-        ?? boutiques.find((b) => b.telephone && numeros.some((n) => memeNumero(n, b.telephone!)));
+      /**
+       * QUI RECLAME CETTE LIGNE ? PARFOIS PLUSIEURS, ET C'EST LE PIEGE.
+       *
+       * Un meme numero peut porter DEUX boutiques : un compte a le droit d'en
+       * posseder plusieurs, et le gerant en exploite deux sous le sien. Prendre
+       * « la premiere trouvee » attribuait alors la ligne au hasard.
+       *
+       * MESURE DU 2 SEPTEMBRE 2026, en production : la ligne de Zahara a ete
+       * creditee a Rose Monde, dont l'adresse attendue differait forcement — et
+       * l'instrument a crie « webhook devie » sur une ligne parfaitement saine.
+       * La premiere alerte de cet instrument etait donc fausse, et de ma main.
+       *
+       * On garde TOUS les pretendants. Si l'adresse observee est celle de l'un
+       * d'eux, la ligne est conforme — le webhook porte le slug, il tranche
+       * lui-meme l'ambiguite que le numero laisse. Sinon, on ne designe un
+       * coupable que s'il n'y en a qu'un possible : accuser au hasard vaut
+       * moins que se taire.
+       */
+      const candidats = boutiques.filter(
+        (b) =>
+          (b.wasender_session_id && valeurs.includes(String(b.wasender_session_id).trim()))
+          || (b.telephone && numeros.some((n) => memeNumero(n, b.telephone!))),
+      );
 
-      if (urlAttendue && proprietaire) {
-        const v = verdictWebhook(s, urlAttendue(proprietaire));
-        if (v.verdict === 'conforme') webhooksConformes += 1;
-        else if (v.verdict === 'divergent') {
-          webhooksDivergents.push(`${proprietaire.nom || proprietaire.slug} → ${v.vue}`);
-        } else webhooksIllisibles += 1;
+      if (urlAttendue && candidats.length) {
+        const verdicts = candidats.map((b) => ({ b, v: verdictWebhook(s, urlAttendue(b)) }));
+
+        if (verdicts.some((x) => x.v.verdict === 'conforme')) {
+          webhooksConformes += 1;
+        } else if (candidats.length === 1 && verdicts[0].v.verdict === 'divergent') {
+          webhooksDivergents.push(`${candidats[0].nom || candidats[0].slug} → ${verdicts[0].v.vue}`);
+        } else {
+          // Soit rien de lisible, soit plusieurs pretendants et aucun conforme :
+          // on ne sait pas a qui reprocher quoi.
+          webhooksIllisibles += 1;
+        }
       }
 
       continue;
