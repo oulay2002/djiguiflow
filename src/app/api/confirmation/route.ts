@@ -126,9 +126,32 @@ const TITRE = "'Trebuchet MS'," + SANS;
 
 type Ton = 'attente' | 'ok' | 'refus';
 
+/**
+ * LES TEINTES DU TAMPON, ET POURQUOI L'UNE N'EST PAS `ENCRE.feuille`.
+ *
+ * Le tampon porte `opacity: .85` — c'est l'encre qui ne prend pas tout a fait,
+ * et c'est ce qui en fait un tampon plutot qu'une etiquette. Mais l'opacite se
+ * compose sur le papier, et le contraste reel n'est pas celui de la couleur
+ * declaree.
+ *
+ * Mesure du 2 septembre 2026, teinte compositee sur `ENCRE.papier` :
+ *
+ *   mangue  #7d4b13  →  4,80 : 1   passe
+ *   bissap  #c4123f  →  4,66 : 1   passe
+ *   feuille #177a5d  →  3,75 : 1   ECHOUE le plancher de 4,5
+ *
+ * Le texte du tampon fait 11 px : c'est du petit texte, le plancher est bien
+ * 4,5. `accent-700` (#125d49), un cran plus bas sur la meme rampe documentee,
+ * donne 5,11 : 1 en gardant l'opacite — donc la matiere.
+ *
+ * TROUVE EN CHANGEANT LE TON DE CETTE PAGE. Le tampon « deja repondu » etait
+ * en mangue, qui passait ; le corriger vers la feuille aurait fait descendre le
+ * contraste sous le plancher sans que rien ne le signale, la sonde du
+ * navigateur lisant la couleur DECLAREE et non celle qui est peinte.
+ */
 const COULEUR_TON: Record<Ton, string> = {
   attente: ENCRE.mangue,
-  ok: ENCRE.feuille,
+  ok: '#125d49',
   refus: ENCRE.bissap,
 };
 
@@ -383,7 +406,6 @@ function dejaRepondu(ligne: Ligne): Response | null {
     return null;
   }
   const confirmee = ligne.confirmation_statut === 'confirmee';
-  const quoi = confirmee ? 'confirmée ✅' : 'annulée ❌';
 
   /**
    * CE QUE CETTE PAGE NE RENDAIT PAS, ET CE QUE CA COUTAIT.
@@ -420,14 +442,55 @@ function dejaRepondu(ligne: Ligne): Response | null {
       : '')
     + (confirmee ? blocSuivi(ligne.reference) : '');
 
-  return reponseHtml(
-    'DÉJÀ RÉPONDU',
-    'attente',
-    'Déjà répondu',
-    `Cette commande a déjà été ${quoi}.`,
-    200,
-    extra,
-  );
+  /**
+   * LA COULEUR DISAIT LE CONTRAIRE DE L'ÉTAT — et sur cette page, la couleur
+   * est lue avant le mot.
+   *
+   * ── CE QUI ÉTAIT RENDU ─────────────────────────────────────────────────
+   *
+   * Les DEUX issues opposées — confirmée, annulée — sortaient sous un même
+   * tampon « DÉJÀ RÉPONDU » en ton `attente`, c'est-à-dire en MANGUE. Or
+   * DESIGN.md réserve la mangue à « commencé, pas fini », la feuille à ce qui
+   * est fait et le bissap au refus. Aucune de ces deux issues n'est une
+   * attente : l'une et l'autre sont réglées.
+   *
+   * Le chemin de réponse immédiate, cinquante lignes plus bas, les peint
+   * pourtant JUSTE — `CONFIRMÉE / ok` et `ANNULÉE / refus`. Le même fichier
+   * disait donc vrai quand on répond et faux quand on revient.
+   *
+   * ── ET C'EST LE RETOUR QUI EST LE CAS FRÉQUENT ─────────────────────────
+   *
+   * Rouvrir le lien gardé dans son message est le geste qui suit une réponse :
+   * c'est ce que ce bloc existe pour servir. L'état le plus souvent affiché
+   * était donc celui dont la couleur mentait.
+   *
+   * ── L'EMOJI PARTAIT AVEC ───────────────────────────────────────────────
+   *
+   * « déjà été confirmée ✅ » faisait porter le signal d'état par un
+   * pictogramme, à dix pixels d'un tampon dont c'est précisément le rôle. Le
+   * tampon dit l'état, la couleur le confirme, la phrase dit ce qui s'est
+   * passé. Trois signaux pour une information suffisaient à deux.
+   *
+   * Le mot « déjà » reste : c'est LUI l'information propre à ce chemin —
+   * « vous avez répondu, ceci n'est pas une nouvelle demande ».
+   */
+  return confirmee
+    ? reponseHtml(
+        'CONFIRMÉE',
+        'ok',
+        'Commande confirmée',
+        'Vous avez déjà confirmé cette commande. Le commerçant la prépare.',
+        200,
+        extra,
+      )
+    : reponseHtml(
+        'ANNULÉE',
+        'refus',
+        'Commande annulée',
+        'Vous avez déjà annulé cette commande. Le commerçant a été prévenu.',
+        200,
+        extra,
+      );
 }
 
 function articlesDe(ligne: Ligne): string[] {
