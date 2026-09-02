@@ -1,101 +1,5 @@
 {
   "active": true,
-  "activeVersion": {
-    "authors": "JEAN PAUL OULAI (via MCP)",
-    "autosaved": false,
-    "connections": {
-      "Erreur detectee": {
-        "main": [
-          [
-            {
-              "index": 0,
-              "node": "Formater alerte",
-              "type": "main"
-            }
-          ]
-        ]
-      },
-      "Formater alerte": {
-        "main": [
-          [
-            {
-              "index": 0,
-              "node": "Alerter l exploitant",
-              "type": "main"
-            }
-          ]
-        ]
-      }
-    },
-    "description": null,
-    "name": null,
-    "nodeGroups": [],
-    "nodes": [
-      {
-        "id": "894dd411-4042-46ad-ba4f-fd31dbe10671",
-        "name": "Erreur detectee",
-        "parameters": {},
-        "position": [
-          0,
-          0
-        ],
-        "type": "n8n-nodes-base.errorTrigger",
-        "typeVersion": 1
-      },
-      {
-        "id": "b4349618-2401-4609-a6fe-e45a3e04079c",
-        "name": "Formater alerte",
-        "parameters": {
-          "jsCode": "// Le message part vers Telegram, qui l'interprete comme du Markdown. Un texte\n// d'erreur contient a peu pres toujours un caractere de balisage — apostrophe,\n// tiret bas, asterisque, accent grave, crochet — et Telegram repond alors 400\n// « can't parse entities ». L'alerte se perd, et la panne devient invisible.\n//\n// On neutralise donc ce qui vient du moteur, et on borne la longueur : au-dela\n// de 4096 caracteres Telegram refuse aussi, et une pile d'appels depasse vite.\nfunction neutraliser(valeur) {\n  return String(valeur == null ? '' : valeur)\n    .replace(/[_*`\\[\\]()~>#+=|{}.!\\\\-]/g, ' ')\n    .replace(/\\s+/g, ' ')\n    .trim();\n}\n\nconst e = $json.execution || {};\nconst w = $json.workflow || {};\nconst err = e.error || {};\n\nconst nomWorkflow = neutraliser(w.name || 'inconnu');\nconst nomNoeud = neutraliser(e.lastNodeExecuted || err.node?.name || 'inconnu');\nconst texteErreur = neutraliser(err.message || 'sans message');\n\n// ETRANGLEMENT DES REPETITIONS.\n//\n// Une panne ne se produit presque jamais une seule fois : une tache\n// quart-horaire qui echoue produit 96 executions dans la journee, donc 96\n// alertes identiques — et les vraies pannes se perdent dedans.\n//\n// Ce filtre existait auparavant dans `Signaler l echec`, cote sous-workflow\n// « Envoyer reponse client », ou il ne servait a rien : n8n ne persiste la\n// memoire statique qu au terme d une execution REUSSIE, et ce noeud-la se\n// termine par un `throw`. Ici l execution reussit, donc la memoire tient.\n//\n// On ne se tait pas pour autant completement : la 1re, la 10e et la 100e\n// occurrence du jour passent, en annoncant leur rang. Une panne qui dure reste\n// visible, sans occuper le canal.\nconst PALIERS = [1, 10, 100];\nconst cle = [nomWorkflow, nomNoeud, texteErreur.slice(0, 120)].join('|');\nconst jour = new Date().toLocaleDateString('fr-CA', { timeZone: 'Africa/Abidjan' });\n\nconst sd = $getWorkflowStaticData('global');\nif (sd.jour !== jour) { sd.jour = jour; sd.compte = {}; }\nif (!sd.compte) sd.compte = {};\n\nconst rang = (sd.compte[cle] || 0) + 1;\nsd.compte[cle] = rang;\n\n// Rien a envoyer : sans item, le noeud Telegram ne s execute pas et\n// l execution se termine en succes — ce qui est precisement la condition pour\n// que le compteur ci-dessus soit conserve.\nif (!PALIERS.includes(rang)) return [];\n\nconst horodatage = new Date().toLocaleString('fr-FR', {\n  timeZone: 'Africa/Abidjan',\n  day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit',\n});\n\nconst lignes = [\n  'ALERTE WORKFLOW',\n  '',\n  'Workflow : ' + nomWorkflow,\n  'Noeud : ' + nomNoeud,\n  'Erreur : ' + texteErreur.slice(0, 500),\n  'Heure : ' + horodatage,\n];\n\n// Le rang n apparait qu a partir de la 10e : sur une panne isolee il n aurait\n// rien dit, et l alerte doit rester breve.\nif (rang > 1) {\n  lignes.push('', 'Repetition numero ' + rang + ' aujourd hui pour cette meme erreur');\n}\n\nif (e.url) lignes.push('', String(e.url));\n\nreturn [{ json: { message: lignes.join('\\n').slice(0, 3800) } }];"
-        },
-        "position": [
-          224,
-          0
-        ],
-        "type": "n8n-nodes-base.code",
-        "typeVersion": 2
-      },
-      {
-        "credentials": {
-          "telegramApi": {
-            "id": "6Kq1Zdz8WA4Xftv2",
-            "name": "Telegram Veille DjiguiFlow"
-          }
-        },
-        "id": "3ca6807b-c247-4c93-bc30-64f142b47ac1",
-        "maxTries": 3,
-        "name": "Alerter l exploitant",
-        "onError": "stopWorkflow",
-        "parameters": {
-          "additionalFields": {
-            "appendAttribution": false
-          },
-          "chatId": "-1003994906478",
-          "operation": "sendMessage",
-          "resource": "message",
-          "text": "={{ $json.message }}"
-        },
-        "position": [
-          448,
-          0
-        ],
-        "retryOnFail": true,
-        "type": "n8n-nodes-base.telegram",
-        "typeVersion": 1.2,
-        "waitBetweenTries": 2000,
-        "webhookId": "58637caa-b616-4443-a1d6-eb0aee5ce1dc"
-      }
-    ],
-    "workflowId": "NfWU666FLz9jR1Zv",
-    "workflowPublishHistory": [
-      {
-        "event": "activated",
-        "id": 91,
-        "userId": "81519f6f-0887-498a-ad83-5ffd6d591e9a",
-        "workflowId": "NfWU666FLz9jR1Zv"
-      }
-    ]
-  },
   "connections": {
     "Erreur detectee": {
       "main": [
@@ -121,6 +25,7 @@
     }
   },
   "description": null,
+  "etat_publication": "publie",
   "id": "NfWU666FLz9jR1Zv",
   "isArchived": false,
   "name": "Alerte Erreurs (plateforme)",
@@ -186,6 +91,5 @@
     "executionOrder": "v1"
   },
   "sourceWorkflowId": null,
-  "tags": [],
-  "versionCounter": 3
+  "tags": []
 }

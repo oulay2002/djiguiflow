@@ -20,9 +20,11 @@
  * chaque export produirait un diff meme sans changement reel — `updatedAt`
  * bouge a chaque sauvegarde, `versionId` a chaque publication, `staticData`
  * porte de la memoire d'execution qui change toute seule. Un diff qui ment a
- * chaque fois n'est plus lu, et l'export perd sa seule raison d'etre. On
- * retire donc le volatil et on trie les cles, pour qu'un diff non vide
- * signifie exactement : quelqu'un a change quelque chose.
+ * chaque fois n'est plus lu, et l'export perd sa seule raison d'etre.
+ *
+ * Cette regle vit dans scripts/normaliser-workflow.mjs, et non ici, parce que
+ * ce fichier-ci interroge n8n des son chargement : rien ne pouvait donc
+ * l'eprouver. Elle avait derive en silence — voir l'en-tete de ce module.
  *
  * LE PIEGE QU'IL NE PEUT PAS RESOUDRE SEUL. Lance a la main, il pourrit : le
  * depot ment des la premiere modification faite dans l'interface. C'est
@@ -31,6 +33,7 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
+import { normaliserWorkflow } from './normaliser-workflow.mjs';
 
 const BASE = (process.env.N8N_API_URL || 'https://n8n.djiguiflow.com').replace(/\/$/, '');
 const CLE = process.env.N8N_API_KEY || process.env.N8N_VPS_KEY;
@@ -39,40 +42,6 @@ const DOSSIER = 'n8n';
 if (!CLE) {
   console.error('N8N_API_KEY manquante (ou N8N_VPS_KEY en local).');
   process.exit(1);
-}
-
-/**
- * Ce qui change tout seul et ne doit donc jamais atteindre un diff.
- *
- * `staticData` en particulier : c'est la memoire d'execution des workflows —
- * les garde-fous anti-doublon y rangent leur etat, qui bouge a chaque passage.
- */
-const VOLATILE = new Set([
-  'createdAt',
-  'updatedAt',
-  'versionId',
-  'activeVersionId',
-  'triggerCount',
-  'staticData',
-  'pinData',
-  'shared',
-  'meta',
-  'homeProject',
-  'sharedWithProjects',
-]);
-
-/** Trie les cles a tous les niveaux : un objet reordonne n'est pas un changement. */
-function stable(valeur) {
-  if (Array.isArray(valeur)) return valeur.map(stable);
-  if (valeur && typeof valeur === 'object') {
-    const sortie = {};
-    for (const cle of Object.keys(valeur).sort()) {
-      if (VOLATILE.has(cle)) continue;
-      sortie[cle] = stable(valeur[cle]);
-    }
-    return sortie;
-  }
-  return valeur;
 }
 
 /** Un nom de fichier lisible, stable, et sur sous tous les systemes. */
@@ -168,7 +137,7 @@ for (const resume of actifs) {
   attendus.add(fichier);
   fs.writeFileSync(
     path.join(DOSSIER, fichier),
-    JSON.stringify(stable(w), null, 2) + '\n',
+    JSON.stringify(normaliserWorkflow(w), null, 2) + '\n',
     'utf8',
   );
 }
