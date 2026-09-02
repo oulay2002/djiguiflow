@@ -12,6 +12,7 @@ import {
   montantPrepaye,
   type PlanKey,
 } from '@/lib/billing/plans';
+import { etatAbonnement, formuleDejaPayee } from '@/lib/billing/etatAbonnement';
 
 type SubscriptionState = {
   user_id: string;
@@ -38,7 +39,14 @@ type SubscriptionResponse = {
   details?: string;
 };
 
-const ACTIVE_STATUSES = new Set(['active', 'trialing']);
+/**
+ * `ACTIVE_STATUSES` A DISPARU, ET C'EST LE CŒUR DU CORRECTIF.
+ *
+ * Il reunissait `active` et `trialing` sous un meme mot — « actif » — et cette
+ * confusion faisait grise la formule qu'un marchand en essai voulait acheter.
+ * Ce que l'ecran doit distinguer, c'est « mon acces court » de « j'ai paye ».
+ * `etatAbonnement` dit le premier, `formuleDejaPayee` le second.
+ */
 
 function formatDate(value: string | null): string {
   if (!value) {
@@ -284,9 +292,7 @@ export default function PaiementsPage() {
     }
   };
 
-  const isSubscriptionActive = subscription
-    ? ACTIVE_STATUSES.has(subscription.status)
-    : false;
+  const etat = etatAbonnement(subscription?.status, subscription?.current_period_end);
 
   return (
     <div className="min-h-screen bg-[var(--background)] p-4 sm:p-6 lg:p-8">
@@ -342,10 +348,21 @@ export default function PaiementsPage() {
                     {subscription ? getPlanLabel(subscription.plan_key) : 'Aucun abonnement actif'}
                   </h2>
                 </div>
-                {subscription && isSubscriptionActive && (
-                  <span className="inline-flex items-center gap-2 bg-accent-100 px-3 py-1.5 text-sm font-semibold text-accent-700">
+                {/* IL DISAIT « Actif » PENDANT UN ESSAI, a cote d'un statut
+                    « Trialing » et au-dessus d'une carte Pro marquee « Plan
+                    actif ». Trois affirmations, et aucune ne disait ce qui
+                    allait se passer. Il porte desormais le meme mot que la
+                    tuile de statut, et sa couleur dit la gravite. */}
+                {subscription && (
+                  <span className={`inline-flex items-center gap-2 px-3 py-1.5 text-sm font-semibold ${
+                    etat.ton === 'alerte'
+                      ? 'bg-bissap-100 text-bissap-700'
+                      : etat.ton === 'attention'
+                        ? 'bg-mangue-100 text-mangue-700'
+                        : 'bg-accent-100 text-accent-700'
+                  }`}>
                     <CheckCircle className="h-4 w-4" />
-                    Actif
+                    {etat.libelle}
                   </span>
                 )}
               </div>
@@ -353,7 +370,9 @@ export default function PaiementsPage() {
               <div className="grid gap-4 md:grid-cols-3">
                 <div className=" border border-[var(--hairline)] bg-chaux-50 p-4">
                   <p className="text-xs uppercase tracking-[0.15em] text-chaux-600">Statut</p>
-                  <p className="mt-2 text-lg font-bold capitalize text-nuit-900">{subscription?.status ?? '-'}</p>
+                  {/* `capitalize` sur la valeur BRUTE du fournisseur rendait
+                      « Trialing », et aurait rendu « Past_due ». */}
+                  <p className="mt-2 text-lg font-bold text-nuit-900">{etat.libelle}</p>
                 </div>
                 <div className=" border border-[var(--hairline)] bg-chaux-50 p-4">
                   <p className="text-xs uppercase tracking-[0.15em] text-chaux-600">Début de période</p>
@@ -364,6 +383,12 @@ export default function PaiementsPage() {
                   <p className="mt-2 text-lg font-bold text-nuit-900">{formatDate(subscription?.current_period_end ?? null)}</p>
                 </div>
               </div>
+
+              {/* CE QUI VA SE PASSER, EN UNE PHRASE. En prepaye rien ne se
+                  reconduit : a l'echeance le bot cesse de prendre les
+                  commandes. Le marchand l'apprenait par Telegram ; l'ecran qui
+                  porte le mot « abonnement » se taisait. */}
+              <p className="mt-4 text-sm leading-relaxed text-chaux-600">{etat.explication}</p>
 
               {subscription?.stripe_customer_id && (
                 <button
@@ -421,7 +446,21 @@ export default function PaiementsPage() {
 
               <div className="grid gap-6 lg:grid-cols-3">
                 {BILLING_PLANS.map((plan) => {
-                  const isCurrentPlan = subscription?.plan_key === plan.key && isSubscriptionActive;
+                  /**
+                   * PAYE VEUT DIRE `active`, ET RIEN D'AUTRE.
+                   *
+                   * L'ancien test acceptait `trialing`. Or l'essai porte deja
+                   * `plan_key = 'pro'` : le marchand voyait Pro grise, marque
+                   * « Plan actif », et ne pouvait acheter que Premium a
+                   * 25 000 F. Il lui etait IMPOSSIBLE de payer les 10 000 F de
+                   * Pro depuis son propre ecran. Mesure en production le
+                   * 2 septembre 2026.
+                   */
+                  const isCurrentPlan = formuleDejaPayee(
+                    subscription?.plan_key,
+                    subscription?.status,
+                    plan.key,
+                  );
                   const isHighlighted = selectedPlanFromQuery === plan.key;
 
                   return (
@@ -493,7 +532,7 @@ export default function PaiementsPage() {
                         {!plan.achetable
                           ? 'Offert à l’inscription'
                           : isCurrentPlan
-                            ? 'Plan actif'
+                            ? 'Formule en cours'
                             : processingPlan === plan.key
                               ? 'Redirection...'
                               : 'S’abonner'}
