@@ -27,8 +27,8 @@ import {
   Clock,
   Star,
   Truck,
-  Loader2
 } from 'lucide-react';
+import EcranDeChargement from '@/components/dashboard/EcranDeChargement';
 
 type Period = 'week' | 'month' | 'year';
 
@@ -289,9 +289,7 @@ export default function AnalyticsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[var(--background)] flex items-center justify-center">
-        <Loader2 className="w-10 h-10 animate-spin text-mangue-600" />
-      </div>
+      <EcranDeChargement annonce="Chargement du pilotage…" />
     );
   }
 

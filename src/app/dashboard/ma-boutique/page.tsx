@@ -9,7 +9,7 @@ import {
   type Horaires,
   type Jour,
 } from '@/lib/horaires';
-import { LienRetour, classesBouton } from '@/components/ui/Bouton';
+import { Bouton, LienRetour, classesBouton } from '@/components/ui/Bouton';
 import { supabase, utilisateurCourant } from '@/lib/supabase';
 import { BUCKET_IMAGES, dossierMarchand, nomFichierSain } from '@/lib/storage';
 import { useBoutique } from '@/lib/boutique';
@@ -27,6 +27,7 @@ import {
   CheckCircle,
   AlertCircle
 } from 'lucide-react';
+import EcranDeChargement from '@/components/dashboard/EcranDeChargement';
 
 
 /**
@@ -449,9 +450,7 @@ export default function MaBoutiquePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[var(--background)] flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-nuit-400"></div>
-      </div>
+      <EcranDeChargement annonce="Chargement de votre boutique…" />
     );
   }
 
@@ -989,23 +988,30 @@ export default function MaBoutiquePage() {
               )}
             </div>
 
-            <button
+            {/*
+              LE COMPOSANT PLUTOT QUE SA RECOPIE.
+              Ce bouton refaisait a la main ce que `Bouton` fait : les classes,
+              la desactivation pendant l'envoi, et un rouet dessine au bord
+              d'un cercle. Il en perdait `aria-busy` au passage — donc, pour un
+              lecteur d'ecran, le bouton restait un bouton ordinaire pendant
+              que la sauvegarde tournait.
+              C'etait aussi le cinquieme rouet dessine a la main du tableau de
+              bord, apres les quatre etats de chargement plein ecran.
+            */}
+            <Bouton
               type="submit"
-              disabled={saving}
-              className={`${classesBouton('action')} w-full md:w-auto px-8`}
+              chargement={saving}
+              className="w-full md:w-auto px-8"
             >
               {saving ? (
-                <>
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                  Sauvegarde en cours...
-                </>
+                'Sauvegarde en cours…'
               ) : (
                 <>
                   <Save className="w-5 h-5" />
                   Enregistrer ma boutique
                 </>
               )}
-            </button>
+            </Bouton>
           </div>
         </div>
       </form>

@@ -14,6 +14,7 @@ import { utilisateurCourant } from '@/lib/supabase';
 import CompteurQuota from '@/components/dashboard/CompteurQuota';
 import ReglagePush from '@/components/pwa/ReglagePush';
 import BoutonPause from '@/components/dashboard/BoutonPause';
+import EcranDeChargement from '@/components/dashboard/EcranDeChargement';
 
 type Stats = {
   caTotal: number; caJour: number; nbCommandes: number; nbJour: number;
@@ -95,9 +96,7 @@ export default function Page() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[var(--background)]">
-        <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-primary-600" />
-      </div>
+      <EcranDeChargement annonce="Chargement du tableau de bord…" />
     );
   }
 

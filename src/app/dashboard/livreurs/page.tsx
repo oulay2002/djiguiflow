@@ -33,6 +33,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { VALEURS_LIVREE } from '@/lib/livraison';
+import EcranDeChargement from '@/components/dashboard/EcranDeChargement';
 
 const TYPE_CONFIG = {
   interne: { label: 'Interne', color: 'bg-nuit-100 text-nuit-700 border-nuit-200' },
@@ -333,9 +334,7 @@ export default function LivreursPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[var(--background)] flex items-center justify-center">
-        <Loader2 className="w-10 h-10 animate-spin text-nuit-400" />
-      </div>
+      <EcranDeChargement annonce="Chargement de vos livreurs…" />
     );
   }
 
