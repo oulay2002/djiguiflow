@@ -485,7 +485,11 @@ export default function Page() {
           <header className="indigo-weave relative overflow-hidden bg-nuit-900 p-6 text-chaux-50 soft-shadow">
             <div className="relative z-10 flex flex-wrap items-center justify-between gap-4">
               <div>
-                <p className="text-sm uppercase tracking-[0.2em] text-mangue-100">Menu réel · feuille Google</p>
+                {/* IL DISAIT « feuille Google », ET C'ETAIT FAUX depuis le
+                    decouplage : cette page lit et ecrit `produits` dans
+                    Supabase, et rien de cette route ne touche une feuille.
+                    Un marchand qui lit ca cherche un tableur qu'il n'a pas. */}
+                <p className="text-sm uppercase tracking-[0.2em] text-mangue-100">Votre catalogue en ligne</p>
                 <h1 className="mt-2 font-display text-3xl font-black">Produits · {nomBoutique}</h1>
                 <p className="mt-1 text-xs text-mangue-100">
                   {prods.length} produits · {prods.filter(p => p.disponible).length} disponibles · à jour à {maj}
@@ -560,7 +564,12 @@ export default function Page() {
                   : 'border-[var(--hairline)] bg-chaux-50'
               }`}
             >
-              <div className="min-w-0 flex-1">
+              {/* `basis-64` FAIT PASSER LE BOUTON A LA LIGNE SUR TELEPHONE.
+                  Le conteneur enveloppe deja, mais `flex-1 min-w-0` laissait ce
+                  bloc se reduire au lieu de pousser : mesure du 2 septembre
+                  2026 a 390 px — texte a 86 px de large, bouton a 222. Le
+                  paragraphe tombait a trois mots par ligne, sur douze lignes. */}
+              <div className="min-w-0 flex-1 basis-64">
                 <p className={`font-bold ${duJour.length > 0 ? 'text-accent-700' : 'text-nuit-800'}`}>
                   {duJour.length > 0
                     ? `Carte du jour · ${duJour.length} article${duJour.length > 1 ? 's' : ''}`
@@ -591,7 +600,19 @@ export default function Page() {
                 </p>
               </div>
               {duJour.length > 0 && (
-                <Bouton variante="voile" onClick={viderSelection}>
+                /* `voile` EST FAIT POUR UNE SURFACE SOMBRE — « secondaire sur
+                   surface teintee », dit `Bouton.tsx`, et il est juste sur le
+                   bandeau de tete de cette page. Ici la carte est vert PALE
+                   (`bg-accent-50`), et `voile` y peint du texte BLANC sur un
+                   blanc a 15 % : le libelle etait invisible.
+
+                   Mesure du 2 septembre 2026 dans un vrai navigateur. Aucun
+                   garde ne pouvait le voir : `contraste.mjs` ne compare que
+                   des paires ecrites dans un meme `className`, et ici la
+                   couleur du texte vit dans `Bouton.tsx` tandis que le fond
+                   reel vit ici. C'est le meme angle mort que l'element fixe
+                   sur fond changeant du 29 aout. */
+                <Bouton variante="calme" onClick={viderSelection}>
                   Tout remettre au catalogue
                 </Bouton>
               )}

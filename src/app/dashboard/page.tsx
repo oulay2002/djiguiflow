@@ -20,6 +20,8 @@ type Stats = {
   livrees: number; enCours: number; parCanal: Record<string, number>;
   noteMoyenne: number; nbNotes: number; topPlats: [string, number][];
   serie7j: { jour: string; ca: number; nb: number }[];
+  /** La somme des points ci-dessus. Ne jamais la recalculer ici. */
+  caSerie7j: number;
   produitsVendus: number; panierMoyen: number;
   /** Paniers composes puis abandonnes sur les 7 derniers jours. */
   paniersPerdus?: { nombre: number; valeur: number };
@@ -385,8 +387,22 @@ export default function Page() {
                   <p className="text-sm text-chaux-600">Performance</p>
                   <h2 className="text-2xl font-black">Évolution du CA · 7 jours</h2>
                 </div>
+                {/* IL DISAIT « AU TOTAL » ET MONTRAIT `caTotal` — toutes les
+                    commandes depuis l'ouverture — au-dessus d'une courbe de
+                    sept jours. Mesure du 2 septembre 2026 : bandeau a
+                    29 500 F, courbe plate a zero. Le marchand lisait deux
+                    nombres contradictoires dans la meme carte.
+
+                    C'est le chiffre sur lequel un commercant juge sa semaine :
+                    gonfle par son historique, il masque une semaine creuse —
+                    exactement le moment ou il faudrait qu'il s'en apercoive.
+
+                    Le total vient desormais de la SOMME DES POINTS DESSINES,
+                    et ne peut donc plus diverger de la courbe. Le CA depuis le
+                    debut reste lisible sur l'ecran Statistiques, ou il porte
+                    son vrai nom. */}
                 <span className=" bg-mangue-100 px-3 py-1.5 text-sm font-bold text-mangue-700">
-                  {s ? s.caTotal.toLocaleString('fr-FR') : 0} F au total
+                  {s ? s.caSerie7j.toLocaleString('fr-FR') : 0} F sur 7 jours
                 </span>
               </div>
               <svg viewBox={`0 0 ${W} ${H}`} className="w-full">
