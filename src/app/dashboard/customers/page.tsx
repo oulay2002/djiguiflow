@@ -35,6 +35,7 @@ import { fetchDashboard } from '@/lib/apiClient';
 import { useBoutique, avecBoutique } from '@/lib/boutique';
 import { TuileStat } from '@/components/ui/Etat';
 import { classesBouton } from '@/components/ui/Bouton';
+import EcranDeChargement from '@/components/dashboard/EcranDeChargement';
 
 // Le client n'a pas de table : il est deduit de ses commandes, cote serveur.
 type Client = {
@@ -136,9 +137,7 @@ export default function CustomersPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[var(--background)]">
-        <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-primary-600" />
-      </div>
+      <EcranDeChargement annonce="Chargement de vos clients…" />
     );
   }
 

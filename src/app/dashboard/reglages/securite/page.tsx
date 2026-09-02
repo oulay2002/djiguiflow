@@ -16,6 +16,7 @@ import {
   CheckCircle,
   AlertCircle,
 } from 'lucide-react';
+import EcranDeChargement from '@/components/dashboard/EcranDeChargement';
 
 type Message = { type: 'success' | 'error'; text: string };
 
@@ -111,9 +112,7 @@ export default function SecuritePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[var(--background)] flex items-center justify-center">
-        <Loader2 className="w-10 h-10 animate-spin text-nuit-400" />
-      </div>
+      <EcranDeChargement annonce="Chargement de votre sécurité…" />
     );
   }
 
