@@ -149,6 +149,13 @@
             "node": "Aiguilleur Telegram",
             "type": "main"
           }
+        ],
+        [
+          {
+            "index": 0,
+            "node": "Refus ou panne ?",
+            "type": "main"
+          }
         ]
       ]
     },
@@ -1180,6 +1187,7 @@
       "maxTries": 2,
       "name": "Charger fiche",
       "notes": "Un bot Telegram = un jeton = un marchand : le slug ne peut pas venir du message. Il se declare ici, et nulle part ailleurs. Pour brancher le bot d un autre marchand, dupliquer ce workflow et changer ce seul slug.",
+      "onError": "continueErrorOutput",
       "parameters": {
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
@@ -2091,6 +2099,19 @@
       "position": [
         940,
         1160
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "id": "6e6e6152-79d6-4740-bee0-2ae94de39a6a",
+      "name": "Refus ou panne ?",
+      "parameters": {
+        "jsCode": "// LE REFUS DE CANAL N EST PAS UNE PANNE DE LA PLATEFORME.\n//\n// `Charger fiche` appelle /api/internal/fiche, qui verifie le secret propre\n// au marchand. Un secret faux ou absent rend 401 — la BONNE reponse. Un noeud\n// HTTP, lui, traite tout non-2xx comme une panne : l execution passait en\n// rouge, et ce workflow porte un errorWorkflow, donc une alerte partait.\n//\n// Consequence mesuree le 3 septembre 2026 : n importe qui connaissant l URL\n// publique du webhook d un marchand faisait sonner le salon de veille avec un\n// en-tete bidon, et brulait une execution n8n. Le banc de l assistante\n// laissait la meme trace rouge a chaque passage.\nconst item = $input.first();\nconst err = (item && item.json && item.json.error) || (item && item.json) || {};\nconst code = String(err.httpCode ?? (err.context && err.context.httpCode) ?? err.status ?? '');\n\n// FIN PROPRE, AUCUNE TRACE ROUGE. Le refus n est pas perdu pour autant :\n// /api/internal/fiche le COMPTE, et la veille des chaines annonce le marchand\n// dont la porte s ouvrait cette semaine et ne s ouvre plus. Voir\n// src/lib/compteurCanal.ts — sans ce comptage, ce `return []` serait un\n// angle mort, et il ne doit jamais le redevenir.\nif (code === '401') return [];\n\n// TOUT LE RESTE RESTE BRUYANT : 5xx, 404, reseau — et toute forme d erreur\n// qu on n a pas su lire. Se tromper ici doit rendre l execution ROUGE, jamais\n// muette.\n//\n// LE MESSAGE TIENT SUR UNE LIGNE, ET SANS DEUX-POINTS. Mesure du 3 septembre\n// 2026 sur l execution 8074 : n8n coupe un message lance depuis un noeud Code\n// au premier deux-points et range la tete dans `description` — champ que\n// « Alerte erreurs plateforme » ne lit pas. Le detail venant d un corps JSON\n// en contient toujours un, et l exploitant recevait donc la QUEUE du message\n// seule, privee de ce qui la nommait. Meme famille que le retour a la ligne,\n// qui lui ne laisse que « Unknown error ».\nconst detail = String(err.message ?? err.description ?? 'sans detail')\n  .replace(/[\\r\\n:]+/g, ' ')\n  .replace(/\\s+/g, ' ')\n  .slice(0, 200);\n\nthrow new Error('Fiche marchand illisible (' + (code || 'sans code') + ') — ' + detail);"
+      },
+      "position": [
+        96,
+        368
       ],
       "type": "n8n-nodes-base.code",
       "typeVersion": 2
