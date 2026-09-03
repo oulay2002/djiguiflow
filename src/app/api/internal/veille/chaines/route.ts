@@ -5,6 +5,7 @@ import { inventaireSessions, santeSessionWhatsApp } from '@/lib/wasenderSessions
 import { rapprocherSessions, type Rapprochement } from '@/lib/rapprochementSessions';
 import { urlWebhookWhatsApp } from '@/lib/routeurWhatsApp';
 import { canalADerive, cleCanalAccepte, cleCanalRefuse } from '@/lib/compteurCanal';
+import { compteAAnnoncer } from '@/lib/compteSansBoutique';
 
 export const dynamic = 'force-dynamic';
 
@@ -428,6 +429,69 @@ export async function POST(req: Request) {
           + ' ne correspond plus a celui que son fournisseur envoie. Les messages de'
           + ' ses clients n arrivent pas. Rebrancher le canal depuis /onboarding'
           + ' pour reposer l empreinte.',
+      });
+    }
+
+    // ---- 4 ter. QUELQU'UN A FRAPPE, ET RIEN NE LE DISAIT.
+    //
+    // Les 24 et 25 aout 2026, deux personnes ont cree un compte et n'ont jamais
+    // eu de boutique — personne ne peut ouvrir la sienne a sa place. Elles sont
+    // reparties, et RIEN, NULLE PART, n'a dit qu'elles etaient venues : on l'a
+    // decouvert dix jours plus tard dans un entonnoir lu a la main.
+    //
+    // C'est le seul controle de cette route qui ne surveille pas une chaine
+    // technique mais une RENCONTRE. Il y a sa place quand meme : la regle de la
+    // maison est de surveiller des resultats, et « quelqu'un a voulu entrer et
+    // n'est pas entre » en est un.
+    //
+    // LA LISTE DES PROPRIETAIRES EST RELUE ICI, AVEC SON ERREUR. Le `boutiques`
+    // du haut de cette route ignore la sienne : une secousse de Supabase le
+    // laisserait a `null`, et cette regle annoncerait alors TOUS les comptes,
+    // y compris ceux qui ont leur boutique depuis des mois. Une alerte qui crie
+    // le plus fort exactement quand la base va mal ne vaut rien.
+    const { data: proprios, error: errProprios } = await sb
+      .from('boutiques')
+      .select('user_id');
+
+    if (errProprios) {
+      throw new Error(`compte-sans-boutique — proprietaires illisibles : ${errProprios.message}`);
+    }
+
+    const { data: registre, error: errRegistre } = await sb.auth.admin.listUsers({
+      page: 1,
+      perPage: 1000,
+    });
+
+    if (errRegistre) {
+      throw new Error(`compte-sans-boutique — registre des comptes illisible : ${errRegistre.message}`);
+    }
+
+    const proprietaires = new Set((proprios ?? []).map((b) => String(b.user_id)));
+
+    for (const u of registre?.users ?? []) {
+      const creeLe = Date.parse(String(u.created_at ?? ''));
+      if (!Number.isFinite(creeLe)) continue;
+
+      const ageMinutes = (maintenant - creeLe) / 60_000;
+      if (!compteAAnnoncer({ aUneBoutique: proprietaires.has(String(u.id)), ageMinutes })) continue;
+
+      const quand = new Date(creeLe).toLocaleString('fr-FR', {
+        timeZone: 'Africa/Abidjan',
+        day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit',
+      });
+
+      trouvees.push({
+        type: 'compte-sans-boutique',
+        // LA REFERENCE NE PORTE PAS L'ADRESSE. Elle est enregistree dans
+        // `anomalies_signalees`, que rien ne purge ; `detail` ne l'est pas et
+        // ne fait que passer vers Telegram. La donnee personnelle reste donc
+        // du cote qui s'efface.
+        reference: `compte-sans-boutique-${String(u.id).slice(0, 8)}-${jour}`,
+        boutique: 'Nouveau compte',
+        detail:
+          `Inscrit le ${quand}, toujours sans boutique. ${String(u.email ?? 'adresse inconnue')}`
+          + ' — personne ne peut ouvrir sa boutique a sa place. Le rappeler'
+          + ' aujourd hui : il voit un ecran qui attend apres nous.',
       });
     }
 
