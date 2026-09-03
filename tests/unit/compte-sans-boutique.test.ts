@@ -123,3 +123,57 @@ describe('la donnee personnelle reste du cote qui s efface', () => {
     expect(detail).toContain('u.email');
   });
 });
+
+/**
+ * L'ÉCRAN ÉCRIT, L'ALERTE LIT — ET LES DEUX DOIVENT PARLER DES MÊMES CLÉS.
+ *
+ * ── LE DÉFAUT QUE CE BLOC ÉCARTE ───────────────────────────────────────────
+ *
+ * `business_name` est écrit par `/register` et par l'écran Profil, et **lu par
+ * personne** côté serveur : la route de provisioning prend son nom et son slug
+ * dans son corps de requête. C'est un réglage mort — exactement ce que les
+ * PR #151 et #154 ont retiré ailleurs.
+ *
+ * L'écran « Votre boutique, pas encore » écrit désormais trois champs. S'ils
+ * n'étaient lus nulle part, on aurait ajouté trois morts de plus. C'est
+ * l'alerte `compte-sans-boutique` qui les lit, et ces gardes tiennent la
+ * jonction : un renommage d'un seul côté la briserait **en silence**, puisque
+ * rien n'échoue quand une clé absente rend `undefined`.
+ */
+describe('ce que l ecran ecrit est bien ce que l alerte lit', () => {
+  const ECRAN = readFileSync('src/components/dashboard/SansBoutique.tsx', 'utf8');
+  const REGLE = readFileSync('src/lib/demandeBoutique.ts', 'utf8');
+  const VEILLE = readFileSync('src/app/api/internal/veille/chaines/route.ts', 'utf8');
+
+  const CLES = ['business_name', 'phone', 'zone_livree'];
+
+  it.each(CLES)('« %s » est ecrite par l ecran et lue par la regle', (cle) => {
+    // ANCRE A GAUCHE, SINON LE PIEGE DU SOUS-MOT. « telephone: » contient
+    // « phone: » : sans cette borne, renommer la cle d'un seul cote laissait
+    // ce garde vert. Trouve en le mutant, pas en le relisant.
+    expect(ECRAN).toMatch(new RegExp(`(^|[^A-Za-z0-9_])${cle}:`, 'm'));
+    expect(REGLE).toMatch(new RegExp(`m\\.${cle}(?![A-Za-z0-9_])`, 'm'));
+  });
+
+  it('l ecran passe par la regle plutot que d assainir a sa facon', () => {
+    expect(ECRAN).toContain("from '@/lib/demandeBoutique'");
+    expect(ECRAN).toContain('normaliserDemande(');
+  });
+
+  /**
+   * ET L'ALERTE LES PORTE VRAIMENT.
+   *
+   * Sans cette ligne, les trois champs seraient écrits, lus par une fonction
+   * pure… et jamais montrés à personne. La chaîne doit aller jusqu'au bout.
+   */
+  it('l alerte porte ce que le marchand a dit', () => {
+    expect(VEILLE).toContain('resumeDemande(lireDemande(u.user_metadata))');
+
+    const bloc = VEILLE.slice(
+      VEILLE.indexOf("type: 'compte-sans-boutique'"),
+      VEILLE.indexOf('// ---- 5. LE COMPTE WASENDER'),
+    );
+    expect(bloc.length).toBeGreaterThan(200);
+    expect(bloc).toContain('dit');
+  });
+});

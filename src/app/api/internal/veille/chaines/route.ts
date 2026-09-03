@@ -6,6 +6,7 @@ import { rapprocherSessions, type Rapprochement } from '@/lib/rapprochementSessi
 import { urlWebhookWhatsApp } from '@/lib/routeurWhatsApp';
 import { canalADerive, cleCanalAccepte, cleCanalRefuse } from '@/lib/compteurCanal';
 import { compteAAnnoncer } from '@/lib/compteSansBoutique';
+import { lireDemande, resumeDemande } from '@/lib/demandeBoutique';
 
 export const dynamic = 'force-dynamic';
 
@@ -480,16 +481,34 @@ export async function POST(req: Request) {
         day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit',
       });
 
+      /**
+       * CE QUE LE MARCHAND NOUS A DIT, S'IL NOUS A DIT QUELQUE CHOSE.
+       *
+       * L'ecran « Votre boutique, pas encore » lui demande le nom de son
+       * commerce, son numero et sa zone, et les range dans son compte. C'EST
+       * ICI QUE CES TROIS CHAMPS SONT LUS — sans ce lecteur, ils seraient des
+       * reglages morts de plus, ecrits par un ecran et regardes par personne.
+       *
+       * Ils sont assainis a la source : ils viennent du client, et ils
+       * s'affichent dans une alerte dont les lignes se separent par des retours
+       * a la ligne.
+       */
+      const dit = resumeDemande(lireDemande(u.user_metadata));
+
       trouvees.push({
         type: 'compte-sans-boutique',
-        // LA REFERENCE NE PORTE PAS L'ADRESSE. Elle est enregistree dans
-        // `anomalies_signalees`, que rien ne purge ; `detail` ne l'est pas et
-        // ne fait que passer vers Telegram. La donnee personnelle reste donc
-        // du cote qui s'efface.
+        // LA REFERENCE NE PORTE NI L'ADRESSE NI CE QU'IL A DIT. Elle est
+        // enregistree dans `anomalies_signalees`, que rien ne purge ; `detail`
+        // ne l'est pas et ne fait que passer vers Telegram. La donnee
+        // personnelle reste donc du cote qui s'efface.
         reference: `compte-sans-boutique-${String(u.id).slice(0, 8)}-${jour}`,
         boutique: 'Nouveau compte',
         detail:
-          `Inscrit le ${quand}, toujours sans boutique. ${String(u.email ?? 'adresse inconnue')}`
+          `Inscrit le ${quand}, toujours sans boutique. `
+          + `${String(u.email ?? 'adresse inconnue')}`
+          // ON DIT AUSSI QUAND IL N'A RIEN DIT. Le silence est une information :
+          // il faut alors ecrire a l'adresse, faute de numero.
+          + (dit ? `. Il nous a dit : ${dit}` : ". Il n'a rien rempli sur l'ecran d'accueil")
           + ' — personne ne peut ouvrir sa boutique a sa place. Le rappeler'
           + ' aujourd hui : il voit un ecran qui attend apres nous.',
       });
