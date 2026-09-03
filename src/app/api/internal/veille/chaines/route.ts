@@ -4,6 +4,7 @@ import { VALEURS_LIVREE } from '@/lib/livraison';
 import { inventaireSessions, santeSessionWhatsApp } from '@/lib/wasenderSessions';
 import { rapprocherSessions, type Rapprochement } from '@/lib/rapprochementSessions';
 import { urlWebhookWhatsApp } from '@/lib/routeurWhatsApp';
+import { canalADerive, cleCanalAccepte, cleCanalRefuse } from '@/lib/compteurCanal';
 
 export const dynamic = 'force-dynamic';
 
@@ -359,6 +360,74 @@ export async function POST(req: Request) {
         detail:
           `Session WhatsApp deconnectee (${sante.brut}). Les messages ne partent`
           + ' plus. Verifier l abonnement wasender, puis rebrancher le numero.',
+      });
+    }
+
+    // ---- 4 bis. LE CANAL DU MARCHAND S'OUVRE-T-IL ENCORE ?
+    //
+    // CE BLOC EXISTE PARCE QU'UN AUTRE S'EST TU. Un refus de secret rendait
+    // auparavant l'execution n8n rouge, donc une alerte — bruyante, mais
+    // bruyante pour tout le monde : un inconnu qui POSTe n'importe quoi sur
+    // l'URL publique du webhook d'un marchand faisait sonner ce salon
+    // exactement comme une vraie panne, et le banc de l'assistante laissait la
+    // meme trace a chaque passage. Le 401 a donc ete rendu silencieux dans les
+    // deux routeurs. CE CONTROLE EST CE QUI REND CE SILENCE ACCEPTABLE.
+    //
+    // CE QU'ON REGARDE EST UN RESULTAT, PAS UNE ERREUR — la regle de toute
+    // cette route. Un refus isole ne dit rien. Ce qui parle, c'est que la porte
+    // de CE marchand s'ouvrait cette semaine et ne s'ouvre plus aujourd'hui
+    // alors qu'on y frappe : son secret a derive de celui que son fournisseur
+    // envoie, et TOUS les messages de ses clients tombent. Aucune autre sonde
+    // ne le voit — `santeSessionWhatsApp` interroge le jeton du coffre, et le
+    // controle de webhook devie compare l'URL, pas le secret. La regle elle-meme
+    // vit dans `compteurCanal.ts`, ou elle s'eprouve.
+    //
+    // ON LIT SEPT JOURS, PAS UN. C'est ce que la regle compare : le marchand a
+    // son propre passe. La table ne garde que sept jours de toute facon, donc
+    // cette lecture ne grossit pas avec le temps.
+    //
+    // MEME JOURNEE DES DEUX COTES. `incrementer_compteur` date ses lignes dans
+    // le fuseau d'Abidjan ; `jour` ci-dessus est la date UTC. Abidjan est a
+    // UTC+0 toute l'annee, sans heure d'ete : c'est la meme date, et le dire
+    // ici evite qu'on « corrige » un jour l'un des deux.
+    const { data: compteurs, error: errCompteurs } = await sb
+      .from('compteurs_journaliers')
+      .select('cle, jour, valeur')
+      .like('cle', 'canal:%');
+
+    if (errCompteurs) {
+      throw new Error(`canal-devie — lecture des compteurs impossible : ${errCompteurs.message}`);
+    }
+
+    const duJour = new Map<string, number>();
+    const deLaSemaine = new Map<string, number>();
+    for (const c of compteurs ?? []) {
+      const cle = String(c.cle);
+      deLaSemaine.set(cle, (deLaSemaine.get(cle) ?? 0) + Number(c.valeur ?? 0));
+      if (String(c.jour) === jour) duJour.set(cle, Number(c.valeur ?? 0));
+    }
+
+    for (const b of aSurveiller ?? []) {
+      if (b.actif === false || b.essai === true) continue;
+      const slug = String(b.slug ?? '').trim();
+      if (!slug) continue;
+
+      const refuses = duJour.get(cleCanalRefuse(slug)) ?? 0;
+      const acceptes = duJour.get(cleCanalAccepte(slug)) ?? 0;
+      const acceptesSeptJours = deLaSemaine.get(cleCanalAccepte(slug)) ?? 0;
+
+      if (!canalADerive({ refuses, acceptes, acceptesSeptJours })) continue;
+
+      trouvees.push({
+        type: 'canal-devie',
+        reference: `canal-devie-${slug}-${jour}`,
+        boutique: String(b.nom ?? slug),
+        detail:
+          `${refuses} message(s) refuses aujourd hui et AUCUN accepte, alors que`
+          + ` ${acceptesSeptJours} l ont ete cette semaine : le secret de son webhook`
+          + ' ne correspond plus a celui que son fournisseur envoie. Les messages de'
+          + ' ses clients n arrivent pas. Rebrancher le canal depuis /onboarding'
+          + ' pour reposer l empreinte.',
       });
     }
 
