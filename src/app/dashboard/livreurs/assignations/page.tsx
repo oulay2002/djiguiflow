@@ -444,7 +444,7 @@ export default function AssignationsPage() {
                   {livraison.statut === 'en_cours' && (
                     <button
                       onClick={() => updateLivraisonStatut(livraison.id, 'livree')}
-                      className="px-4 py-2 bg-accent-500 text-white text-sm font-semibold hover:bg-accent-600 transition"
+                      className="px-4 py-2 bg-accent-600 text-white text-sm font-semibold hover:bg-accent-700 transition"
                     >
                       Terminer
                     </button>

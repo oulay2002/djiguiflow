@@ -394,7 +394,14 @@ export default function Page() {
                           <span key={i} className="inline-flex items-center gap-1.5 border border-mangue-200 bg-mangue-50 px-3 py-1 text-sm font-semibold text-mangue-700">
                             <span className=" bg-mangue-700 px-2 py-0.5 text-xs font-bold text-white">{it.q}×</span>
                             {it.plat}
-                            {it.prix > 0 && <span className="text-mangue-600">· {(it.q * it.prix).toLocaleString('fr-FR')} F</span>}
+                            {/* MANGUE-700, ET PAS 600 : 4,32 contre 4,5 exiges, a 14 px.
+                                Mesure le 3 septembre 2026 par `contraste-rendu.mjs`.
+                                `contraste.mjs` ne pouvait pas le voir — la couleur est
+                                seule dans ce `className`, le fond `bg-mangue-50` vient
+                                d un ancetre. On perd une nuance de hierarchie avec le nom
+                                de l article ; le point median les separe deja, et un
+                                MONTANT se lit sans effort ou ne sert a rien. */}
+                            {it.prix > 0 && <span className="text-mangue-700">· {(it.q * it.prix).toLocaleString('fr-FR')} F</span>}
                           </span>
                         ))
                       )}

@@ -26,6 +26,16 @@ const PALETTE = {
   'accent-800': '#0f4738', 'accent-900': '#0b2f28',
   'mangue-50': '#fdf6e9', 'mangue-100': '#fbe9c8', 'mangue-200': '#f6d493', 'mangue-300': '#efb75a',
   'mangue-400': '#e9a23b', 'mangue-500': '#d1861f', 'mangue-600': '#a76518', 'mangue-700': '#7d4b13',
+
+  // LE BLANC ET LE NOIR MANQUAIENT, ET C'ETAIT LE TROU LE PLUS LARGE.
+  //
+  // Ce releve ne reconnaissait que les teintes maison : TOUTE paire faisant
+  // intervenir `text-white` ou `bg-white` lui etait invisible, meme ecrite dans
+  // un seul et meme `className`. Trouve le 3 septembre 2026 par
+  // `contraste-rendu.mjs` — le rang n°1 du podium, `bg-mangue-400 text-white`,
+  // rendait 2,17:1 sur l'ecran d'accueil du marchand, et cette sonde-ci
+  // annoncait « toutes au-dessus de 4,5:1 ».
+  white: '#ffffff', black: '#000000',
   white: '#ffffff',
 };
 
@@ -65,8 +75,14 @@ for (const fichier of fichiers) {
       .split(/\s+/)
       .filter((c) => !c.includes(':') || c.startsWith('sm:') || c.startsWith('lg:'))
       .join(' ');
-    const fond = auRepos.match(/\bbg-((?:nuit|chaux|bissap|accent|mangue)-\d{2,3})\b/)?.[1];
-    const texte = auRepos.match(/\btext-((?:nuit|chaux|bissap|accent|mangue)-\d{2,3})\b/)?.[1];
+    // UNE CLASSE A OPACITE N'EST PAS CALCULABLE ICI, ET LA COMPTER FAIT CRIER
+    // A TORT. `bg-white/15` avec `text-white/90` se lisait « blanc sur blanc,
+    // 1,00:1 » — alors que le fond reel est un voile blanc sur du sombre. Ce
+    // qui se cache derriere un alpha releve de `contraste-rendu.mjs`, qui
+    // compose les couches ; ici on se tait plutot que de deviner.
+    const sansAlpha = auRepos.split(/\s+/).filter((c) => !c.includes('/')).join(' ');
+    const fond = sansAlpha.match(/\bbg-((?:nuit|chaux|bissap|accent|mangue)-\d{2,3}|white|black)\b/)?.[1];
+    const texte = sansAlpha.match(/\btext-((?:nuit|chaux|bissap|accent|mangue)-\d{2,3}|white|black)\b/)?.[1];
     if (!fond || !texte) continue;
     const cle = `${texte} sur ${fond}`;
     if (!paires.has(cle)) paires.set(cle, { texte, fond, ou: fichier.split('\\').join('/') });
