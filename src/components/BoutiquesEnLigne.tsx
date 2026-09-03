@@ -162,6 +162,21 @@ export default function BoutiquesEnLigne() {
 
                       Posee en bas a gauche, sur la seule zone que la mosaique
                       garde toujours pleine. */}
+                  {/* 10 PX EST UNE DECISION, PAS UN OUBLI — mesuree le
+                      3 septembre 2026, a 390 px, sur la production.
+
+                      C'est sous le plancher de 12 px qu'on s'impose ailleurs.
+                      Mais a 12 px, LES DEUX BADGES SE TRONQUENT : 285 px
+                      disponibles pour 285 demandes, contre 279 et 272 a 10 px.
+                      On perdrait le nom du produit vedette — c'est-a-dire
+                      l'information meme du badge, dont l'etiquette n'est que le
+                      contexte.
+
+                      Ce qui rend le compromis tenable : majuscules, tracking
+                      large, et blanc sur `nuit-900/85` — le contraste est
+                      largement au-dessus du seuil. Agrandir sans elargir la
+                      boite echangerait une regle tenue contre une information
+                      perdue. */}
                   {b.vedette && (
                     <span className="absolute bottom-0 left-0 max-w-[80%] truncate bg-nuit-900/85 px-2.5 py-1.5 font-mono text-[10px] uppercase tracking-[0.14em] text-white backdrop-blur-[2px]">
                       Le plus commandé · {b.vedette}
@@ -199,7 +214,14 @@ export default function BoutiquesEnLigne() {
                   <span className="block truncate font-display text-xl font-bold leading-tight tracking-[-0.01em] text-nuit-900">
                     {b.nom}
                   </span>
-                  <span className="mt-1 block truncate font-mono text-xs uppercase tracking-[0.16em] text-chaux-500">
+                  {/* CHAUX-600, ET PAS 500 : 4,05 CONTRE 4,5 EXIGES.
+                      Mesure du 3 septembre 2026 par `contraste-rendu.mjs`, sur
+                      la page RENDUE. `contraste.mjs` ne pouvait pas le voir :
+                      il releve les paires ecrites dans un meme `className`, et
+                      ici la couleur est sur ce span quand le fond blanc vient
+                      du `<a>` deux niveaux plus haut. Vu a 390 px avant et
+                      apres — le nom reste dominant, la hierarchie tient. */}
+                  <span className="mt-1 block truncate font-mono text-xs uppercase tracking-[0.16em] text-chaux-600">
                     {b.secteur}
                     {b.zone && ` · ${b.zone}`}
                   </span>
