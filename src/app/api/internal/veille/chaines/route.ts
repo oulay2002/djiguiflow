@@ -7,6 +7,7 @@ import { urlWebhookWhatsApp } from '@/lib/routeurWhatsApp';
 import { canalADerive, cleCanalAccepte, cleCanalRefuse } from '@/lib/compteurCanal';
 import { compteAAnnoncer } from '@/lib/compteSansBoutique';
 import { lireDemande, resumeDemande } from '@/lib/demandeBoutique';
+import { etatVitrine, vitrineASignaler, vitrineMuette } from '@/lib/vitrineComplete';
 
 export const dynamic = 'force-dynamic';
 
@@ -85,6 +86,26 @@ export async function POST(req: Request) {
    * le compte est injoignable, et un zero invente se lirait « rien a payer ».
    */
   let inventaire: (Rapprochement & { total: number | null }) | null = null;
+
+  /**
+   * LE TEMOIN DES VITRINES, ET LA CONTREPARTIE DU « UNE FOIS PUIS SILENCE ».
+   *
+   * L'anomalie `vitrine-muette` n'est annoncee qu'une seule fois — sa
+   * reference ne porte pas le jour. Sans ce temoin, une boutique muette
+   * disparaitrait de la vue au deuxieme passage et resterait muette pour
+   * toujours : on aurait remplace un dossier bruyant par un dossier oublie.
+   *
+   * Il porte TOUTES les boutiques en ligne, muettes ou non — un temoin qui ne
+   * montrerait que les cas rouges ne prouverait jamais que l'instrument
+   * regarde. C'est le meme raisonnement que `rattachees` pour les lignes
+   * WhatsApp.
+   */
+  const vitrines: {
+    boutique: string;
+    posees: number;
+    total: number;
+    muette: boolean;
+  }[] = [];
 
   // Le nom lisible de chaque boutique, pour que l'alerte nomme le marchand
   // plutot que de rendre un uuid que personne ne reconnait.
@@ -332,7 +353,17 @@ export async function POST(req: Request) {
     // normale. Datee, elle se redit une fois par jour tant qu'elle dure.
     const { data: aSurveiller } = await sb
       .from('boutiques')
-      .select('slug, nom, actif, essai, telephone, wasender_session_id');
+      // Les sept dernieres colonnes ne servent qu'au controle « 4 quater » :
+      // ce sont les reponses que le client cherche sur la vitrine. Elles sont
+      // lues ici plutot que par une seconde requete — la liste des boutiques
+      // est deja chargee, et une requete de plus serait une requete de plus a
+      // gerer en erreur.
+      //
+      // ⚠ UNE SEULE CHAINE LITTERALE, JAMAIS UNE CONCATENATION. `supabase-js`
+      // deduit le type des lignes en LISANT ce texte : coupe en `'a,' + 'b'`,
+      // il n'a plus rien a lire et rend `GenericStringError`. Les 1065 tests
+      // restaient verts — seul le typecheck l'a vu, sur 19 lignes d'un coup.
+      .select('slug, nom, actif, essai, telephone, wasender_session_id, description, horaires, mode_recuperation, delai_livraison, delai_preparation_min, zones_livrees, paiements_acceptes');
 
     const jour = new Date().toISOString().slice(0, 10);
 
@@ -430,6 +461,80 @@ export async function POST(req: Request) {
           + ' ne correspond plus a celui que son fournisseur envoie. Les messages de'
           + ' ses clients n arrivent pas. Rebrancher le canal depuis /onboarding'
           + ' pour reposer l empreinte.',
+      });
+    }
+
+    // ---- 4 quater. UNE VITRINE EN LIGNE, ET MUETTE.
+    //
+    // ── L'ANGLE MORT QUE CE CONTROLE FERME ─────────────────────────────────
+    //
+    // La sonde « vitrine complete » existe depuis le 1er septembre 2026, et
+    // l'entonnoir la lit depuis le 3. Mais l'entonnoir EXCLUT nos propres
+    // boutiques — a dessein, et c'est juste : les compter ferait croire a une
+    // activation parfaite, puisque c'est nous qui les avons remplies.
+    //
+    // L'exclusion, juste pour un ratio, a ferme le seul oeil capable de voir
+    // qu'une boutique de la plateforme est PUBLIQUEMENT EN LIGNE et muette.
+    // Mesure du 3 septembre 2026 : Rose Monde, `actif = true`, repondait a UNE
+    // question sur cinq. C'est le motif du filet qui cree son angle mort.
+    //
+    // ── ELLE SURVEILLE UN RESULTAT, PAS UNE ERREUR ─────────────────────────
+    //
+    // Rien n'echoue ici : la boutique repond 200, accepte les commandes, et sa
+    // chaine technique est intacte. Elle ne dit simplement pas ce qu'elle vend.
+    // Aucune autre sonde ne peut le voir — c'est exactement la raison d'etre de
+    // cette veille, ecrite en tete de fichier.
+    //
+    // ── POURQUOI LA REFERENCE NE PORTE PAS LE JOUR ─────────────────────────
+    //
+    // Les autres anomalies redisent une fois par jour, parce qu'elles sont des
+    // pannes : un canal devie coute des messages a chaque heure qui passe. Une
+    // vitrine muette, elle, peut le rester des semaines sans que rien
+    // n'empire. La redire chaque matin occuperait le canal avec ce qu'on ne
+    // traitera pas ce matin-la.
+    //
+    // Elle est donc annoncee UNE FOIS, et ne disparait pas pour autant : le
+    // temoin `vitrines` ci-dessous la porte a chaque passage, comme
+    // `inventaire` porte les lignes WhatsApp. Se taire ET disparaitre serait
+    // remplacer un dossier bruyant par un dossier oublie.
+    for (const b of aSurveiller ?? []) {
+      const slug = String(b.slug ?? '').trim();
+      if (!slug) continue;
+
+      const nom = String(b.nom ?? slug);
+      const enLigne = b.actif !== false;
+      const etat = etatVitrine(b);
+
+      // LE TEMOIN NE PORTE QUE LES BOUTIQUES SERVIES AU PUBLIC. Y faire figurer
+      // une boutique en preparation ferait lire « 2 vitrines sur 3 en ordre »
+      // la ou une seule est exposee.
+      if (enLigne && b.essai !== true) {
+        vitrines.push({
+          boutique: nom,
+          posees: etat.posees,
+          total: etat.total,
+          muette: vitrineMuette(etat),
+        });
+      }
+
+      // LES TROIS CONDITIONS VIVENT DANS LA REGLE, PAS ICI. Ecrites dans cette
+      // boucle, elles auraient ete les seules lignes du controle qu'aucun test
+      // n'atteint — voir le commentaire de `vitrineASignaler`.
+      if (!vitrineASignaler({ enLigne, deBanc: b.essai === true, etat })) continue;
+
+      trouvees.push({
+        type: 'vitrine-muette',
+        reference: `vitrine-muette-${slug}`,
+        boutique: nom,
+        detail:
+          `Cette boutique est EN LIGNE et ne repond qu a ${etat.posees} question(s)`
+          + ` sur ${etat.total}. Sans reponse : `
+          // Les questions du CLIENT, pas les noms de colonnes : l'exploitant
+          // qui appelle le marchand lui lit ce qui manque, il ne lui parle pas
+          // de `zones_livrees`.
+          + etat.manquantes.map((m) => m.question).join(' ')
+          + ' Ses visiteurs repartent sans savoir quoi acheter, et le marchand'
+          + ' ne saura jamais pourquoi. A remplir depuis /dashboard/ma-boutique.',
       });
     }
 
@@ -649,7 +754,7 @@ export async function POST(req: Request) {
   }
 
   if (!trouvees.length) {
-    return Response.json({ ok: true, nouvelles: 0, anomalies: [], inventaire });
+    return Response.json({ ok: true, nouvelles: 0, anomalies: [], inventaire, vitrines });
   }
 
   // ---- Ne garder que ce qui n'a jamais ete annonce.
@@ -679,5 +784,6 @@ export async function POST(req: Request) {
     vues: trouvees.length,
     anomalies,
     inventaire,
+    vitrines,
   });
 }
