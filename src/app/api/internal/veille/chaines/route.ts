@@ -9,6 +9,7 @@ import { compteAAnnoncer } from '@/lib/compteSansBoutique';
 import { lireDemande, resumeDemande } from '@/lib/demandeBoutique';
 import { etatVitrine, vitrineASignaler, vitrineMuette } from '@/lib/vitrineComplete';
 import { vitrineSansCanalClient } from '@/lib/boutiquePrete';
+import { assainirPourTelegram } from '@/lib/alerteTelegram';
 
 export const dynamic = 'force-dynamic';
 
@@ -827,7 +828,37 @@ export async function POST(req: Request) {
   }
 
   const neuves = new Set((inserees ?? []).map((a) => `${a.reference}|${a.type}`));
-  const anomalies = trouvees.filter((a) => neuves.has(`${a.reference}|${a.type}`));
+
+  /**
+   * ON ASSAINIT ICI, ET PAS UNE LIGNE PLUS HAUT.
+   *
+   * ── POURQUOI IL FAUT ASSAINIR ──────────────────────────────────────────
+   *
+   * Le noeud Telegram qui porte cette alerte interprete son texte comme du
+   * Markdown. Le 10 aout 2026, un `_` dans `Commandes_Zahara` a fait repondre
+   * `can't parse entities` a Telegram, et L'ALERTE N'EST JAMAIS PARTIE.
+   *
+   * Cette veille est la seule a injecter des donnees ecrites par des inconnus :
+   * `compte-sans-boutique` porte l'adresse e-mail de l'inscrit et le texte
+   * libre qu'il a saisi. Une adresse avec un `_` suffirait — et le dossier
+   * serait perdu pour de bon, puisque l'insertion ci-dessus a deja consomme
+   * son « une fois puis silence ».
+   *
+   * ── ET POURQUOI APRES L'ECRITURE ───────────────────────────────────────
+   *
+   * `reference` est la CLE PRIMAIRE de `anomalies_signalees`. L'assainir avant
+   * l'insertion changerait la cle : le silence ne reconnaitrait plus le dossier
+   * deja annonce, et la meme anomalie reviendrait a chaque passage. L'ordre
+   * n'est pas un detail de style, il est le correctif.
+   */
+  const anomalies = trouvees
+    .filter((a) => neuves.has(`${a.reference}|${a.type}`))
+    .map((a) => ({
+      type: a.type,
+      reference: assainirPourTelegram(a.reference),
+      boutique: assainirPourTelegram(a.boutique),
+      detail: assainirPourTelegram(a.detail),
+    }));
 
   return Response.json({
     ok: true,
