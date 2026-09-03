@@ -30,6 +30,7 @@
  * Usage : node scripts/entonnoir.mjs
  */
 import { readFileSync } from 'node:fs';
+import { vitrineComplete } from './vitrineComplete.mjs';
 
 const env = Object.fromEntries(
   readFileSync('.env.local', 'utf8')
@@ -60,7 +61,11 @@ async function lire(chemin) {
 // ---------------------------------------------------------------- les donnees
 
 const boutiques = await lire(
-  '/rest/v1/boutiques?select=id,slug,nom,user_id,actif,essai,wasender_session_id,telegram_marchand',
+  '/rest/v1/boutiques?select=id,slug,nom,user_id,actif,essai,wasender_session_id,telegram_marchand'
+  // Les six colonnes que lit `vitrineComplete` : ce que le CLIENT a besoin de
+  // savoir avant de commander. Voir la marche « Vitrine complete » plus bas.
+  + ',description,horaires,delai_livraison,delai_preparation_min,zones_livrees'
+  + ',paiements_acceptes,mode_recuperation',
 );
 
 /**
@@ -151,10 +156,39 @@ try {
 const branchee = (b) =>
   Boolean(String(b.wasender_session_id ?? '').trim() || String(b.telegram_marchand ?? '').trim());
 
+/**
+ * « VITRINE COMPLETE » — LA MARCHE QUI MANQUAIT, ET LA SEULE QUI SOIT MUETTE.
+ *
+ * Toutes les autres marches se voient : une boutique sans produit est vide, un
+ * canal non branche se signale, une vitrine hors ligne ne s'ouvre pas. Celle-ci
+ * ne se voit d'AUCUN cote. La boutique s'affiche, accepte les commandes, et ne
+ * dit simplement pas au client ce qu'elle vend, ou elle livre, ni comment on la
+ * paie. Le marchand ne vend pas et NE SAURA JAMAIS POURQUOI — il conclura que
+ * la plateforme ne marche pas.
+ *
+ * Mesure du 1er septembre 2026 : sur les trois boutiques d'alors, AUCUNE
+ * n'avait de delai de preparation, et l'une ne repondait a aucune des trois
+ * questions. Voir `src/lib/vitrineComplete.ts`, qui porte la regle.
+ *
+ * SA PLACE EST APRES « au moins un produit ». Le marchand a garni sa boutique ;
+ * la question suivante est s'il a repondu au client. C'est la que le
+ * decrochage se produit, pas au branchement.
+ *
+ * ELLE NE RECLAME PAS LES LEVIERS COMMERCIAUX. `commande_minimum` et
+ * `livraison_offerte_des` sont exclus a dessein : une boutique sans minimum est
+ * parfaitement complete, et un indicateur qui reclame tout ne se lit plus.
+ */
+const incompletes = reelles
+  .filter((b) => avecProduit.has(b.id))
+  .map((b) => ({ slug: b.slug, etat: vitrineComplete(b) }))
+  .filter(({ etat }) => etat.manquantes.length > 0);
+
 const etapes = [
   ['Compte cree', comptes],
   ['Boutique creee', reelles.length],
   ['Au moins un produit', reelles.filter((b) => avecProduit.has(b.id)).length],
+  ['Vitrine complete', reelles.filter((b) => avecProduit.has(b.id)
+    && vitrineComplete(b).manquantes.length === 0).length],
   ['Un canal branche', reelles.filter(branchee).length],
   ['Vitrine en ligne', reelles.filter((b) => b.actif !== false).length],
   ['Au moins une commande', reelles.filter((b) => avecCommande.has(b.id)).length],
@@ -175,6 +209,21 @@ for (const [nom, valeur] of etapes) {
       : `  ${valeur === precedent ? '—' : `-${precedent - valeur}`}  (${Math.round((valeur / precedent) * 100)} %)`;
   console.log(`  ${nom.padEnd(24)} ${String(valeur).padStart(4)}${perte}`);
   precedent = valeur;
+}
+
+/**
+ * ON NOMME CE QUI MANQUE, PAS SEULEMENT COMBIEN.
+ *
+ * « 2 vitrines incompletes » ne se traite pas. « Rose Monde ne dit pas ce
+ * qu'elle vend ni ou elle livre » s'appelle et se corrige en trois minutes.
+ * C'est la seule marche de cet entonnoir sur laquelle on puisse agir le jour
+ * meme, marchand par marchand.
+ */
+if (incompletes.length) {
+  console.log(`\n  ${incompletes.length} vitrine(s) garnie(s) mais muette(s) :`);
+  for (const { slug, etat } of incompletes) {
+    console.log(`    ${slug.padEnd(18)} ${etat.posees}/${etat.total} — manque ${etat.manquantes.join(', ')}`);
+  }
 }
 
 console.log(`\n  ${factices} boutique(s) a nous, exclue(s) du calcul.`);

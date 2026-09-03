@@ -101,3 +101,49 @@ describe('ce qui compte comme rempli', () => {
       .manquantes.map((m) => m.cle)).toContain('delai_preparation_min');
   });
 });
+
+/**
+ * LES DEUX IMPLÉMENTATIONS NE PEUVENT PAS DIVERGER.
+ *
+ * `scripts/entonnoir.mjs` est lancé par `node`, qui ne sait lire ni le
+ * TypeScript ni l'alias `@/` — et le dépôt n'embarque pas de chargeur, en
+ * ajouter un pour un script lancé à la main coûtant plus qu'il ne rapporte. La
+ * règle existe donc en double, dans `scripts/vitrineComplete.mjs`.
+ *
+ * **C'est ce bloc, et lui seul, qui rend ce doublon acceptable.** Il ne compare
+ * pas deux textes : il fait tourner les DEUX fonctions sur la même série de cas
+ * et exige le même verdict. Une divergence introduite d'un côté devient rouge
+ * ici, avant d'aller mentir dans un entonnoir que personne ne saura relire.
+ *
+ * Même dispositif que `objectifs-panier`, et pour la même raison : un chiffre
+ * faux dans un tableau de bord ne se voit pas.
+ */
+describe('la copie pour les scripts dit exactement la meme chose', () => {
+  const CAS: Record<string, Record<string, unknown>> = {
+    'vitrine pleine, en livraison': pleine,
+    'vitrine muette, en livraison': { mode_recuperation: 'livraison' },
+    'vitrine muette, en retrait': { mode_recuperation: 'retrait' },
+    'vitrine muette, mode absent': {},
+    'retrait, delai a zero': { mode_recuperation: 'retrait', delai_preparation_min: 0 },
+    'retrait, delai pose': { ...pleine, mode_recuperation: 'retrait', delai_preparation_min: 20 },
+    'les deux modes': { ...pleine, mode_recuperation: 'les_deux' },
+    'description en espaces': { ...pleine, description: '   ' },
+    'zones en tableau vide': { ...pleine, zones_livrees: [] },
+    'horaires en objet vide': { ...pleine, horaires: {} },
+    'mode avec espaces autour': { ...pleine, mode_recuperation: '  retrait  ' },
+    'valeurs nulles partout': {
+      description: null, horaires: null, delai_livraison: null,
+      zones_livrees: null, paiements_acceptes: null, mode_recuperation: null,
+    },
+  };
+
+  it.each(Object.keys(CAS))('%s', async (nom) => {
+    const { vitrineComplete } = await import('../../scripts/vitrineComplete.mjs');
+    const ts = etatVitrine(CAS[nom]);
+    const mjs = vitrineComplete(CAS[nom]);
+
+    expect(mjs.manquantes).toEqual(ts.manquantes.map((m) => m.cle));
+    expect(mjs.total).toBe(ts.total);
+    expect(mjs.posees).toBe(ts.posees);
+  });
+});
