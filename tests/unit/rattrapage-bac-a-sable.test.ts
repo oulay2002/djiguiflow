@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
 /**
@@ -141,5 +142,70 @@ describe('rattrapage des paiements — ce qui merite une alerte', () => {
     it('un bac a sable deja signale n encombre pas le rapport', () => {
       expect(auRapport({ ...bloque, jeton: 'SANDBOX_X', dejaSignale: true })).toBe(false);
     });
+  });
+});
+
+/**
+ * AUCUN PAIEMENT NE SORT DU CHAMP DE VISION.
+ *
+ * ── LE TROU, MESURÉ EN PRODUCTION LE 3 SEPTEMBRE 2026 ──────────────────────
+ *
+ * Le balayage exigeait `jeton_prestataire is not null`. C'est juste pour ce
+ * qu'il fait — sans référence du prestataire, il n'y a rien à lui demander.
+ * Mais ces paiements-là n'étaient alors **ni examinés, ni comptés, ni
+ * signalés, ni listés dans les dossiers ouverts**. Ils disparaissaient.
+ *
+ * `scripts/essai-rattrapage.mjs` l'a montré avant qu'on y touche : deux
+ * paiements en attente depuis trois heures, l'un porteur d'un jeton et
+ * signalé, l'autre sans jeton et **invisible**.
+ *
+ * ── QUAND ÇA ARRIVE ────────────────────────────────────────────────────────
+ *
+ * Le jeton est écrit au checkout par une mise à jour séparée de l'insertion,
+ * juste après l'appel au prestataire. Son échec n'est que journalisé — à
+ * dessein, refuser la commande à ce stade serait pire. Mais le tunnel s'ouvre
+ * quand même : le marchand peut payer, et plus rien ne le rattrapera.
+ *
+ * Ce garde relit la route. Il ne prouve pas le comportement — c'est le banc qui
+ * le fait, contre un vrai serveur — il empêche que le filtre revienne en
+ * silence, ce qui est exactement la façon dont ce défaut est né.
+ */
+describe('le rattrapage ne perd personne de vue', () => {
+  const ROUTE = readFileSync('src/app/api/internal/billing/rattrapage/route.ts', 'utf8');
+
+  it('il interroge le prestataire sur ceux qui ont un jeton', () => {
+    expect(ROUTE).toContain(".not('jeton_prestataire', 'is', null)");
+  });
+
+  it('et il REGARDE aussi ceux qui n en ont pas', () => {
+    expect(ROUTE).toContain(".is('jeton_prestataire', null)");
+  });
+
+  /**
+   * `examines` DOIT COMPTER TOUT CE QU'ON A REGARDÉ.
+   *
+   * Le compter sur la seule liste interrogeable rassurerait à tort : c'est ce
+   * chiffre-là qu'on lit dans l'exécution n8n, et il taisait la moitié de ce
+   * qu'il prétendait couvrir.
+   */
+  it('le compte annonce couvre les deux listes', () => {
+    expect(ROUTE).toContain('examines: resultats.length');
+    expect(ROUTE).not.toContain('examines: lignes.length');
+  });
+
+  /**
+   * ILS REJOIGNENT LA MÊME MACHINERIE.
+   *
+   * Une seconde voie d'alerte serait une voie de plus à oublier : ces
+   * paiements entrent dans `resultats`, donc dans le seuil des deux heures, le
+   * « une fois puis silence » et les dossiers ouverts.
+   */
+  it('ils entrent dans la meme file que les autres', () => {
+    const bloc = ROUTE.slice(ROUTE.indexOf(".is('jeton_prestataire', null)"));
+    expect(bloc).toContain('resultats.push(');
+    expect(bloc).toContain("etat: 'sans_jeton'");
+    // Sans jeton, impossible de savoir si c'est un essai : on ne l'ecarte donc
+    // pas de l'alerte. Le repli penche du cote qui reveille.
+    expect(bloc).toContain('bacASable: false');
   });
 });

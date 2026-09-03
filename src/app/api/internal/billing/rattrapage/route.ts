@@ -60,8 +60,8 @@ export async function POST(req: Request) {
   const depuis = new Date(Date.now() - FENETRE_JOURS * 86400_000).toISOString();
 
   // `jeton_prestataire` non nul : c'est la reference du prestataire, sans
-  // laquelle il n'y a rien a interroger. Les paiements CinetPay n'en ont pas et
-  // sont donc naturellement hors de ce balayage.
+  // laquelle il n'y a rien a interroger. Ceux qui n'en ont pas sont repris plus
+  // bas — on ne peut pas les VERIFIER, on refuse seulement qu'ils disparaissent.
   const { data: enAttente, error } = await sb
     .from('paiements')
     .select('reference, created_at, jeton_prestataire, alerte_envoyee_le')
@@ -159,6 +159,70 @@ export async function POST(req: Request) {
     }
   }
 
+  /**
+   * LES PAIEMENTS SANS JETON — CEUX QUI SORTAIENT DU CHAMP DE VISION.
+   *
+   * ── LE TROU, MESURE LE 3 SEPTEMBRE 2026 ──────────────────────────────────
+   *
+   * Le balayage ci-dessus exige `jeton_prestataire is not null`, et c'est juste
+   * pour ce qu'il fait : sans reference du prestataire, il n'y a rien a lui
+   * demander. Mais ces paiements-la n'etaient alors NI examines, NI comptes, NI
+   * signales, NI listes dans les dossiers ouverts. Ils disparaissaient — ce que
+   * les commentaires de cette route interdisent explicitement quelques lignes
+   * plus bas : « un marchand qui a paye sans recevoir son acces ne doit jamais
+   * sortir du champ de vision ».
+   *
+   * Le banc `scripts/essai-rattrapage.mjs` l'a montre en production avant qu'on
+   * y touche : le paiement porteur d'un jeton etait examine et signale, celui
+   * sans jeton restait INVISIBLE, meme vieux de trois heures.
+   *
+   * ── QUAND CA ARRIVE ──────────────────────────────────────────────────────
+   *
+   * Le jeton est ecrit au checkout par une mise a jour SEPAREE de l'insertion,
+   * juste apres l'appel au prestataire. Son echec n'est que journalise — a
+   * dessein, car refuser la commande a ce stade serait pire. Mais le paiement
+   * existe alors sans jeton, et le tunnel s'est ouvert : le marchand peut
+   * payer. Personne ne le rattrapera jamais.
+   *
+   * ── CE QU'ON EN FAIT ─────────────────────────────────────────────────────
+   *
+   * On ne peut pas les verifier : on ne le tente donc pas, et on ne pretend pas
+   * le contraire. On les fait simplement REJOINDRE la meme machinerie —
+   * l'alerte a deux heures, le « une fois puis silence », les dossiers ouverts.
+   * Une seconde voie d'alerte serait une voie de plus a oublier.
+   */
+  const { data: sansJeton, error: errSansJeton } = await sb
+    .from('paiements')
+    .select('reference, created_at, alerte_envoyee_le')
+    .eq('statut', 'en_attente')
+    .is('jeton_prestataire', null)
+    .gte('created_at', depuis)
+    .order('created_at', { ascending: true })
+    .limit(MAX_PAR_PASSAGE);
+
+  if (errSansJeton) {
+    console.error('Rattrapage — lecture des paiements sans jeton impossible :', errSansJeton.message);
+    return NextResponse.json({ error: 'Lecture impossible.' }, { status: 503 });
+  }
+
+  for (const ligne of sansJeton ?? []) {
+    const reference = String(ligne.reference ?? '');
+    if (!reference) continue;
+
+    const naissance = Date.parse(String(ligne.created_at ?? ''));
+    resultats.push({
+      reference,
+      // L'etat existe deja dans `IssueEncaissement` : on ne fabrique pas un
+      // vocabulaire parallele pour dire la meme chose.
+      etat: 'sans_jeton',
+      heures: Number.isFinite(naissance) ? Math.round((Date.now() - naissance) / 3600_000) : 0,
+      // Sans jeton, impossible de savoir si c'est un essai : on ne l'ecarte
+      // donc pas de l'alerte. Le repli penche du cote qui reveille.
+      bacASable: false,
+      dejaSignale: Boolean(String(ligne.alerte_envoyee_le ?? '').trim()),
+    });
+  }
+
   // CE QUI DOIT REVEILLER QUELQU'UN. Un paiement que le rattrapage n'arrive pas
   // a honorer depuis plus de deux heures, c'est un marchand qui a peut-etre
   // paye et qui n'a pas son acces. `deja` et `honore` sont des succes ; tout le
@@ -249,7 +313,12 @@ export async function POST(req: Request) {
   }
 
   return NextResponse.json({
-    examines: lignes.length,
+    // EXAMINES COMPTE TOUT CE QU'ON A REGARDE, pas seulement ce qu'on a pu
+    // interroger : un chiffre qui tait la moitie de ce qu'il couvre rassure a
+    // tort, et c'est ce silence qui a laisse les paiements sans jeton dehors.
+    examines: resultats.length,
+    interroges: lignes.length,
+    sansJeton: resultats.filter((r) => r.etat === 'sans_jeton').length,
     honores,
     bloques: bloques.length,
     detailBloques: bloques,
