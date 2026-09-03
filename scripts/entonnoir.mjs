@@ -201,13 +201,36 @@ if (orphelins.length) {
 
 /**
  * LE LEVIER LATENT. `commande_minimum` et `livraison_offerte_des` existent
- * depuis le 29 aout et personne ne les a jamais poses. Le seuil de livraison
- * offerte est le levier le plus fiable du commerce pour faire monter un
- * panier : le rappeler ici evite qu'il dorme une saison de plus.
+ * depuis le 29 aout. Le seuil de livraison offerte est le levier le plus fiable
+ * du commerce pour faire monter un panier : le rappeler ici evite qu'il dorme
+ * une saison de plus.
+ *
+ * ⚠ IL COMPTAIT LES BOUTIQUES QUE CE SCRIPT VENAIT D'EXCLURE.
+ *
+ * Ajoute apres le reste, ce bloc relisait `boutiques` en entier au lieu de
+ * `reelles`. Il annoncait donc « pose sur 0 boutique(s) sur 3 » DEUX LIGNES
+ * apres « Aucune boutique cliente » — les trois etant Zahara, Rose Monde et
+ * Atelier Temoin, qui sont a nous. Ce zero a ete lu comme un levier que les
+ * marchands dedaignent, et a ouvert un chantier ; il ne disait rien du tout.
+ *
+ * On ne demande donc pas a un echantillon vide de repondre. Le jour ou il y
+ * aura de vrais marchands, cette ligne recommencera a vouloir dire quelque
+ * chose — et pas avant.
  */
-const leviers = await lire('/rest/v1/boutiques?select=slug,commande_minimum,livraison_offerte_des');
-const poses = leviers.filter(
-  (b) => b.commande_minimum !== null || b.livraison_offerte_des !== null,
-).length;
-console.log(`  Levier de panier pose sur ${poses} boutique(s) sur ${leviers.length}.`);
+if (reelles.length === 0) {
+  console.log('  Levier de panier : rien a mesurer, aucune boutique cliente.');
+} else {
+  const idsALire = reelles.map((b) => b.id).join(',');
+  const leviers = await lire(
+    `/rest/v1/boutiques?select=slug,commande_minimum,livraison_offerte_des&id=in.(${idsALire})`,
+  );
+  const poses = leviers.filter(
+    (b) => b.commande_minimum !== null || b.livraison_offerte_des !== null,
+  );
+  console.log(`  Levier de panier pose sur ${poses.length} boutique(s) sur ${leviers.length}.`);
+  // NOMMER CELLES QUI NE L'ONT PAS, plutot qu'un ratio. Un ratio se contemple ;
+  // une liste de noms se traite, marchand par marchand.
+  const sans = leviers.filter((b) => !poses.includes(b)).map((b) => b.slug);
+  if (sans.length) console.log(`    sans levier : ${sans.join(', ')}`);
+}
 console.log();
