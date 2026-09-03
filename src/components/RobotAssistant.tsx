@@ -1,16 +1,10 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 
 /**
  * LE ROBOT DE L'ASSISTANT — un casque sombre, un visage-écran qui sourit.
- *
- * ── CE QUI A CHANGÉ, ET CE QUI NE DEVAIT SURTOUT PAS CHANGER ───────────────
- *
- * La tête précédente était claire, avec une visière sombre et une antenne. La
- * nouvelle inverse les valeurs : casque sombre, écran lumineux. Le dessin est
- * neuf ; la contrainte qui l'a fait naître ne l'est pas.
  *
  * ── LA TÊTE PORTE TOUJOURS SES DEUX VALEURS ────────────────────────────────
  *
@@ -19,7 +13,7 @@ import { motion, useReducedMotion } from 'framer-motion';
  * trait était en `currentColor`, donc d'UNE seule valeur, il tombait à 1,00:1
  * sur le pied de page sombre — exactement la couleur de son fond, invisible.
  *
- * Les deux valeurs sont désormais :
+ * Les deux valeurs sont :
  *   - le casque `nuit-800`, qui le détache du corps de page clair — 15,7:1 ;
  *   - l'écran `lagune-400`, qui le détache du pied de page sombre — 9,4:1.
  *
@@ -27,38 +21,52 @@ import { motion, useReducedMotion } from 'framer-motion';
  * jour l'un des deux disparaît, le défaut revient — et il ne se verra pas
  * depuis un poste de développement, seulement en bas d'une vraie page.
  *
- * ── LE CYAN EST DE LA LUMIÈRE, PAS UNE COULEUR DE MARQUE ───────────────────
+ * ── LA MATIÈRE EST UNE COUCHE, JAMAIS UNE COULEUR ──────────────────────────
  *
- * `lagune` n'existe que pour cet écran. Elle ne doit jamais servir à un bouton,
- * un lien ou un état : bissap, feuille et mangue tiennent déjà ces rôles, et
- * une sixième famille qui se mettrait à porter du sens diluerait les cinq
- * autres. Ici elle ne dit qu'une chose, littérale : cette surface est allumée.
+ * Le volume, les reflets et la lueur sont obtenus en posant du BLANC ou du
+ * NOIR en opacité par-dessus les aplats. Aucune teinte nouvelle n'est déclarée
+ * pour cette tête, et c'est délibéré, pour trois raisons :
  *
- * ── LES ANGLES SONT ARRONDIS ICI, ET NULLE PART AILLEURS ───────────────────
+ *   1. `lagune` n'a qu'un niveau, et la maison tient à sa palette courte : y
+ *      ajouter des paliers pour un seul dessin la diluerait ;
+ *   2. le garde de palette ne lit que les classes Tailwind — un hex écrit ici
+ *      passerait la CI en silence ;
+ *   3. surtout : LES DEUX VALEURS RESTENT PORTÉES PAR LES APLATS DE BASE. Une
+ *      couche translucide éclaircit ou assombrit, elle ne remplace pas. Le
+ *      contraste de survie ne dépend donc jamais d'un dégradé.
  *
- * La maison n'a pas un seul coin arrondi : ni les boutons, ni les cartes, ni
- * les champs. La règle vaut pour les BLOCS D'INTERFACE — ce sont des
- * contenants, et leur franchise fait la tenue de l'ensemble.
+ * ── L'ÉCART À LA CHARTE EST ASSUMÉ, ET C'EST LE SECOND ─────────────────────
  *
- * Une tête n'est pas un contenant, c'est un personnage. Écart assumé, pas
- * oubli.
+ * La maison est à 0 dégradé, 0 flou, 0 ombre, et n'a pas un seul coin arrondi.
+ * Ces règles valent pour les BLOCS D'INTERFACE — ce sont des contenants, et
+ * leur franchise fait la tenue de l'ensemble.
  *
- * ── LES COULEURS VIENNENT DES VARIABLES, PAS DE CLASSES NI DE HEX ──────────
+ * Une tête n'est ni un contenant ni un bloc : c'est un personnage. Elle avait
+ * déjà ses angles arrondis pour cette raison ; elle a désormais sa matière pour
+ * la même. Écart assumé, borné à ce fichier, et qui ne doit jamais servir de
+ * précédent pour une carte ou un bouton.
  *
- * Une classe utilitaire écrite ici et nulle part ailleurs serait purgée à la
- * compilation, et la tête sortirait sans couleur — le défaut des classes
- * mortes, déjà payé. Un hex écrit en dur, lui, échapperait au garde de palette
- * qui ne lit que les classes Tailwind : il passerait la CI en silence et
- * personne ne saurait qu'une couleur hors maison s'est installée.
+ * ── LA VIE INATTENDUE, ET POURQUOI ELLE EST RARE ───────────────────────────
+ *
+ * Trois comportements sortent de l'ordinaire : des satellites qui gravitent,
+ * un glyphe qui traverse l'écran à la place du visage, et une brève rupture de
+ * signal. Ils ont tous la même règle : ILS SE FONT ATTENDRE.
+ *
+ * Le hochement de bienvenue avait déjà établi le principe — « une tête qui
+ * salue en boucle devient un panneau publicitaire ». Une surprise qu'on peut
+ * prévoir n'est plus une surprise, c'est une animation d'attente ; et sur un
+ * élément posé en coin d'écran, elle devient vite un objet qu'on cesse de
+ * regarder. D'où des intervalles longs ET irréguliers.
  *
  * ── TOUJOURS DU SVG EN LIGNE ───────────────────────────────────────────────
  *
  * Une image, un Lottie ou une scène 3D coûteraient chacun un téléchargement de
- * plus à des clients sur réseau mobile ivoirien. La tête tient en une quinzaine
- * de balises et s'anime avec `framer-motion`, déjà dépendance.
+ * plus à des clients sur réseau mobile ivoirien. Tout ce qui suit — matière,
+ * lueur, satellites, rupture — est du SVG et du `framer-motion`, déjà présents.
+ * Le poids réseau de cette tête reste exactement de zéro octet.
  *
- * MOUVEMENT RÉDUIT : tout se fige, hochement compris. La tête reste
- * parfaitement lisible immobile — condition pour qu'une animation soit un
+ * MOUVEMENT RÉDUIT : tout se fige, hochement et vie inattendue compris. La tête
+ * reste parfaitement lisible immobile — condition pour qu'une animation soit un
  * supplément et non un support d'information.
  */
 
@@ -74,6 +82,41 @@ const TRAIT = 'var(--color-nuit-900)';
 /** Les oreillettes. Seul accent de la figure, et il ne sert qu'ici. */
 const OREILLE = 'var(--color-bissap-500)';
 
+/**
+ * LES GLYPHES QUI TRAVERSENT L'ÉCRAN.
+ *
+ * Ils ne disent RIEN d'utile, et c'est voulu : un pictogramme porteur de sens
+ * apparu au hasard se lirait comme une notification, et on chercherait ce qu'il
+ * annonce. Ceux-ci sont des signes de vie, pas des messages.
+ */
+const GLYPHES = [
+  // Un cœur, tracé plein.
+  'M36 50c-6-4.2-9.5-7.2-9.5-10.8a4.6 4.6 0 0 1 9.5-2 4.6 4.6 0 0 1 9.5 2C45.5 42.8 42 45.8 36 50Z',
+  // Un éclair.
+  'M38.5 33 28 43h6.5L33.5 51 44 41h-6.5L38.5 33Z',
+  // Une étoile à quatre branches.
+  'M36 32c1.2 5 2.8 6.6 7.8 7.8-5 1.2-6.6 2.8-7.8 7.8-1.2-5-2.8-6.6-7.8-7.8 5-1.2 6.6-2.8 7.8-7.8Z',
+];
+
+/**
+ * LES SATELLITES : angle de départ, rayon, durée de tour, taille.
+ *
+ * ⚠ LE RAYON EST BORNÉ PAR LE CADRE, ET LA PREMIÈRE VERSION L'A OUBLIÉ. Le
+ * repère fait 72 de côté et le centre de rotation est en (36, 40) : au-delà de
+ * 30, le point sort par le bas du `viewBox` et le SVG l'écrête — on voyait
+ * alors des demi-points collés au bord. Trois orbites CIRCULAIRES, donc, et non
+ * elliptiques : composer une rotation et un aplatissement sur le même élément
+ * ne donne pas une ellipse mais un mouvement faux, ce qui était le vrai défaut.
+ *
+ * Des durées volontairement sans rapport simple entre elles : trois orbites
+ * synchrones se liraient comme un chargeur, pas comme de la vie.
+ */
+const SATELLITES = [
+  { depart: 0, rayon: 29, duree: 14, r: 1.5 },
+  { depart: 130, rayon: 25, duree: 19, r: 1.1 },
+  { depart: 245, rayon: 30, duree: 24, r: 1.3 },
+];
+
 export default function RobotAssistant({
   reflechit = false,
   ouvert = false,
@@ -87,9 +130,23 @@ export default function RobotAssistant({
 }) {
   const reduit = useReducedMotion();
   const ref = useRef<SVGSVGElement>(null);
+
+  /**
+   * UN IDENTIFIANT PAR INSTANCE, ET C'EST INDISPENSABLE.
+   *
+   * Les dégradés d'un SVG se référencent par `url(#id)`, dans un espace de noms
+   * GLOBAL au document. Deux robots sur une même page — un dans l'en-tête, un
+   * dans le panneau — partageraient leurs couches, et la seconde tête irait
+   * chercher les dégradés de la première. Le défaut ne se voit qu'à deux.
+   */
+  const uid = useId().replace(/:/g, '');
+  const id = (nom: string) => `${nom}-${uid}`;
+
   const [regard, setRegard] = useState({ x: 0, y: 0 });
   const [clignote, setClignote] = useState(false);
   const [salue, setSalue] = useState(false);
+  const [glyphe, setGlyphe] = useState<string | null>(null);
+  const [rupture, setRupture] = useState(false);
 
   /**
    * LE HOCHEMENT, UNE SEULE FOIS.
@@ -154,6 +211,51 @@ export default function RobotAssistant({
     return () => clearTimeout(t);
   }, [reduit]);
 
+  /**
+   * LE GLYPHE FUGITIF — la surprise principale, et la plus rare.
+   *
+   * Entre 14 et 32 secondes : assez long pour qu'on ne l'attende pas, assez
+   * court pour qu'un visiteur qui lit la page en voie un. Il ne se déclenche
+   * JAMAIS pendant que l'assistante réfléchit ni quand le panneau est ouvert :
+   * à ces moments-là le visage porte une information, et la couvrir d'un signe
+   * décoratif dirait quelque chose de faux.
+   */
+  useEffect(() => {
+    if (reduit || reflechit || ouvert) return;
+    let t: ReturnType<typeof setTimeout>;
+    const programmer = () => {
+      t = setTimeout(() => {
+        setGlyphe(GLYPHES[Math.floor(Math.random() * GLYPHES.length)]);
+        setTimeout(() => setGlyphe(null), 780);
+        programmer();
+      }, 14000 + Math.random() * 18000);
+    };
+    programmer();
+    return () => clearTimeout(t);
+  }, [reduit, reflechit, ouvert]);
+
+  /**
+   * LA RUPTURE DE SIGNAL — brève, et deux fois plus rare que le glyphe.
+   *
+   * L'écran se décale et se recompose, comme un signal qui accroche. C'est le
+   * seul moment où la tête paraît être un APPAREIL plutôt qu'un visage, et
+   * c'est pour cela qu'elle doit rester exceptionnelle : répétée, elle ne dirait
+   * plus « objet vivant » mais « affichage cassé ».
+   */
+  useEffect(() => {
+    if (reduit || ouvert) return;
+    let t: ReturnType<typeof setTimeout>;
+    const programmer = () => {
+      t = setTimeout(() => {
+        setRupture(true);
+        setTimeout(() => setRupture(false), 220);
+        programmer();
+      }, 26000 + Math.random() * 30000);
+    };
+    programmer();
+    return () => clearTimeout(t);
+  }, [reduit, ouvert]);
+
   const ressort = { type: 'spring' as const, stiffness: 220, damping: 20, mass: 0.4 };
 
   /** Un œil : une pastille sombre sur l'écran, qui se ferme en s'écrasant. */
@@ -170,6 +272,9 @@ export default function RobotAssistant({
       style={{ transformOrigin: `${cx}px 37px` }}
     />
   );
+
+  /** Le visage cède la place au glyphe, jamais l'inverse : une chose à la fois. */
+  const visageVisible = !glyphe;
 
   return (
     <motion.svg
@@ -205,6 +310,70 @@ export default function RobotAssistant({
       }
       style={{ transformOrigin: '36px 62px' }}
     >
+      <defs>
+        {/* ---- LE VOLUME DU CASQUE. Blanc en haut, noir en bas, transparent au
+                milieu : la lumière tombe d'en haut, comme partout ailleurs sur
+                la page. Les opacités sont basses — au-delà, le casque cesse
+                d'être `nuit-800` et sa valeur de survie dérive. */}
+        <linearGradient id={id('volumeCasque')} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#fff" stopOpacity="0.20" />
+          <stop offset="45%" stopColor="#fff" stopOpacity="0.03" />
+          <stop offset="100%" stopColor="#000" stopOpacity="0.28" />
+        </linearGradient>
+
+        {/* ---- LA LUEUR DE L'ÉCRAN, plus vive au centre-haut : une dalle
+                rétroéclairée n'est jamais uniforme. */}
+        <radialGradient id={id('lueurEcran')} cx="0.5" cy="0.34" r="0.72">
+          <stop offset="0%" stopColor="#fff" stopOpacity="0.42" />
+          <stop offset="60%" stopColor="#fff" stopOpacity="0.08" />
+          <stop offset="100%" stopColor="#000" stopOpacity="0.16" />
+        </radialGradient>
+
+        {/* ---- LE BALAYAGE. Une bande claire oblique qui traverse la dalle. */}
+        <linearGradient id={id('balayage')} x1="0" y1="0" x2="1" y2="0.4">
+          <stop offset="0%" stopColor="#fff" stopOpacity="0" />
+          <stop offset="50%" stopColor="#fff" stopOpacity="0.38" />
+          <stop offset="100%" stopColor="#fff" stopOpacity="0" />
+        </linearGradient>
+
+        {/* ---- Le volume des oreillettes, même logique que le casque. */}
+        <linearGradient id={id('volumeOreille')} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#fff" stopOpacity="0.26" />
+          <stop offset="100%" stopColor="#000" stopOpacity="0.24" />
+        </linearGradient>
+
+        {/* ---- Tout ce qui vit DANS la dalle y reste enfermé : sans ce
+                découpage, le balayage déborderait sur le casque et la tête
+                aurait l'air fendue. */}
+        <clipPath id={id('dalle')}>
+          <rect x="15.5" y="24" width="41" height="31" rx="12.5" />
+        </clipPath>
+      </defs>
+
+      {/* ---- LES SATELLITES, posés en premier pour passer DERRIÈRE la tête.
+              Ils gravitent sur des ellipses de tailles et de vitesses
+              différentes : trois orbites synchrones se liraient comme un
+              chargeur, pas comme de la vie. */}
+      {!reduit && !ouvert && SATELLITES.map((s) => (
+        <motion.g
+          key={s.depart}
+          animate={{ rotate: [s.depart, s.depart + 360] }}
+          transition={{ duration: s.duree, repeat: Infinity, ease: 'linear' }}
+          style={{ transformOrigin: '36px 40px' }}
+        >
+          <motion.circle
+            cx={36 + s.rayon}
+            cy={40}
+            r={s.r}
+            fill={ECRAN}
+            // Ils s'allument et s'éteignent le long du parcours : un point d'une
+            // opacité constante se lit comme une poussière sur l'écran.
+            animate={{ opacity: [0.12, 0.5, 0.12] }}
+            transition={{ duration: s.duree / 2, repeat: Infinity, ease: 'easeInOut' }}
+          />
+        </motion.g>
+      ))}
+
       {/* ---- LES OREILLETTES, posées AVANT le casque pour passer derrière lui.
               Elles ancrent la silhouette : sans elles, une tête arrondie seule
               se lit comme une bulle de conversation.
@@ -213,18 +382,33 @@ export default function RobotAssistant({
               large sur 21 de haut : rendues à l'image, elles se lisaient comme
               des oreilles de lapin. Plus larges que hautes de peu, et inclinées
               de 22°, elles redeviennent ce qu'elles doivent être — un casque. */}
-      <rect
-        x="9" y="10" width="11" height="16" rx="5.5"
-        fill={OREILLE} transform="rotate(-22 14.5 18)"
-      />
-      <rect
-        x="52" y="10" width="11" height="16" rx="5.5"
-        fill={OREILLE} transform="rotate(22 57.5 18)"
-      />
+      <g transform="rotate(-22 14.5 18)">
+        <rect x="9" y="10" width="11" height="16" rx="5.5" fill={OREILLE} />
+        <rect x="9" y="10" width="11" height="16" rx="5.5" fill={`url(#${id('volumeOreille')})`} />
+      </g>
+      <g transform="rotate(22 57.5 18)">
+        <rect x="52" y="10" width="11" height="16" rx="5.5" fill={OREILLE} />
+        <rect x="52" y="10" width="11" height="16" rx="5.5" fill={`url(#${id('volumeOreille')})`} />
+      </g>
 
       {/* ---- LE CASQUE. Première des deux valeurs : c'est lui qui détache la
-              tête du fond clair du corps de page. */}
+              tête du fond clair du corps de page. L'aplat porte la valeur, la
+              couche au-dessus ne fait que sculpter. */}
       <rect x="8" y="17" width="56" height="47" rx="17" fill={CASQUE} />
+      <rect x="8" y="17" width="56" height="47" rx="17" fill={`url(#${id('volumeCasque')})`} />
+
+      {/* ---- L'ARÊTE. Un trait clair sur le bord supérieur, très fin : c'est ce
+              qui fait qu'un objet paraît avoir une épaisseur plutôt qu'être une
+              découpe. Il s'arrête aux tempes — une arête qui ferait tout le tour
+              transformerait le casque en bouton. */}
+      <path
+        d="M 15 27 Q 36 18.5 57 27"
+        stroke="#fff"
+        strokeOpacity="0.34"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        fill="none"
+      />
 
       {/* ---- L'ÉCRAN. Seconde des deux valeurs : c'est lui qui détache la tête
               du pied de page sombre, là où le casque seul disparaîtrait.
@@ -232,45 +416,95 @@ export default function RobotAssistant({
               AUCUNE LUEUR AUTOUR. Une a été essayée — un rectangle translucide
               débordant l'écran. Elle ne se lisait pas comme de la lumière mais
               comme un cerclage gris-bleu, et à 48 px elle salissait le visage.
-              L'écran pose donc directement sur le casque. */}
-      <rect x="15.5" y="24" width="41" height="31" rx="12.5" fill={ECRAN} />
+              L'écran pose donc directement sur le casque, et toute sa lumière
+              lui reste INTÉRIEURE. */}
+      <motion.g
+        animate={reduit ? undefined : { x: rupture ? [0, -1.6, 1.2, 0] : 0 }}
+        transition={{ duration: 0.22, ease: 'linear' }}
+      >
+        <rect x="15.5" y="24" width="41" height="31" rx="12.5" fill={ECRAN} />
+        <rect x="15.5" y="24" width="41" height="31" rx="12.5" fill={`url(#${id('lueurEcran')})`} />
 
-      {oeil(28)}
-      {oeil(44)}
+        <g clipPath={`url(#${id('dalle')})`}>
+          {/* Le balayage : long, lent, et espacé. Il passe, on ne l'attend pas. */}
+          {!reduit && (
+            <motion.rect
+              x="-26" y="24" width="26" height="31"
+              fill={`url(#${id('balayage')})`}
+              animate={{ x: [-26, 58] }}
+              transition={{ duration: 1.4, repeat: Infinity, repeatDelay: 7.5, ease: 'easeInOut' }}
+            />
+          )}
 
-      {/* ---- LE SOURIRE, et ce qui le remplace pendant qu'elle écrit.
-              Trois points valent mieux qu'un curseur : c'est le signal d'attente
-              que tout le monde connaît, et il est ici à sa place — sur un
-              écran. Le sourire s'efface pendant ce temps : on ne sourit pas en
-              réfléchissant, et le visage dit alors ce qui se passe vraiment. */}
-      {reflechit ? (
-        [30, 36, 42].map((cx, i) => (
-          <motion.circle
-            key={cx}
-            cx={cx} cy={46.5} r={1.9}
+          {/* La ligne de rupture : elle ne vit que le temps de l'accroc. */}
+          {rupture && !reduit && (
+            <motion.rect
+              x="15.5" width="41" height="2.4"
+              fill="#fff" fillOpacity="0.5"
+              initial={{ y: 24 }}
+              animate={{ y: 53 }}
+              transition={{ duration: 0.22, ease: 'linear' }}
+            />
+          )}
+        </g>
+
+        {/* ---- LE VISAGE. Il cède la place au glyphe, jamais l'inverse. */}
+        {visageVisible && (
+          <>
+            {oeil(28)}
+            {oeil(44)}
+
+            {/* ---- LE SOURIRE, et ce qui le remplace pendant qu'elle écrit.
+                    Trois points valent mieux qu'un curseur : c'est le signal
+                    d'attente que tout le monde connaît, et il est ici à sa
+                    place — sur un écran. Le sourire s'efface pendant ce temps :
+                    on ne sourit pas en réfléchissant, et le visage dit alors ce
+                    qui se passe vraiment. */}
+            {reflechit ? (
+              [30, 36, 42].map((cx, i) => (
+                <motion.circle
+                  key={cx}
+                  cx={cx} cy={46.5} r={1.9}
+                  fill={TRAIT}
+                  animate={reduit ? { opacity: 1 } : { opacity: [0.25, 1, 0.25] }}
+                  transition={
+                    reduit
+                      ? undefined
+                      : { duration: 1.2, repeat: Infinity, ease: 'easeInOut', delay: i * 0.18 }
+                  }
+                />
+              ))
+            ) : (
+              <motion.path
+                d="M 28.5 45 Q 36 51 43.5 45"
+                stroke={TRAIT}
+                strokeWidth="2.6"
+                strokeLinecap="round"
+                fill="none"
+                // Le sourire suit le regard, mais deux fois moins que les yeux :
+                // un visage dont toutes les pieces bougent d'un bloc se lit
+                // comme un autocollant qu'on deplace, pas comme un regard.
+                animate={reduit ? undefined : { x: regard.x * 0.45, y: regard.y * 0.45 }}
+                transition={ressort}
+              />
+            )}
+          </>
+        )}
+
+        {/* ---- LE GLYPHE FUGITIF. Il apparaît en se dilatant, disparaît en se
+                contractant : posé sans transition, il se lirait comme un
+                changement d'état, pas comme un passage. */}
+        {glyphe && !reduit && (
+          <motion.path
+            d={glyphe}
             fill={TRAIT}
-            animate={reduit ? { opacity: 1 } : { opacity: [0.25, 1, 0.25] }}
-            transition={
-              reduit
-                ? undefined
-                : { duration: 1.2, repeat: Infinity, ease: 'easeInOut', delay: i * 0.18 }
-            }
+            initial={{ opacity: 0, scale: 0.55 }}
+            animate={{ opacity: [0, 1, 1, 0], scale: [0.55, 1.06, 1, 0.8] }}
+            transition={{ duration: 0.78, times: [0, 0.22, 0.7, 1], ease: 'easeOut' }}
+            style={{ transformOrigin: '36px 40px' }}
           />
-        ))
-      ) : (
-        <motion.path
-          d="M 28.5 45 Q 36 51 43.5 45"
-          stroke={TRAIT}
-          strokeWidth="2.6"
-          strokeLinecap="round"
-          fill="none"
-          // Le sourire suit le regard, mais deux fois moins que les yeux : un
-          // visage dont toutes les pieces bougent d'un bloc se lit comme un
-          // autocollant qu'on deplace, pas comme un regard.
-          animate={reduit ? undefined : { x: regard.x * 0.45, y: regard.y * 0.45 }}
-          transition={ressort}
-        />
-      )}
+        )}
+      </motion.g>
     </motion.svg>
   );
 }
