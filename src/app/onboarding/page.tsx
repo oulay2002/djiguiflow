@@ -6,6 +6,8 @@ import { ArrowUpRight } from 'lucide-react';
 import { fetchDashboard } from '@/lib/apiClient';
 import { useBoutique, avecBoutique } from '@/lib/boutique';
 import { classesBouton } from '@/components/ui/Bouton';
+import { etatLivraisonOfferte, etatMinimum } from '@/lib/objectifsPanier';
+import { boutiqueLivre } from '@/lib/boutiquePrete';
 import { TONS, type Ton } from '@/components/ui/Etat';
 
 /**
@@ -30,6 +32,11 @@ type Boutique = {
   whatsapp_webhook_protege?: boolean;
   telegram_connecte?: boolean;
   telegram_webhook_branche?: boolean;
+  // Les deux leviers commerciaux. Ils arrivent deja dans la fiche : la route
+  // rend la ligne entiere moins les secrets. On ne les ECRIT pas ici.
+  commande_minimum?: number | null;
+  livraison_offerte_des?: number | null;
+  mode_recuperation?: string | null;
 };
 
 /** Les trois issues d'un geste : en cours, abouti, echoue. */
@@ -694,6 +701,98 @@ export default function OnboardingPage() {
                 </div>
               )}
             </section>
+
+            {/* CE BLOC N'A PAS DE RANG, ET C'EST LE POINT.
+
+                Numeroter, c'est promettre que la chose est requise. Une
+                boutique sans minimum et sans seuil de livraison offerte est
+                parfaitement complete — `vitrineComplete` les exclut d'ailleurs
+                a dessein, parce qu'un indicateur qui reclame tout ne se lit
+                plus. On les NOMME, on ne les impose pas.
+
+                POURQUOI IL EXISTE. Le 3 septembre 2026, ce parcours ne parlait
+                jamais de ces deux reglages : un marchand qui le terminait avait
+                une boutique qui marche, sans levier, et RIEN ne l'avait invite
+                a y penser. Le seuil de livraison offerte est le levier le plus
+                fiable du commerce pour faire monter un panier ; le laisser
+                dormir n'est pas neutre.
+
+                POURQUOI IL N'ECRIT RIEN. `/dashboard/ma-boutique` regle deja
+                ces deux colonnes, avec trois choix explicites et
+                l'avertissement sur qui regle le livreur. Poser ici un second
+                formulaire rejouerait ce que les PR #151 et #154 ont retire :
+                la meme question sur deux ecrans. Un seul ecran ecrit, celui-ci
+                montre l'etat et mene au bon endroit.
+
+                IL RESTE EN `calme`. Un seul `action` a l'ecran a tout instant,
+                et c'est le bouton du bas. */}
+            <Etape
+              titre="Faire monter le panier"
+              aide={
+                <>
+                  Deux réglages facultatifs. Vos clients les voient pendant qu’ils
+                  choisissent : « il vous manque 500 FCFA pour la livraison offerte »
+                  s’affiche dans leur panier, avant qu’ils renoncent.
+                </>
+              }
+            >
+              <dl className="divide-y divide-[var(--hairline)] border border-[var(--hairline)] bg-white">
+                {[
+                  /* ON NE RECLAME PAS A UNE BOUTIQUE DE RETRAIT UN SEUIL DE
+                     LIVRAISON QU'ELLE N'AURA JAMAIS. Meme soin que la vitrine
+                     et que l'ecran de reglages, qui masquent la question — et
+                     meme fonction, pour que les trois ne puissent pas diverger.
+                     Son bloc n'existe d'ailleurs pas dans Ma boutique : le lien
+                     tomberait dans le vide. */
+                  ...(boutiqueLivre(boutique.mode_recuperation)
+                    ? [{
+                      cle: 'livraison',
+                      question: 'À partir de quel montant offrez-vous la livraison ?',
+                      etat: etatLivraisonOfferte(boutique.livraison_offerte_des),
+                    }]
+                    : []),
+                  {
+                    cle: 'minimum',
+                    question: 'À partir de quel montant prenez-vous une commande ?',
+                    etat: etatMinimum(boutique.commande_minimum),
+                  },
+                ].map((l) => (
+                  <div key={l.cle} className="flex flex-wrap items-baseline gap-x-3 gap-y-1 p-4">
+                    <dt className="min-w-0 flex-1 text-sm text-nuit-800">{l.question}</dt>
+                    {/* L'ETAT SE LIT SANS COULEUR. Peindre « pas encore pose »
+                        en rouge en ferait une faute, alors que c'est un choix
+                        que le marchand a le droit de ne pas faire. Le pose est
+                        seulement plus appuye que le vide. */}
+                    <dd
+                      className={
+                        l.etat.pose
+                          ? 'font-mono text-sm font-semibold text-nuit-900'
+                          : 'font-mono text-sm text-chaux-600'
+                      }
+                    >
+                      {l.etat.phrase}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+
+              <div className="flex flex-wrap gap-3">
+                {boutiqueLivre(boutique.mode_recuperation) && (
+                  <Link
+                    href="/dashboard/ma-boutique#frais-de-livraison"
+                    className={classesBouton('calme', 'sm', 'carree')}
+                  >
+                    Régler la livraison offerte
+                  </Link>
+                )}
+                <Link
+                  href="/dashboard/ma-boutique#commande-minimum"
+                  className={classesBouton('calme', 'sm', 'carree')}
+                >
+                  Régler le minimum
+                </Link>
+              </div>
+            </Etape>
 
             {/* LA COULEUR FORTE DESIGNE CE QU'IL RESTE A FAIRE. Un seul
                 `action` a l'ecran a tout instant : le test tant que la boutique

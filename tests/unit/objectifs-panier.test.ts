@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { objectifPanier, phraseObjectif } from '@/lib/objectifsPanier';
+import {
+  etatLivraisonOfferte,
+  etatMinimum,
+  objectifPanier,
+  phraseObjectif,
+} from '@/lib/objectifsPanier';
 
 /**
  * CE QUE CES TESTS PROTEGENT.
@@ -139,5 +144,98 @@ describe('phraseObjectif', () => {
     const p = phraseObjectif({ type: 'livraison', manque: 12000, seuil: 25000 });
     expect(p).toContain(montant('12 000'));
     expect(p).not.toContain(montant('25 000'));
+  });
+});
+
+/**
+ * CE QUE LE MARCHAND VOIT DE SES PROPRES LEVIERS.
+ *
+ * ── POURQUOI CE BLOC EXISTE ────────────────────────────────────────────────
+ *
+ * Le 3 septembre 2026, le parcours d'accueil ne parlait jamais de ces deux
+ * réglages : un marchand qui le terminait avait une boutique qui marche, sans
+ * minimum ni seuil de livraison offerte, et **rien ne l'avait invité à y
+ * penser**. Le bloc facultatif ajouté à `/onboarding` les lui nomme et lui dit
+ * où ils se règlent — il n'écrit rien, pour qu'un seul écran garde ces
+ * colonnes.
+ *
+ * ── LE PIÈGE QUE CES TESTS TIENNENT ────────────────────────────────────────
+ *
+ * `livraison_offerte_des` a **trois** états, pas deux. Un écran qui lit
+ * `!valeur` confond le `0` — « toujours offerte », un choix délibéré — avec le
+ * `NULL` — « le livreur annonce ». Il annoncerait « pas encore posé » à un
+ * marchand qui offre la livraison à tout le monde depuis le premier jour.
+ *
+ * C'est exactement le motif du défaut silencieux : une valeur par défaut qui
+ * masque une donnée présente.
+ */
+describe('etatMinimum — ce que le marchand a posé', () => {
+  it('dit le vide quand rien n est pose', () => {
+    expect(etatMinimum(null)).toEqual({ phrase: 'pas encore posé', pose: false });
+    expect(etatMinimum(undefined).pose).toBe(false);
+  });
+
+  it('dit le montant quand il est pose', () => {
+    const e = etatMinimum(5000);
+    expect(e.pose).toBe(true);
+    expect(e.phrase).toContain(montant('5 000'));
+  });
+
+  /**
+   * UN MINIMUM DE ZÉRO N'EST PAS UN MINIMUM.
+   *
+   * Contrairement à la livraison offerte, le zéro n'a ici aucun sens propre :
+   * « les commandes commencent à 0 F » ne contraint rien. La route de commande
+   * l'ignore déjà (`minimum > 0`) ; l'écran doit dire la même chose, sans quoi
+   * le marchand croirait avoir posé une règle qui ne s'applique pas.
+   */
+  it('un zero ne compte pas comme un minimum pose', () => {
+    expect(etatMinimum(0).pose).toBe(false);
+  });
+
+  it('une valeur qui n est pas un nombre ne pose rien', () => {
+    expect(etatMinimum('5000').pose).toBe(false);
+    expect(etatMinimum(true).pose).toBe(false);
+    expect(etatMinimum(Number.NaN).pose).toBe(false);
+  });
+});
+
+describe('etatLivraisonOfferte — les TROIS etats, pas deux', () => {
+  it('NULL veut dire que le livreur annonce ses frais', () => {
+    const e = etatLivraisonOfferte(null);
+    expect(e.pose).toBe(false);
+    expect(e.phrase).toContain('livreur');
+  });
+
+  /**
+   * LE CONTRÔLE QUI PORTE TOUT LE BLOC.
+   *
+   * Si celui-ci tombe, un marchand qui a choisi d'offrir la livraison à tout
+   * le monde lit « pas encore posé » — et pourrait la reposer, ou croire que
+   * son réglage n'a pas été enregistré.
+   */
+  it('ZERO veut dire toujours offerte, et c est un CHOIX', () => {
+    const e = etatLivraisonOfferte(0);
+    expect(e.pose).toBe(true);
+    expect(e.phrase).toBe('toujours offerte');
+    expect(e.phrase).not.toContain('pas encore');
+  });
+
+  it('un seuil se dit avec son montant', () => {
+    const e = etatLivraisonOfferte(10000);
+    expect(e.pose).toBe(true);
+    expect(e.phrase).toContain(montant('10 000'));
+  });
+
+  it('une valeur qui n est pas un nombre retombe sur le livreur', () => {
+    expect(etatLivraisonOfferte('10000').pose).toBe(false);
+    expect(etatLivraisonOfferte(Number.NaN).pose).toBe(false);
+  });
+
+  it('la phrase n est jamais vide — un ecran ne doit pas afficher un trou', () => {
+    for (const v of [null, undefined, 0, 10000, 'x', Number.NaN]) {
+      expect(etatLivraisonOfferte(v).phrase.length).toBeGreaterThan(0);
+      expect(etatMinimum(v).phrase.length).toBeGreaterThan(0);
+    }
   });
 });
