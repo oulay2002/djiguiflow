@@ -8,6 +8,7 @@ import { canalADerive, cleCanalAccepte, cleCanalRefuse } from '@/lib/compteurCan
 import { compteAAnnoncer } from '@/lib/compteSansBoutique';
 import { lireDemande, resumeDemande } from '@/lib/demandeBoutique';
 import { etatVitrine, vitrineASignaler, vitrineMuette } from '@/lib/vitrineComplete';
+import { vitrineSansCanalClient } from '@/lib/boutiquePrete';
 
 export const dynamic = 'force-dynamic';
 
@@ -363,7 +364,7 @@ export async function POST(req: Request) {
       // deduit le type des lignes en LISANT ce texte : coupe en `'a,' + 'b'`,
       // il n'a plus rien a lire et rend `GenericStringError`. Les 1065 tests
       // restaient verts — seul le typecheck l'a vu, sur 19 lignes d'un coup.
-      .select('slug, nom, actif, essai, telephone, wasender_session_id, description, horaires, mode_recuperation, delai_livraison, delai_preparation_min, zones_livrees, paiements_acceptes');
+      .select('slug, nom, actif, essai, telephone, wasender_session_id, description, horaires, mode_recuperation, delai_livraison, delai_preparation_min, zones_livrees, paiements_acceptes, wasender_secret_id, telegram_secret_id, groupe_livreurs, banc_telegram_id');
 
     const jour = new Date().toISOString().slice(0, 10);
 
@@ -535,6 +536,56 @@ export async function POST(req: Request) {
           + etat.manquantes.map((m) => m.question).join(' ')
           + ' Ses visiteurs repartent sans savoir quoi acheter, et le marchand'
           + ' ne saura jamais pourquoi. A remplir depuis /dashboard/ma-boutique.',
+      });
+    }
+
+    // ---- 4 quinquies. EN LIGNE, ET INCAPABLE DE PREVENIR SES CLIENTS.
+    //
+    // ── LA CHAINE, VERIFIEE MAILLON PAR MAILLON LE 3 SEPTEMBRE 2026 ────────
+    //
+    // La vitrine ecrit `CANAL_DES_COMMANDES_VITRINE` — whatsapp — sur CHAQUE
+    // commande, parce qu'un client de vitrine laisse un numero et que Telegram
+    // ne sait pas ecrire a un numero. Une boutique branchee en Telegram SEUL
+    // passe pourtant `boutiquePeutVendre`, qui accepte l'un OU l'autre : elle
+    // met sa vitrine en ligne, accepte des commandes, et ses cinq
+    // notifications de livraison echouent toutes en 424.
+    //
+    // C'etait le cas d'une des deux boutiques en service.
+    //
+    // ── POURQUOI AVANT LA COMMANDE, ET NON APRES ───────────────────────────
+    //
+    // `client_non_prevenu` fait deja ce travail, mais il lui faut un vrai
+    // client qui a commande et n'a rien recu. « Tester ma boutique » le dit
+    // aussi, a condition que le marchand le lance. Entre les deux, personne ne
+    // prevenait l'exploitant — et le prix de l'attente est un client qu'on
+    // laisse sans nouvelles apres lui avoir pris sa commande.
+    //
+    // Meme reference sans jour que `vitrine-muette`, et pour la meme raison :
+    // ce n'est pas une panne qui empire, c'est un dossier a traiter. Le temoin
+    // `vitrines` porte l'etat a chaque passage.
+    for (const b of aSurveiller ?? []) {
+      const slug = String(b.slug ?? '').trim();
+      if (!slug) continue;
+
+      if (!vitrineSansCanalClient({
+        enLigne: b.actif !== false,
+        essai: b.essai,
+        bancTelegramId: b.banc_telegram_id,
+        wasenderSecretId: b.wasender_secret_id,
+        telegramSecretId: b.telegram_secret_id,
+        groupeLivreurs: b.groupe_livreurs,
+        modeRecuperation: b.mode_recuperation,
+      })) continue;
+
+      trouvees.push({
+        type: 'vitrine-sans-canal-client',
+        reference: `vitrine-sans-canal-${slug}`,
+        boutique: String(b.nom ?? slug),
+        detail:
+          'Cette boutique est EN LIGNE et n a pas de canal WhatsApp. Toute commande'
+          + ' prise sur sa vitrine est marquee « whatsapp » : ses cinq notifications'
+          + ' de livraison echoueront et le client ne sera JAMAIS prevenu, meme si'
+          + ' elle a Telegram. Brancher WhatsApp depuis /onboarding.',
       });
     }
 

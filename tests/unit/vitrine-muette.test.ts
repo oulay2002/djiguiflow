@@ -192,16 +192,32 @@ describe('la veille ne parle que d une vitrine EN LIGNE et muette', () => {
 describe('la veille ne peut plus decider a la place de la regle', () => {
   const ROUTE = readFileSync('src/app/api/internal/veille/chaines/route.ts', 'utf8');
 
-  /** Le bloc du contrôle, isolé de tout le reste du fichier. */
+  /**
+   * Le bloc du contrôle, isolé de tout le reste du fichier.
+   *
+   * ⚠ LA BORNE EST « LE PROCHAIN BLOC », JAMAIS UN BLOC NOMMÉ. La première
+   * version s'arrêtait à `4 ter` : insérer un contrôle **entre** les deux —
+   * ce qui est arrivé le 3 septembre 2026 avec `4 quinquies` — faisait avaler
+   * le bloc voisin et tomber ce garde. Il avait raison de tomber, mais pour la
+   * mauvaise raison : rien n'était cassé, seulement déplacé.
+   */
+  /**
+   * ⚠ AUCUN `expect` ICI, ET C'EST DÉLIBÉRÉ. Un échec au moment de composer le
+   * `describe` fait ÉCHOUER LE FICHIER, et vitest résume alors « N passed »
+   * sans afficher un seul test rouge. La CI le voit, un humain pressé non.
+   * Le bloc introuvable rend une chaîne vide, et le contrôle nommé ci-dessous
+   * l'annonce.
+   */
   const BLOC = (() => {
     const debut = ROUTE.indexOf('// ---- 4 quater.');
-    const fin = ROUTE.indexOf('// ---- 4 ter.');
-    // Un témoin : sur un bloc renommé, les deux index vaudraient -1 et les
-    // contrôles passeraient sur une chaîne vide sans rien prouver.
-    expect(debut).toBeGreaterThan(0);
-    expect(fin).toBeGreaterThan(debut);
-    return ROUTE.slice(debut, fin);
+    if (debut < 0) return '';
+    const fin = ROUTE.indexOf('\n    // ---- ', debut + 20);
+    return fin > debut ? ROUTE.slice(debut, fin) : '';
   })();
+
+  it('le bloc du controle existe toujours dans la veille', () => {
+    expect(BLOC).not.toBe('');
+  });
 
   it('la regle est importee, et le bloc l appelle', () => {
     expect(ROUTE).toContain("from '@/lib/vitrineComplete'");

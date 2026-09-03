@@ -90,3 +90,65 @@ export function boutiquePeutVendre(etat: EtatBranchement): VerdictBranchement {
 
   return manque.length ? { peutVendre: false, manque } : { peutVendre: true };
 }
+
+/**
+ * LE CANAL QUE LA VITRINE ECRIT SUR CHAQUE COMMANDE — EN DUR, ET C'EST VOULU.
+ *
+ * Un client de la vitrine laisse un NUMERO. Telegram ne sait pas ecrire a un
+ * numero : il lui faut un `chat_id`, que seul un client ayant deja parle au bot
+ * possede. La commande porte donc `whatsapp`, toujours.
+ *
+ * ── POURQUOI CETTE VALEUR EST SORTIE DE LA ROUTE ───────────────────────────
+ *
+ * Le controle `vitrineSansCanalClient` ci-dessous repose ENTIEREMENT sur ce
+ * fait. Si la route changeait sa valeur sans que la regle le sache, l'alerte
+ * deviendrait silencieusement fausse : elle reclamerait un canal dont plus
+ * personne ne se sert, et se tairait sur celui qui manque vraiment. Les deux
+ * lisent donc la meme constante, et un garde relit le texte de la route.
+ */
+export const CANAL_DES_COMMANDES_VITRINE = 'whatsapp' as const;
+
+/**
+ * CETTE BOUTIQUE POURRA-T-ELLE PREVENIR UN CLIENT DE SA VITRINE ?
+ *
+ * ── CE QUE `boutiquePeutVendre` NE PEUT PAS VOIR ───────────────────────────
+ *
+ * Il accepte un canal client « wasender OU telegram », et il a raison pour ce
+ * qu'il mesure : le marchand a bien un moyen de parler a quelqu'un.
+ *
+ * Mais la VITRINE, elle, ne choisit pas. Elle ecrit
+ * `CANAL_DES_COMMANDES_VITRINE` sur chaque commande. Une boutique branchee en
+ * Telegram SEUL passe donc son verdict, met sa vitrine en ligne, accepte des
+ * commandes — et ses cinq notifications de livraison echouent toutes en 424.
+ * Mesure du 3 septembre 2026 : c'etait le cas d'une des deux boutiques en
+ * service.
+ *
+ * ── POURQUOI L'ALERTE VIENT AVANT LA COMMANDE ──────────────────────────────
+ *
+ * `client_non_prevenu` existe et fait son travail, mais APRES coup : il faut
+ * qu'un vrai client ait commande et n'ait rien recu. « Tester ma boutique » le
+ * dit aussi, a condition que le marchand le lance. Entre les deux, personne ne
+ * previent l'exploitant — et le prix de l'attente est un client qui a commande
+ * et qu'on laisse sans nouvelles.
+ *
+ * ── CE QU'IL NE FAIT PAS ───────────────────────────────────────────────────
+ *
+ * Il n'empeche RIEN. Bloquer la vente ferait disparaitre le marchand pendant
+ * qu'il branche son canal — exactement ce que `boutiquePeutVendre` prend soin
+ * de ne pas faire. C'est une alerte a l'exploitant, pas un verrou.
+ */
+export function vitrineSansCanalClient(
+  etat: EtatBranchement & {
+    /** `actif` : la vitrine est-elle servie au public en ce moment ? */
+    enLigne: boolean;
+  },
+): boolean {
+  // Hors ligne, personne ne peut y commander : il n'y a pas de client a perdre.
+  if (!etat.enLigne) return false;
+  if (estBoutiqueDeBanc(etat)) return false;
+
+  // LE JETON DU CANAL QUE LA VITRINE ECRIRA, ET LUI SEUL. Accepter le jeton
+  // Telegram ici rendrait ce controle identique a `boutiquePeutVendre` — donc
+  // inutile, et muet sur le seul cas qu'il existe pour voir.
+  return !rempli(etat.wasenderSecretId);
+}
