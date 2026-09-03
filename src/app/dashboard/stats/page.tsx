@@ -159,7 +159,7 @@ export default function Page() {
                 <div className="mt-5 space-y-3">
                   {s.topPlats.map(([nom, q], i) => (
                     <div key={nom} className="flex items-center gap-4">
-                      <span className={`flex h-8 w-8 shrink-0 items-center justify-center text-sm font-black ${i === 0 ? 'bg-mangue-400 text-white' : i === 1 ? 'bg-chaux-300 text-nuit-700' : i === 2 ? 'bg-mangue-200 text-mangue-700' : 'bg-chaux-100 text-chaux-600'}`}>{i + 1}</span>
+                      <span className={`flex h-8 w-8 shrink-0 items-center justify-center text-sm font-black ${i === 0 ? 'bg-mangue-400 text-nuit-900' : i === 1 ? 'bg-chaux-300 text-nuit-700' : i === 2 ? 'bg-mangue-200 text-mangue-700' : 'bg-chaux-100 text-chaux-600'}`}>{i + 1}</span>
                       <div className="flex-1">
                         <div className="flex justify-between text-sm">
                           <span className="font-semibold text-nuit-800">{nom}</span>

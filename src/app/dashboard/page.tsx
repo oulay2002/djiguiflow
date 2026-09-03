@@ -484,7 +484,7 @@ export default function Page() {
                   {s?.topPlats.slice(0, 4).map(([nom, q], i) => (
                     <div key={nom} className="flex items-center justify-between bg-chaux-50 p-3">
                       <span className="flex items-center gap-3">
-                        <span className={`flex h-7 w-7 items-center justify-center text-xs font-black ${i === 0 ? 'bg-mangue-400 text-white' : 'bg-chaux-200 text-chaux-600'}`}>{i + 1}</span>
+                        <span className={`flex h-7 w-7 items-center justify-center text-xs font-black ${i === 0 ? 'bg-mangue-400 text-nuit-900' : 'bg-chaux-200 text-chaux-600'}`}>{i + 1}</span>
                         <span className="font-semibold text-nuit-800">{nom}</span>
                       </span>
                       <span className="text-sm font-bold text-chaux-600">{q} vendu{q > 1 ? 's' : ''}</span>

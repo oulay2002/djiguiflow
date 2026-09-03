@@ -26,15 +26,48 @@
  * sonde, mais avec l'assurance d'avoir regarde.
  *
  * Usage :
- *   node scripts/contraste-rendu.mjs                    (production)
+ *   node scripts/contraste-rendu.mjs                    (production, ecrans publics)
  *   BASE=http://localhost:3000 node scripts/contraste-rendu.mjs
+ *   AVEC_SESSION=1 node scripts/contraste-rendu.mjs      (+ le tableau de bord)
  */
+import { readFileSync } from 'node:fs';
 import { chromium } from 'playwright';
 
 const BASE = process.env.BASE || 'https://www.djiguiflow.com';
 
 /** Les ecrans PUBLICS : aucun n'exige de session. */
 const PAGES = ['/', '/boutiques', '/boutiques/rose-monde', '/boutiques/zahara', '/suivi'];
+
+/**
+ * LE TABLEAU DE BORD, QUE RIEN N'AVAIT JAMAIS MESURE.
+ *
+ * C'est l'ecran que le marchand ouvre tous les jours, et il est derriere une
+ * session — donc invisible a toute sonde qui se contente des URL publiques.
+ * On reutilise le compte d'essai de la suite e2e plutot que d'en fabriquer un.
+ */
+const PAGES_MARCHAND = [
+  '/dashboard',
+  '/dashboard/commandes',
+  '/dashboard/ma-boutique',
+  '/dashboard/products',
+  '/dashboard/analytics',
+];
+
+/** `.env.local` n'est pas charge par node : on le lit, comme les autres scripts. */
+const env = (() => {
+  try {
+    return Object.fromEntries(
+      readFileSync('.env.local', 'utf8').split('\n')
+        .filter((l) => l.includes('=') && !l.trim().startsWith('#'))
+        .map((l) => {
+          const i = l.indexOf('=');
+          return [l.slice(0, i).trim(), l.slice(i + 1).trim().replace(/^['"]|['"]$/g, '')];
+        }),
+    );
+  } catch {
+    return {};
+  }
+})();
 
 /** WCAG AA : 4,5:1 pour du texte courant, 3:1 pour du grand texte. */
 const SEUIL_COURANT = 4.5;
@@ -181,7 +214,36 @@ let insuffisants = 0;
 let petits = 0;
 let indecidables = 0;
 
-for (const chemin of PAGES) {
+let aVisiter = [...PAGES];
+
+if (process.env.AVEC_SESSION === '1') {
+  const email = process.env.E2E_EMAIL || env.E2E_EMAIL;
+  const motDePasse = process.env.E2E_PASSWORD || env.E2E_PASSWORD;
+  if (!email || !motDePasse) {
+    console.log('AVEC_SESSION demande mais E2E_EMAIL / E2E_PASSWORD manquent — ecrans publics seuls.');
+  } else {
+    await page.goto(`${BASE}/login`, { waitUntil: 'networkidle', timeout: 60000 });
+    await page.getByLabel('Email', { exact: true }).fill(email);
+    await page.getByLabel('Mot de passe', { exact: true }).fill(motDePasse);
+    /**
+     * ⚠ LE NOM EXACT, ET SURTOUT PAS `.first()`.
+     *
+     * L'ecran porte DEUX boutons qui repondent a « se connecter » : celui de
+     * Google, place plus haut dans le DOM, et celui du formulaire. Un
+     * `.first()` cliquait donc sur Google et attendait une redirection qui ne
+     * venait jamais — 60 s pour rien, et aucune trace de la vraie cause.
+     *
+     * Il est aussi `disabled` tant que React n'a pas repris la main : Playwright
+     * attend cet etat de lui-meme, mais seulement si on vise le bon bouton.
+     */
+    await page.getByRole('button', { name: 'Se connecter', exact: true }).click();
+    await page.waitForURL(/\/(dashboard|onboarding)/, { timeout: 60000 });
+    console.log(`session ouverte — ${PAGES_MARCHAND.length} ecran(s) marchand en plus`);
+    aVisiter = [...PAGES, ...PAGES_MARCHAND];
+  }
+}
+
+for (const chemin of aVisiter) {
   await page.goto(BASE + chemin, { waitUntil: 'networkidle', timeout: 60000 });
   // La vitrine est entierement 'use client' : sans cette attente, on mesure
   // une page vide et on la declare parfaite.
