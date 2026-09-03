@@ -240,7 +240,17 @@ function BarreBas({ actif, ouvrir }: { actif: string | null; ouvrir: () => void 
           // PRODUCT.md dit que le marchand la consulte « debout, en plein
           // travail, parfois en plein soleil ». Le seuil de 44 px avait ete
           // pense ici ; la lisibilite, non.
-          className={`flex min-h-[3.5rem] flex-1 flex-col items-center justify-center gap-1 px-1 py-2 text-[0.65rem] font-semibold transition ${
+          //
+          // 12 PX, ET NON 10,4 — MESURE LE 3 SEPTEMBRE 2026, A 390 PX.
+          //
+          // `text-[0.65rem]` valait 10,4 px : hors rampe, et sous le plancher
+          // qu'on s'impose ailleurs. Le doute etait le debordement — cinq
+          // onglets sur 390 px n'en laissent que 78 chacun, et « Commandes »
+          // est le plus long. Verifie a l'ecran plutot que calcule : a 12 px il
+          // demande 72 px, RIEN N'EST TRONQUE, et aucun libelle n'en touche un
+          // autre. La ligne ci-dessus disait la lisibilite oubliee ; elle ne
+          // l'est plus.
+          className={`flex min-h-[3.5rem] flex-1 flex-col items-center justify-center gap-1 px-1 py-2 text-xs font-semibold transition ${
             href === actif ? 'text-primary-700' : 'text-chaux-600'
           }`}
         >
@@ -252,7 +262,7 @@ function BarreBas({ actif, ouvrir }: { actif: string | null; ouvrir: () => void 
       <button
         onClick={ouvrir}
         aria-label="Ouvrir le menu"
-        className={`flex min-h-[3.5rem] flex-1 flex-col items-center justify-center gap-1 px-1 py-2 text-[0.65rem] font-semibold transition ${
+        className={`flex min-h-[3.5rem] flex-1 flex-col items-center justify-center gap-1 px-1 py-2 text-xs font-semibold transition ${
           dansLeTiroir ? 'text-primary-700' : 'text-chaux-600'
         }`}
       >

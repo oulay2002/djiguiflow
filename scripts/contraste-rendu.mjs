@@ -36,7 +36,7 @@ import { chromium } from 'playwright';
 const BASE = process.env.BASE || 'https://www.djiguiflow.com';
 
 /** Les ecrans PUBLICS : aucun n'exige de session. */
-const PAGES = ['/', '/boutiques', '/boutiques/rose-monde', '/boutiques/zahara', '/suivi'];
+const PAGES = ['/', '/boutiques', '/boutiques/rose-monde', '/boutiques/zahara', '/suivi', '/legal'];
 
 /**
  * LE TABLEAU DE BORD, QUE RIEN N'AVAIT JAMAIS MESURE.
@@ -51,6 +51,7 @@ const PAGES_MARCHAND = [
   '/dashboard/ma-boutique',
   '/dashboard/products',
   '/dashboard/analytics',
+  '/onboarding',
 ];
 
 /** `.env.local` n'est pas charge par node : on le lit, comme les autres scripts. */

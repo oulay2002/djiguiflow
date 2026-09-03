@@ -154,7 +154,7 @@ function Etape({
           voit plus. */}
       <div className="flex items-baseline gap-3">
         {rang === undefined ? (
-          <span className="shrink-0 border border-chaux-300 px-2 py-0.5 font-mono text-[0.65rem] uppercase tracking-[0.16em] text-chaux-600">
+          <span className="shrink-0 border border-chaux-300 px-2 py-0.5 font-mono text-xs uppercase tracking-[0.16em] text-chaux-600">
             Facultatif
           </span>
         ) : (

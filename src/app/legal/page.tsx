@@ -72,7 +72,7 @@ export default async function PageLegal() {
                     {doc.titre}
                   </b>
                   {!doc.publiable && (
-                    <span className="border border-bissap-200 bg-bissap-50 px-2 py-0.5 font-mono text-[0.65rem] uppercase tracking-[0.14em] text-bissap-600">
+                    <span className="border border-bissap-200 bg-bissap-50 px-2 py-0.5 font-mono text-xs uppercase tracking-[0.14em] text-bissap-600">
                       Projet
                     </span>
                   )}
