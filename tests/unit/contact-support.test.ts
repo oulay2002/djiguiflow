@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { COURRIEL_SUPPORT, porteSupport } from '@/lib/contactSupport';
 
@@ -70,5 +71,67 @@ describe('le lien d appel', () => {
     const p = porteSupport({ whatsapp: '', telephone: '+225 01 02 91 88 86', message: MESSAGE, objet: OBJET });
     expect(p.telephone?.affichage).toBe('+225 01 02 91 88 86');
     expect(p.telephone?.href).toBe('tel:+2250102918886');
+  });
+});
+
+/**
+ * L'ÉCRAN LUI-MÊME, ET PAS SEULEMENT LA FONCTION.
+ *
+ * ── CE QUE CE GARDE A COÛTÉ AVANT D'EXISTER ────────────────────────────────
+ *
+ * `porteSupport` garantit qu'il y a toujours un lien. Elle ne garantit pas
+ * qu'on l'affiche. Le défaut d'origine n'était pas dans le calcul du lien : il
+ * était dans le JSX, où tout le bloc de contact était enveloppé dans
+ * `{(whatsapp || telephone) && …}`.
+ *
+ * Établi le 3 septembre 2026 : le commit du 30 août constate, vérifié en
+ * production ce jour-là, que `NEXT_PUBLIC_SUPPORT_WHATSAPP` « n'est posée nulle
+ * part » — et `NEXT_PUBLIC_SUPPORT_PHONE` ne l'était pas davantage. **Les deux
+ * personnes inscrites les 24 et 25 août ont donc vu un écran qui leur demandait
+ * de nous écrire sans rien à cliquer.** Ni bouton, ni adresse, ni numéro.
+ * L'une est revenue trois minutes plus tard. Aucune n'est jamais revenue après.
+ *
+ * Les tests du dessus étaient tous verts pendant ce temps-là : ils éprouvaient
+ * la fonction, que personne n'appelait au bon endroit.
+ *
+ * ── CE QUE CE GARDE TIENT ──────────────────────────────────────────────────
+ *
+ * Que les variables d'environnement ne puissent pas redevenir un interrupteur,
+ * et que le lien principal ne soit enveloppé dans aucune condition. Le lien
+ * d'appel, lui, a le droit d'être conditionnel : sans numéro configuré il n'y a
+ * rien à composer, et `porteSupport` rend alors `null`.
+ */
+describe('le seul bouton du nouveau marchand ne peut plus disparaitre', () => {
+  const source = readFileSync('src/components/dashboard/SansBoutique.tsx', 'utf8');
+
+  it('la porte vient de porteSupport, et de nulle part ailleurs', () => {
+    expect(source).toContain("from '@/lib/contactSupport'");
+    expect(source).toContain('porteSupport({');
+  });
+
+  it('les variables d environnement ne sont lues QUE pour la construire', () => {
+    // LE DEFAUT D ORIGINE COMMENCAIT LA : elles etaient lues dans des variables
+    // locales, qui servaient ensuite a CONDITIONNER le JSX. Les garder a
+    // l interieur de l appel les empeche de redevenir un interrupteur.
+    const debut = source.indexOf('porteSupport({');
+    const appel = source.slice(debut, source.indexOf('});', debut));
+
+    const total = (source.match(/NEXT_PUBLIC_SUPPORT_/g) ?? []).length;
+    const dansLAppel = (appel.match(/NEXT_PUBLIC_SUPPORT_/g) ?? []).length;
+
+    expect(total).toBeGreaterThan(0);
+    expect(dansLAppel).toBe(total);
+  });
+
+  it('le lien principal n est enveloppe dans AUCUNE condition', () => {
+    const avantLeLien = source.slice(
+      source.indexOf('return ('),
+      source.indexOf('href={support.href}'),
+    );
+
+    // Un temoin : sur un fichier renomme, les deux index vaudraient -1 et la
+    // tranche serait vide — un garde vide passe au vert sans rien tenir.
+    expect(avantLeLien.length).toBeGreaterThan(200);
+    expect(avantLeLien).not.toContain('&&');
   });
 });
