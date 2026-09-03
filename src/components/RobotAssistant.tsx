@@ -329,11 +329,50 @@ export default function RobotAssistant({
           <stop offset="100%" stopColor="#000" stopOpacity="0.16" />
         </radialGradient>
 
-        {/* ---- LE BALAYAGE. Une bande claire oblique qui traverse la dalle. */}
-        <linearGradient id={id('balayage')} x1="0" y1="0" x2="1" y2="0.4">
+        {/* ---- LE BALAYAGE. Une bande claire oblique qui traverse la dalle.
+                ⚠ LES DEUX EXTREMITES DOIVENT S'ETEINDRE TOT. Avec des arrets a
+                0 / 50 / 100 %, le bord du rectangle restait visible : on lisait
+                une COUTURE verticale au milieu de l'ecran, pas de la lumiere.
+                La bande s'eteint desormais bien avant ses propres bords. */}
+        {/* ⚠ HORIZONTAL, ET SURTOUT PAS OBLIQUE. Un axe oblique sur un
+                rectangle fait passer ses COINS hors de l'intervalle 0-1, et
+                `spreadMethod` y prolonge alors la derniere couleur : le bord du
+                rectangle cesse d'etre a zero et devient VISIBLE. On lisait une
+                barre verticale nette traversant l'ecran de haut en bas — une
+                couture, exactement ce que ce degrade doit eviter. Avec un axe
+                horizontal, les lignes d'egale valeur sont verticales et les deux
+                bords valent exactement zero. */}
+        <linearGradient id={id('balayage')} x1="0" y1="0" x2="1" y2="0">
           <stop offset="0%" stopColor="#fff" stopOpacity="0" />
-          <stop offset="50%" stopColor="#fff" stopOpacity="0.38" />
+          <stop offset="30%" stopColor="#fff" stopOpacity="0.08" />
+          <stop offset="50%" stopColor="#fff" stopOpacity="0.30" />
+          <stop offset="70%" stopColor="#fff" stopOpacity="0.08" />
           <stop offset="100%" stopColor="#fff" stopOpacity="0" />
+        </linearGradient>
+
+        {/* ---- LES FLANCS DU CASQUE. Un degrade vertical seul aplatit : il dit
+                « une lumiere vient d'en haut », pas « cet objet est rond ». Deux
+                plans sombres sur les cotes lui donnent sa rondeur. */}
+        <linearGradient id={id('flancs')} x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stopColor="#000" stopOpacity="0.34" />
+          <stop offset="26%" stopColor="#000" stopOpacity="0" />
+          <stop offset="74%" stopColor="#000" stopOpacity="0" />
+          <stop offset="100%" stopColor="#000" stopOpacity="0.30" />
+        </linearGradient>
+
+        {/* ---- L'ENCASTREMENT. Une dalle posee A PLAT sur le casque ressemble a
+                un autocollant. Une ombre courte sous le bord superieur suffit a
+                la faire passer DERRIERE la matiere. */}
+        <linearGradient id={id('encastrement')} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#000" stopOpacity="0.30" />
+          <stop offset="22%" stopColor="#000" stopOpacity="0" />
+        </linearGradient>
+
+        {/* ---- LE REFLET DE VERRE. Une dalle vitree renvoie le ciel : un arc
+                clair en haut, coupe net en bas, comme une surface polie. */}
+        <linearGradient id={id('verre')} x1="0" y1="0" x2="0.3" y2="1">
+          <stop offset="0%" stopColor="#fff" stopOpacity="0.30" />
+          <stop offset="100%" stopColor="#fff" stopOpacity="0.06" />
         </linearGradient>
 
         {/* ---- Le volume des oreillettes, même logique que le casque. */}
@@ -396,16 +435,25 @@ export default function RobotAssistant({
               couche au-dessus ne fait que sculpter. */}
       <rect x="8" y="17" width="56" height="47" rx="17" fill={CASQUE} />
       <rect x="8" y="17" width="56" height="47" rx="17" fill={`url(#${id('volumeCasque')})`} />
+      <rect x="8" y="17" width="56" height="47" rx="17" fill={`url(#${id('flancs')})`} />
 
       {/* ---- L'ARÊTE. Un trait clair sur le bord supérieur, très fin : c'est ce
               qui fait qu'un objet paraît avoir une épaisseur plutôt qu'être une
               découpe. Il s'arrête aux tempes — une arête qui ferait tout le tour
-              transformerait le casque en bouton. */}
+              transformerait le casque en bouton.
+
+              ⚠ ELLE DOIT ÉPOUSER LE BORD, PAS FLOTTER DESSOUS. Première
+              version : `M 15 27 Q 36 18.5 57 27`, à un trait et demi
+              d'épaisseur. Vue en gros plan sur fond neutre, elle ne se lisait
+              pas comme une arête mais comme une ANSE — un serre-tête posé sur
+              la tête. Remontée contre le bord, affinée, et raccourcie aux
+              tempes : elle redevient ce qu'elle doit être, la lumière qui
+              accroche le haut d'un volume. */}
       <path
-        d="M 15 27 Q 36 18.5 57 27"
+        d="M 17.5 24.5 Q 36 17.2 54.5 24.5"
         stroke="#fff"
-        strokeOpacity="0.34"
-        strokeWidth="1.5"
+        strokeOpacity="0.26"
+        strokeWidth="1.1"
         strokeLinecap="round"
         fill="none"
       />
@@ -426,13 +474,24 @@ export default function RobotAssistant({
         <rect x="15.5" y="24" width="41" height="31" rx="12.5" fill={`url(#${id('lueurEcran')})`} />
 
         <g clipPath={`url(#${id('dalle')})`}>
-          {/* Le balayage : long, lent, et espacé. Il passe, on ne l'attend pas. */}
+          {/* L'ombre d'encastrement, et le reflet de verre : la dalle est prise
+              DANS le casque, et sa surface renvoie la lumière. Les deux sont
+              découpés par la dalle, donc ils ne débordent jamais. */}
+          <rect x="15.5" y="24" width="41" height="31" fill={`url(#${id('encastrement')})`} />
+          <path
+            d="M 15.5 24 H 56.5 V 33 Q 36 41 15.5 33 Z"
+            fill={`url(#${id('verre')})`}
+          />
+
+          {/* Le balayage : long, lent, et espacé. Il passe, on ne l'attend pas.
+              Plus large que la dalle : ses extrémités s'éteignent hors champ,
+              et on ne voit jamais son bord entrer ni sortir. */}
           {!reduit && (
             <motion.rect
-              x="-26" y="24" width="26" height="31"
+              x="-34" y="24" width="34" height="31"
               fill={`url(#${id('balayage')})`}
-              animate={{ x: [-26, 58] }}
-              transition={{ duration: 1.4, repeat: Infinity, repeatDelay: 7.5, ease: 'easeInOut' }}
+              animate={{ x: [-34, 60] }}
+              transition={{ duration: 1.6, repeat: Infinity, repeatDelay: 7.5, ease: 'easeInOut' }}
             />
           )}
 
