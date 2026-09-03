@@ -3,6 +3,8 @@ import { createHash, timingSafeEqual } from 'node:crypto';
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import { nomsOngletsParDefaut } from '@/lib/marchands';
+import { cleCanalAccepte, cleCanalRefuse } from '@/lib/compteurCanal';
+import { compterJournalier } from '@/lib/limiteur';
 
 export const dynamic = 'force-dynamic';
 
@@ -144,17 +146,24 @@ export async function GET(req: Request) {
     // Deux refus distincts, journalises distinctement : sans cette distinction,
     // un provisionnement inachevé se lit comme une tentative d'intrusion, et on
     // cherche au mauvais endroit.
+    //
+    // LES TROIS REFUS CI-DESSOUS SE COMPTENT, ET C'EST TOUT CE QUI LES REND
+    // VISIBLES. Depuis que n8n ne casse plus son execution sur un 401, ce
+    // compteur est le SEUL endroit ou l'on saura qu'un canal de marchand a
+    // cesse de s'ouvrir. Voir `compteurCanal.ts`.
     if (verdict === 'empreinte_absente') {
       console.error(
         `Fiche — « ${slug} » présente un ${entete} mais AUCUNE empreinte n'est enregistrée.`
         + ' Canal refusé. Rebranchez le bot depuis /onboarding pour reposer l’empreinte'
         + ' (POST /api/internal/telegram/brancher).',
       );
+      await compterJournalier(cleCanalRefuse(slug));
       return NextResponse.json({ error: 'Canal non provisionné' }, { status: 401 });
     }
 
     if (verdict === 'invalide') {
       console.warn(`Fiche — secret ${entete} invalide pour « ${slug} »`);
+      await compterJournalier(cleCanalRefuse(slug));
       return NextResponse.json({ error: 'Secret webhook invalide' }, { status: 401 });
     }
   }
@@ -175,8 +184,24 @@ export async function GET(req: Request) {
   const aUnSecret = canaux.some(({ empreinte }) => String(empreinte ?? '').trim());
   if (aUnSecret && !secretPresente && !usageInterne) {
     console.warn(`Fiche — aucun secret presente pour « ${slug} »`);
+    await compterJournalier(cleCanalRefuse(slug));
     return NextResponse.json({ error: 'Secret webhook requis' }, { status: 401 });
   }
+
+  /**
+   * L'ACCEPTATION SE COMPTE AUSSI, ET SANS ELLE LE REFUS NE VEUT RIEN DIRE.
+   *
+   * Des refus AVEC des acceptations, c'est un inconnu qui frappe a une porte
+   * qui fonctionne : rien a signaler. Des refus SANS aucune acceptation, c'est
+   * la porte du marchand qui ne s'ouvre plus. Seul le couple distingue les
+   * deux, et c'est ce couple que relit la veille des chaines.
+   *
+   * ON NE COMPTE QUE LE TRAFIC DE CANAL. Un appel interne — `Commande App`,
+   * qui se declare par `x-usage-interne` et ne presente aucun secret de canal
+   * — ne prouve pas que le webhook du marchand fonctionne. Le compter
+   * eteindrait l'alerte exactement dans le cas ou elle doit sonner.
+   */
+  if (secretPresente) await compterJournalier(cleCanalAccepte(slug));
 
   // n8n conserve ses donnees d'execution : tout ce qui touche aux secrets
   // resterait lisible dans ses journaux longtemps apres l'appel. Il n'a besoin

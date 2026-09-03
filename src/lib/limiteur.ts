@@ -194,3 +194,34 @@ export async function fenetreDepassee(
 
   return { depassee: !autorise, valeur, indisponible: false };
 }
+
+/**
+ * COMPTER SANS PLAFONNER, et pourquoi ca vit ici.
+ *
+ * Meme table, meme RPC, meme jour d'Abidjan que le plafond ci-dessus — un seul
+ * endroit ou l'on ecrit dans `compteurs_journaliers`, donc une seule regle de
+ * purge a tenir (sept jours, deja couverts par la tache nocturne). Le plafond
+ * est simplement mis hors d'atteinte : ce compteur-la ne refuse rien, il ne
+ * fait qu'accumuler une trace que la veille relit le lendemain.
+ *
+ * IL NE DOIT JAMAIS FAIRE ECHOUER SON APPELANT. C'est l'inverse exact du
+ * choix fait par `plafondJournalierDepasse`, et pour une raison exacte : la,
+ * ne pas pouvoir compter voulait dire ne pas pouvoir proteger une depense,
+ * donc refuser. Ici, ne pas pouvoir compter veut dire perdre une ligne de
+ * statistique, et refuser un webhook de canal pour ca ferait taire un vrai
+ * client. Le seul echec possible est donc une ligne de journal.
+ */
+export async function compterJournalier(cle: string): Promise<void> {
+  const sb = getSupabaseAdmin();
+  if (!sb) return;
+
+  // `supabase.rpc()` n'est pas une promesse au sens habituel : il n'a pas de
+  // `.catch`. On l'attend et on lit `error`, sinon un echec passerait inapercu.
+  const { error } = await sb.rpc('incrementer_compteur', {
+    p_cle: cle,
+    // Hors d'atteinte, a dessein : `autorise` n'est pas lu par cet appelant.
+    p_plafond: 2_147_483_647,
+  });
+
+  if (error) console.error(`Compteur ${cle} — comptage impossible : ${error.message}`);
+}
