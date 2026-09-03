@@ -43,6 +43,16 @@ export type Marchand = {
    * l'oubliait, et la fiche n'avait donc rien a afficher.
    */
   logo: string;
+  /**
+   * Ce que le marchand dit de son commerce.
+   *
+   * MEME OUBLI QUE LE LOGO, ET AU MEME ENDROIT. La colonne existait, elle
+   * etait remplie, la carte de l'annuaire et sa RECHERCHE s'en servaient — et
+   * ce registre ne la lisait pas. La meta-description de chaque boutique etait
+   * donc un gabarit identique pour toutes, y compris dans l'apercu WhatsApp,
+   * la ou un marchand partage son lien.
+   */
+  description: string;
   /*
     `sheetId` ET `sheetMenu` SONT PARTIS le 28 aout 2026 : plus personne ne
     les lisait une fois Google Sheets retire. `sheetCommandes` reste, seul,
@@ -131,7 +141,7 @@ async function depuisSupabase(): Promise<Marchand[]> {
   const { data, error } = await sb
     .from('boutiques')
     .select(
-      'id, slug, nom, categorie, emoji, logo_url, sheet_commandes, groupe_livreurs, telephone, telegram_marchand, actif',
+      'id, slug, nom, categorie, emoji, logo_url, description, sheet_commandes, groupe_livreurs, telephone, telegram_marchand, actif',
     );
 
   if (error) {
@@ -155,6 +165,7 @@ async function depuisSupabase(): Promise<Marchand[]> {
       secteur: String(b.categorie ?? ''),
       emoji: String(b.emoji || '🏪'),
       logo: String(b.logo_url ?? '').trim(),
+      description: String(b.description ?? '').trim(),
       sheetCommandes: String(b.sheet_commandes || parDefaut.sheetCommandes),
       groupeLivreurs: String(b.groupe_livreurs || ''),
       whatsapp: String(b.telephone || ''),
