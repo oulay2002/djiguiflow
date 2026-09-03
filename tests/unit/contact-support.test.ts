@@ -74,6 +74,7 @@ describe('le lien d appel', () => {
   });
 });
 
+
 /**
  * L'ÉCRAN LUI-MÊME, ET PAS SEULEMENT LA FONCTION.
  *
@@ -86,52 +87,77 @@ describe('le lien d appel', () => {
  *
  * Établi le 3 septembre 2026 : le commit du 30 août constate, vérifié en
  * production ce jour-là, que `NEXT_PUBLIC_SUPPORT_WHATSAPP` « n'est posée nulle
- * part » — et `NEXT_PUBLIC_SUPPORT_PHONE` ne l'était pas davantage. **Les deux
- * personnes inscrites les 24 et 25 août ont donc vu un écran qui leur demandait
- * de nous écrire sans rien à cliquer.** Ni bouton, ni adresse, ni numéro.
- * L'une est revenue trois minutes plus tard. Aucune n'est jamais revenue après.
+ * part ». **Les deux personnes inscrites les 24 et 25 août ont donc vu un écran
+ * qui leur demandait de nous écrire sans rien à cliquer.** L'une est revenue
+ * trois minutes plus tard. Aucune n'est jamais revenue après.
  *
  * Les tests du dessus étaient tous verts pendant ce temps-là : ils éprouvaient
  * la fonction, que personne n'appelait au bon endroit.
  *
- * ── CE QUE CE GARDE TIENT ──────────────────────────────────────────────────
+ * ── POURQUOI LA PORTE VIT DANS SON PROPRE FICHIER ──────────────────────────
  *
- * Que les variables d'environnement ne puissent pas redevenir un interrupteur,
- * et que le lien principal ne soit enveloppé dans aucune condition. Le lien
- * d'appel, lui, a le droit d'être conditionnel : sans numéro configuré il n'y a
- * rien à composer, et `porteSupport` rend alors `null`.
+ * Un formulaire est venu se placer au-dessus d'elle dans `SansBoutique`. Le
+ * garde vérifiait qu'aucune condition ne précédait le lien : le formulaire
+ * l'aurait fait tomber, et on aurait été tenté de l'assouplir — c'est-à-dire
+ * d'affaiblir la seule chose qui protège ce qui a coûté deux marchands.
+ *
+ * Sortie dans `PorteContact.tsx`, elle reste gardée pour ce qu'elle est : un
+ * composant court, sans état, dont le lien principal n'est enveloppé dans rien.
+ * Et `SansBoutique` doit la rendre sans condition.
  */
-describe('le seul bouton du nouveau marchand ne peut plus disparaitre', () => {
-  const source = readFileSync('src/components/dashboard/SansBoutique.tsx', 'utf8');
+describe('la porte du nouveau marchand ne peut plus disparaitre', () => {
+  const PORTE = readFileSync('src/components/dashboard/PorteContact.tsx', 'utf8');
+  const ECRAN = readFileSync('src/components/dashboard/SansBoutique.tsx', 'utf8');
 
   it('la porte vient de porteSupport, et de nulle part ailleurs', () => {
-    expect(source).toContain("from '@/lib/contactSupport'");
-    expect(source).toContain('porteSupport({');
+    expect(PORTE).toContain("from '@/lib/contactSupport'");
+    expect(PORTE).toContain('porteSupport({');
   });
 
   it('les variables d environnement ne sont lues QUE pour la construire', () => {
-    // LE DEFAUT D ORIGINE COMMENCAIT LA : elles etaient lues dans des variables
-    // locales, qui servaient ensuite a CONDITIONNER le JSX. Les garder a
-    // l interieur de l appel les empeche de redevenir un interrupteur.
-    const debut = source.indexOf('porteSupport({');
-    const appel = source.slice(debut, source.indexOf('});', debut));
+    // LE DEFAUT D ORIGINE COMMENCAIT LA : lues dans des variables locales,
+    // elles servaient ensuite a CONDITIONNER le JSX.
+    const debut = PORTE.indexOf('porteSupport({');
+    const appel = PORTE.slice(debut, PORTE.indexOf('});', debut));
 
-    const total = (source.match(/NEXT_PUBLIC_SUPPORT_/g) ?? []).length;
-    const dansLAppel = (appel.match(/NEXT_PUBLIC_SUPPORT_/g) ?? []).length;
+    // ON COMPTE LES LECTURES, PAS LES MENTIONS. Le commentaire d'en-tete
+    // nomme la variable pour raconter le defaut d'origine : le compter comme
+    // une lecture ferait tomber ce garde sur une phrase.
+    const lectures = /process\.env\.NEXT_PUBLIC_SUPPORT_/g;
+    const total = (PORTE.match(lectures) ?? []).length;
+    const dansLAppel = (appel.match(lectures) ?? []).length;
 
     expect(total).toBeGreaterThan(0);
     expect(dansLAppel).toBe(total);
   });
 
   it('le lien principal n est enveloppe dans AUCUNE condition', () => {
-    const avantLeLien = source.slice(
-      source.indexOf('return ('),
-      source.indexOf('href={support.href}'),
+    const avantLeLien = PORTE.slice(
+      PORTE.indexOf('return ('),
+      PORTE.indexOf('href={support.href}'),
     );
 
     // Un temoin : sur un fichier renomme, les deux index vaudraient -1 et la
     // tranche serait vide — un garde vide passe au vert sans rien tenir.
-    expect(avantLeLien.length).toBeGreaterThan(200);
+    expect(avantLeLien.length).toBeGreaterThan(20);
     expect(avantLeLien).not.toContain('&&');
+  });
+
+  /**
+   * ET L'ÉCRAN LA REND SANS CONDITION.
+   *
+   * Une porte parfaite dans un fichier que personne n'affiche ne vaut rien.
+   * Le formulaire, lui, a le droit d'être conditionnel — pas elle.
+   */
+  it('l ecran du nouveau marchand la rend, et sans condition', () => {
+    const ligne = ECRAN.split('\n').find((l) => l.includes('<PorteContact')) ?? '';
+    expect(ligne).not.toBe('');
+    expect(ligne).not.toContain('&&');
+
+    const avant = ECRAN.slice(ECRAN.indexOf('return ('), ECRAN.indexOf('<PorteContact'));
+    expect(avant.length).toBeGreaterThan(200);
+    // Le formulaire n'a pas le droit d'etre la CONDITION de la porte : elle
+    // vient apres lui dans la page, jamais a l'interieur d'un `&&` a lui.
+    expect(avant).not.toContain('{enregistre && (');
   });
 });
