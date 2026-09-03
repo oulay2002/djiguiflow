@@ -2,7 +2,7 @@ import { getMarchand, prefixeReference, type Marchand } from '@/lib/marchands';
 import { resoudreBoutiqueUuid } from '@/lib/boutiques';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import { etatBoutique } from '@/lib/horaires';
-import { boutiquePeutVendre } from '@/lib/boutiquePrete';
+import { boutiquePeutVendre, CANAL_DES_COMMANDES_VITRINE } from '@/lib/boutiquePrete';
 import {
   horodaterRetrait,
   livraisonOfferte,
@@ -618,7 +618,12 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
         // signale. Le livreur et le gerant, eux, etaient bien prevenus, ce qui
         // rendait la panne invisible. Un client de la vitrine laisse son
         // numero : c'est sur WhatsApp qu'on le joint.
-        canal: 'whatsapp',
+        // LA VALEUR VIT DANS `boutiquePrete`, ET C'EST CE QUI TIENT L'ALERTE.
+        // `vitrineSansCanalClient` signale la boutique en ligne dont le jeton de
+        // CE canal manque. La reecrire ici sans qu'il le sache rendrait cette
+        // alerte silencieusement fausse : elle reclamerait un canal dont plus
+        // personne ne se sert, et se tairait sur celui qui manque vraiment.
+        canal: CANAL_DES_COMMANDES_VITRINE,
         statut: 'en_attente',
       })
       .select('id, jeton_suivi')
