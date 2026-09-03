@@ -140,3 +140,71 @@ export function etatVitrine(b: BoutiqueVitrine): EtatVitrine {
 
   return { posees: total - manquantes.length, total, manquantes };
 }
+
+/**
+ * CETTE BOUTIQUE EST-ELLE MUETTE ? — la question que la veille pose.
+ *
+ * ── L'ANGLE MORT QU'ELLE FERME ─────────────────────────────────────────────
+ *
+ * `etatVitrine` parle au MARCHAND, dans son tableau de bord : il voit ce qui
+ * manque et il le remplit. Cette regle-ci parle a l'EXPLOITANT, et elle repond
+ * a une autre question : y a-t-il, en ce moment, une boutique publiquement en
+ * ligne qui ne dit rien a ses clients ?
+ *
+ * L'entonnoir ne pouvait pas la poser. Il EXCLUT nos propres boutiques — a
+ * dessein depuis le 3 septembre 2026, et c'est juste : les compter ferait
+ * croire a une activation parfaite. Mais l'exclusion, juste pour un ratio, a
+ * ferme le seul oeil qui regardait. Mesure du 3 septembre : Rose Monde,
+ * `actif = true`, repondait a UNE question sur cinq.
+ *
+ * ── POURQUOI UN SEUIL, ET POURQUOI CELUI-LA ────────────────────────────────
+ *
+ * Alerter des qu'une reponse manque ferait sonner la veille sur toute boutique
+ * neuve le jour de son ouverture — et une veille qu'on bruite est une veille
+ * qu'on cesse de lire. Une boutique a qui il ne manque que les horaires n'est
+ * pas muette : elle est perfectible, et son tableau de bord le lui dit deja.
+ *
+ * La moitie est la ou les deux etats cessent de se ressembler. En dessous, le
+ * client n'a plus de quoi decider d'acheter.
+ *
+ * ── ELLE SE CALCULE, ELLE NE SE CHOISIT PAS ────────────────────────────────
+ *
+ * Le seuil sort de `total`, jamais d'un nombre ecrit en dur : une boutique de
+ * retrait a QUATRE questions et non cinq, et un « moins de 3 » la jugerait sur
+ * une echelle qui n'est pas la sienne.
+ */
+export function vitrineMuette(etat: EtatVitrine): boolean {
+  return etat.posees * 2 < etat.total;
+}
+
+/**
+ * LA VEILLE DOIT-ELLE PARLER DE CETTE BOUTIQUE ?
+ *
+ * ── POURQUOI CETTE DECISION N'EST PAS RESTEE DANS LA ROUTE ─────────────────
+ *
+ * `vitrineMuette` dit si une vitrine est muette. Elle ne dit RIEN de la
+ * question que se pose la veille, qui en compte trois : muette, oui — mais
+ * aussi publiquement en ligne, et pas une boutique de banc.
+ *
+ * Ces deux conditions-la portent tout le sens du controle. « En ligne et
+ * muette » est une urgence : des visiteurs arrivent en ce moment sur une page
+ * qui ne dit rien. « Hors ligne et muette » n'est rien du tout — c'est une
+ * boutique en preparation, et le 3 septembre 2026 c'etait le cas d'Atelier
+ * Temoin, `actif = false`, elle aussi a 1 reponse sur 5.
+ *
+ * Laissees dans la boucle de la route, elles auraient ete les seules lignes du
+ * controle qu'aucun test n'atteint — le defaut exact du 2 septembre, ou une
+ * fonction parfaitement eprouvee n'etait pas appelee au bon endroit. Elles
+ * vivent donc ici, ou une mutation les fait rougir.
+ */
+export function vitrineASignaler(v: {
+  /** `actif` : la boutique est-elle servie au public en ce moment ? */
+  enLigne: boolean;
+  /** Une boutique de banc n'est pas une panne — meme raison que cote dispatch. */
+  deBanc: boolean;
+  etat: EtatVitrine;
+}): boolean {
+  if (!v.enLigne) return false;
+  if (v.deBanc) return false;
+  return vitrineMuette(v.etat);
+}
