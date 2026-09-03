@@ -94,3 +94,55 @@ export function phraseObjectif(o: Objectif): string {
   }
   return `Plus que ${fcfa(o.manque)} FCFA et la livraison vous est offerte.`;
 }
+
+/**
+ * CE QUE LE MARCHAND A POSE — dit au marchand, pas au client.
+ *
+ * ── POURQUOI CETTE FONCTION VIT ICI ────────────────────────────────────────
+ *
+ * Tout ce fichier traduit deux colonnes en phrases pour le CLIENT. Celle-ci
+ * les traduit pour le MARCHAND, et c'est le seul endroit ou les deux lectures
+ * peuvent rester d'accord.
+ *
+ * ⚠ LE PIEGE, ET IL EST LE MEME DES DEUX COTES. `livraison_offerte_des` a
+ * TROIS etats, pas deux :
+ *
+ *     NULL   le livreur annonce ses frais       (l etat par defaut)
+ *     0      la livraison est TOUJOURS offerte  (un choix, pas un vide)
+ *     N > 0  offerte a partir de N francs
+ *
+ * Un ecran qui lit `!valeur` confond le zero et le vide, et annonce « pas
+ * encore pose » a un marchand qui a EXPRESSEMENT choisi d offrir la livraison.
+ * C est le motif du defaut silencieux, et c est pour ne l ecrire qu une fois
+ * que cette fonction existe.
+ *
+ * ── CE QU ELLE NE FAIT PAS ─────────────────────────────────────────────────
+ *
+ * Elle ne juge pas. « Pas encore pose » n est pas un reproche : une boutique
+ * sans minimum est parfaitement complete, et `vitrineComplete` exclut ces deux
+ * colonnes a dessein. On dit l etat, on laisse le marchand decider.
+ */
+export type EtatLevier = {
+  /** La phrase a afficher, toujours non vide. */
+  phrase: string;
+  /** Le marchand a-t-il fait un choix ? Sert a distinguer visuellement. */
+  pose: boolean;
+};
+
+export function etatMinimum(minimum: unknown): EtatLevier {
+  const n = seuilUtilisable(minimum);
+  if (n === null || n <= 0) return { phrase: 'pas encore posé', pose: false };
+  return { phrase: `${fcfa(n)} FCFA`, pose: true };
+}
+
+export function etatLivraisonOfferte(offerteDes: unknown): EtatLevier {
+  const n = seuilUtilisable(offerteDes);
+  if (n === null) return { phrase: 'le livreur annonce ses frais', pose: false };
+
+  // LE ZERO EST UN CHOIX, ET IL SE DIT COMME TEL. Le confondre avec le vide
+  // annoncerait « pas encore pose » a un marchand qui offre la livraison a
+  // tout le monde depuis le premier jour.
+  if (n <= 0) return { phrase: 'toujours offerte', pose: true };
+
+  return { phrase: `offerte à partir de ${fcfa(n)} FCFA`, pose: true };
+}

@@ -149,6 +149,33 @@ export default function MaBoutiquePage() {
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string>('');
 
+  /**
+   * LE SAUT D'ANCRE SE FAIT APRES LE CHARGEMENT, ET PAS AVANT.
+   *
+   * Le parcours d'accueil renvoie ici sur `#frais-de-livraison` et
+   * `#commande-minimum` pour nommer OU se regle chaque levier. Mais cette page
+   * ne rend son formulaire qu'une fois la fiche recue : au premier rendu, la
+   * cible n'existe pas encore, le navigateur ne trouve rien, et il ne
+   * reessaie jamais. Le marchand atterrirait en haut d'une longue page apres
+   * qu'on lui a promis un endroit — un lien qui ne mene pas la ou il dit vaut
+   * moins que pas de lien.
+   *
+   * ON NE SAUTE PAS DANS LE VIDE. Le bloc des frais de livraison n'existe pas
+   * pour une boutique en retrait seul : cible absente, on ne fait rien et on
+   * laisse le marchand en haut, ce qui est la verite de son cas.
+   */
+  useEffect(() => {
+    if (loading || typeof window === 'undefined') return;
+
+    const cible = window.location.hash.slice(1);
+    if (!cible) return;
+
+    const el = document.getElementById(cible);
+    if (!el) return;
+
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [loading]);
+
   useEffect(() => {
     const checkAuthAndLoadBoutique = async () => {
       const user = await utilisateurCourant();
@@ -626,7 +653,10 @@ export default function MaBoutiquePage() {
                       il n'y a ni course ni frais : poser la question ferait
                       reglee une chose qui n'existe pas. */}
                   {formData.mode_recuperation !== 'retrait' && (
-                    <div className="mt-5 border-t border-[var(--hairline)] pt-4">
+                    <div
+                      id="frais-de-livraison"
+                      className="mt-5 scroll-mt-24 border-t border-[var(--hairline)] pt-4"
+                    >
                       <span className="mb-2 block text-sm font-medium text-nuit-700">
                         Frais de livraison
                       </span>
@@ -758,7 +788,7 @@ export default function MaBoutiquePage() {
                       </p>
                     </div>
 
-                    <div>
+                    <div id="commande-minimum" className="scroll-mt-24">
                       <label className="mb-1 block text-sm font-medium text-nuit-700">
                         Commande minimum
                       </label>
