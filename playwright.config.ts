@@ -37,7 +37,7 @@ export default defineConfig({
       // found », ce qui se lit comme une erreur d'appel et non comme un oubli
       // de configuration. La liste est donc explicite, et s'allonge avec elle.
       name: 'marchand',
-      testMatch: /(authenticated-dashboard|onboarding-diagnostic)\.spec\.ts/,
+      testMatch: /(authenticated-dashboard|onboarding-diagnostic|onboarding-leviers)\.spec\.ts/,
       dependencies: ['setup'],
       use: { storageState: FICHIER_SESSION },
     },
