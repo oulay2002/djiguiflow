@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { getMarchand } from '@/lib/marchands';
 import { SITE_LOCALE, SITE_NOM, SITE_URL } from '@/lib/site';
 import { jsonLdSur } from '@/lib/jsonLd';
+import { descriptionBoutique } from '@/lib/metaBoutique';
 
 type Props = {
   children: React.ReactNode;
@@ -48,9 +49,20 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 
   const titre = `${m.nom} — commander en ligne a Abidjan`;
-  const description =
-    `Commandez chez ${m.nom}${m.secteur ? ` (${m.secteur.toLowerCase()})` : ''} ` +
-    'a Abidjan et suivez votre livraison en direct avec DjiguiFlow.';
+
+  /**
+   * LA PHRASE DU MARCHAND D'ABORD, LE GABARIT SEULEMENT S'IL N'EN A PAS.
+   *
+   * Le commentaire en tete de ce fichier promettait « sa propre description »
+   * depuis le debut. Le titre l'honorait ; la description non — elle etait un
+   * gabarit identique pour toutes, ou le nom de la plateforme prenait la place
+   * du commerce. Et `boutiques.description` etait remplie tout ce temps : c'est
+   * `getMarchand` qui ne la lisait pas.
+   *
+   * Ce n'est pas qu'une affaire de referencement : c'est la phrase que WhatsApp
+   * affiche quand un marchand colle le lien de sa boutique.
+   */
+  const description = descriptionBoutique(m);
   const chemin = `/boutiques/${m.id}`;
 
   return {
