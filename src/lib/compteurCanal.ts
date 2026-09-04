@@ -36,6 +36,40 @@ export function cleCanalRefuse(slug: string): string {
 }
 
 /**
+ * Appels sur un slug qui n'est AUCUNE boutique — et un seul seau pour tous.
+ *
+ * ── POURQUOI PAS UNE CLE PAR SLUG, COMME LES DEUX AU-DESSUS ────────────────
+ *
+ * Parce qu'ici le slug vient de l'appelant, et qu'il n'existe pas. Les deux
+ * cles ci-dessus sont bornees par le nombre de boutiques ; celle-ci ne le
+ * serait par rien. Quiconque POSTe des slugs au hasard creerait une ligne par
+ * essai — on remplacerait un bruit d'alerte par une croissance de table, ce
+ * qui est pire : le premier se voit, la seconde non.
+ *
+ * On perd le detail du slug, et c'est assume. Ce compteur ne sert pas a
+ * enqueter : il sert a savoir qu'on frappe, et combien.
+ *
+ * ── POURQUOI SE TAIRE SUR CE CAS EST SUR ───────────────────────────────────
+ *
+ * L'URL du routeur WhatsApp est publiee : le depot est public et elle y figure
+ * en clair. N'importe qui peut donc POSTer un slug invente, et jusqu'ici chaque
+ * essai faisait sonner le salon de veille — un deni d'attention sur le seul
+ * canal dont depend toute la surveillance.
+ *
+ * Le cas de 404 qui compte VRAIMENT — une boutique renommee dont la session
+ * wasender pointe encore l'ancien slug, donc des messages perdus en silence —
+ * n'est pas perdu pour autant : `verdictWebhook` le voit du COTE DU COMPTE,
+ * en comparant l'adresse declaree chez le fournisseur a celle qu'on attend.
+ * C'est meme plus fiable, puisque ca ne demande pas qu'un client ecrive.
+ *
+ * Si ce rapprochement disparaissait un jour, ce silence-ci redeviendrait un
+ * angle mort. Les deux se tiennent : ne pas retirer l'un sans regarder l'autre.
+ */
+export function cleCanalSlugInconnu(): string {
+  return 'canal:slug-inconnu';
+}
+
+/**
  * LE PLANCHER, ET IL VAUT EXACTEMENT UNE REQUETE.
  *
  * `Charger fiche` porte `retryOnFail` : il rejoue trois fois avant d'abandonner.
