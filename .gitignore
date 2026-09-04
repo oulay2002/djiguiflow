@@ -54,6 +54,14 @@ next-env.d.ts
 .claude/settings.local.json
 .claude/skills/
 .agents/
+.claude-flow/
+.claude/proven-config.json
+.claude/.proven-config-version
+.claude/.headroom_wrap_settings.lock
+.claude-flow/
+.claude/proven-config.json
+.claude/.proven-config-version
+.claude/.headroom_wrap_settings.lock
 
 # graphify : graphe de connaissance regenerable via `graphify update .`
 /graphify-out/
