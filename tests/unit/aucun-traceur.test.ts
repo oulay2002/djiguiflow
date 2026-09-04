@@ -114,13 +114,39 @@ describe('et le code ne le contredit pas', () => {
     };
     await parcourir('src');
 
+    /*
+      CE PARCOURS RELISAIT CHAQUE FICHIER UNE FOIS PAR HOTE.
+
+      Soit neuf decoupages et neuf filtres par regex sur chacun des 212
+      fichiers de `src`, alors que l'immense majorite n'en nomme aucun — et des
+      lectures enchainees une par une. Mesure du 4 septembre 2026 sur ce
+      depot : 165 ms avant, 33 ms apres.
+
+      Le resultat est identique, hote pour hote : `contenu.includes(h)` ne peut
+      etre faux si une ligne du fichier contient `h`. On ne fait que sauter le
+      travail sur les fichiers dont on sait deja qu'il ne dira rien.
+
+      ⚠ CE N'EST PAS CE QUI FAISAIT FLOTTER CE TEST, et le banc l'a dit contre
+      l'intuition. Il expirait a 5,04-5,34 s pour un budget de 5 s, alors que
+      son propre travail ne coute qu'un sixieme de seconde : le reste etait la
+      charge de la suite entiere sur un poste Windows. C'est le budget qui a
+      ete elargi, dans `vitest.config.mts`, et lui seul rend ce garde fiable.
+      Ces 130 ms gagnes sont un gain reel et une fausse piste — les deux.
+    */
+    const textes = await Promise.all(
+      fichiers.map(async (f) => [f, await lire(f)] as const),
+    );
+
     const fautifs: string[] = [];
-    for (const f of fichiers) {
-      const contenu = await lire(f);
-      for (const h of HOTES) {
-        // On ignore les lignes de commentaire : ce fichier-ci nomme ces hotes
-        // pour les interdire, et un garde qui s'attrape lui-meme est inutile.
-        const lignes = contenu.split('\n').filter((l) => !/^\s*(\/\/|\*|\/\*)/.test(l));
+    for (const [f, contenu] of textes) {
+      // Le fichier ne nomme aucun hote, meme en commentaire : rien a decouper.
+      const cites = HOTES.filter((h) => contenu.includes(h));
+      if (cites.length === 0) continue;
+
+      // On ignore les lignes de commentaire : ce fichier-ci nomme ces hotes
+      // pour les interdire, et un garde qui s'attrape lui-meme est inutile.
+      const lignes = contenu.split('\n').filter((l) => !/^\s*(\/\/|\*|\/\*)/.test(l));
+      for (const h of cites) {
         if (lignes.some((l) => l.includes(h))) fautifs.push(`${f} → ${h}`);
       }
     }
