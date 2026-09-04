@@ -3,7 +3,7 @@ import { createHash, timingSafeEqual } from 'node:crypto';
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import { nomsOngletsParDefaut } from '@/lib/marchands';
-import { cleCanalAccepte, cleCanalRefuse } from '@/lib/compteurCanal';
+import { cleCanalAccepte, cleCanalRefuse, cleCanalSlugInconnu } from '@/lib/compteurCanal';
 import { compterJournalier } from '@/lib/limiteur';
 
 export const dynamic = 'force-dynamic';
@@ -117,7 +117,24 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: 'Registre indisponible' }, { status: 503 });
   }
 
-  if (!data) return NextResponse.json({ error: 'Boutique introuvable' }, { status: 404 });
+  if (!data) {
+    /**
+     * ON COMPTE, ON NE CRIE PLUS.
+     *
+     * Ce 404 est rendu APRES une recherche qui a abouti sans rien trouver —
+     * le cas « registre indisponible » est sorti plus haut en 503. Il designe
+     * donc un slug qui n'est reellement aucune boutique.
+     *
+     * Cote n8n, il faisait echouer l'execution du routeur, qui porte un
+     * `errorWorkflow` : n'importe qui pouvait faire sonner le salon de veille
+     * en POSTant un slug invente sur une URL publiee dans un depot public.
+     * Meme famille que le 401 traite le 3 septembre, meme remede — a ceci pres
+     * que le seau est GLOBAL et non par slug, faute de quoi l'appelant
+     * choisirait le nombre de lignes de la table. Voir `compteurCanal.ts`.
+     */
+    await compterJournalier(cleCanalSlugInconnu());
+    return NextResponse.json({ error: 'Boutique introuvable' }, { status: 404 });
+  }
 
   const fiche = data as {
     webhook_secret_hash?: string | null;
