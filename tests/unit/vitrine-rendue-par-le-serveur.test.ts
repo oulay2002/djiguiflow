@@ -33,6 +33,9 @@ import type { FicheVitrine } from '@/lib/vitrine/donnees';
 
 const PAGE = readFileSync('src/app/boutiques/[id]/page.tsx', 'utf8');
 const VITRINE = readFileSync('src/app/boutiques/[id]/Vitrine.tsx', 'utf8');
+const PAGE_ANNUAIRE = readFileSync('src/app/boutiques/page.tsx', 'utf8');
+const ANNUAIRE = readFileSync('src/app/boutiques/Annuaire.tsx', 'utf8');
+const LIB_ANNUAIRE = readFileSync('src/lib/vitrine/annuaire.ts', 'utf8');
 
 const FICHE: FicheVitrine = {
   id: 'zahara',
@@ -138,6 +141,53 @@ describe('les valeurs absentes gardent leur sens', () => {
 
   it('un menu VRAIMENT vide ne crie pas a la panne', () => {
     expect(etatInitial(FICHE, []).pannePage).toBe('');
+  });
+});
+
+describe("l'annuaire aussi part du serveur", () => {
+  /**
+   * MEME DEFAUT QUE LA FICHE, MEME REMEDE. `/boutiques` appelait
+   * `vitrine_boutiques()` dans un `useEffect` : son HTML ne contenait pas un
+   * seul nom de commerce, et un robot qui n'execute pas de JavaScript n'y
+   * voyait aucune boutique a suivre. C'est pourtant la page d'entree.
+   *
+   * Mesure du 4 septembre 2026, meme profil bride : la premiere boutique etait
+   * nommee a 16,1 s en production, contre 2,5 s une fois rendue par le serveur.
+   */
+  it("LE DEFAUT : la page d'entree etait 'use client' de bout en bout", () => {
+    expect(PAGE_ANNUAIRE).not.toMatch(/^\s*['"]use client['"]/m);
+    expect(PAGE_ANNUAIRE).toContain('chargerAnnuaire');
+    expect(PAGE_ANNUAIRE).toMatch(/boutiques=\{boutiques\}/);
+  });
+
+  it('le rendu reste dynamique : les cartes portent un etat d ouverture', () => {
+    // Mis en cache, l'annuaire annoncerait « ouvert » sur des commerces fermes
+    // depuis des heures — et le compte d'articles et la note bougent aussi.
+    expect(PAGE_ANNUAIRE).toMatch(/export const dynamic = ['"]force-dynamic['"]/);
+  });
+
+  it('UNE PANNE DE LECTURE N EST PAS UNE PLACE DE MARCHE VIDE', () => {
+    // `null` doit rester distinct de `[]` jusqu'a l'ecran : sinon une base
+    // muette se lit « aucun commercant n'est branche ».
+    expect(ANNUAIRE).toMatch(/listeServeur === null/);
+    expect(LIB_ANNUAIRE).toMatch(/Promise<BoutiqueAnnuaire\[\] \| null>/);
+  });
+
+  it("les squelettes d'attente ont ete RETIRES, pas rendus inatteignables", () => {
+    // Un ecran de chargement qui ne peut plus s'afficher est un mensonge dans
+    // le code : la liste arrive avec la page.
+    expect(ANNUAIRE).not.toContain('animate-pulse');
+    // L'APPEL, pas le mot : le commentaire en tete du fichier raconte le
+    // defaut et nomme `useEffect` pour l'expliquer.
+    expect(ANNUAIRE).not.toMatch(/\buseEffect\(/);
+  });
+
+  it("et la porte reste `vitrine_boutiques`, jamais la table", () => {
+    // Lire `boutiques` directement ne rend que ses propres enseignes des qu'on
+    // est connecte : la place de marche se vidait pour un marchand qui la
+    // consultait.
+    expect(LIB_ANNUAIRE).toContain('vitrine_boutiques');
+    expect(LIB_ANNUAIRE).not.toMatch(/\.from\(['"]boutiques['"]\)/);
   });
 });
 
