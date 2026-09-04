@@ -141,6 +141,45 @@ describe('les valeurs absentes gardent leur sens', () => {
   });
 });
 
+describe('le catalogue ne part pas en photos d un coup', () => {
+  /**
+   * MESURE LE 4 SEPTEMBRE 2026 : 475 ko de photos pour les CINQ articles de
+   * Chez Zahara, toutes chargees a l'ouverture. Un marchand a trente articles
+   * en enverrait deux a trois megaoctets, dont vingt-huit sous la ligne de
+   * flottaison — sur un forfait ou chaque megaoctet se paie.
+   *
+   * LE RENDU SERVEUR REND CE POINT PLUS URGENT, PAS MOINS : le navigateur voit
+   * desormais toutes les balises des le HTML et lance tous les
+   * telechargements a la fois, en concurrence avec le JavaScript.
+   */
+  it('LE DEFAUT : aucune photo n etait differee', () => {
+    expect(VITRINE).toMatch(/loading=\{immediate \? 'eager' : 'lazy'\}/);
+  });
+
+  it('mais les premieres NE LE SONT PAS — une photo vue en retard est pire', () => {
+    expect(VITRINE).toMatch(/const PHOTOS_IMMEDIATES = \d/);
+    // Deux cartes tiennent dans une fenetre de 390 px. En differer davantage
+    // ferait attendre le client sur ce qu'il regarde deja.
+    const n = Number(VITRINE.match(/const PHOTOS_IMMEDIATES = (\d+)/)?.[1]);
+    expect(n).toBeGreaterThan(0);
+    expect(n).toBeLessThanOrEqual(4);
+  });
+
+  it('le rang traverse les DEUX sections', () => {
+    // Sans le decalage, les premieres cartes de « À la carte » se croiraient
+    // en haut de page alors qu'elles sont sous le menu du jour.
+    expect(VITRINE).toMatch(/rang=\{depart \+ i\}/);
+    expect(VITRINE).toMatch(/grille\(grouperEnArticles\(carte\), enVedette\.length\)/);
+  });
+
+  it('les vignettes de coloris sont differees SANS exception', () => {
+    // Elles vivent sous la photo de leur carte : jamais dans la premiere
+    // fenetre, et un article a quatre coloris en porte quatre.
+    const vignette = VITRINE.slice(VITRINE.indexOf('src={v.image}'));
+    expect(vignette.slice(0, 200)).toContain("loading=\"lazy\"");
+  });
+});
+
 describe('la page reste un composant serveur', () => {
   it("LE DEFAUT : elle etait 'use client' de bout en bout", () => {
     expect(PAGE).not.toMatch(/^\s*['"]use client['"]/m);

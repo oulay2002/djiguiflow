@@ -193,14 +193,45 @@ function lexique(secteur: string) {
  * l'initiale du plat en très grand, très basse intensité, sur un lavis chaux
  * vers mangue. Une absence assumée vaut mieux qu'un trou.
  */
-function Visuel({ p }: { p: Produit }) {
+/**
+ * Combien de photos partent AVANT que le client ait fait defiler.
+ *
+ * A 390 px, la carte fait un peu plus d'un demi-ecran : deux tiennent dans la
+ * fenetre, la troisieme est deja dessous. On les charge donc immediatement, et
+ * seulement celles-la — une image differee que le client regarde arrive en
+ * retard, ce qui est pire que de l'avoir chargee pour rien.
+ */
+const PHOTOS_IMMEDIATES = 2;
+
+function Visuel({ p, rang }: { p: Produit; rang: number }) {
   if (p.image) {
+    const immediate = rang < PHOTOS_IMMEDIATES;
     return (
       <div className="relative aspect-[4/3] overflow-hidden bg-chaux-100">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={p.image}
           alt={p.nom}
+          /**
+           * LE CATALOGUE ENTIER PARTAIT D'UN COUP.
+           *
+           * Mesure le 4 septembre 2026 : 475 ko de photos pour les CINQ
+           * articles de Chez Zahara. Un marchand a trente articles en enverrait
+           * deux a trois megaoctets a l'ouverture, dont vingt-huit sous la
+           * ligne de flottaison — sur un forfait ou chaque megaoctet se paie.
+           *
+           * Le rendu serveur a rendu ce point plus urgent, pas moins : le
+           * navigateur voit desormais toutes les balises des le HTML et lance
+           * tous les telechargements a la fois, en concurrence avec le
+           * JavaScript sur le meme tuyau.
+           */
+          loading={immediate ? 'eager' : 'lazy'}
+          // Le decodage sort du fil principal : sur un processeur d'entree de
+          // gamme, decoder six photos bloquait le defilement.
+          decoding="async"
+          // Ce qui est visible passe devant le reste ; ce qui ne l'est pas
+          // cede le tuyau au JavaScript dont la page a besoin pour repondre.
+          fetchPriority={immediate ? 'high' : 'low'}
           className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.04]"
         />
       </div>
@@ -662,6 +693,16 @@ export default function Vitrine({ slug, fiche: ficheServeur, menu: menuServeur }
   // « À la carte » chapeauterait la totalité du menu, ce qui n'apprend rien.
   const sectionne = duJour.length > 0 && carte.length > 0;
 
+  /**
+   * Les articles en vedette, groupes UNE FOIS.
+   *
+   * Ils l'etaient au fil du rendu, ce qui suffisait. On en a besoin ici parce
+   * que la seconde section doit savoir COMBIEN de cartes la precedent : c'est
+   * ce rang qui decide quelles photos se chargent tout de suite et lesquelles
+   * attendent d'approcher de l'ecran.
+   */
+  const enVedette = grouperEnArticles(duJour);
+
   // ---- CE QUI SE PERD EN ROUTE.
   //
   // Le marchand ne voit que ses ventes, jamais ses quasi-ventes : un client qui
@@ -832,9 +873,9 @@ export default function Vitrine({ slug, fiche: ficheServeur, menu: menuServeur }
    * le stock — et c'est LUI qui entre au panier. Les autres restent a portee de
    * pouce, en vignettes.
    */
-  const grille = (articles: Article[]) => (
+  const grille = (articles: Article[], depart = 0) => (
     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-      {articles.map(article => {
+      {articles.map((article, i) => {
         // Le coloris retenu, ou le premier qui reste en stock. Ouvrir une carte
         // sur une declinaison epuisee ferait croire l'article indisponible.
         const choisi = article.variantes.find(v => v.id === coloris[article.cle])
@@ -930,7 +971,7 @@ export default function Vitrine({ slug, fiche: ficheServeur, menu: menuServeur }
             key={article.cle}
             className="group flex flex-col overflow-hidden border border-[var(--hairline)] bg-chaux-50 transition duration-200 soft-shadow hover:-translate-y-1"
           >
-            <Visuel p={p} />
+            <Visuel p={p} rang={depart + i} />
 
             <div className="flex flex-1 flex-col p-4">
               {/* LA MARQUE PASSE AVANT LE NOM.
@@ -1035,8 +1076,19 @@ export default function Vitrine({ slug, fiche: ficheServeur, menu: menuServeur }
                           }`}
                         >
                           {v.image ? (
+                            // TOUJOURS DIFFEREE, sans exception de rang : une
+                            // vignette de coloris vit SOUS la photo de sa
+                            // carte, donc jamais dans la premiere fenetre. Un
+                            // article a quatre coloris en porte quatre.
                             // eslint-disable-next-line @next/next/no-img-element
-                            <img src={v.image} alt="" className="h-full w-full object-cover" />
+                            <img
+                              src={v.image}
+                              alt=""
+                              loading="lazy"
+                              decoding="async"
+                              fetchPriority="low"
+                              className="h-full w-full object-cover"
+                            />
                           ) : (
                             <span className="flex h-full w-full items-center justify-center bg-chaux-100 font-display text-sm font-black text-nuit-900/30">
                               {initiale(v.couleur || v.nom)}
@@ -1473,14 +1525,14 @@ export default function Vitrine({ slug, fiche: ficheServeur, menu: menuServeur }
                     {mots.duJour}
                     <span className="h-px flex-1 bg-mangue-200" />
                   </h2>
-                  {grille(grouperEnArticles(duJour))}
+                  {grille(enVedette)}
                 </section>
                 <section>
                   <h2 className="mb-4 flex items-center gap-3 font-mono text-xs font-bold uppercase tracking-[0.24em] text-chaux-600">
                     {mots.reste}
                     <span className="h-px flex-1 bg-chaux-200" />
                   </h2>
-                  {grille(grouperEnArticles(carte))}
+                  {grille(grouperEnArticles(carte), enVedette.length)}
                 </section>
               </>
             ) : (
