@@ -1,75 +1,28 @@
 import { getMarchand } from '@/lib/marchands';
-import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
+import { chargerMenuBoutique } from '@/lib/vitrine/donnees';
 
+/**
+ * Le catalogue publie d'une boutique.
+ *
+ * LE CORPS DE CETTE ROUTE A DEMENAGE dans `lib/vitrine/donnees.ts` le
+ * 4 septembre 2026 : la vitrine charge desormais son menu cote serveur, sans
+ * repasser par HTTP. La route reste — l'assistante n8n la lit depuis le
+ * 19 aout, et la vitrine s'en sert pour son repli.
+ *
+ * LES TROIS REPONSES SONT CONSERVEES TELLES QUELLES. `getMarchand` est rappele
+ * ici pour distinguer le 404 du 503 : le registre est en cache 30 secondes,
+ * l'appel ne coute rien, et confondre « cette boutique n'existe pas » avec
+ * « la base n'a pas repondu » ferait dire a l'assistante qu'un commercant a
+ * ferme alors que Supabase toussait.
+ */
 export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }) {
   const { id } = await ctx.params;
+
   const m = await getMarchand(id);
   if (!m) return Response.json({ error: 'Marchand introuvable' }, { status: 404 });
 
-  const sb = getSupabaseAdmin();
-  if (!sb) return Response.json({ error: 'Menu indisponible' }, { status: 503 });
-
-  const { data, error } = await sb
-    .from('produits')
-    // photo_url et menu_du_jour manquaient : les photos televersees par le
-    // marchand n'atteignaient jamais la vitrine, et le menu du jour qu'il
-    // compose restait invisible.
-    .select('reference, id, nom, categorie, prix, description, photo_url, menu_du_jour, stock, groupe, couleur, attribut_nom, attribut_valeurs, marque, public_vise')
-    .eq('boutique_id', m.boutiqueId)
-    .eq('disponible', true)
-    .order('categorie', { ascending: true })
-    .order('nom', { ascending: true });
-
-  if (error) {
-    console.error(`Menu — lecture Supabase impossible (${m.id}) :`, error);
-    return Response.json({ error: 'Menu indisponible' }, { status: 503 });
-  }
-
-  const produits = (data ?? []).map(p => ({
-    // La reference de la feuille reste l'identifiant public : c'est elle que
-    // le panier renvoie a /commander, et que n8n connait encore.
-    id: String(p.reference ?? p.id),
-    nom: String(p.nom ?? ''),
-    categorie: String(p.categorie ?? ''),
-    prix: Number(p.prix ?? 0),
-    description: String(p.description ?? ''),
-    image: String(p.photo_url ?? ''),
-    duJour: Boolean(p.menu_du_jour),
-    // LE STOCK ETAIT LU MAIS PAS RENDU — c'est tout ce qui manquait.
-    //
-    // Le tableau de bord affichait « Rupture », la vitrine proposait le plat
-    // sans rien dire, et le client ne l'apprenait qu'au dernier clic, une fois
-    // son panier compose et son adresse saisie. La pire facon de l'apprendre.
-    //
-    // `null` veut dire « le marchand ne compte pas ce produit », jamais zero :
-    // confondre les deux epuiserait d'un coup tout le catalogue de ceux qui ne
-    // tiennent pas de stock.
-    stock: p.stock === null || p.stock === undefined ? null : Number(p.stock),
-    // LA DECLINAISON. Deux articles partageant `groupe` dans une meme boutique
-    // sont le meme article en plusieurs coloris : la vitrine n'en fait qu'une
-    // carte. Vide, l'article s'affiche seul, exactement comme avant.
-    groupe: String(p.groupe ?? '').trim(),
-    couleur: String(p.couleur ?? '').trim(),
-    // LA CARACTERISTIQUE : pointure, taille, contenance — le marchand la
-    // nomme lui-meme. Le client la demandait par message, article par
-    // article, et le marchand repondait a la main a chaque fois.
-    //
-    // ELLE PART AUSSI VERS L'ASSISTANTE, qui lit cette route depuis le
-    // 19 aout. Sans elle, le bot aurait continue a ignorer une question
-    // que tout acheteur de chaussures pose en premier.
-    //
-    // Les deux vont ensemble ou pas du tout — la base l'impose. On rend
-    // donc une chaine vide et un tableau vide, jamais l'un sans l'autre.
-    // CE QU'UN CLIENT CHERCHE DANS UNE BOUTIQUE DE VETEMENTS : la marque
-    // d'abord, puis pour qui c'est. Vide = le marchand ne l'a pas donne, et la
-    // vitrine se tait — jamais « sans marque », jamais « pour tous ».
-    marque: String(p.marque ?? '').trim(),
-    publicVise: String(p.public_vise ?? '').trim(),
-    attributNom: String(p.attribut_nom ?? '').trim(),
-    attributValeurs: Array.isArray(p.attribut_valeurs)
-      ? p.attribut_valeurs.map((v) => String(v ?? '').trim()).filter(Boolean)
-      : [],
-  }));
+  const produits = await chargerMenuBoutique(id);
+  if (!produits) return Response.json({ error: 'Menu indisponible' }, { status: 503 });
 
   return Response.json(produits);
 }
