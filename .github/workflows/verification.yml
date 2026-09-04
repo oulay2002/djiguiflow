@@ -209,5 +209,42 @@ jobs:
           node-version: '24'
           cache: npm
       - run: npm ci
+      # UN SERVICE INJOIGNABLE N'EST PAS UN VERDICT.
+      #
+      # `npm audit` sort en erreur pour DEUX raisons opposees : il a trouve une
+      # vulnerabilite, ou il n'a pas pu poser la question. La version precedente
+      # les confondait. Le 4 septembre 2026, le registre npm a repondu
+      # « 503 Service Unavailable » : le travail est passe au rouge exactement
+      # comme s'il avait trouve une faille, et la protection de branche a bloque
+      # la fusion de la PR #179 — pour une panne qui n'etait pas la notre.
+      #
+      # LE DISCRIMINANT, VERIFIE CE JOUR-LA : un rapport authentique porte
+      # `metadata.dependencies` et compte les paquets. Une erreur de service,
+      # non. Ce n'est pas le code de sortie qui separe les deux cas, c'est le
+      # CONTENU de la reponse.
+      #
+      # ET L'INJOIGNABLE NE BLOQUE PAS. C'est la meme regle que la sonde
+      # WhatsApp : `indetermine` se tait, seul `deconnectee` reveille quelqu'un.
+      # Faire echouer sur une panne de npm arreterait le travail pour une raison
+      # etrangere au code — et l'audit repassera a la PR suivante.
       - name: Vulnerabilites connues (production)
-        run: npm audit --omit=dev --audit-level=high
+        run: |
+          for essai in 1 2 3; do
+            if npm audit --omit=dev --audit-level=high --json > audit.json 2> audit.err; then
+              echo "Aucune vulnerabilite haute ou critique en production."
+              exit 0
+            fi
+
+            if node -e "const r=require('./audit.json'); process.exit(r.metadata && r.metadata.dependencies ? 0 : 1)" 2>/dev/null; then
+              echo "::error::Vulnerabilites haute(s) ou critique(s) en production."
+              node -e "const r=require('./audit.json'); console.log(JSON.stringify(r.metadata.vulnerabilities)); for (const [n, v] of Object.entries(r.vulnerabilities || {})) console.log(v.severity + '  ' + n)"
+              exit 1
+            fi
+
+            echo "Essai $essai : service d'audit npm injoignable."
+            head -3 audit.err || true
+            [ "$essai" -lt 3 ] && sleep 20
+          done
+
+          echo "::warning::Audit npm injoignable apres 3 essais — c'est un DOUTE, pas un verdict. Non bloquant ; l'audit repassera a la prochaine PR."
+          exit 0
