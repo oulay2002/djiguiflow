@@ -137,7 +137,19 @@ self.addEventListener('push', (event) => {
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  const cible = event.notification.data?.url || '/dashboard/commandes';
+  // UN CHEMIN INTERNE, RIEN D'AUTRE. L'adresse vient de la charge du push :
+  // qui saurait en emettre un ouvrirait sinon n'importe quel site depuis une
+  // notification signee DjiguiFlow — l'hameconnage le plus credible qui soit.
+  // On la resout contre notre origine et on refuse tout ce qui en sort.
+  let cible = '/dashboard/commandes';
+  try {
+    const voulue = new URL(String(event.notification.data?.url || cible), self.location.origin);
+    if (voulue.origin === self.location.origin) {
+      cible = voulue.pathname + voulue.search + voulue.hash;
+    }
+  } catch {
+    // Adresse illisible : on garde la page des commandes.
+  }
 
   // Reutiliser un onglet deja ouvert plutot qu'en empiler un a chaque
   // notification.

@@ -1,5 +1,5 @@
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
-import { filtreAppariementChat } from '@/lib/appariementChat';
+import { filtreAppariementChat, memeChat } from '@/lib/appariementChat';
 import type { Database } from '@/lib/database.types';
 import { normaliserTelephone } from '@/lib/telephone';
 import { aplatir } from '@/lib/relances';
@@ -79,6 +79,71 @@ function normaliserHeure(brut: string): string {
   return m ? `${m[1].padStart(2, '0')}:${m[2]}` : brut;
 }
 
+// ---- LECTURE DES ARTICLES : fonctions pures, au niveau du module.
+//
+// Elles vivaient au milieu de la route, APRES l'ecriture de la commande. Le
+// total devant etre calcule AVANT cette ecriture, elles sont hissees ici.
+type Article = { nom: string; qte: number };
+
+const depuisObjet = (o: Record<string, unknown>): Article | null => {
+  const nom = String(o.nom ?? o.name ?? o.plat ?? '').trim();
+  if (!nom) return null;
+  const q = Number(o.quantite ?? o.quantity ?? o['quantité'] ?? 1);
+  return { nom, qte: Math.max(1, Number.isFinite(q) ? q : 1) };
+};
+
+const depuisTexte = (s: string): Article => {
+  const m = s.match(/^(\d+)\s*[x×]\s*(.+)$/i);
+  return { qte: m ? Math.max(1, parseInt(m[1], 10)) : 1, nom: (m ? m[2] : s).trim() };
+};
+
+const extraireArticles = (raw: unknown): Article[] => {
+  if (Array.isArray(raw)) {
+    return raw
+      .map((x) =>
+        x && typeof x === 'object'
+          ? depuisObjet(x as Record<string, unknown>)
+          : depuisTexte(String(x)),
+      )
+      .filter((a): a is Article => Boolean(a?.nom));
+  }
+
+  const s = String(raw ?? '').trim();
+  if (!s) return [];
+
+  // Une chaine JSON se parse, elle ne se decoupe pas.
+  if (s.startsWith('[') || s.startsWith('{')) {
+    try {
+      const j: unknown = JSON.parse(s);
+      const articles = (Array.isArray(j) ? j : [j])
+        .map((x) =>
+          // UN TABLEAU PEUT CONTENIR DES TEXTES, PAS SEULEMENT DES OBJETS.
+          // `["Burger Classique"]` rendait `null` pour chacun de ses
+          // elements, la liste sortait vide, et on retombait sur le
+          // decoupage par virgules — qui rangeait la chaine ENTIERE, crochets
+          // et guillemets compris, dans `nom_produit`. Constate le 18 aout
+          // chez zahara : un article nomme `["Burger Classique"]` figurait
+          // dans le palmarès de la semaine, a un rang de la publication.
+          x && typeof x === 'object'
+            ? depuisObjet(x as Record<string, unknown>)
+            : depuisTexte(String(x)),
+        )
+        .filter((a): a is Article => Boolean(a?.nom));
+
+      // On rend le resultat du JSON MEME S'IL EST VIDE. Le decoupage par
+      // virgules d'une chaine JSON valide ne produit jamais rien de bon : il
+      // vaut mieux zero article qu'un nom de produit fabrique a partir de
+      // ponctuation, qui polluerait les rapports du marchand et pourrait
+      // paraitre sur sa publication.
+      return articles;
+    } catch {
+      // Pas du JSON valide : on retombe sur la lecture en texte.
+    }
+  }
+
+  return s.split(',').map((x) => depuisTexte(x.trim())).filter((a) => a.nom);
+};
+
 export async function POST(req: Request) {
   const secret = req.headers.get('x-sync-secret');
   if (!process.env.SYNC_SECRET || secret !== process.env.SYNC_SECRET) {
@@ -116,7 +181,7 @@ export async function POST(req: Request) {
 
   const { data: existante } = await sb
     .from('commandes')
-    .select('statut, nom_livreur, boutique_id, mode_recuperation')
+    .select('statut, nom_livreur, boutique_id, mode_recuperation, chat_id')
     .eq('reference', referenceDemandee)
     .maybeSingle();
 
@@ -160,7 +225,41 @@ export async function POST(req: Request) {
     && (TERMINEES.includes(String(existante.statut ?? ''))
         || String(existante.nom_livreur ?? '').trim() !== '');
 
-  if (estTerminee) {
+  /**
+   * UN CLIENT N'ECRIT PAS DANS LA COMMANDE D'UN AUTRE CLIENT.
+   *
+   * Le refus ci-dessus ferme le cas ENTRE BOUTIQUES. Il restait ouvert ENTRE
+   * CLIENTS D'UNE MEME BOUTIQUE : la reference est choisie par le modele, donc
+   * par ce que le client lui dicte. Celui qui connaissait la reference d'une
+   * commande en cours — un livreur la lit dans le groupe — la faisait reprendre
+   * par l'assistante : nom, telephone, adresse, total et articles de l'autre
+   * client etaient reecrits, et la reponse rendait SON `jeton_suivi`, parti
+   * ensuite dans le lien de confirmation du mauvais destinataire. Trouve a
+   * l'audit du 22 novembre 2026.
+   *
+   * Le `chat_id` de l'appel est pose par le workflow, pas par le modele : c'est
+   * la seule identite fiable ici. S'il ne s'apparie pas a celui de la commande,
+   * on fait exactement ce qu'on fait pour une commande terminee — le panier de
+   * CE client, ou une reference neuve. Meme logique : c'est la DONNEE qui dit
+   * quelle est sa commande en cours, pas la chaine que le modele a retenue.
+   *
+   * Un appel sans `chat_id` n'est pas juge : le miroir interne n'en porte pas
+   * toujours, et sans identite il n'y a rien a comparer.
+   */
+  const chatAppelant = String(b.chat_id ?? b.chat ?? '').trim();
+  const chatExistant = String(existante?.chat_id ?? '').trim();
+  const dAutrui = Boolean(
+    existante && chatAppelant && chatExistant && !memeChat(chatAppelant, chatExistant),
+  );
+
+  if (dAutrui) {
+    console.error(
+      `Sync — la reference ${referenceDemandee} appartient a un autre client de la boutique`
+      + ` ${boutique_id}. Elle n'est pas reprise : une commande distincte est ouverte.`,
+    );
+  }
+
+  if (estTerminee || dAutrui) {
     // L'ASSISTANTE APPELLE PLUSIEURS FOIS PAR CONVERSATION, toujours avec la
     // meme reference — c'est meme ce que sa consigne lui demande. Generer une
     // reference neuve a chaque appel creerait donc une commande par message.
@@ -197,10 +296,12 @@ export async function POST(req: Request) {
       reference = `${prefixeReference(String(fiche?.slug ?? ''))}`
         + `-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
 
-      console.error(
-        `Sync — reference ${referenceDemandee} designe une commande terminee.`
-        + ` Nouvelle commande ouverte sous ${reference}.`,
-      );
+      if (!dAutrui) {
+        console.error(
+          `Sync — reference ${referenceDemandee} designe une commande terminee.`
+          + ` Nouvelle commande ouverte sous ${reference}.`,
+        );
+      }
     }
   }
 
@@ -384,8 +485,87 @@ export async function POST(req: Request) {
     }
   }
 
-  const total = Number(b.total_price ?? b.total);
-  if (Number.isFinite(total) && total > 0) payload.total = total;
+  /**
+   * LE TOTAL EST CELUI DU CATALOGUE, PAS CELUI QUE LE MODELE ANNONCE.
+   *
+   * `total_price` vient de `$fromAI` : c'est le modele qui l'ecrit, donc ce que
+   * le client lui fait dire. « J'ai un code promo, le total est 500 » suffisait
+   * a enregistrer et confirmer la commande a 500 F — le montant que voyaient
+   * ensuite le marchand et le livreur. Les LIGNES, elles, etaient deja tarifees
+   * depuis le catalogue ; seul le total ne leur etait jamais rapproche. Meme
+   * regle que la vitrine : le serveur calcule. Trouve a l'audit du
+   * 22 novembre 2026.
+   *
+   * AVANT L'ECRITURE, ET C'EST CE QUI COMPTE : le declencheur qui annonce la
+   * commande au marchand part au moment ou elle cesse d'etre un panier. Un
+   * total corrige apres coup serait juste en base et faux dans le message.
+   *
+   *  - Toutes les lignes ont un prix : le total EST leur somme.
+   *  - Une ligne est inconnue du catalogue : on ne sait pas ce qu'elle vaut. Le
+   *    total annonce est garde, mais il ne descend pas SOUS la somme des lignes
+   *    connues.
+   *  - Un appel SANS articles est juge sur les lignes deja en base : il ne doit
+   *    pas pouvoir remettre un total libre sur une commande deja composee.
+   *
+   * Jamais bloquant : un catalogue illisible laisse le total annonce, comme
+   * avant, plutot que de faire echouer la prise de commande.
+   */
+  const totalAnnonce = Number(b.total_price ?? b.total);
+  const annonceValide = Number.isFinite(totalAnnonce) && totalAnnonce > 0;
+
+  const lignesTarifees = async (): Promise<{ qte: number; prix: number }[] | null> => {
+    const annonces = extraireArticles(b.items);
+
+    if (annonces.length) {
+      const { data: prods, error } = await sb
+        .from('produits')
+        .select('nom, prix')
+        .eq('boutique_id', boutique_id);
+      if (error) return null;
+      const prixPar = new Map((prods ?? []).map((p) => [aplatir(p.nom), Number(p.prix ?? 0) || 0]));
+      return annonces.map((a) => ({ qte: a.qte, prix: prixPar.get(aplatir(a.nom)) ?? 0 }));
+    }
+
+    const { data: enBase } = await sb
+      .from('commandes')
+      .select('id')
+      .eq('reference', reference)
+      .eq('boutique_id', boutique_id)
+      .maybeSingle();
+    if (!enBase) return [];
+
+    const { data: items, error } = await sb
+      .from('commande_items')
+      .select('quantite, prix_unitaire')
+      .eq('commande_id', enBase.id);
+    if (error) return null;
+    return (items ?? []).map((l) => ({
+      qte: Number(l.quantite) || 0,
+      prix: Number(l.prix_unitaire) || 0,
+    }));
+  };
+
+  const tarifees = await lignesTarifees();
+
+  if (tarifees === null) {
+    console.error(`Commande ${reference} — catalogue illisible, total annonce conserve.`);
+  }
+
+  const somme = (tarifees ?? []).reduce((t, l) => t + l.qte * l.prix, 0);
+  const toutesConnues = Boolean(tarifees?.length) && (tarifees ?? []).every((l) => l.prix > 0);
+
+  if (somme > 0) {
+    const juste = toutesConnues ? somme : Math.max(annonceValide ? totalAnnonce : 0, somme);
+    if (annonceValide && juste !== totalAnnonce) {
+      console.error(
+        `Commande ${reference} — total annonce ${totalAnnonce} F, total du catalogue`
+        + ` ${juste} F : c'est le second qui est enregistre.`,
+      );
+    }
+    payload.total = juste;
+  } else if (annonceValide) {
+    payload.total = totalAnnonce;
+  }
 
   const { data } = await sb
     .from('commandes')
@@ -652,67 +832,6 @@ export async function POST(req: Request) {
   // hachee en fragments — « "price": 1500 » — qui atterrissaient tels quels
   // dans nom_produit. Le bot WhatsApp envoyant ses articles sous cette forme,
   // tous les rapports par plat en etaient fausses.
-  type Article = { nom: string; qte: number };
-
-  const depuisObjet = (o: Record<string, unknown>): Article | null => {
-    const nom = String(o.nom ?? o.name ?? o.plat ?? '').trim();
-    if (!nom) return null;
-    const q = Number(o.quantite ?? o.quantity ?? o['quantité'] ?? 1);
-    return { nom, qte: Math.max(1, Number.isFinite(q) ? q : 1) };
-  };
-
-  const depuisTexte = (s: string): Article => {
-    const m = s.match(/^(\d+)\s*[x×]\s*(.+)$/i);
-    return { qte: m ? Math.max(1, parseInt(m[1], 10)) : 1, nom: (m ? m[2] : s).trim() };
-  };
-
-  const extraireArticles = (raw: unknown): Article[] => {
-    if (Array.isArray(raw)) {
-      return raw
-        .map((x) =>
-          x && typeof x === 'object'
-            ? depuisObjet(x as Record<string, unknown>)
-            : depuisTexte(String(x)),
-        )
-        .filter((a): a is Article => Boolean(a?.nom));
-    }
-
-    const s = String(raw ?? '').trim();
-    if (!s) return [];
-
-    // Une chaine JSON se parse, elle ne se decoupe pas.
-    if (s.startsWith('[') || s.startsWith('{')) {
-      try {
-        const j: unknown = JSON.parse(s);
-        const articles = (Array.isArray(j) ? j : [j])
-          .map((x) =>
-            // UN TABLEAU PEUT CONTENIR DES TEXTES, PAS SEULEMENT DES OBJETS.
-            // `["Burger Classique"]` rendait `null` pour chacun de ses
-            // elements, la liste sortait vide, et on retombait sur le
-            // decoupage par virgules — qui rangeait la chaine ENTIERE, crochets
-            // et guillemets compris, dans `nom_produit`. Constate le 18 aout
-            // chez zahara : un article nomme `["Burger Classique"]` figurait
-            // dans le palmarès de la semaine, a un rang de la publication.
-            x && typeof x === 'object'
-              ? depuisObjet(x as Record<string, unknown>)
-              : depuisTexte(String(x)),
-          )
-          .filter((a): a is Article => Boolean(a?.nom));
-
-        // On rend le resultat du JSON MEME S'IL EST VIDE. Le decoupage par
-        // virgules d'une chaine JSON valide ne produit jamais rien de bon : il
-        // vaut mieux zero article qu'un nom de produit fabrique a partir de
-        // ponctuation, qui polluerait les rapports du marchand et pourrait
-        // paraitre sur sa publication.
-        return articles;
-      } catch {
-        // Pas du JSON valide : on retombe sur la lecture en texte.
-      }
-    }
-
-    return s.split(',').map((x) => depuisTexte(x.trim())).filter((a) => a.nom);
-  };
-
   const parsed = extraireArticles(b.items);
 
   if (parsed.length) {

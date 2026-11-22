@@ -19,6 +19,9 @@ import {
 } from '@/lib/limiteur';
 import { secretWebhookN8n } from '@/lib/secretN8n';
 import { DELAI_WEBHOOK, delai } from '@/lib/reseau';
+import { clefLigne, lirePanierDemande, type LigneDemandee } from '@/lib/panierDemande';
+import { normaliserTelephone } from '@/lib/telephone';
+import { referenceDeVitrine } from '@/lib/reference';
 
 /**
  * Prise de commande depuis la boutique en ligne.
@@ -77,29 +80,22 @@ type Admin = NonNullable<ReturnType<typeof getSupabaseAdmin>>;
  */
 async function tariferPanier(
   m: Marchand,
-  panier: unknown,
+  // DEJA LU, FONDU ET BORNE par `lirePanierDemande` : aucun doublon n'arrive
+  // ici, donc le controle de stock, ligne par ligne, porte bien sur la SOMME
+  // demandee de chaque article.
+  demandes: LigneDemandee[],
   sb: Admin | null,
   boutiqueUuid: string | null,
 ): Promise<LigneCommande[]> {
-  const demandes = (Array.isArray(panier) ? panier : [])
-    .map((l) => ({
-      id: String((l as { id?: unknown })?.id ?? '').trim(),
-      quantite: Math.max(1, Number((l as { quantite?: unknown })?.quantite) || 1),
-      // On borne : cette valeur part telle quelle dans le message du marchand
-      // et du livreur. Un client ne tape pas trente caracteres de pointure.
-      variante: String((l as { variante?: unknown })?.variante ?? '').trim().slice(0, 40),
-    }))
-    .filter((l) => l.id);
-
   if (!demandes.length) return [];
 
   /**
    * INDEXE PAR ARTICLE **ET** PAR CHOIX. Une clef limitee a l'identifiant
    * aurait fondu deux pointures du meme modele en une seule ligne : le client
    * demandait un 39 et un 41, le marchand en recevait deux d'une seule taille.
+   * La regle vit dans `@/lib/panierDemande`, la ou la fusion s'en sert aussi.
    */
-  const clef = (l: { id: string; variante: string }) =>
-    l.variante ? `${l.id}::${l.variante}` : l.id;
+  const clef = clefLigne;
 
   const resolues = new Map<string, LigneCommande>();
 
@@ -242,9 +238,11 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
   const m = await getMarchand(id);
   if (!m) return Response.json({ error: 'Marchand introuvable' }, { status: 404 });
 
-  // LES FREINS PASSENT AVANT TOUT LE RESTE : avant de lire le corps, avant
-  // d'interroger le catalogue, avant la moindre ecriture. Un appel refuse ne
-  // doit rien couter.
+  // LE FREIN PAR APPELANT PASSE AVANT TOUT LE RESTE : avant de lire le corps,
+  // avant d'interroger le catalogue, avant la moindre ecriture. Un appel
+  // refuse ne doit rien couter. Les deux compteurs PARTAGES de la boutique,
+  // eux, ne sont consommes que par ce qui va devenir une commande — voir plus
+  // bas pourquoi.
   const appelant = adresseAppelante(req);
 
   const rafaleAppelant = rafaleDepassee(
@@ -260,62 +258,51 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     );
   }
 
-  const rafaleBoutique = await fenetreDepassee(
-    `commande:${m.id}`,
-    COMMANDES_PAR_BOUTIQUE,
-    FENETRE_COMMANDES_MS / 1000,
-  );
-  if (rafaleBoutique.depassee) {
-    // Celui-ci est journalise en priorite : une boutique qui atteint ce seuil
-    // est soit en train de tres bien marcher, soit attaquee. Les deux valent
-    // qu'on le sache.
-    console.error(
-      `Commande — seuil de boutique atteint pour « ${m.id} » :`
-        + ` plus de ${COMMANDES_PAR_BOUTIQUE} commandes en ${FENETRE_COMMANDES_MS / 60_000} min.`,
-    );
-    return Response.json(
-      { error: rafaleBoutique.indisponible ? SERVICE_INDISPONIBLE : BOUTIQUE_SATUREE },
-      {
-        // 503 quand le compteur est injoignable : ce n'est pas un refus de
-        // quota, c'est une panne, et l'appelant doit pouvoir les distinguer.
-        status: rafaleBoutique.indisponible ? 503 : 429,
-        headers: { 'Retry-After': String(FENETRE_COMMANDES_MS / 1000) },
-      },
-    );
-  }
-
-  // Le plafond du jour est en base, donc partage entre les instances Vercel :
-  // un abus reparti sur plusieurs instances ne passe que celui-la. Quand le
-  // compteur est injoignable, il refuse — et cela ne coute rien ici, puisque
-  // sans base la commande ne pourrait de toute facon pas etre enregistree.
-  const plafondJour = await plafondJournalierDepasse(`commande:${m.id}`, COMMANDES_PAR_JOUR);
-  if (plafondJour.depasse) {
-    console.error(
-      `Commande — plafond du jour atteint pour « ${m.id} » (${plafondJour.valeur ?? '?'}`
-        + `/${COMMANDES_PAR_JOUR}).`,
-    );
-    return Response.json(
-      { error: plafondJour.indisponible ? SERVICE_INDISPONIBLE : BOUTIQUE_COMPLETE },
-      {
-        status: plafondJour.indisponible ? 503 : 429,
-        headers: { 'Retry-After': String(secondesAvantMinuitAbidjan()) },
-      },
-    );
-  }
-
   // Un corps tronque ou un content-type inattendu ne doit pas rendre un 500 :
   // c'est un client qui a mal envoye, pas le serveur qui a casse.
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
   if (!body) return Response.json({ error: 'Requête illisible' }, { status: 400 });
+
+  /**
+   * CE QUI SE REFUSE SANS RIEN LIRE SE REFUSE ICI, AVANT LES COMPTEURS.
+   *
+   * Les deux compteurs de boutique etaient consommes des la premiere ligne,
+   * AVANT meme la lecture du corps. Or ils sont PARTAGES par tous les clients
+   * de la boutique : trois cents appels au corps vide suffisaient donc a faire
+   * repondre « a atteint son nombre de commandes pour aujourd'hui » jusqu'a
+   * minuit — une vitrine fermee, sans une seule commande en base, donc sans
+   * rien que le marchand puisse voir. Trouve a l'audit du 22 novembre 2026.
+   *
+   * Un compteur de COMMANDES ne doit compter que des commandes. Les deux
+   * controles ci-dessous sont purs — ni base, ni reseau — et un appel qu'ils
+   * refusent ne coute toujours rien.
+   */
+  const lecture = lirePanierDemande(body.panier);
+  if (!lecture.ok) return Response.json({ error: lecture.erreur }, { status: 400 });
+  if (!lecture.lignes.length) return Response.json({ error: 'Panier vide' }, { status: 400 });
+
+  /**
+   * LE NUMERO EST CONTROLE PAR LE SERVEUR, COMME TOUT LE RESTE.
+   *
+   * La vitrine le normalise deja, mais rien ne l'imposait ici : n'importe
+   * quelle suite de chiffres etait prefixee de `225` et ecrite. Un numero de
+   * huit chiffres donnait `225XXXXXXXX`, qui ne se normalise plus et que
+   * `memeNumero` rapproche alors des abonnes 01…, 05… ET 07… de meme suffixe.
+   */
+  const telephone = normaliserTelephone(body.tel);
+  if (!telephone.ok) return Response.json({ error: telephone.erreur }, { status: 400 });
   const {
-    nom, tel, adresse, instructions, panier,
     mode_recuperation: modeDemande,
     heure_retrait: heureDemandee,
-  } = body as {
-    nom?: unknown; tel?: unknown; adresse?: unknown;
-    instructions?: unknown; panier?: unknown;
-    mode_recuperation?: unknown; heure_retrait?: unknown;
-  };
+  } = body as { mode_recuperation?: unknown; heure_retrait?: unknown };
+
+  // LES CHAMPS LIBRES SONT BORNES. Ils sont ecrits en base puis pousses tels
+  // quels dans le message du marchand et du livreur : sans longueur maximale,
+  // c'etait du texte arbitraire envoye a un numero tiers au nom de la boutique.
+  const borne = (v: unknown, max: number) => String(v ?? '').trim().slice(0, max);
+  const nom = borne(body.nom, 80);
+  const adresse = borne(body.adresse, 300);
+  const instructions = borne(body.instructions, 500);
 
   const sb = getSupabaseAdmin();
   const boutiqueUuid = sb ? await resoudreBoutiqueUuid(sb, m) : null;
@@ -479,7 +466,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     }
   }
 
-  const lignes = await tariferPanier(m, panier, sb, boutiqueUuid);
+  const lignes = await tariferPanier(m, lecture.lignes, sb, boutiqueUuid);
   if (!lignes.length) return Response.json({ error: 'Panier vide' }, { status: 400 });
 
   // ---- Ce qui est demande existe-t-il encore ?
@@ -540,9 +527,67 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     );
   }
 
-  let phone = String(tel || '').replace(/\D/g, '');
-  if (!phone.startsWith('225')) phone = '225' + phone;
-  const order_id = `${prefixeReference(m.id)}-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
+  /**
+   * LES DEUX COMPTEURS DE BOUTIQUE, ICI ET PAS PLUS HAUT.
+   *
+   * Tout ce qui precede a ete verifie : le corps, le panier, le numero, les
+   * horaires, le catalogue, le stock, le minimum. Ce qui arrive ici VA devenir
+   * une commande — c'est donc ici, et seulement ici, qu'on en compte une. Un
+   * abus doit desormais passer par de vraies commandes, que le marchand voit
+   * arriver, au lieu de fermer sa vitrine en silence.
+   *
+   * Le frein par appelant, lui, reste tout en haut : il borne ce que coute la
+   * lecture du catalogue a qui martele la route.
+   */
+  const rafaleBoutique = await fenetreDepassee(
+    `commande:${m.id}`,
+    COMMANDES_PAR_BOUTIQUE,
+    FENETRE_COMMANDES_MS / 1000,
+  );
+  if (rafaleBoutique.depassee) {
+    // Celui-ci est journalise en priorite : une boutique qui atteint ce seuil
+    // est soit en train de tres bien marcher, soit attaquee. Les deux valent
+    // qu'on le sache.
+    console.error(
+      `Commande — seuil de boutique atteint pour « ${m.id} » :`
+        + ` plus de ${COMMANDES_PAR_BOUTIQUE} commandes en ${FENETRE_COMMANDES_MS / 60_000} min.`,
+    );
+    return Response.json(
+      { error: rafaleBoutique.indisponible ? SERVICE_INDISPONIBLE : BOUTIQUE_SATUREE },
+      {
+        // 503 quand le compteur est injoignable : ce n'est pas un refus de
+        // quota, c'est une panne, et l'appelant doit pouvoir les distinguer.
+        status: rafaleBoutique.indisponible ? 503 : 429,
+        headers: { 'Retry-After': String(FENETRE_COMMANDES_MS / 1000) },
+      },
+    );
+  }
+
+  // Le plafond du jour est en base, donc partage entre les instances Vercel :
+  // un abus reparti sur plusieurs instances ne passe que celui-la. Quand le
+  // compteur est injoignable, il refuse — et cela ne coute rien ici, puisque
+  // sans base la commande ne pourrait de toute facon pas etre enregistree.
+  const plafondJour = await plafondJournalierDepasse(`commande:${m.id}`, COMMANDES_PAR_JOUR);
+  if (plafondJour.depasse) {
+    console.error(
+      `Commande — plafond du jour atteint pour « ${m.id} » (${plafondJour.valeur ?? '?'}`
+        + `/${COMMANDES_PAR_JOUR}).`,
+    );
+    return Response.json(
+      { error: plafondJour.indisponible ? SERVICE_INDISPONIBLE : BOUTIQUE_COMPLETE },
+      {
+        status: plafondJour.indisponible ? 503 : 429,
+        headers: { 'Retry-After': String(secondesAvantMinuitAbidjan()) },
+      },
+    );
+  }
+
+  // La forme internationale, celle que la base portait deja pour un numero
+  // bien saisi : rien ne change pour les commandes existantes.
+  const phone = telephone.international;
+  // La forme est fabriquee par `reference.ts`, qui sait aussi la RECONNAITRE :
+  // l'ecran des droits en depend pour savoir que ce numero a ete tape.
+  const order_id = referenceDeVitrine(prefixeReference(m.id));
 
   /**
    * Le jeton qui rend le lien de suivi indevinable.

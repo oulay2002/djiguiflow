@@ -5,6 +5,7 @@ import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import { nomsOngletsParDefaut } from '@/lib/marchands';
 import { cleCanalAccepte, cleCanalRefuse, cleCanalSlugInconnu } from '@/lib/compteurCanal';
 import { compterJournalier } from '@/lib/limiteur';
+import { motifExact } from '@/lib/reference';
 
 export const dynamic = 'force-dynamic';
 
@@ -108,7 +109,9 @@ export async function GET(req: Request) {
     if (!data) {
       data = await chercher(
         'nom',
-        sb.from('boutiques').select('*').ilike('nom', `%${slug}%`).maybeSingle(),
+        // Echappe : `%`, `_` et `*` venus du chemin du webhook resolvaient
+        // sinon une boutique sur un simple fragment de son nom.
+        sb.from('boutiques').select('*').ilike('nom', `%${motifExact(slug)}%`).maybeSingle(),
       );
     }
   } catch {

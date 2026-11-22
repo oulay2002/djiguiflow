@@ -180,7 +180,20 @@ function detenuSurCommande(c: {
  * montrer trois commandes sur cinq, ou pire annoncer « rien à votre nom » sur
  * une panne, serait une réponse fausse à une question de droit.
  */
-export async function rassemblerDossier(sb: Sb, telephone: string): Promise<Dossier> {
+export async function rassemblerDossier(
+  sb: Sb,
+  telephone: string,
+  /**
+   * LA SEULE COMMANDE PROUVÉE, quand le numéro n'est pas attesté.
+   *
+   * Sans elle, on rassemble par numéro — ce qui n'est permis qu'à celui dont le
+   * numéro est attesté par WhatsApp (voir `telephoneAtteste`). Avec elle, on ne
+   * lit QUE cette commande, et rien de ce qui se cherche par numéro : ni
+   * paniers, ni relances, ni refus, ni demandes antérieures. Un numéro tapé
+   * n'ouvre pas ce qu'un autre a laissé sous le même numéro.
+   */
+  seule?: { reference: string },
+): Promise<Dossier> {
   const motif = motifNumero(telephone);
   if (!motif) {
     throw new Error('Numéro inexploitable : impossible de constituer un dossier.');
@@ -190,15 +203,19 @@ export async function rassemblerDossier(sb: Sb, telephone: string): Promise<Doss
     throw new Error(`Lecture impossible (${quoi}) : ${message}`);
   };
 
-  const cmd = await sb
+  let lecture = sb
     .from('commandes')
     .select(
       'id, reference, created_at, statut, client_nom, client_telephone,'
       + ' client_adresse, instructions, latitude, chat_id, boutiques(nom)',
     )
-    .ilike('client_telephone', motif)
-    .order('created_at', { ascending: false })
-    .limit(500);
+    .ilike('client_telephone', motif);
+
+  // La référence est unique sur toute la plateforme : ce filtre ramène une
+  // ligne. Le motif du numéro reste posé par-dessus, par prudence.
+  if (seule) lecture = lecture.eq('reference', seule.reference);
+
+  const cmd = await lecture.order('created_at', { ascending: false }).limit(500);
   if (cmd.error) echoue('commandes', cmd.error.message);
 
   type Brute = {
@@ -222,6 +239,38 @@ export async function rassemblerDossier(sb: Sb, telephone: string): Promise<Doss
   const idsCommandes = miennes.map((c) => c.id);
   const idsCommandesCloses = miennes.filter((c) => commandeClose(c.statut)).map((c) => c.id);
 
+  // Les avis passent par la commande : `livraisons` ne porte aucun numéro. Ils
+  // sont donc lus dans les deux portées.
+  const lireAvis = async (): Promise<number> => {
+    if (!idsCommandes.length) return 0;
+    const av = await sb
+      .from('livraisons')
+      .select('id, commentaire_client, note_client')
+      .in('commande_id', idsCommandes)
+      .limit(500);
+    if (av.error) echoue('avis de livraison', av.error.message);
+    return (av.data ?? []).filter(
+      (l) => String(l.commentaire_client ?? '').trim() || l.note_client !== null,
+    ).length;
+  };
+
+  // TOUT CE QUI SUIT SE CHERCHE PAR NUMÉRO. Avec une portée réduite à une
+  // commande, on s'arrête ici : rien de ce qui est rangé sous un numéro
+  // seulement SAISI ne sort.
+  if (seule) {
+    return {
+      telephone,
+      commandes,
+      idsCommandes,
+      idsCommandesCloses,
+      paniers: 0,
+      relances: 0,
+      refusDemarchage: [],
+      avisLivraison: await lireAvis(),
+      demandesAnterieures: [],
+    };
+  }
+
   const pan = await sb.from('paniers').select('id, telephone').ilike('telephone', motif).limit(500);
   if (pan.error) echoue('paniers', pan.error.message);
   const paniers = (pan.data ?? []).filter((p) => memeNumero(p.telephone, telephone));
@@ -236,19 +285,7 @@ export async function rassemblerDossier(sb: Sb, telephone: string): Promise<Doss
   if (stop.error) echoue('refus de démarchage', stop.error.message);
   const refus = (stop.data ?? []).filter((s) => memeNumero(s.telephone, telephone));
 
-  // Les avis passent par la commande : `livraisons` ne porte aucun numéro.
-  let avisLivraison = 0;
-  if (idsCommandes.length) {
-    const av = await sb
-      .from('livraisons')
-      .select('id, commentaire_client, note_client')
-      .in('commande_id', idsCommandes)
-      .limit(500);
-    if (av.error) echoue('avis de livraison', av.error.message);
-    avisLivraison = (av.data ?? []).filter(
-      (l) => String(l.commentaire_client ?? '').trim() || l.note_client !== null,
-    ).length;
-  }
+  const avisLivraison = await lireAvis();
 
   const dem = await sb
     .from('demandes_droits')
@@ -276,6 +313,12 @@ export async function rassemblerDossier(sb: Sb, telephone: string): Promise<Doss
 }
 
 export type BilanEffacement = {
+  /**
+   * Ce que la preuve ouvrait. Écrit dans `demandes_droits.detail` : c'est là
+   * que la tâche nocturne le relit pour reprendre une demande restée ouverte
+   * SANS l'élargir au numéro entier.
+   */
+  portee: 'numero' | 'commande';
   commandesAnonymisees: number;
   paniersSupprimes: number;
   relancesSupprimees: number;
@@ -302,10 +345,23 @@ export type BilanEffacement = {
  * nouveau dès demain. On garde le strict nécessaire pour tenir parole, et
  * l'écran le lui dit avant qu'elle ne décide.
  */
-export async function effacerDossier(sb: Sb, telephone: string): Promise<BilanEffacement> {
-  const dossier = await rassemblerDossier(sb, telephone);
+export async function effacerDossier(
+  sb: Sb,
+  telephone: string,
+  /**
+   * La même borne que `rassemblerDossier`, et pour la même raison : ce que
+   * l'écran a montré est ce que l'effacement retire, ni plus ni moins. Avec
+   * elle, ni paniers, ni relances, ni liste des refus ne sont touchés — ils se
+   * cherchent par numéro, et ce numéro n'a été que saisi. Sans cela, commander
+   * au numéro d'un tiers suffisait à l'inscrire sur la liste des refus de
+   * toutes ses boutiques et à faire anonymiser tout son historique.
+   */
+  seule?: { reference: string },
+): Promise<BilanEffacement> {
+  const dossier = await rassemblerDossier(sb, telephone, seule);
 
   const bilan: BilanEffacement = {
+    portee: seule ? 'commande' : 'numero',
     commandesAnonymisees: 0,
     paniersSupprimes: 0,
     relancesSupprimees: 0,
@@ -369,6 +425,10 @@ export async function effacerDossier(sb: Sb, telephone: string): Promise<BilanEf
     if (maj.error) echoue('commandes', maj.error.message);
     bilan.commandesAnonymisees = (maj.data ?? []).length;
   }
+
+  // Portée réduite à une commande : on s'arrête là. Tout ce qui suit se cherche
+  // par numéro.
+  if (seule) return bilan;
 
   // ---- 4. Paniers et relances : supprimés.
   if (motif) {

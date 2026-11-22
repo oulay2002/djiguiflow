@@ -18,9 +18,24 @@ const origineSupabaseWs = origineSupabase.replace(/^https:/, 'wss:');
  *
  * La session du marchand vit dans des cookies lisibles par JavaScript :
  * l'architecture l'impose, puisque les pages interrogent Supabase depuis le
- * navigateur en s'appuyant sur RLS. Cette politique est donc LA barriere
- * contre le vol de session par XSS — et tant qu'elle etait en `Report-Only`,
- * cette barriere n'existait pas.
+ * navigateur en s'appuyant sur RLS. Cette politique reduit donc ce qu'une XSS
+ * peut atteindre — et tant qu'elle etait en `Report-Only`, elle ne reduisait
+ * rien.
+ *
+ * ── CE QU'ELLE N'ARRETE PAS, ET IL NE FAUT PAS COMPTER DESSUS ──────────────
+ *
+ * Ce commentaire disait « LA barriere contre le vol de session ». C'ETAIT FAUX,
+ * et l'audit du 22 novembre 2026 l'a corrige : `script-src` porte
+ * `'unsafe-inline'`, donc un script INJECTE dans la page s'execute. Il peut
+ * alors se servir de la session sur place (Supabase est autorise) ou l'emporter
+ * par une simple navigation, qu'aucune directive ne couvre.
+ *
+ * La vraie barriere est L'ABSENCE DE POINT D'INJECTION : l'echappement de
+ * React, et `src/lib/jsonLd.ts` pour les deux seuls `dangerouslySetInnerHTML`
+ * du depot. Tout nouveau rendu de HTML brut retire cette barriere, et cette
+ * politique ne la remplacera pas. La fermer vraiment demande un nonce par
+ * requete et `'strict-dynamic'` poses par `proxy.ts` — ce qui impose le rendu
+ * dynamique partout : un chantier, pas un correctif.
  *
  * ── CE QUI A DECIDE DU BASCULEMENT ─────────────────────────────────────────
  *

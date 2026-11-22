@@ -69,7 +69,7 @@ jobs:
         with:
           node-version: '24'
 
-      - uses: supabase/setup-cli@v1
+      - uses: supabase/setup-cli@1dedf2c611547ede7232d26866dd3c56ab903bbb # v1.7.3 — epingle par commit : ce travail detient le jeton de compte Supabase, et une etiquette se deplace
         with:
           # UNE VERSION FIXE, PAS « latest ».
           #

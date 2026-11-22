@@ -62,6 +62,39 @@ export async function POST(req: Request) {
   const marchand = await resoudreMarchand(slug);
   if (!marchand) return NextResponse.json({ error: 'Marchand introuvable' }, { status: 404 });
 
+  /**
+   * LES FRAIS NE S'ANNONCENT QUE DEPUIS LE GROUPE DES LIVREURS.
+   *
+   * La regle « Frais tapes » du routeur Telegram ne regardait que la FORME du
+   * message : une reponse chiffree a un texte contenant « Commande <ref> ». Elle
+   * ne verifiait ni QUI ecrivait, ni OU : l'annonce des frais n'etait donc pas
+   * reservee aux livreurs. Trouve a l'audit du 22 novembre 2026.
+   *
+   * Le workflow transmet desormais `groupe` : l'identifiant de la conversation
+   * d'ou vient le message. Il doit etre celui du groupe des livreurs de CETTE
+   * boutique. La comparaison est faite ICI plutot que dans le seul aiguilleur :
+   * une condition de workflow se modifie d'un clic, sans relecture.
+   *
+   * ABSENT, IL EST ENCORE TOLERE — et c'est un ordre de mise en service, pas
+   * une indulgence : exiger le champ avant que le workflow ne l'envoie couperait
+   * l'annonce des frais pour tous les livreurs. n8n d'abord, puis on retire
+   * cette tolerance (voir FRAIS_GROUPE_EXIGE).
+   */
+  const groupe = String(corps.groupe ?? '').trim();
+  const groupeAttendu = String(marchand.groupeLivreurs ?? '').trim();
+
+  if (groupe) {
+    if (!groupeAttendu || groupe !== groupeAttendu) {
+      console.error(
+        `Frais — REFUS (${reference}) : annonce venue d'une conversation qui n'est pas`
+        + ` le groupe des livreurs de « ${slug} ».`,
+      );
+      return NextResponse.json({ ok: true, etat: 'hors_groupe' }, { status: 403 });
+    }
+  } else if (process.env.FRAIS_GROUPE_EXIGE === '1') {
+    return NextResponse.json({ error: 'groupe requis' }, { status: 400 });
+  }
+
   const sb = getSupabaseAdmin();
   if (!sb) return NextResponse.json({ error: 'Base indisponible' }, { status: 503 });
 

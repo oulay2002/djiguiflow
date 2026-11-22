@@ -71,7 +71,13 @@ export async function POST(req: Request) {
 
   let bilan;
   try {
-    bilan = await effacerDossier(sb, preuve.telephone);
+    // La même portée que la consultation : ce que l'écran a montré est ce que
+    // l'effacement retire.
+    bilan = await effacerDossier(
+      sb,
+      preuve.telephone,
+      preuve.portee === 'commande' ? { reference: preuve.reference } : undefined,
+    );
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e);
     console.error('Droits — effacement interrompu :', message);
@@ -89,7 +95,7 @@ export async function POST(req: Request) {
       reference: preuve.reference,
       preuve: preuve.moyen,
       statut: 'refusee',
-      detail: { erreur: message },
+      detail: { erreur: message, portee: preuve.portee },
     });
 
     return Response.json(

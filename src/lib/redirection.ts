@@ -23,9 +23,26 @@ export function cheminInterneSur(
 	// navigateurs normalisent `/\` en `//`. Les deux sortent du site.
 	if (valeur.startsWith('//') || valeur.startsWith('/\\')) return defaut;
 
-	// Un retour a la ligne ou un NUL glisse dans un en-tete Location permet
-	// d'y injecter une seconde directive.
-	if (/[\r\n\0]/.test(valeur)) return defaut;
+	// AUCUN CARACTERE DE CONTROLE, AUCUN ANTISLASH, NULLE PART.
+	//
+	// La liste ne nommait que `\r`, `\n` et `\0` — ceux qui injectent dans un
+	// en-tete. Elle oubliait la TABULATION, et l'analyseur d'URL des navigateurs
+	// la RETIRE avant de lire : `/\t/evil.example` devient `//evil.example`, donc
+	// un autre site. `/login?next=/%09/evil.example` emmenait le marchand chez un
+	// tiers juste apres une authentification reussie. Trouve a l'audit du
+	// 22 novembre 2026. Enumerer les caracteres dangereux ne tient pas : on
+	// refuse toute la plage de controle.
+	if (/[\u0000-\u001f\u007f\\]/.test(valeur)) return defaut;
+
+	// LA PREUVE, PLUTOT QUE LA LISTE. On laisse l'analyseur d'URL — celui-la
+	// meme que le navigateur appliquera — dire ou mene la cible. Si elle sort de
+	// l'origine de reference, elle est refusee, quelle que soit l'astuce.
+	try {
+		const base = 'https://interne.invalid';
+		if (new URL(valeur, base).origin !== base) return defaut;
+	} catch {
+		return defaut;
+	}
 
 	return valeur;
 }

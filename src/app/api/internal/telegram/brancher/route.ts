@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
-import { brancherBotTelegram, urlWebhookTelegram } from '@/lib/telegramBranchement';
+import {
+  brancherBotTelegram,
+  URL_ROUTEUR_TELEGRAM,
+  urlWebhookTelegram,
+} from '@/lib/telegramBranchement';
 import { DELAI_MESSAGE, delai } from '@/lib/reseau';
 
 export const dynamic = 'force-dynamic';
@@ -90,6 +94,23 @@ export async function POST(req: Request) {
   const url = String(corps.url ?? '').trim() || urlWebhookTelegram(slug);
   if (!/^https:\/\/\S+$/.test(url)) {
     return NextResponse.json({ error: 'url https requise' }, { status: 400 });
+  }
+
+  // LE WEBHOOK D'UN BOT NE POINTE QUE VERS NOTRE ROUTEUR. `url` etait libre :
+  // le porteur du secret partage pouvait rediriger vers son propre serveur
+  // TOUS les messages qu'un bot de marchand recoit — commandes, adresses,
+  // numeros. La surcharge reste utile pour changer de chemin, pas d'hote.
+  let memeHote = false;
+  try {
+    memeHote = new URL(url).host === new URL(URL_ROUTEUR_TELEGRAM).host;
+  } catch {
+    memeHote = false;
+  }
+  if (!memeHote) {
+    return NextResponse.json(
+      { error: 'url refusée : le webhook ne peut viser que le routeur de la plateforme' },
+      { status: 400 },
+    );
   }
 
   const resultat = await brancherBotTelegram(slug, url);

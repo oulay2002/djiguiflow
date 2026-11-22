@@ -4,8 +4,9 @@ import {
   verdictTelephone,
 } from '@/lib/jetonSuivi';
 import { adresseAppelante, plafondJournalierDepasse, rafaleDepassee } from '@/lib/limiteur';
-import { motifExact, referenceRecevable } from '@/lib/reference';
+import { estReferenceDeVitrine, motifExact, referenceRecevable } from '@/lib/reference';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
+import { memeNumero } from '@/lib/telephone';
 
 /**
  * « Prouvez-moi que c'est bien vous », en un seul endroit.
@@ -28,9 +29,10 @@ import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
  *   - la RÉFÉRENCE d'une commande plus les QUATRE DERNIERS CHIFFRES de son
  *     numéro, bornés à dix essais par jour et par commande.
  *
- * Prouver qu'on maîtrise une commande, c'est prouver qu'on est ce client. Le
- * numéro n'est alors plus une saisie — il est LU sur la commande prouvée. On ne
- * cherche jamais par ce que l'appelant a tapé.
+ * Le numéro n'est jamais une saisie de cet écran — il est LU sur la commande
+ * prouvée. Mais maîtriser une commande ne prouve pas qu'on détient le numéro
+ * qu'elle porte : voir `telephoneAtteste`, qui décide de ce que la preuve
+ * ouvre.
  *
  * ── L'AMPLIFICATION, DITE FRANCHEMENT ──────────────────────────────────────
  *
@@ -54,8 +56,67 @@ export type Preuve =
       reference: string;
       boutiqueId: string;
       moyen: 'jeton' | 'telephone';
+      /**
+       * Ce que la preuve OUVRE. `numero` : tout ce qu'on detient sous ce
+       * telephone, chez tous les marchands. `commande` : la seule commande
+       * prouvee. Voir `telephoneAtteste`.
+       */
+      portee: 'numero' | 'commande';
     }
   | { ok: false; statut: number; message: string; entetes?: Record<string, string> };
+
+/**
+ * Le numéro porté par cette commande est-il ATTESTÉ, ou seulement SAISI ?
+ *
+ * ── LE DÉFAUT QUE CETTE FONCTION FERME ─────────────────────────────────────
+ *
+ * « Prouver qu'on maîtrise une commande, c'est prouver qu'on est ce client » :
+ * la phrase est écrite plus haut, et elle était FAUSSE. Maîtriser une commande
+ * prouve qu'on l'a PASSÉE — rien de plus. Le numéro qu'elle porte, lui, a été
+ * tapé dans la vitrine ou dicté à l'assistante, et personne n'a vérifié qu'il
+ * appartenait à celui qui le donnait.
+ *
+ * Il suffisait donc de commander au numéro d'un voisin. La vitrine rend le
+ * jeton de suivi dans sa réponse ; l'assistante l'envoie dans le lien de
+ * confirmation. Avec ce jeton, cet écran rassemblait TOUTES les commandes du
+ * voisin, chez tous les marchands — références, dates, enseignes — et, comme
+ * l'attaquant connaît par construction les quatre derniers chiffres, `/suivi`
+ * livrait ensuite le nom, l'adresse de domicile et le contenu de chacune.
+ * Puis l'effacement les anonymisait toutes, sous la trace « preuve : jeton ».
+ * Trouvé à l'audit du 22 novembre 2026.
+ *
+ * ── CE QUI ATTESTE UN NUMÉRO ───────────────────────────────────────────────
+ *
+ * Une seule chose, sur cette plateforme : WhatsApp. Quand un client écrit, le
+ * `chat_id` est son numéro, annoncé par l'opérateur de messagerie et posé par
+ * le workflow — jamais par le client, jamais par le modèle. Si le téléphone de
+ * la commande EST ce `chat_id`, alors celui qui a reçu le lien détient bien ce
+ * numéro.
+ *
+ * Trois conditions, toutes nécessaires :
+ *
+ *   - le canal est WhatsApp (un `chat_id` Telegram est un entier arbitraire) ;
+ *   - la référence n'a pas la forme d'une commande de vitrine — celle-ci écrit
+ *     aussi `chat_id = téléphone`, mais avec un téléphone tapé ;
+ *   - le téléphone et le `chat_id` désignent le même abonné.
+ *
+ * ── QUAND CE N'EST PAS ATTESTÉ ─────────────────────────────────────────────
+ *
+ * La preuve reste valable — pour LA commande prouvée, pas pour le numéro. La
+ * personne voit et efface ce que cette commande détient. C'est moins qu'avant
+ * pour un client honnête de la vitrine, et c'est le prix : on ne peut pas
+ * montrer le dossier d'un numéro à quelqu'un qui n'a fait que le taper.
+ */
+export function telephoneAtteste(commande: {
+  reference: unknown;
+  canal: unknown;
+  chat_id: unknown;
+  client_telephone: unknown;
+}): boolean {
+  if (String(commande.canal ?? '').trim().toLowerCase() !== 'whatsapp') return false;
+  if (estReferenceDeVitrine(commande.reference)) return false;
+  return memeNumero(commande.chat_id, commande.client_telephone);
+}
 
 /** Dix minutes, la même fenêtre que la confirmation. */
 const FENETRE_MS = 10 * 60_000;
@@ -140,7 +201,7 @@ export async function prouverClient(
 
   const { data, error } = await sb
     .from('commandes')
-    .select('reference, jeton_suivi, client_telephone, boutique_id')
+    .select('reference, jeton_suivi, client_telephone, boutique_id, canal, chat_id')
     .ilike('reference', motifExact(ref))
     .maybeSingle();
 
@@ -150,6 +211,8 @@ export async function prouverClient(
   }
   if (!data) return introuvable;
 
+  const portee = telephoneAtteste(data) ? ('numero' as const) : ('commande' as const);
+
   const verdictDuJeton = verdictJeton(texte(saisie.jeton), data.jeton_suivi);
   if (verdictDuJeton === 'ok') {
     return {
@@ -158,6 +221,7 @@ export async function prouverClient(
       reference: String(data.reference ?? ''),
       boutiqueId: String(data.boutique_id ?? ''),
       moyen: 'jeton',
+      portee,
     };
   }
 
@@ -203,6 +267,7 @@ export async function prouverClient(
     reference: String(data.reference ?? ''),
     boutiqueId: String(data.boutique_id ?? ''),
     moyen: 'telephone',
+    portee,
   };
 }
 

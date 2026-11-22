@@ -66,10 +66,15 @@ export async function POST(req: Request) {
   }
 
   try {
-    const dossier = await rassemblerDossier(sb, preuve.telephone);
+    // Un numéro seulement SAISI n'ouvre que la commande prouvée.
+    const seule = preuve.portee === 'commande' ? { reference: preuve.reference } : undefined;
+    const dossier = await rassemblerDossier(sb, preuve.telephone, seule);
 
     return Response.json({
       numero: numeroMasque(preuve.telephone),
+      // L'écran le DIT : montrer une commande en laissant croire que c'est
+      // tout ce qu'on détient serait une réponse fausse à une question de droit.
+      portee: preuve.portee,
       commandes: dossier.commandes,
       paniers: dossier.paniers,
       relances: dossier.relances,
