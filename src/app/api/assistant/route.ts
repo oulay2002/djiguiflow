@@ -58,6 +58,10 @@ const SYSTEM_PROMPT =
 function sanitizeMessages(messages: IncomingMessage[]): IncomingMessage[] {
   const bornes = messages
     .filter((message) => typeof message.content === 'string' && message.content.trim().length > 0)
+    // DEUX ROLES, PAS UN DE PLUS. Le role etait recopie tel quel : un visiteur
+    // pouvait donc envoyer un message `system` et remplacer la consigne de
+    // l'assistant officiel par la sienne.
+    .filter((message) => message.role === 'user' || message.role === 'assistant')
     .slice(-12)
     .map((message) => ({
       role: message.role,

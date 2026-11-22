@@ -34,10 +34,42 @@ const MANGUE = '#e9a23b';
  * de taille, et on s'en passe au moindre doute. Une image sans photo reste une
  * bonne image ; une image absente n'est rien.
  */
+/** L'adresse designe-t-elle un objet PUBLIC de notre stockage Supabase ? */
+function photoDuStockage(url: string): boolean {
+  const base = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!base) return false;
+  try {
+    const cible = new URL(url);
+    const stockage = new URL(base);
+    return (
+      cible.protocol === 'https:'
+      && cible.host === stockage.host
+      && cible.pathname.startsWith('/storage/v1/object/public/')
+    );
+  } catch {
+    return false;
+  }
+}
+
 async function chargerPhoto(url: string | undefined): Promise<string | null> {
   if (!url) return null;
+
+  // ON NE VA CHERCHER QUE DANS NOTRE PROPRE STOCKAGE.
+  //
+  // `photo_url` est un champ LIBRE, saisi par le marchand, et cette route est
+  // publique. Tel quel, le serveur allait chercher n'importe quelle adresse
+  // qu'un compte inscrit avait ecrite sur un de ses articles — un relais de
+  // requetes depuis notre infrastructure, redirections suivies. Trouve a
+  // l'audit du 22 novembre 2026.
+  //
+  // Une photo hebergee ailleurs ne s'affiche de toute facon pas sur la vitrine
+  // (la politique de contenu ne laisse passer que le stockage) : la refuser ici
+  // n'enleve donc rien a personne. Et `redirect: 'error'`, sinon une adresse
+  // admise suffirait a rebondir vers une qui ne l'est pas.
+  if (!photoDuStockage(url)) return null;
+
   try {
-    const r = await fetch(url, { signal: AbortSignal.timeout(6000) });
+    const r = await fetch(url, { signal: AbortSignal.timeout(6000), redirect: 'error' });
     if (!r.ok) return null;
     const type = r.headers.get('content-type') ?? '';
     if (!type.startsWith('image/')) return null;

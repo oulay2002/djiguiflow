@@ -199,12 +199,25 @@ async function chargerMarchands(forcer = false): Promise<Record<string, Marchand
 
   const dict: Record<string, Marchand> = {};
 
-  // Deux passes, et l'ordre compte. Les slugs d'abord, pour qu'aucun alias ne
-  // puisse prendre la place d'une boutique existante ; les alias ensuite, et
-  // seulement la ou la cle est encore libre.
+  // TROIS passes, et l'ordre compte.
+  //
+  // L'UUID D'ABORD, ET RIEN NE LE DELOGE. C'est la seule cle qu'un marchand ne
+  // choisit pas. Elle n'etait qu'un alias, pose apres les slugs : or le slug
+  // etait ecrit librement par son proprietaire, et celui qui prenait pour slug
+  // l'uuid d'une AUTRE boutique recevait a sa place tout ce qui lui etait
+  // adresse par uuid — sa vitrine, ses commandes, le nom et l'adresse de ses
+  // clients. Trouve a l'audit du 22 novembre 2026. La base refuse desormais un
+  // slug de cette forme ; ce registre ne s'en remet pas a elle.
+  for (const m of base) {
+    if (m.boutiqueId) dict[m.boutiqueId] = m;
+  }
+
+  // Les slugs ensuite, pour qu'aucun alias ne puisse prendre la place d'une
+  // boutique existante ; les alias enfin, et seulement la ou la cle est
+  // encore libre.
   for (const m of base) {
     const cle = clePrincipale(m);
-    if (cle) dict[cle] = m;
+    if (cle && !dict[cle]) dict[cle] = m;
   }
 
   for (const m of base) {

@@ -74,3 +74,35 @@ export function referenceRecevable(valeur: unknown): boolean {
 export function motifExact(valeur: string): string {
   return valeur.replace(/[\\%_*]/g, (c) => `\\${c}`);
 }
+
+/**
+ * La reference d'une commande prise SUR LA VITRINE.
+ *
+ * ── POURQUOI LA FABRIQUE ET SON DETECTEUR VIVENT ENSEMBLE ──────────────────
+ *
+ * Une commande de vitrine porte un numero que le visiteur a TAPE : rien ne
+ * prouve qu'il est le sien. Or son jeton de suivi lui est rendu dans la
+ * reponse. Tant que l'ecran des droits tenait ce jeton pour la preuve « je suis
+ * ce numero », il suffisait de commander au numero d'un voisin pour lire la
+ * liste de ses commandes chez tous les marchands — puis les faire effacer.
+ * Trouve a l'audit du 22 novembre 2026.
+ *
+ * `preuveClient` doit donc reconnaitre une commande de vitrine, et la base n'a
+ * pas de colonne qui le dise (`canal` dit comment JOINDRE le client, pas d'ou
+ * vient la commande). C'est la FORME de la reference qui le dit — et une forme
+ * dont dependent un droit et une fuite ne peut pas etre ecrite a un endroit et
+ * devinee a un autre. Les deux fonctions sont ici, et un test les tient
+ * accordees.
+ *
+ * Le detecteur se trompe du bon cote : une reference qu'il prend a tort pour
+ * une commande de vitrine RESTREINT ce que l'ecran montre, jamais l'inverse.
+ */
+export function referenceDeVitrine(prefixe: string): string {
+  return `${prefixe}-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
+}
+
+const FORME_VITRINE = /^[A-Za-z0-9]{1,3}-\d{13}-\d{1,4}$/;
+
+export function estReferenceDeVitrine(reference: unknown): boolean {
+  return FORME_VITRINE.test(String(reference ?? '').trim());
+}

@@ -116,6 +116,18 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true, accepte: false });
   }
 
+  // UN MONTANT INCONNU N'EST PAS UN MONTANT JUSTE. Le controle ci-dessous ne
+  // jouait que si le prestataire rendait un montant : `null` le SAUTAIT, et le
+  // paiement ouvrait l'acces sans que personne n'ait compare quoi que ce soit.
+  // Meme regle que `encaissement.ts` : dans le doute, on laisse en attente et
+  // le prestataire reessaie — on n'ouvre pas, on ne refuse pas.
+  if (verdict.montant === null) {
+    console.error(
+      `Paiement ${reference} — accepte mais montant inconnu. Laisse en attente.`,
+    );
+    return NextResponse.json({ error: 'Montant non confirmé.' }, { status: 503 });
+  }
+
   // Le montant encaisse doit etre celui qu'on a demande. Sans ce controle, une
   // transaction de 100 FCFA ouvrirait les droits d'un plan a 25 000 : il suffit
   // de savoir forger une reference et de payer une piece.

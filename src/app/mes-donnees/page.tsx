@@ -64,6 +64,8 @@ type Dossier = {
    */
   efface?: boolean;
   numero: string | null;
+  /** `commande` : le serveur n'a ouvert que la commande prouvee. */
+  portee?: 'numero' | 'commande';
   commandes: Commande[];
   paniers: number;
   relances: number;
@@ -693,6 +695,24 @@ function Ecran() {
               <Compteur libelle="Relances reçues" valeur={dossier.relances} />
               <Compteur libelle="Avis de livraison" valeur={dossier.avisLivraison} />
             </dl>
+
+            {/*
+              ON DIT CE QUE L'ECRAN NE MONTRE PAS.
+              Un numero tape dans la vitrine n'est pas la preuve qu'il est a
+              celui qui l'a tape : le serveur n'ouvre alors que la commande
+              prouvee. Montrer cette seule commande sous le titre « Votre
+              dossier » sans rien ajouter laisserait croire que c'est tout ce
+              qu'on detient — une reponse fausse a une question de droit. Et on
+              indique le chemin qui, lui, ouvre tout.
+            */}
+            {dossier.portee === 'commande' && (
+              <p className="mt-4 text-sm text-chaux-600">
+                Cet écran ne montre que la commande dont vous avez donné la référence : le
+                numéro qu’elle porte a été saisi, et rien ne nous prouve qu’il est le vôtre.
+                Pour voir tout ce que nous détenons sous ce numéro, ouvrez le lien reçu sur
+                WhatsApp pour une commande passée par message, ou écrivez-nous.
+              </p>
+            )}
 
             {dossier.refusDemarchage.length > 0 && (
               <p className="mt-4 text-sm text-chaux-600">

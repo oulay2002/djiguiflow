@@ -236,8 +236,11 @@ export async function sonderInitialisation(
   const url = urlSurchargee?.trim() || `${BASE}/payment`;
 
   let hote = '';
+  let protocole = '';
   try {
-    hote = new URL(url).hostname;
+    const lue = new URL(url);
+    hote = lue.hostname;
+    protocole = lue.protocol;
   } catch {
     return {
       urlAppelee: url,
@@ -246,6 +249,31 @@ export async function sonderInitialisation(
       statutHttp: null,
       corpsBrut: null,
       erreurReseau: 'URL invalide.',
+    };
+  }
+
+  /**
+   * LA SONDE NE PARLE QU'A CINETPAY.
+   *
+   * L'URL surchargeable sert a « essayer un autre hote » — mais le corps de la
+   * requete porte `apikey` et `site_id`. Sans cette borne, quiconque detenait
+   * le secret partage des routes internes n'avait qu'a nommer SON serveur pour
+   * recevoir les identifiants de paiement en clair : un secret de plomberie
+   * s'elevait en cle d'encaissement. C'etait aussi une requete sortante vers
+   * n'importe quel hote, depuis le serveur. Trouve a l'audit du
+   * 22 novembre 2026.
+   *
+   * « Un autre hote » veut dire un autre hote DE CINETPAY, en https.
+   */
+  const hoteCinetpay = hote === 'cinetpay.com' || hote.endsWith('.cinetpay.com');
+  if (protocole !== 'https:' || !hoteCinetpay) {
+    return {
+      urlAppelee: url,
+      dns: 'non interroge',
+      envoye: {},
+      statutHttp: null,
+      corpsBrut: null,
+      erreurReseau: 'Hôte refusé : la sonde n’interroge que https://*.cinetpay.com.',
     };
   }
 
@@ -293,6 +321,9 @@ export async function sonderInitialisation(
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(charge),
+      // Une redirection 307/308 rejouerait le corps — donc les identifiants —
+      // vers l'hote de destination, hors de la borne posee plus haut.
+      redirect: 'error',
     });
   } catch (e) {
     return {

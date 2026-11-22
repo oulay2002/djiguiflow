@@ -238,7 +238,7 @@ export async function POST(req: Request) {
   {
     const { data, error } = await sb
       .from('demandes_droits')
-      .select('id, telephone')
+      .select('id, telephone, reference, detail')
       .eq('type', 'effacement')
       .eq('statut', 'recue')
       .limit(100);
@@ -248,7 +248,17 @@ export async function POST(req: Request) {
       for (const d of data) {
         if (essai) { fait.effacements += 1; continue; }
         try {
-          const bilan = await effacerDossier(sb, String(d.telephone));
+          // LA REPRISE GARDE LA PORTÉE DE LA DEMANDE. Une demande prouvée sur
+          // un numéro seulement saisi ne vaut que pour SA commande : la
+          // reprendre par numéro ferait, la nuit, exactement l'effacement
+          // élargi que la route refuse le jour.
+          const restreinte =
+            (d.detail as { portee?: unknown } | null)?.portee === 'commande' && d.reference;
+          const bilan = await effacerDossier(
+            sb,
+            String(d.telephone),
+            restreinte ? { reference: String(d.reference) } : undefined,
+          );
           if (bilan.commandesEnCours > 0) continue;
 
           const { error: errMaj } = await sb

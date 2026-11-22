@@ -49,3 +49,20 @@ export function filtreAppariementChat(chatId: string): string {
   if (!cle) return exact;
   return `${exact},chat_cle.eq.${citer(cle)}`;
 }
+
+/**
+ * La MEME regle que `filtreAppariementChat`, pour deux valeurs deja en main.
+ *
+ * Egalite stricte, ou memes huit derniers chiffres quand les deux ont la forme
+ * d'un telephone ivoirien. Elle vit ici pour ne pas diverger du filtre : une
+ * commande que la base tiendrait pour celle du client et que le code tiendrait
+ * pour celle d'un autre — ou l'inverse — serait pire que l'absence de regle.
+ */
+export function memeChat(a: unknown, b: unknown): boolean {
+  const x = String(a ?? '').trim();
+  const y = String(b ?? '').trim();
+  if (!x || !y) return false;
+  if (x === y) return true;
+  const cle = cleAppariement(x);
+  return cle !== '' && cle === cleAppariement(y);
+}

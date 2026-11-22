@@ -140,7 +140,7 @@ création.
 
 Preuve, exécution `2597` :
 ```
-Trouver la commande   → phone: 140216907        (0 initial déjà perdu : stocké en nombre)
+Trouver la commande   → phone: 0700000000        (0 initial déjà perdu : stocké en nombre)
 Préparer données      → phone absent            (le nœud ne le transmet pas)
 Corriger téléphone    → phone: "0000000000"     (fallback appliqué)
 ```
@@ -189,7 +189,7 @@ retourne `[{json:{...}}]` alors qu'un Code Tool doit retourner une **string** �
 « Wrong output type returned ».
 
 ### B18 — Perte du `0` initial des numéros ivoiriens
-`chat_id: Number($json.phone) || 0` dans `Commande App` : `"0140216907"` → `140216907`.
+`chat_id: Number($json.phone) || 0` dans `Commande App` : `"0700000000"` → `0700000000`.
 Confirmé en base (exécution `2597`).
 
 ### B19 — `padStart` sur `undefined`
