@@ -45,6 +45,7 @@ const FICHE: FicheVitrine = {
   logo: '',
   ouvert: true,
   messageHoraire: null,
+  horaires: null,
   fiche: {
     zone: 'Cocody',
     delai_livraison: '30',

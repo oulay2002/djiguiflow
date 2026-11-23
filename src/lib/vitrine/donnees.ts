@@ -44,6 +44,12 @@ export type FicheVitrine = {
   ouvert: boolean;
   messageHoraire: string | null;
   /**
+   * Les horaires tels que le marchand les a saisis, ou `null` s'il n'en a pas.
+   * Ils servent aux donnees structurees : `ouvert` ne dit que l'instant
+   * present, un moteur veut la semaine. Deja publics — la vitrine les annonce.
+   */
+  horaires: unknown;
+  /**
    * `null` quand la fiche n'a pas pu etre lue : la page se tait alors, au lieu
    * d'annoncer des valeurs par defaut que le marchand n'a pas choisies.
    */
@@ -100,6 +106,7 @@ export async function chargerFicheBoutique(id: string): Promise<FicheVitrine | n
   let ouvert = true;
   let messageHoraire: string | null = null;
   let fiche: FicheVitrine['fiche'] = null;
+  let horaires: unknown = null;
 
   const sb = getSupabaseAdmin();
   if (sb) {
@@ -115,6 +122,7 @@ export async function chargerFicheBoutique(id: string): Promise<FicheVitrine | n
         const etat = etatBoutique(data?.horaires, new Date(), data?.pause_jusqua);
         ouvert = etat.ouvert;
         messageHoraire = etat.message;
+        horaires = data?.horaires ?? null;
 
         if (data) {
           fiche = {
@@ -153,6 +161,7 @@ export async function chargerFicheBoutique(id: string): Promise<FicheVitrine | n
     logo: m.logo,
     ouvert,
     messageHoraire,
+    horaires,
     fiche,
   };
 }

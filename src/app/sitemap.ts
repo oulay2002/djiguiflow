@@ -53,7 +53,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // plateforme cache. La boutique de demonstration y figurait, et le jour ou
     // un marchand part, sa page lui aurait survecu dans les resultats.
     boutiques = (await listerMarchands())
-      .filter((m) => m.actif)
+      // Une boutique de demonstration reste en ligne sans etre soumise.
+      .filter((m) => m.actif && m.indexable !== false)
       .map((m) => ({
       url: `${SITE_URL}/boutiques/${m.id}`,
       lastModified: maintenant,
