@@ -416,7 +416,7 @@ export default function GuideBrancherPage() {
             >
               <p>
                 Indiquez d’abord le numéro WhatsApp auquel vos clients écrivent, au format
-                international sans le plus — <Val>2250759486701</Val>. Collez ensuite le
+                international sans le plus — <Val>2250700000000</Val>. Collez ensuite le
                 jeton de votre bot dans le champ Telegram.
               </p>
               <p className="text-sm text-nuit-600">
@@ -449,7 +449,7 @@ export default function GuideBrancherPage() {
                 legende="En privé, avec VOTRE bot"
                 lignes={[
                   ['moi', 'ID'],
-                  ['lui', '🆔 Identifiant de cette conversation : 1724402569'],
+                  ['lui', '🆔 Identifiant de cette conversation : 123456789'],
                 ]}
               />
             </Etape>

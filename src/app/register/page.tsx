@@ -93,7 +93,7 @@ export default function RegisterPage() {
       return;
     }
 
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email: formData.email,
       password: formData.password,
       options: {
@@ -108,6 +108,23 @@ export default function RegisterPage() {
 
     if (error) {
       setError(error.message);
+    } else if (data.session) {
+      /**
+       * LE COMPTE EST DEJA OUVERT : ON Y EMMENE LE MARCHAND.
+       *
+       * La confirmation d'adresse est desactivee : `signUp` rend alors une
+       * SESSION, le marchand est connecte. La page lui disait pourtant
+       * « Ouvrez votre email pour confirmer votre adresse » — un message
+       * qu'aucun email ne suit. Il attendait un courrier qui ne partait pas,
+       * devant un formulaire reste plein, alors que son tableau de bord
+       * l'attendait. Trouve en jouant le parcours d'inscription le
+       * 23 novembre 2026.
+       *
+       * On juge sur la REPONSE, pas sur le reglage : si la confirmation est
+       * reactivee un jour, `session` sera nul et l'autre branche dira vrai.
+       */
+      window.location.href = '/dashboard';
+      return;
     } else {
       setSuccess('Compte créé. Ouvrez votre email pour confirmer votre adresse.');
     }
