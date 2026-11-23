@@ -1,5 +1,6 @@
 import type { MetadataRoute } from 'next';
 import { listerMarchands } from '@/lib/marchands';
+import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import { documentsPubliables } from '@/lib/legal';
 import { SITE_URL } from '@/lib/site';
 
@@ -9,18 +10,45 @@ import { SITE_URL } from '@/lib/site';
 export const revalidate = 3600;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const maintenant = new Date();
+  /**
+   * UNE DATE VRAIE, OU PAS DE DATE.
+   *
+   * Chaque page portait, comme date de modification, l'heure de generation du
+   * fichier. Toutes les pages « modifiees » a la meme seconde, a chaque
+   * passage : un moteur qui constate qu'une date ment cesse de la lire, pour
+   * tout le site. Mieux vaut ne rien declarer que declarer faux.
+   *
+   * Pour une boutique, on connait une vraie date : celle de son dernier
+   * article ajoute. Elle sous-estime (un prix corrige ne la change pas), ce
+   * qui est sans consequence ; elle ne surestime jamais.
+   */
+  const dernierArticle = new Map<string, Date>();
+  try {
+    const sb = getSupabaseAdmin();
+    if (sb) {
+      const { data } = await sb
+        .from('produits')
+        .select('boutique_id, created_at')
+        .order('created_at', { ascending: false })
+        .limit(2000);
+      for (const p of data ?? []) {
+        if (p.boutique_id && p.created_at && !dernierArticle.has(p.boutique_id)) {
+          dernierArticle.set(p.boutique_id, new Date(p.created_at));
+        }
+      }
+    }
+  } catch (e) {
+    console.error('Sitemap : dates des articles illisibles :', e);
+  }
 
   const pagesFixes: MetadataRoute.Sitemap = [
     {
       url: `${SITE_URL}/`,
-      lastModified: maintenant,
       changeFrequency: 'weekly',
       priority: 1,
     },
     {
       url: `${SITE_URL}/boutiques`,
-      lastModified: maintenant,
       changeFrequency: 'daily',
       priority: 0.9,
     },
@@ -36,7 +64,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       //
       // `monthly` : elle change avec le produit, pas avec le catalogue.
       url: `${SITE_URL}/aide/brancher`,
-      lastModified: maintenant,
       changeFrequency: 'monthly',
       priority: 0.7,
     },
@@ -57,7 +84,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       .filter((m) => m.actif && m.indexable !== false)
       .map((m) => ({
       url: `${SITE_URL}/boutiques/${m.id}`,
-      lastModified: maintenant,
+      // La date du dernier article ajoute, quand on la connait. Sinon RIEN.
+      ...(dernierArticle.get(m.boutiqueId) ? { lastModified: dernierArticle.get(m.boutiqueId) } : {}),
       changeFrequency: 'daily' as const,
       priority: 0.8,
     }));
@@ -82,13 +110,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       legal = [
         {
           url: `${SITE_URL}/legal`,
-          lastModified: maintenant,
           changeFrequency: 'yearly' as const,
           priority: 0.3,
         },
         ...publiables.map((doc) => ({
           url: `${SITE_URL}/legal/${doc.slug}`,
-          lastModified: maintenant,
           changeFrequency: 'yearly' as const,
           priority: 0.3,
         })),
