@@ -21,6 +21,7 @@ import { secretWebhookN8n } from '@/lib/secretN8n';
 import { DELAI_WEBHOOK, delai } from '@/lib/reseau';
 import { clefLigne, lirePanierDemande, type LigneDemandee } from '@/lib/panierDemande';
 import { normaliserTelephone } from '@/lib/telephone';
+import { cleEnvoiRecevable } from '@/lib/cleEnvoi';
 import { referenceDeVitrine } from '@/lib/reference';
 
 /**
@@ -233,6 +234,35 @@ const BOUTIQUE_COMPLETE =
 const SERVICE_INDISPONIBLE =
   'Service momentanément indisponible. Réessayez dans un instant.';
 
+/**
+ * La commande deja enregistree sous cette cle, ou `null`.
+ *
+ * LE NUMERO DOIT CONCORDER. La cle evite un doublon, elle n'ouvre aucun droit :
+ * la rendre seule suffirait a obtenir la reference et le jeton de suivi d'une
+ * commande. Avec le numero, il faut connaitre les deux — ce que seul l'onglet
+ * qui a commande connait.
+ */
+async function commandeDejaRecue(
+  sb: NonNullable<ReturnType<typeof getSupabaseAdmin>>,
+  boutiqueUuid: string,
+  cle: string,
+  telephone: string,
+): Promise<{ reference: string; jeton: string } | null> {
+  const { data, error } = await sb
+    .from('commandes')
+    .select('reference, jeton_suivi, client_telephone')
+    .eq('boutique_id', boutiqueUuid)
+    .eq('cle_envoi', cle)
+    .maybeSingle();
+
+  if (error) {
+    console.error('Commande — recherche par cle impossible :', error.message);
+    return null;
+  }
+  if (!data || String(data.client_telephone ?? '') !== telephone) return null;
+  return { reference: String(data.reference), jeton: String(data.jeton_suivi ?? '') };
+}
+
 export async function POST(req: Request, ctx: { params: Promise<{ id: string }> }) {
   const { id } = await ctx.params;
   const m = await getMarchand(id);
@@ -306,6 +336,29 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
 
   const sb = getSupabaseAdmin();
   const boutiqueUuid = sb ? await resoudreBoutiqueUuid(sb, m) : null;
+
+  /**
+   * UN SECOND ENVOI DE LA MEME COMMANDE REND LA PREMIERE, ET NE REFAIT RIEN.
+   *
+   * La connexion tombe pendant l'envoi, le client ne sait pas si sa commande
+   * est arrivee, il reessaie. Sans ce controle : deux lignes, deux alertes au
+   * marchand, deux courses proposees aux livreurs, un stock decompte deux
+   * fois. La regle et ses raisons vivent dans `@/lib/cleEnvoi`.
+   *
+   * IL PASSE AVANT TOUT LE RESTE, ET C'EST VOULU. Plus bas, la route verifie
+   * le stock, les horaires et les plafonds. Or la premiere commande a deja
+   * decompte le stock et consomme le quota : un second envoi qui les
+   * retraverserait serait refuse — « epuise », « ferme » — pour une commande
+   * qui est pourtant bien enregistree. Le client lirait un refus a la place
+   * de son recu.
+   */
+  const cle = cleEnvoiRecevable((body as { cle?: unknown }).cle);
+  if (cle && sb && boutiqueUuid) {
+    const deja = await commandeDejaRecue(sb, boutiqueUuid, cle, telephone.international);
+    if (deja) {
+      return Response.json({ ok: true, order_id: deja.reference, jeton_suivi: deja.jeton, deja_recue: true });
+    }
+  }
 
   // ---- La boutique est-elle ouverte ?
   //
@@ -670,9 +723,20 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
         // personne ne se sert, et se tairait sur celui qui manque vraiment.
         canal: CANAL_DES_COMMANDES_VITRINE,
         statut: 'en_attente',
+        cle_envoi: cle || null,
       })
       .select('id, jeton_suivi')
       .single();
+
+    // DEUX ENVOIS AU MEME INSTANT : la recherche du debut ne voit rien pour
+    // aucun des deux, et c'est l'index unique qui tranche. Le perdant recoit
+    // 23505 — sa commande existe, enregistree par l'autre : on la lui rend.
+    if (error?.code === '23505' && cle) {
+      const deja = await commandeDejaRecue(sb, boutiqueUuid, cle, phone);
+      if (deja) {
+        return Response.json({ ok: true, order_id: deja.reference, jeton_suivi: deja.jeton, deja_recue: true });
+      }
+    }
 
     if (error || !creee) {
       console.error(`Commande ${order_id} — insertion Supabase refusee :`, error);

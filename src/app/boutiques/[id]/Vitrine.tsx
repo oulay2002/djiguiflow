@@ -20,6 +20,7 @@ import { etatInitial } from '@/lib/vitrine/etatInitial';
 import { clefBrouillon, ecrireBrouillon, lireBrouillon, type Brouillon } from '@/lib/vitrine/brouillon';
 import { clefRecu, ecrireRecu, lireRecu, type Recu as DonneesRecu } from '@/lib/vitrine/recu';
 import { Recu } from './Recu';
+import { clePourEnvoi, clefDeLaCle, empreinteEnvoi, oublierCle, type StockageCle } from '@/lib/cleEnvoi';
 
 type Produit = {
   id: string;
@@ -118,6 +119,8 @@ type FicheRow = {
   mode_recuperation: string | null;
   delai_preparation_min: number | null;
   livraison_offerte_des: number | null;
+  /** Absente d'une page gardee en cache avant la migration : d'ou le `?`. */
+  adresse_retrait?: string | null;
 };
 
 type ProduitRow = {
@@ -590,9 +593,8 @@ export default function Vitrine({ slug, fiche: ficheServeur, menu: menuServeur }
         // marchand croyait offrir.
         setRecuperation({
           mode: String(b.mode_recuperation ?? 'livraison'),
-          // Le repli ne lit pas cette colonne : la page se tait, comme pour
-          // toute boutique qui ne l'a pas renseignee.
-          adresse: '',
+          // Le repli la rend aussi, depuis la migration 20261123231000.
+          adresse: String(b.adresse_retrait ?? '').trim(),
           preparationMin:
             typeof b.delai_preparation_min === 'number' ? b.delai_preparation_min : null,
           offerteDes:
@@ -848,6 +850,27 @@ export default function Vitrine({ slug, fiche: ficheServeur, menu: menuServeur }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [estMarchandSheets, telOk, tel, nom, slug, JSON.stringify(panier)]);
 
+  /** Le stockage de l'onglet, ou `null` s'il est interdit (navigation privee). */
+  const stockageOnglet = (): StockageCle | null => {
+    try {
+      return window.sessionStorage;
+    } catch {
+      return null;
+    }
+  };
+
+  /**
+   * Une cle au hasard. `randomUUID` n'existe que sur une page servie en
+   * https ; le repli compose la meme forme a partir de `getRandomValues`, que
+   * tous les navigateurs ont.
+   */
+  const tirerCle = (): string => {
+    if (typeof crypto.randomUUID === 'function') return crypto.randomUUID();
+    const o = crypto.getRandomValues(new Uint8Array(16));
+    const h = Array.from(o, (x) => x.toString(16).padStart(2, '0')).join('');
+    return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`;
+  };
+
   /** Range le recu : a l'ecran ET dans l'onglet, sans quoi il reviendrait. */
   const masquerRecu = () => {
     setRecu(null);
@@ -894,6 +917,15 @@ export default function Vitrine({ slug, fiche: ficheServeur, menu: menuServeur }
               const { pid, variante } = litClef(clef);
               return { id: pid, quantite, variante };
             }),
+            // LA MEME COMMANDE PORTE LA MEME CLE, d'un essai a l'autre : le
+            // serveur reconnait un second envoi et rend la premiere au lieu
+            // d'en creer une seconde. Voir `@/lib/cleEnvoi`.
+            cle: clePourEnvoi(
+              stockageOnglet(),
+              clefDeLaCle(slug),
+              empreinteEnvoi({ panier, telephone: tel, mode: modeChoisi }),
+              tirerCle,
+            ),
           }),
         });
         const d = await res.json();
@@ -917,6 +949,8 @@ export default function Vitrine({ slug, fiche: ficheServeur, menu: menuServeur }
             frais: mentionFrais({ mode: modeChoisi, offerteDes: recuperation.offerteDes, total }),
           };
           setRecu(nouveau);
+          // Partie : la prochaine sera une AUTRE commande, meme identique.
+          oublierCle(stockageOnglet(), clefDeLaCle(slug));
           // Garde le temps de l'onglet : le recu envoie le client sur
           // WhatsApp, et c'est ce trajet qui fait decharger la page.
           try {

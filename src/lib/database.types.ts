@@ -206,6 +206,7 @@ export type Database = {
           canal: string | null
           chat_cle: string | null
           chat_id: string | null
+          cle_envoi: string | null
           client_adresse: string
           client_nom: string
           client_prevenu_le: string | null
@@ -242,6 +243,7 @@ export type Database = {
           canal?: string | null
           chat_cle?: string | null
           chat_id?: string | null
+          cle_envoi?: string | null
           client_adresse: string
           client_nom: string
           client_prevenu_le?: string | null
@@ -278,6 +280,7 @@ export type Database = {
           canal?: string | null
           chat_cle?: string | null
           chat_id?: string | null
+          cle_envoi?: string | null
           client_adresse?: string
           client_nom?: string
           client_prevenu_le?: string | null
@@ -1089,6 +1092,7 @@ export type Database = {
       vitrine_boutique: {
         Args: { p_ref: string }
         Returns: {
+          adresse_retrait: string
           categorie: string
           commande_minimum: number
           delai_livraison: string
