@@ -1,4 +1,5 @@
 import { chargerFicheBoutique, chargerMenuBoutique } from '@/lib/vitrine/donnees';
+import { SCRIPT_AVANT_EVEIL } from '@/lib/vitrine/avantEveil';
 import Vitrine from './Vitrine';
 
 /**
@@ -45,5 +46,13 @@ export default async function PageBoutique({ params }: Props) {
    * protegeait par la dependance `[slug]` de son effet de chargement ; l'etat
    * initial venant maintenant des props, c'est le montage qu'il faut refaire.
    */
-  return <Vitrine key={id} slug={id} fiche={fiche} menu={menu} />;
+  return (
+    <>
+      {/* Retient les appuis sur « Ajouter » tant que la page ne repond pas
+          encore : voir `@/lib/vitrine/avantEveil`. Pose AVANT la vitrine,
+          pour etre lu et execute avant que ses boutons ne s'affichent. */}
+      <script dangerouslySetInnerHTML={{ __html: SCRIPT_AVANT_EVEIL }} />
+      <Vitrine key={id} slug={id} fiche={fiche} menu={menu} />
+    </>
+  );
 }

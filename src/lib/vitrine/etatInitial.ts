@@ -15,6 +15,9 @@ export function etatInitial(fiche: FicheVitrine | null, menu: ProduitVitrine[] |
   const f = fiche?.fiche ?? null;
   return {
     estMarchandSheets: fiche !== null,
+    // Le numero WhatsApp du commerce : public, deja dans les donnees
+    // structurees de la page. Il sert au recours « rien recu ? » du recu.
+    telBoutique: String(fiche?.telephone ?? ''),
     ouvert: fiche ? fiche.ouvert !== false : true,
     messageHoraire: String(fiche?.messageHoraire ?? ''),
     header: {
