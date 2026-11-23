@@ -75,6 +75,16 @@ export type Marchand = {
    * sa page lui survit dans les resultats.
    */
   actif: boolean;
+  /**
+   * La boutique est-elle PROPOSEE AUX MOTEURS ?
+   *
+   * `false` : la vitrine reste en ligne et dans l'annuaire, mais se declare
+   * `noindex`, sort du plan du site et de `/llms.txt`. C'est le cas d'une
+   * boutique de demonstration, qu'un moteur presenterait sinon comme un vrai
+   * commerce. Absent ou illisible = `true` : on ne retire jamais une boutique
+   * des moteurs par defaut.
+   */
+  indexable: boolean;
 };
 
 /**
@@ -141,7 +151,7 @@ async function depuisSupabase(): Promise<Marchand[]> {
   const { data, error } = await sb
     .from('boutiques')
     .select(
-      'id, slug, nom, categorie, emoji, logo_url, description, sheet_commandes, groupe_livreurs, telephone, telegram_marchand, actif',
+      'id, slug, nom, categorie, emoji, logo_url, description, sheet_commandes, groupe_livreurs, telephone, telegram_marchand, actif, indexable',
     );
 
   if (error) {
@@ -173,6 +183,7 @@ async function depuisSupabase(): Promise<Marchand[]> {
       // `null` vaut ACTIF : c'est la regle de `vitrine_boutiques()`, on ne la
       // duplique pas differemment ici.
       actif: b.actif !== false,
+      indexable: b.indexable !== false,
       };
     });
 }

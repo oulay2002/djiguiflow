@@ -41,7 +41,7 @@ const rempli = (v: unknown) => String(v ?? '').trim() !== '';
  */
 function gabarit(nom: string, secteur: string): string {
   const precision = rempli(secteur) ? ` (${secteur.trim().toLowerCase()})` : '';
-  return `Commandez chez ${nom}${precision} a Abidjan et suivez votre livraison`
+  return `Commandez chez ${nom}${precision} à Abidjan et suivez votre livraison`
     + ' en direct avec DjiguiFlow.';
 }
 

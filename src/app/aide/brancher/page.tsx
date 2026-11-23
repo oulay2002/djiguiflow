@@ -35,6 +35,12 @@ export const metadata: Metadata = {
   description:
     'Huit étapes pour que votre boutique reçoive de vraies commandes, les confie '
     + 'à un livreur et tienne son stock toute seule.',
+  // SA PROPRE ADRESSE CANONIQUE. Sans elle, la page heritait de celle du
+  // layout racine — « / » — et se declarait donc COPIE DE L'ACCUEIL : un
+  // moteur qui lit cela n'indexe pas la page. Mesure sur le HTML servi le
+  // 23 novembre 2026.
+  alternates: { canonical: '/aide/brancher' },
+  openGraph: { url: '/aide/brancher' },
 };
 
 /**

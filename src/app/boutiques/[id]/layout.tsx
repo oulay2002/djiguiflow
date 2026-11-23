@@ -4,6 +4,8 @@ import { getMarchand } from '@/lib/marchands';
 import { SITE_LOCALE, SITE_NOM, SITE_URL } from '@/lib/site';
 import { jsonLdSur } from '@/lib/jsonLd';
 import { descriptionBoutique } from '@/lib/metaBoutique';
+import { structureBoutique } from '@/lib/donneesStructurees';
+import { chargerFicheBoutique, chargerMenuBoutique } from '@/lib/vitrine/donnees';
 
 type Props = {
   children: React.ReactNode;
@@ -48,7 +50,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     };
   }
 
-  const titre = `${m.nom} — commander en ligne a Abidjan`;
+  const titre = `${m.nom} — commander en ligne à Abidjan`;
 
   /**
    * LA PHRASE DU MARCHAND D'ABORD, LE GABARIT SEULEMENT S'IL N'EN A PAS.
@@ -68,6 +70,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: titre,
     description,
+    // EN LIGNE, MAIS PAS PROPOSEE AUX MOTEURS : une boutique de demonstration.
+    // `follow` reste vrai — ses liens menent a de vraies pages.
+    ...(m.indexable === false ? { robots: { index: false, follow: true } } : {}),
     alternates: { canonical: chemin },
     openGraph: {
       type: 'website',
@@ -149,16 +154,48 @@ export default async function BoutiqueLayout({ children, params }: Props) {
 
   // Meme raison que le `noindex` plus haut : ne pas affirmer un commerce en
   // activite pour une boutique retiree de l'annuaire.
-  const donneesStructurees = m && m.actif
-    ? {
-        '@context': 'https://schema.org',
-        '@type': typeSchema(m.secteur ?? ''),
-        '@id': `${SITE_URL}/boutiques/${m.id}#boutique`,
-        name: m.nom,
-        url: `${SITE_URL}/boutiques/${m.id}`,
-        areaServed: { '@type': 'City', name: 'Abidjan' },
-      }
-    : null;
+  /**
+   * CE QUE LA PAGE DIT D'ELLE-MEME AUX MOTEURS.
+   *
+   * Elle ne declarait que son nom et « Abidjan ». Le menu, les prix, le
+   * telephone, les quartiers livres, les horaires etaient a l'ecran et absents
+   * de ce que lit une machine. Voir `@/lib/donneesStructurees`.
+   *
+   * La fiche et le menu sont ceux que la page lit elle-meme : memes sources,
+   * donc memes valeurs. Une lecture qui echoue rend une fiche plus maigre,
+   * jamais une page cassee.
+   */
+  let donneesStructurees: Record<string, unknown> | null = null;
+  // Une boutique hors des moteurs ne leur declare pas non plus sa fiche.
+  if (m && m.actif && m.indexable !== false) {
+    const url = `${SITE_URL}/boutiques/${m.id}`;
+    const [fiche, menu] = await Promise.all([
+      chargerFicheBoutique(m.id).catch(() => null),
+      chargerMenuBoutique(m.id).catch(() => null),
+    ]);
+
+    donneesStructurees = structureBoutique({
+      url,
+      type: typeSchema(m.secteur ?? ''),
+      nom: m.nom,
+      description: m.description,
+      logo: m.logo,
+      telephone: m.whatsapp,
+      zone: fiche?.fiche?.zone,
+      zonesLivrees: fiche?.fiche?.zones_livrees,
+      paiements: fiche?.fiche?.paiements_acceptes,
+      horaires: fiche?.horaires,
+      articles: (menu ?? []).map((p) => ({
+        nom: p.nom,
+        description: p.description,
+        categorie: p.categorie,
+        prix: p.prix,
+        image: p.image,
+        // `stock` nul = non suivi : on ne sait pas, donc on ne declare rien.
+        disponible: p.stock === null ? undefined : p.stock > 0,
+      })),
+    });
+  }
 
   return (
     <>

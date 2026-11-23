@@ -5,9 +5,9 @@ import { SITE_LOCALE, SITE_NOM } from '@/lib/site';
 // metadonnees. Ce layout serveur existe uniquement pour les porter. Le segment
 // enfant `[id]` redefinit titre et canonical pour son propre compte.
 
-const TITRE = 'Boutiques a Abidjan';
+const TITRE = 'Boutiques à Abidjan';
 const DESCRIPTION =
-  'Parcourez les boutiques et restaurants qui livrent a Abidjan avec DjiguiFlow. ' +
+  'Parcourez les boutiques et restaurants qui livrent à Abidjan avec DjiguiFlow. ' +
   'Commandez en ligne et suivez votre livraison en direct.';
 
 export const metadata: Metadata = {

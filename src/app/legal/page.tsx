@@ -21,6 +21,8 @@ export const metadata: Metadata = {
   description:
     'Conditions d’utilisation et de vente, politique de confidentialité, '
     + 'politique livreurs et mentions légales de DjiguiFlow.',
+  // Sa propre adresse canonique : sans elle, la page heritait de « / ».
+  alternates: { canonical: '/legal' },
 };
 
 export default async function PageLegal() {

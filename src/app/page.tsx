@@ -5,6 +5,9 @@ import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import BoutiquesEnLigne from '@/components/BoutiquesEnLigne';
 import { BILLING_PLANS } from '@/lib/billing/plans';
+import { structureQuestions } from '@/lib/donneesStructurees';
+import { jsonLdSur } from '@/lib/jsonLd';
+import { SITE_URL } from '@/lib/site';
 
 /**
  * L'ASSISTANTE ARRIVE APRES LE RESTE.
@@ -138,6 +141,15 @@ function Eyebrow({ children, className = '' }: { children: ReactNode; className?
 export default function Home() {
   return (
     <main id="contenu" className="min-h-screen bg-chaux-100">
+      {/* LES QUESTIONS, DITES AUSSI AUX MOTEURS. Elles sont affichees plus bas ;
+          ce bloc les declare sous la forme qu'un moteur ou un assistant sait
+          citer. Meme tableau que l'ecran : les deux ne peuvent pas diverger.
+          Ce composant est rendu par le serveur a son premier affichage, le
+          bloc est donc bien dans le HTML que lit un robot sans JavaScript. */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: jsonLdSur(structureQuestions(SITE_URL, questions)) }}
+      />
       <nav className="fixed inset-x-0 top-0 z-50 border-b border-white/10 bg-nuit-900/90">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-6 px-4 py-3.5 sm:px-6">
           <Link href="/" className="flex items-center gap-2.5">
