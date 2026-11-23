@@ -67,7 +67,6 @@ export default function Page() {
   >([]);
   const [fDesc, setFDesc] = useState('');
   const [fDispo, setFDispo] = useState(true);
-  const [fUrl, setFUrl] = useState('');
   const [fFile, setFFile] = useState<File | null>(null);
   const [fStock, setFStock] = useState('');
   const [fSeuil, setFSeuil] = useState('5');
@@ -163,7 +162,7 @@ export default function Page() {
     if (!fNom || !fPrix) { setMsg('Nom et prix sont obligatoires.'); return; }
     setEnvoi(true); setMsg('');
     try {
-      let image = fUrl.trim();
+      let image = '';
       if (fFile) {
         // La photo passe par le serveur, qui la redresse, la recadre et
         // l'allege avant de la ranger. Elle partait auparavant du navigateur
@@ -260,7 +259,7 @@ export default function Page() {
         }
       }
       setOuvert(false);
-      setFNom(''); setFCat(''); setFPrix(''); setFDesc(''); setFUrl('');
+      setFNom(''); setFCat(''); setFPrix(''); setFDesc('');
       setFFile(null); setFDispo(true); setFStock(''); setFSeuil('5');
       setFColoris([]); setFAttrNom(''); setFAttrValeurs('');
       await charger();
@@ -980,10 +979,17 @@ export default function Page() {
               <label className="mb-1 block text-sm font-semibold text-chaux-600">Photo de l’article</label>
               <input type="file" accept="image/*" onChange={e => setFFile(e.target.files?.[0] || null)}
                 className="block w-full text-sm text-chaux-600 file:mr-3 file: file:border-0 file:bg-mangue-100 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-mangue-700 hover:file:bg-mangue-200" />
-              <p className="mt-2 text-xs text-chaux-600">…ou colle un lien image :</p>
-              <input className="mt-1 w-full border p-2" placeholder="https://…/photo.jpg" value={fUrl} onChange={e => setFUrl(e.target.value)} />
-              {(fFile || fUrl) && (
-                <img src={fFile ? URL.createObjectURL(fFile) : fUrl} alt="aperçu" className="mt-2 h-28 w-full object-cover" />
+              {/* LE CHAMP « …OU COLLE UN LIEN IMAGE » EST RETIRE.
+                  Il acceptait l'adresse d'une image hebergee ailleurs — que la
+                  vitrine n'affiche JAMAIS : la politique de contenu ne laisse
+                  passer que notre propre stockage. Le marchand voyait son
+                  apercu ici, croyait sa photo posee, et ses clients
+                  decouvraient un article sans image, sans que rien ne le
+                  dise. Un champ qui promet ce que la vitrine refuse est pire
+                  qu'un champ absent. La photo se choisit sur l'appareil : elle
+                  passe alors par le serveur, qui la redresse et l'allege. */}
+              {fFile && (
+                <img src={URL.createObjectURL(fFile)} alt="aperçu" className="mt-2 h-28 w-full object-cover" />
               )}
             </div>
 

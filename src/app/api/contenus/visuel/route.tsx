@@ -1,4 +1,5 @@
 import { ImageResponse } from 'next/og';
+import { photoDuStockage } from '@/lib/images/stockage';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import { contenusHebdo, SEUIL_QUANTITE_PUBLIABLE } from '@/lib/contenus/hebdo';
 
@@ -34,23 +35,6 @@ const MANGUE = '#e9a23b';
  * de taille, et on s'en passe au moindre doute. Une image sans photo reste une
  * bonne image ; une image absente n'est rien.
  */
-/** L'adresse designe-t-elle un objet PUBLIC de notre stockage Supabase ? */
-function photoDuStockage(url: string): boolean {
-  const base = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  if (!base) return false;
-  try {
-    const cible = new URL(url);
-    const stockage = new URL(base);
-    return (
-      cible.protocol === 'https:'
-      && cible.host === stockage.host
-      && cible.pathname.startsWith('/storage/v1/object/public/')
-    );
-  } catch {
-    return false;
-  }
-}
-
 async function chargerPhoto(url: string | undefined): Promise<string | null> {
   if (!url) return null;
 
@@ -66,7 +50,7 @@ async function chargerPhoto(url: string | undefined): Promise<string | null> {
   // (la politique de contenu ne laisse passer que le stockage) : la refuser ici
   // n'enleve donc rien a personne. Et `redirect: 'error'`, sinon une adresse
   // admise suffirait a rebondir vers une qui ne l'est pas.
-  if (!photoDuStockage(url)) return null;
+  if (!photoDuStockage(url, process.env.NEXT_PUBLIC_SUPABASE_URL)) return null;
 
   try {
     const r = await fetch(url, { signal: AbortSignal.timeout(6000), redirect: 'error' });
