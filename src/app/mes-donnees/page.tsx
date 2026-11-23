@@ -232,9 +232,22 @@ function Ecran() {
    * dossier — on ne le vole qu'une fois, a l'arrivee.
    */
   const enteteDossier = useRef<HTMLParagraphElement | null>(null);
+  /**
+   * « DEJA EFFACE » REMPLACE TOUTE LA PAGE, ET LE FAISAIT EN SILENCE.
+   * Des quatre etats terminaux, c'etait le dernier a ne pas emmener le focus :
+   * le dossier a son en-tete, la confirmation son avertissement, l'accuse de
+   * reception son titre. Ici la porte disparaissait, un panneau vert la
+   * remplacait, et le lecteur d'ecran restait sur `<body>` sans rien dire.
+   */
+  // Le titre porte `outline-none`, comme celui de l'accuse de reception : le
+  // focus y est pose par le code pour qu'il soit ANNONCE, pas pour designer une
+  // commande. L'anneau bissap de `:focus-visible` autour d'un titre vert se
+  // lisait comme une erreur sur le message qui dit que tout est en ordre.
+  const titreDejaEfface = useRef<HTMLHeadingElement | null>(null);
   const ouvertureDeja = useRef(false);
   useEffect(() => {
     if (!dossier) { ouvertureDeja.current = false; return; }
+    if (dossier.efface) { titreDejaEfface.current?.focus(); return; }
     if (ouvertureDeja.current) return;
     ouvertureDeja.current = true;
     enteteDossier.current?.focus();
@@ -437,7 +450,7 @@ function Ecran() {
         l'interligne du corps, et perdait 2,125 px de plomb par ligne. C'est ce
         dommage-la que la regle de DESIGN.md existe pour empecher.
       */}
-      <p className="mt-2 text-chapeau text-chaux-600">
+      <p className="mt-2 max-w-[62ch] text-chapeau text-chaux-600">
         Voyez ce que DjiguiFlow détient à votre sujet, pourquoi, et pendant combien de
         temps. Vous pouvez en demander l’effacement.
       </p>
@@ -497,7 +510,7 @@ function Ecran() {
             veut « juste voir ses données », et l'écran passe pour tatillon. La
             vraie raison le rassure : c'est SA protection qu'on applique.
           */}
-          <p className="mt-2 text-sm text-chaux-600">
+          <p className="mt-2 max-w-[62ch] text-sm text-chaux-600">
             Nous ne demandons pas seulement votre numéro : n’importe qui pourrait taper
             celui d’un voisin et lire son adresse. Utilisez le lien reçu dans votre message
             de commande — ou, si vous l’avez perdu, la référence d’une de vos commandes et
@@ -542,7 +555,7 @@ function Ecran() {
                 autoComplete="off"
                 spellCheck={false}
                 aria-describedby="ou-trouver-reference"
-                className="mt-1 min-h-11 w-full border border-nuit-900/20 bg-white px-3 py-2.5 font-mono text-sm text-nuit-900"
+                className="mt-1 min-h-11 w-full border border-[var(--hairline)] bg-white px-3 py-2.5 font-mono text-base text-nuit-900 transition focus:border-nuit-400"
               />
               <span id="ou-trouver-reference" className="mt-1 block text-xs text-chaux-600">
                 Elle est en haut du message que la boutique vous a envoyé.
@@ -560,7 +573,7 @@ function Ecran() {
                 autoComplete="off"
                 placeholder="0405"
                 aria-describedby="pourquoi-quatre-chiffres"
-                className="mt-1 min-h-11 w-full border border-nuit-900/20 bg-white px-3 py-2.5 font-mono text-sm text-nuit-900"
+                className="mt-1 min-h-11 w-full border border-[var(--hairline)] bg-white px-3 py-2.5 font-mono text-base text-nuit-900 transition focus:border-nuit-400"
               />
               {/*
                 « DU NUMERO QUI A COMMANDE », ET PAS « DE VOTRE NUMERO ».
@@ -594,6 +607,28 @@ function Ecran() {
             >
               Voir mes données
             </Bouton>
+            {/*
+              CE QUI MANQUE, NOMME.
+              Le bouton reste gris tant que les deux preuves ne sont pas la, et
+              rien ne disait lesquelles : la personne tapait sa reference,
+              sautait le second champ, touchait un bouton pale — et rien ne se
+              passait. Un bouton grise sans explication passe pour une panne.
+              Meme motif que le ticket de la vitrine.
+              Pas de `role="alert"` : ce n'est pas une erreur, c'est l'etat
+              normal d'un formulaire qu'on est en train de remplir.
+            */}
+            {!chargement && !envoiPossible && !erreur && (
+              <p className="mt-2 text-xs text-chaux-600">
+                Il manque&nbsp;:{' '}
+                {[
+                  ref.trim() === '' && 'la référence de commande',
+                  (!jetonUrl || lienEchoue) && tel4.length !== 4 && 'les quatre chiffres',
+                ]
+                  .filter(Boolean)
+                  .join(' et ')}
+                .
+              </p>
+            )}
           </div>
 
           {/*
@@ -635,8 +670,12 @@ function Ecran() {
 
       {dossier?.efface && (
         <section className="mt-8 border border-accent-200 bg-accent-50 p-5 soft-shadow">
-          <h2 className="flex items-center gap-2 font-display text-2xl font-bold tracking-[-0.01em] text-nuit-900">
-            <ShieldCheck className="size-5 text-accent-600" aria-hidden />
+          <h2
+            ref={titreDejaEfface}
+            tabIndex={-1}
+            className="flex items-start gap-2 font-display text-2xl font-bold tracking-[-0.01em] text-nuit-900 outline-none"
+          >
+            <ShieldCheck className="mt-1.5 size-5 shrink-0 text-accent-600" aria-hidden />
             Ces données ont déjà été effacées
           </h2>
           <p className="mt-2 text-sm text-nuit-900">
@@ -655,7 +694,9 @@ function Ecran() {
               className="flex items-center gap-2 text-sm text-chaux-600"
             >
               <ShieldCheck className="size-4 text-accent-600" aria-hidden />
-              Dossier de la personne joignable au{' '}
+              {/* Sans numero a montrer, la phrase s'arretait sur « joignable
+                  au » : le type le dit nullable, la phrase ne le prevoyait pas. */}
+              {dossier.numero ? 'Dossier de la personne joignable au' : 'Votre dossier est ouvert.'}{' '}
               {/*
                 PAS DE `whitespace-nowrap` ICI, ET C'EST UN ARBITRAGE.
                 « 01 •• •• •• 05 » se coupe en deux au milieu du masque a
@@ -690,10 +731,10 @@ function Ecran() {
             </h2>
 
             <dl className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
-              <Compteur libelle="Commandes" valeur={dossier.commandes.length} />
-              <Compteur libelle="Paniers non validés" valeur={dossier.paniers} />
-              <Compteur libelle="Relances reçues" valeur={dossier.relances} />
-              <Compteur libelle="Avis de livraison" valeur={dossier.avisLivraison} />
+              <Compteur un="Commande" plusieurs="Commandes" valeur={dossier.commandes.length} />
+              <Compteur un="Panier non validé" plusieurs="Paniers non validés" valeur={dossier.paniers} />
+              <Compteur un="Relance reçue" plusieurs="Relances reçues" valeur={dossier.relances} />
+              <Compteur un="Avis de livraison" plusieurs="Avis de livraison" valeur={dossier.avisLivraison} />
             </dl>
 
             {/*
@@ -706,7 +747,7 @@ function Ecran() {
               indique le chemin qui, lui, ouvre tout.
             */}
             {dossier.portee === 'commande' && (
-              <p className="mt-4 text-sm text-chaux-600">
+              <p className="mt-4 max-w-[62ch] text-sm text-chaux-600">
                 Cet écran ne montre que la commande dont vous avez donné la référence : le
                 numéro qu’elle porte a été saisi, et rien ne nous prouve qu’il est le vôtre.
                 Pour voir tout ce que nous détenons sous ce numéro, ouvrez le lien reçu sur
@@ -836,7 +877,7 @@ function Ecran() {
             */}
             <ul className="mt-4 space-y-3">
               {dossier.traitements.map((t) => (
-                <li key={t.cle} className="border-t border-nuit-900/10 pt-3 first:border-0 first:pt-0">
+                <li key={t.cle} className="border-t border-[var(--hairline)] pt-3 first:border-0 first:pt-0">
                   <details className="group">
                     {/* Le nom reste un `h3` A L'INTERIEUR du `summary` : le
                         replier ne doit pas le retirer de la navigation par
@@ -912,7 +953,7 @@ function Ecran() {
                   </details>
 
                   {t.effacement === 'garde' && t.pourquoi && (
-                    <p className="mt-1 text-sm text-mangue-700">
+                    <p className="mt-1 max-w-[62ch] text-sm text-mangue-700">
                       Conservé même après un effacement — {t.pourquoi}
                     </p>
                   )}
@@ -956,7 +997,7 @@ function Ecran() {
               </h3>
               <ul className="mt-2 space-y-2">
                 {dossier.horsDePortee.map((h) => (
-                  <li key={h.quoi} className="text-sm text-chaux-600">
+                  <li key={h.quoi} className="max-w-[62ch] text-sm text-chaux-600">
                     <strong className="font-medium text-nuit-900">{h.quoi}</strong> —{' '}
                     {h.pourquoi}
                   </li>
@@ -965,7 +1006,7 @@ function Ecran() {
             </div>
 
             {dossier.commandes.some((c) => !c.close) && (
-              <p className="mt-4 text-sm text-mangue-700">
+              <p className="mt-4 max-w-[62ch] text-sm text-mangue-700">
                 Une de vos commandes est encore en cours : elle n’est pas touchée, sans quoi
                 le livreur n’aurait plus ni nom ni adresse. Elle sera effacée d’elle-même dès
                 qu’elle sera terminée — vous n’aurez rien à redemander.
@@ -1091,7 +1132,7 @@ function Ecran() {
  * `font-bold` et non `font-black` : 700 est la graisse que DESIGN.md donne au
  * role `donnee`, et desormais la plus haute face mono reellement chargee.
  */
-function Compteur({ libelle, valeur }: { libelle: string; valeur: number }) {
+function Compteur({ un, plusieurs, valeur }: { un: string; plusieurs: string; valeur: number }) {
   // `justify-end` : en `col-reverse`, le debut de l'axe est EN BAS. Sans lui,
   // les tuiles se tassaient vers le bas de leur cellule de grille, et « 2 » se
   // retrouvait 16 px sous « 12 » des que l'intitule voisin passait sur deux
@@ -1099,7 +1140,9 @@ function Compteur({ libelle, valeur }: { libelle: string; valeur: number }) {
   return (
     <div className="flex flex-col-reverse justify-end">
       <dt className="mt-1 text-xs font-semibold uppercase tracking-[0.12em] text-chaux-600">
-        {libelle}
+        {/* L'intitule s'accorde : « 1 RELANCES REÇUES » etait un gabarit, pas
+            une phrase. En francais, zero et un prennent le singulier. */}
+        {valeur < 2 ? un : plusieurs}
       </dt>
       <dd className="font-mono text-3xl font-bold leading-none tracking-[-0.01em] tabular-nums text-nuit-900">
         {valeur}
@@ -1164,9 +1207,9 @@ function ApresEffacement({ etat }: { etat: { complet: boolean; bilan: Bilan } })
       <h2
         ref={titre}
         tabIndex={-1}
-        className="flex items-center gap-2 font-display text-2xl font-bold tracking-[-0.01em] text-nuit-900"
+        className="flex items-start gap-2 font-display text-2xl font-bold tracking-[-0.01em] text-nuit-900 outline-none"
       >
-        <ShieldCheck className="size-5 shrink-0 text-accent-600" aria-hidden />
+        <ShieldCheck className="mt-1.5 size-5 shrink-0 text-accent-600" aria-hidden />
         C’est fait
       </h2>
 
@@ -1190,7 +1233,7 @@ function ApresEffacement({ etat }: { etat: { complet: boolean; bilan: Bilan } })
           assemblee par cinq ternaires est le meme gabarit que « commande(s) »,
           simplement plus difficile a relire. */}
       {!complet && (
-        <p className="mt-3 text-sm text-mangue-700">
+        <p className="mt-3 max-w-[62ch] text-sm text-mangue-700">
           {bilan.commandesEnCours === 1
             ? 'Une commande est encore en cours et n’a pas été touchée. Elle le sera automatiquement dès qu’elle sera terminée — vous n’aurez rien à redemander.'
             : `${bilan.commandesEnCours} commandes sont encore en cours et n’ont pas été touchées. Elles le seront automatiquement dès qu’elles seront terminées — vous n’aurez rien à redemander.`}
