@@ -140,7 +140,7 @@ export const TRAITEMENTS: Traitement[] = [
     nom: 'Vos paniers non validés',
     concerne: ['client'],
     ou: 'Base de données (table « paniers »)',
-    donnees: ['votre nom', 'votre numéro de téléphone', 'les articles que vous aviez choisis'],
+    donnees: ['votre numéro de téléphone', 'les articles que vous aviez choisis'],
     finalite:
       'Reprendre une commande interrompue, et permettre au marchand de mesurer '
       + 'combien de paniers n’aboutissent pas.',

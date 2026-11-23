@@ -69,7 +69,7 @@ export async function POST(req: Request) {
   const limiteCommande = new Date(maintenant);
   limiteCommande.setMonth(limiteCommande.getMonth() - MOIS_AVANT_ANONYMISATION);
 
-  const fait = { paniers: 0, commandes: 0, positions: 0, relances: 0, effacements: 0 };
+  const fait = { paniers: 0, paniersAboutis: 0, commandes: 0, positions: 0, relances: 0, effacements: 0 };
   const erreurs: string[] = [];
 
   // ── 1. Paniers jamais convertis ────────────────────────────────────────
@@ -96,6 +96,49 @@ export async function POST(req: Request) {
         if (errSuppr) {
           erreurs.push(`paniers non supprimes : ${errSuppr.message}`);
           fait.paniers = 0;
+        }
+      }
+    }
+  }
+
+  // ── 1 bis. Paniers ABOUTIS, trente jours après la commande ─────────────
+  //
+  // L'ANGLE MORT DE LA RÈGLE DU DESSUS. Elle ne vise que `converti_le IS
+  // NULL` : un panier qui a abouti à une commande n'était donc purgé par
+  // RIEN. Il gardait le numéro et le contenu sans limite de durée — alors que
+  // la commande qu'il a produite, elle, finit par être anonymisée. Constaté
+  // le 23 novembre 2026 : trois paniers aboutis en août et septembre étaient
+  // toujours là, nom compris.
+  //
+  // Il ne porte rien que la commande ne porte déjà, et il ne sert plus à la
+  // mesure : `paniersPerdus` ne compte que les paniers non convertis. Passé
+  // le délai, c'est un double — et le double d'une donnée personnelle n'a
+  // aucune raison de survivre à l'original.
+  //
+  // MÊME DÉLAI, COMPTÉ DEPUIS LA COMMANDE. Une seule durée à annoncer au
+  // client pour tout ce qui s'appelle « panier », au lieu de deux.
+  //
+  // Compté À PART (`paniersAboutis`) : ce n'est pas une vente perdue qu'on
+  // efface, et le journal ne doit pas les confondre.
+  {
+    const { data, error } = await sb
+      .from('paniers')
+      .select('id')
+      .not('converti_le', 'is', null)
+      .lt('converti_le', seuilPanier)
+      .limit(500);
+
+    if (error) erreurs.push(`paniers aboutis illisibles : ${error.message}`);
+    else if (data?.length) {
+      fait.paniersAboutis = data.length;
+      if (!essai) {
+        const { error: errSuppr } = await sb
+          .from('paniers')
+          .delete()
+          .in('id', data.map((p) => p.id));
+        if (errSuppr) {
+          erreurs.push(`paniers aboutis non supprimes : ${errSuppr.message}`);
+          fait.paniersAboutis = 0;
         }
       }
     }
@@ -294,10 +337,10 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, erreurs, fait, essai }, { status: 503 });
   }
 
-  const total = fait.paniers + fait.commandes + fait.relances + fait.effacements;
+  const total = fait.paniers + fait.paniersAboutis + fait.commandes + fait.relances + fait.effacements;
   if (total > 0) {
     console.log(
-      `Conservation${essai ? ' (essai a blanc)' : ''} — ${fait.paniers} panier(s) supprime(s), `
+      `Conservation${essai ? ' (essai a blanc)' : ''} — ${fait.paniers} panier(s) abandonne(s) et ${fait.paniersAboutis} abouti(s) supprime(s), `
       + `${fait.commandes} commande(s) anonymisee(s), ${fait.relances} trace(s) de relance retiree(s).`,
     );
   }
