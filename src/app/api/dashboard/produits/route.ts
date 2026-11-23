@@ -1,4 +1,6 @@
+import { after } from 'next/server';
 import { exigerAccesMarchand } from '@/lib/dashboardAuth';
+import { prevenirMoteurs } from '@/lib/indexNow';
 import { PHOTO_REFUSEE, photoDuStockage } from '@/lib/images/stockage';
 import { prixRecevable } from '@/lib/prixArticle';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
@@ -189,6 +191,13 @@ export async function POST(req: Request) {
     return Response.json({ error: 'Enregistrement impossible, reessayez' }, { status: 503 });
   }
 
+  // LA VITRINE VIENT DE CHANGER : on previent les moteurs, APRES la reponse.
+  // `after` ne retarde pas l'enregistrement et ne peut pas le faire echouer.
+  // Une boutique hors annuaire ou hors des moteurs n'est pas annoncee.
+  if (m.actif && m.indexable !== false) {
+    after(() => prevenirMoteurs([`/boutiques/${m.id}`]));
+  }
+
   return Response.json({ ok: true, boutique_id: m.id, reference });
 }
 
@@ -367,6 +376,13 @@ export async function PATCH(req: Request) {
     n'a jamais ete corrige. Une justification perimee tient un code en vie
     aussi surement qu'une bonne raison.
   */
+
+  // LA VITRINE VIENT DE CHANGER : on previent les moteurs, APRES la reponse.
+  // `after` ne retarde pas l'enregistrement et ne peut pas le faire echouer.
+  // Une boutique hors annuaire ou hors des moteurs n'est pas annoncee.
+  if (m.actif && m.indexable !== false) {
+    after(() => prevenirMoteurs([`/boutiques/${m.id}`]));
+  }
 
   return Response.json({ ok: true });
 }
