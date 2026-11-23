@@ -53,6 +53,7 @@ const FICHE: FicheVitrine = {
     paiements_acceptes: ['Orange Money', ''],
     commande_minimum: 2000,
     mode_recuperation: 'les_deux',
+    adresse_retrait: 'Riviera 2, face à la station',
     delai_preparation_min: 20,
     livraison_offerte_des: 0,
   },
@@ -118,6 +119,17 @@ describe('les valeurs absentes gardent leur sens', () => {
       fiche: { ...FICHE.fiche!, livraison_offerte_des: null },
     };
     expect(etatInitial(sansGratuite, []).recuperation.offerteDes).toBeNull();
+  });
+
+  it('l’adresse de retrait arrive jusqu’à la page', () => {
+    expect(etatInitial(FICHE, []).recuperation.adresse).toBe('Riviera 2, face à la station');
+  });
+
+  it('une adresse non renseignée reste vide : la page se tait, elle n’invente pas « sur place »', () => {
+    for (const adresse_retrait of [null, '', '   ']) {
+      const sans: FicheVitrine = { ...FICHE, fiche: { ...FICHE.fiche!, adresse_retrait } };
+      expect(etatInitial(sans, []).recuperation.adresse, JSON.stringify(adresse_retrait)).toBe('');
+    }
   });
 
   it('une boutique hors registre laisse la page attendre son repli', () => {

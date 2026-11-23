@@ -60,6 +60,8 @@ export type FicheVitrine = {
     paiements_acceptes: string[] | null;
     commande_minimum: number | null;
     mode_recuperation: string;
+    /** Ou venir chercher sa commande. `null` = non renseignee : la page se tait. */
+    adresse_retrait: string | null;
     delai_preparation_min: number | null;
     livraison_offerte_des: number | null;
   } | null;
@@ -116,7 +118,7 @@ export async function chargerFicheBoutique(id: string): Promise<FicheVitrine | n
         const { data } = await sb
           .from('boutiques')
           // En UNE seule chaine litterale : concatenee, elle perd son inference.
-          .select('horaires, pause_jusqua, zone, delai_livraison, zones_livrees, paiements_acceptes, commande_minimum, mode_recuperation, delai_preparation_min, livraison_offerte_des')
+          .select('horaires, pause_jusqua, zone, delai_livraison, zones_livrees, paiements_acceptes, commande_minimum, mode_recuperation, adresse_retrait, delai_preparation_min, livraison_offerte_des')
           .eq('id', uuid)
           .maybeSingle();
         const etat = etatBoutique(data?.horaires, new Date(), data?.pause_jusqua);
@@ -137,6 +139,9 @@ export async function chargerFicheBoutique(id: string): Promise<FicheVitrine | n
                 ? data.commande_minimum
                 : null,
             mode_recuperation: data.mode_recuperation || 'livraison',
+            // Une chaine d'espaces n'est pas une adresse : elle afficherait un
+            // libelle suivi de rien.
+            adresse_retrait: String(data.adresse_retrait ?? '').trim() || null,
             delai_preparation_min: data.delai_preparation_min,
             // ZERO GARDE SA VALEUR. Un `|| null` ferait de « toujours offerte »
             // un « le livreur annonce ses frais » — l'exact contraire.

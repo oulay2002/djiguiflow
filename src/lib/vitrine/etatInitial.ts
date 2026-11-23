@@ -34,6 +34,7 @@ export function etatInitial(fiche: FicheVitrine | null, menu: ProduitVitrine[] |
     },
     recuperation: {
       mode: String(f?.mode_recuperation ?? 'livraison'),
+      adresse: String(f?.adresse_retrait ?? '').trim(),
       preparationMin: typeof f?.delai_preparation_min === 'number' ? f.delai_preparation_min : null,
       // Zero garde sa valeur : c'est « toujours offerte », pas un trou.
       offerteDes: typeof f?.livraison_offerte_des === 'number' ? f.livraison_offerte_des : null,
