@@ -41,6 +41,8 @@ export type FicheVitrine = {
   emoji: string;
   /** Le logo depose par le marchand. Vide = il n'en a pas. */
   logo: string;
+  /** Le numero WhatsApp du commerce. Vide = non renseigne. Deja public. */
+  telephone: string;
   ouvert: boolean;
   messageHoraire: string | null;
   /**
@@ -156,10 +158,17 @@ export async function chargerFicheBoutique(id: string): Promise<FicheVitrine | n
     }
   }
 
-  // On ne renvoie que le public : ni sheetId, ni groupeLivreurs, ni whatsapp.
+  // On ne renvoie que le public : ni sheetId, ni groupeLivreurs.
+  //
+  // LE NUMERO WHATSAPP, LUI, EST PUBLIC — et il l'etait deja : `layout.tsx` le
+  // publie dans les donnees structurees de cette meme page, et le chemin de
+  // repli (`vitrine_boutique`) le rend a tout visiteur. Il manquait seulement
+  // ICI, si bien que le recu ne pouvait offrir aucun moyen de joindre le
+  // commerce quand le message de confirmation n'arrive pas.
   return {
     id: m.id,
     nom: m.nom,
+    telephone: m.whatsapp,
     secteur: m.secteur,
     emoji: m.emoji,
     // Le logo est PUBLIC : c'est la devanture, pas une donnee d'exploitation.

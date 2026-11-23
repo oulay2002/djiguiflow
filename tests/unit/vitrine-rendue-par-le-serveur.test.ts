@@ -43,6 +43,7 @@ const FICHE: FicheVitrine = {
   secteur: 'restaurant',
   emoji: '🍽️',
   logo: '',
+  telephone: '2250700000000',
   ouvert: true,
   messageHoraire: null,
   horaires: null,

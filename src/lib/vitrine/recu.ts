@@ -56,6 +56,21 @@ export type Recu = {
   paiements: string[];
   /** La phrase des frais, telle qu'elle etait affichee sous le total. */
   frais: string;
+  /**
+   * Le numero WhatsApp du COMMERCE, pour le recours « rien recu ? ». Public :
+   * c'est celui que la boutique affiche deja. Vide = pas de recours a offrir.
+   */
+  telephoneBoutique: string;
+  /**
+   * Le numero auquel le message va arriver, tel que le client l'a saisi.
+   *
+   * EN MEMOIRE SEULEMENT — `ecrireRecu` ne l'ecrit jamais. Il sert une fois,
+   * a l'instant ou le recu s'affiche : c'est la que le client peut voir qu'il
+   * s'est trompe d'un chiffre, avant d'attendre un message qui n'arrivera
+   * pas. Apres un rechargement il a disparu, et la phrase redevient generale :
+   * rien de personnel ne reste dans le navigateur.
+   */
+  numero?: string;
 };
 
 const VERSION = 1;
@@ -66,7 +81,11 @@ export function clefRecu(slug: string): string {
 }
 
 export function ecrireRecu(r: Recu): string {
-  return JSON.stringify({ v: VERSION, ...r });
+  // Le numero du client est retire ICI, par construction : aucun appelant ne
+  // peut l'ecrire par megarde, puisque c'est la seule porte vers le stockage.
+  const aGarder: Recu = { ...r };
+  delete aGarder.numero;
+  return JSON.stringify({ v: VERSION, ...aGarder });
 }
 
 const texte = (v: unknown, max: number): string =>
@@ -127,6 +146,9 @@ export function lireRecu(brut: string | null | undefined): Recu | null {
       ? o.paiements.filter((p): p is string => typeof p === 'string').map((p) => p.slice(0, 60)).slice(0, 8)
       : [],
     frais: texte(o.frais, 240),
+    // Absent d'un recu ecrit avant ce champ : il se lit vide, et le recours
+    // ne s'affiche pas — le recu, lui, reste valable.
+    telephoneBoutique: texte(o.telephoneBoutique, 20).replace(/\D/g, ''),
   };
 }
 
@@ -141,9 +163,14 @@ export function lireRecu(brut: string | null | undefined): Recu | null {
  * Phrases entieres, pas de gabarit a trous : l'heure et l'adresse ne sont
  * mentionnees que lorsqu'elles existent.
  */
-export function etapesDuRecu(r: Pick<Recu, 'mode' | 'heure' | 'adresseRetrait'>): string[] {
+export function etapesDuRecu(
+  r: Pick<Recu, 'mode' | 'heure' | 'adresseRetrait'> & { numero?: string },
+): string[] {
+  // Le numero se dit quand on le connait : c'est lui qui permet au client de
+  // reperer une erreur de saisie avant d'attendre pour rien.
+  const ou = r.numero?.trim() ? ` au ${r.numero.trim()}` : '';
   const etapes = [
-    'Répondez au message WhatsApp qui va vous être envoyé. La préparation ne commence qu’après votre réponse.',
+    `Répondez au message WhatsApp qui va vous être envoyé${ou}. La préparation ne commence qu’après votre réponse.`,
   ];
 
   if (r.mode === 'retrait') {
@@ -159,4 +186,56 @@ export function etapesDuRecu(r: Pick<Recu, 'mode' | 'heure' | 'adresseRetrait'>)
   }
 
   return etapes;
+}
+
+/**
+ * Le lien pour ecrire a la boutique quand le message n'arrive pas, ou vide.
+ *
+ * LE RECOURS QUI MANQUAIT. Le recu demande de repondre a un message. Si le
+ * numero saisi etait faux, ou sans WhatsApp, ce message n'arrive jamais : le
+ * client attendait devant un tampon « REÇUE », et le commerce perdait la vente
+ * sans le savoir. Ce lien ouvre la conversation avec la boutique, depuis le
+ * VRAI WhatsApp du client, avec la reference deja ecrite.
+ *
+ * CE N'EST PAS UNE CONFIRMATION. Il ne remplace pas la reponse au message :
+ * confirmer depuis cette page reviendrait a valider une commande sans avoir
+ * jamais verifie que le numero donne existe — exactement ce que la
+ * confirmation par WhatsApp sert a empecher.
+ *
+ * Vide quand le commerce n'a pas de numero lisible : mieux vaut ne rien
+ * proposer qu'ouvrir WhatsApp sur un numero invalide.
+ */
+export function lienVersLaBoutique(telephoneBoutique: string, reference: string): string {
+  const chiffres = String(telephoneBoutique ?? '').replace(/\D/g, '');
+  if (chiffres.length < 10) return '';
+  const numero = chiffres.startsWith('225') ? chiffres : `225${chiffres}`;
+  const message = `Bonjour, je n’ai pas reçu le message de confirmation de ma commande ${reference}.`;
+  return `https://wa.me/${numero}?text=${encodeURIComponent(message)}`;
+}
+
+/**
+ * La phrase du recours : que faire si le message n'arrive pas. Vide quand il
+ * n'y a rien d'honnete a proposer.
+ *
+ * Elle suit ce que le recu SAIT. Avec le numero sous les yeux, la premiere
+ * chose a faire est de le relire — c'est la cause la plus frequente. Avec un
+ * moyen de joindre le commerce, on le propose. Sans l'un ni l'autre, on se
+ * tait : « contactez la boutique » sans dire comment renvoie le client a une
+ * recherche qu'il ne fera pas.
+ */
+export function recoursDuRecu(r: Pick<Recu, 'numero' | 'telephoneBoutique' | 'reference'>): string {
+  const aLeNumero = Boolean(r.numero?.trim());
+  const joignable = lienVersLaBoutique(r.telephoneBoutique, r.reference) !== '';
+
+  if (aLeNumero && joignable) {
+    return 'Rien reçu ? Vérifiez que ce numéro est le bon. Sinon, écrivez à la boutique : '
+      + 'elle retrouvera votre commande avec la référence.';
+  }
+  if (aLeNumero) {
+    return 'Rien reçu ? Vérifiez que ce numéro est le bon. S’il est faux, repassez votre commande.';
+  }
+  if (joignable) {
+    return 'Rien reçu ? Écrivez à la boutique : elle retrouvera votre commande avec la référence.';
+  }
+  return '';
 }

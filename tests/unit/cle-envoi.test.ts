@@ -167,7 +167,7 @@ describe('ce qui tient autour', () => {
 
   it('la vitrine envoie la cle, et l’oublie quand la commande est partie', () => {
     expect(vitrine).toContain('cle: clePourEnvoi(');
-    expect(vitrine).toContain('oublierCle(stockageOnglet(), clefDeLaCle(slug));');
+    expect(vitrine).toContain('oublierCle(stockageDeLaCle(), clefDeLaCle(slug));');
   });
 });
 

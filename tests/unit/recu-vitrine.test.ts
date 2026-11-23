@@ -24,6 +24,7 @@ const RECU: Recu = {
   adresseRetrait: 'Riviera 2, face à la station',
   paiements: ['Espèces à la livraison', 'Wave'],
   frais: 'Vous récupérez votre commande sur place : aucun frais de livraison.',
+  telephoneBoutique: '2250700000000',
 };
 
 describe('ce qu’il reste a faire', () => {

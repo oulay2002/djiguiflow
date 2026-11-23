@@ -20,6 +20,7 @@ import { etatInitial } from '@/lib/vitrine/etatInitial';
 import { clefBrouillon, ecrireBrouillon, lireBrouillon, type Brouillon } from '@/lib/vitrine/brouillon';
 import { clefRecu, ecrireRecu, lireRecu, type Recu as DonneesRecu } from '@/lib/vitrine/recu';
 import { Recu } from './Recu';
+import { prendreLesAppuis, type FenetreAvantEveil } from '@/lib/vitrine/avantEveil';
 import { JOURS_PANIER_ABANDONNE } from '@/lib/conservation';
 import { clePourEnvoi, clefDeLaCle, empreinteEnvoi, oublierCle, type StockageCle } from '@/lib/cleEnvoi';
 
@@ -306,6 +307,8 @@ export default function Vitrine({ slug, fiche: ficheServeur, menu: menuServeur }
   }, []);
   /** Le haut de la page, ou s affichent « REÇUE » et « REFUSÉE ». */
   const verdictRef = useRef<HTMLDivElement>(null);
+  /** Le verdict d'un echec, dans le ticket, juste au-dessus du bouton. */
+  const echecRef = useRef<HTMLDivElement>(null);
 
   /*
     CES TROIS VALEURS NE SONT PLUS DES ETATS, ET C'EST LE SIGNE QUE LE
@@ -385,7 +388,25 @@ export default function Vitrine({ slug, fiche: ficheServeur, menu: menuServeur }
    * Un indetermine n'est pas un refus : il a son tampon et sa consigne.
    */
   const [sansReponse, setSansReponse] = useState(false);
+
+  // Le verdict nait dans le ticket ; on l'amene au milieu de l'ecran, avec le
+  // bouton d'envoi juste dessous. `commander` remet `echec` a vide avant chaque
+  // essai : deux refus identiques de suite font donc bien deux defilements.
+  useEffect(() => {
+    if (echec) echecRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, [echec]);
+
   /**
+   * LE REPLI DE LA CLE D'ENVOI, QUAND L'ONGLET N'A PAS DE STOCKAGE.
+   *
+   * La cle qui empeche le doublon vit dans le stockage de l'onglet. En
+   * navigation privee stricte il est interdit : la cle etait alors retiree a
+   * chaque envoi, et la protection ne jouait plus — au moment meme ou le
+   * verdict « SANS REPONSE » dit au client que renvoyer est sans risque.
+   * Cette memoire tient la cle le temps de la page : la promesse reste vraie
+   * tant qu'il ne la recharge pas.
+   */
+  const memoireCle = useRef(new Map<string, string>());  /**
    * La voie WhatsApp a-t-elle ete empruntee ?
    *
    * Elle n ouvre qu un onglet : aucune commande n est enregistree chez nous, il
@@ -402,7 +423,7 @@ export default function Vitrine({ slug, fiche: ficheServeur, menu: menuServeur }
    * repartait en pensant que le commercant est mauvais.
    */
   const [pannePage, setPannePage] = useState<'' | 'introuvable' | 'reseau'>(depart.pannePage);
-  const [telBoutique, setTelBoutique] = useState('');
+  const [telBoutique, setTelBoutique] = useState(depart.telBoutique);
 
   /**
    * CE QUE LE CLIENT DEVAIT DEMANDER AU MARCHAND.
@@ -506,6 +527,31 @@ export default function Vitrine({ slug, fiche: ficheServeur, menu: menuServeur }
       setBrouillonRelu(true);
     })();
   }, [brouillonRelu, chargement, produits, recuperation.mode, slug]);
+
+  /**
+   * LA PAGE REPOND : ELLE REPREND LA MAIN, PUIS REJOUE CE QU'ON LUI A DEMANDE.
+   *
+   * Deux temps, comme pour le brouillon. Des le premier rendu vivant, on dit
+   * au script d'avant l'eveil de ne plus rien retenir — a partir d'ici, React
+   * entend les appuis lui-meme, et les retenir en plus les doublerait.
+   *
+   * La file, elle, n'est rejouee qu'APRES la relecture du brouillon. Dans
+   * l'autre ordre, l'article rejoue remplirait le panier, et le brouillon —
+   * qui ne s'impose qu'a un panier vide — serait ecarte : un client de retour
+   * perdrait sa commande en cours pour avoir touche un bouton trop tot.
+   */
+  useEffect(() => {
+    (window as FenetreAvantEveil).__djfPret = true;
+  }, []);
+
+  const ajouterRef = useRef<(pid: string, variante?: string) => void>(() => {});
+
+  useEffect(() => {
+    if (!brouillonRelu) return;
+    const appuis = prendreLesAppuis(window as FenetreAvantEveil);
+    document.querySelectorAll('[data-ajout][aria-busy]').forEach((b) => b.removeAttribute('aria-busy'));
+    for (const [pid, variante] of appuis) ajouterRef.current(pid, variante);
+  }, [brouillonRelu]);
 
   useEffect(() => {
     if (!brouillonRelu) return;
@@ -695,6 +741,12 @@ export default function Vitrine({ slug, fiche: ficheServeur, menu: menuServeur }
     return { ...p, [clef]: (p[clef] || 0) + 1 };
   });
 
+  // Toujours la derniere version : l'effet qui rejoue les appuis d'avant
+  // l'eveil est declare plus haut, avant que `ajouter` n'existe.
+  useEffect(() => {
+    ajouterRef.current = ajouter;
+  });
+
   const retirer = (pid: string, variante = '') =>
     setPanier(p => {
       const clef = clefLigne(pid, variante);
@@ -864,6 +916,28 @@ export default function Vitrine({ slug, fiche: ficheServeur, menu: menuServeur }
     }
   };
 
+  /** Le stockage de la cle d'envoi : celui de l'onglet, ou la memoire de la page. */
+  const stockageDeLaCle = (): StockageCle => {
+    const onglet = stockageOnglet();
+    if (onglet) {
+      try {
+        // Present ne veut pas dire utilisable : certains navigateurs l'exposent
+        // puis levent a la premiere ecriture.
+        onglet.setItem('djiguiflow:sonde', '1');
+        onglet.removeItem('djiguiflow:sonde');
+        return onglet;
+      } catch {
+        // On retombe sur la memoire, ci-dessous.
+      }
+    }
+    const m = memoireCle.current;
+    return {
+      getItem: (k) => m.get(k) ?? null,
+      setItem: (k, v) => { m.set(k, v); },
+      removeItem: (k) => { m.delete(k); },
+    };
+  };
+
   /**
    * Une cle au hasard. `randomUUID` n'existe que sur une page servie en
    * https ; le repli compose la meme forme a partir de `getRandomValues`, que
@@ -926,7 +1000,7 @@ export default function Vitrine({ slug, fiche: ficheServeur, menu: menuServeur }
             // serveur reconnait un second envoi et rend la premiere au lieu
             // d'en creer une seconde. Voir `@/lib/cleEnvoi`.
             cle: clePourEnvoi(
-              stockageOnglet(),
+              stockageDeLaCle(),
               clefDeLaCle(slug),
               empreinteEnvoi({ panier, telephone: tel, mode: modeChoisi }),
               tirerCle,
@@ -952,10 +1026,13 @@ export default function Vitrine({ slug, fiche: ficheServeur, menu: menuServeur }
             adresseRetrait: modeChoisi === 'retrait' ? recuperation.adresse : '',
             paiements: infos.paiements,
             frais: mentionFrais({ mode: modeChoisi, offerteDes: recuperation.offerteDes, total }),
+            telephoneBoutique: telBoutique,
+            // En memoire seulement : `ecrireRecu` ne l'ecrit pas.
+            numero: tel,
           };
           setRecu(nouveau);
           // Partie : la prochaine sera une AUTRE commande, meme identique.
-          oublierCle(stockageOnglet(), clefDeLaCle(slug));
+          oublierCle(stockageDeLaCle(), clefDeLaCle(slug));
           // Garde le temps de l'onglet : le recu envoie le client sur
           // WhatsApp, et c'est ce trajet qui fait decharger la page.
           try {
@@ -995,12 +1072,11 @@ export default function Vitrine({ slug, fiche: ficheServeur, menu: menuServeur }
         setSansReponse(true);
         setEchec(
           'Nous n’avons pas reçu de réponse : votre commande est peut-être partie.'
-          + ' Avant de réessayer, regardez si un message WhatsApp de la boutique est arrivé.',
+          + ' Regardez si un message WhatsApp de la boutique est arrivé. Sinon, renvoyez-la :'
+          + ' elle ne sera pas enregistrée deux fois.',
         );
       } finally {
         setEnvoi(false);
-        // Un echec doit se voir autant qu un succes : meme raison qu au-dessus.
-        verdictRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
     } else {
       // LE CHOIX DOIT FIGURER DANS CE TEXTE. Pour les boutiques hors registre,
@@ -1032,7 +1108,6 @@ export default function Vitrine({ slug, fiche: ficheServeur, menu: menuServeur }
         setEchec(
           'Cette boutique n’a pas encore de numéro WhatsApp. Réessayez plus tard.',
         );
-        verdictRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         return;
       }
 
@@ -1344,7 +1419,14 @@ export default function Vitrine({ slug, fiche: ficheServeur, menu: menuServeur }
                 ) : (
                   <button
                     onClick={() => ajouter(p.id, tailleChoisie)}
-                    className={classesBouton('action', 'md', 'carree')}
+                    // Ces deux attributs disent au script d'avant l'eveil quel
+                    // article retenir si on appuie avant que la page reponde.
+                    // `aria-busy` est pose par lui, hors de React : d'ou
+                    // `suppressHydrationWarning`.
+                    data-ajout={p.id}
+                    data-variante={tailleChoisie}
+                    suppressHydrationWarning
+                    className={`${classesBouton('action', 'md', 'carree')} aria-busy:cursor-progress aria-busy:opacity-60`}
                   >
                     <Plus className="h-4 w-4" /> Ajouter
                   </button>
@@ -1481,32 +1563,6 @@ export default function Vitrine({ slug, fiche: ficheServeur, menu: menuServeur }
             et montre ce qui a ete commande : voir `./Recu.tsx`. */}
         {recu && (
           <Recu recu={recu} slug={slug} fondPage={FOND_PAGE} onMasquer={masquerRecu} />
-        )}
-
-        {/* Le pendant du bandeau « REÇUE ». Une commande refusee doit se voir
-            autant qu'une commande passee : c'est son absence qui a laisse un
-            client croire, le 15 aout, qu'il avait commande. */}
-        {echec && (
-          <div
-            role="alert"
-            /* LA MANGUE POUR CE QU'ON NE SAIT PAS, le bissap pour ce qui est refuse :
-               DESIGN.md donne a la mangue « en attente, a surveiller ». Peindre
-               en rouge une commande peut-etre partie la declarerait perdue. */
-            className={`mb-8 flex flex-wrap items-center gap-4 border p-5 ${
-              sansReponse ? 'border-mangue-200 bg-mangue-50' : 'border-bissap-200 bg-bissap-50'
-            }`}
-          >
-            <span
-              className={`stamp shrink-0 font-mono text-xs font-bold ${
-                sansReponse ? 'text-mangue-700' : 'text-bissap-700'
-              }`}
-            >
-              {sansReponse ? 'SANS RÉPONSE' : 'REFUSÉE'}
-            </span>
-            <p className={`min-w-0 flex-1 basis-56 text-sm ${sansReponse ? 'text-nuit-900' : 'text-bissap-800'}`}>
-              {echec} Votre panier est conservé.
-            </p>
-          </div>
         )}
 
         {/* ────────────────────────────────────────────────────────────────
@@ -2145,6 +2201,43 @@ export default function Vitrine({ slug, fiche: ficheServeur, menu: menuServeur }
                         onChange={e => setInstructions(e.target.value)}
                       />
                     </div>
+
+                    {/* LE VERDICT D'UN ECHEC, LA OU LE CLIENT PEUT Y REPONDRE.
+                        Il s'affichait tout en haut de la page, et la page y
+                        remontait : le client lisait un refus, puis devait
+                        retrouver seul son formulaire, 1 600 a 2 500 px plus
+                        bas. Une commande refusee doit se voir autant qu'une
+                        commande passee — mais pres du geste qui la corrige.
+
+                        LA MANGUE POUR CE QU'ON NE SAIT PAS, le bissap pour ce
+                        qui est refuse : DESIGN.md donne a la mangue « en
+                        attente, a surveiller ». Peindre en rouge une commande
+                        peut-etre partie la declarerait perdue.
+
+                        Pas de second bouton « renvoyer » : celui du dessous
+                        fait exactement cela, et deux boutons rouges se
+                        disputeraient le pouce. C'est le texte qui dit que
+                        renvoyer est sans risque. */}
+                    {echec && (
+                      <div
+                        ref={echecRef}
+                        role="alert"
+                        className={`scroll-mt-6 border p-4 ${
+                          sansReponse ? 'border-mangue-200 bg-mangue-50' : 'border-bissap-200 bg-bissap-50'
+                        }`}
+                      >
+                        <span
+                          className={`stamp inline-block font-mono text-xs font-bold ${
+                            sansReponse ? 'text-mangue-700' : 'text-bissap-700'
+                          }`}
+                        >
+                          {sansReponse ? 'SANS RÉPONSE' : 'REFUSÉE'}
+                        </span>
+                        <p className={`mt-3 text-sm leading-relaxed ${sansReponse ? 'text-nuit-900' : 'text-bissap-800'}`}>
+                          {echec}
+                        </p>
+                      </div>
+                    )}
 
                     <button
                       onClick={commander}

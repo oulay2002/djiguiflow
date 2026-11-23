@@ -3,7 +3,12 @@
 import { useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { classesBouton } from '@/components/ui/Bouton';
-import { etapesDuRecu, type Recu as DonneesRecu } from '@/lib/vitrine/recu';
+import {
+  etapesDuRecu,
+  lienVersLaBoutique,
+  recoursDuRecu,
+  type Recu as DonneesRecu,
+} from '@/lib/vitrine/recu';
 
 /**
  * Le recu : la souche qu'on garde quand le bon de commande est parti.
@@ -57,6 +62,8 @@ export function Recu({
   }, [recu.reference]);
 
   const [premiere, ...suite] = etapesDuRecu(recu);
+  const recours = recoursDuRecu(recu);
+  const versLaBoutique = lienVersLaBoutique(recu.telephoneBoutique, recu.reference);
 
   const suivi = `/suivi?ref=${encodeURIComponent(recu.reference)}`
     + `&boutique=${encodeURIComponent(slug)}`
@@ -101,6 +108,33 @@ export function Recu({
           </li>
         ))}
       </ol>
+
+      {/* ET SI LE MESSAGE N'ARRIVE PAS ?
+          Le recu demande de repondre a un message. Un numero mal tape, ou
+          sans WhatsApp, et ce message n'arrive jamais : le client attendait
+          devant « REÇUE », et le commerce perdait la vente sans le savoir.
+          On lui dit quoi verifier, et on lui ouvre la conversation avec la
+          boutique, reference deja ecrite.
+
+          Ce lien ne CONFIRME rien : confirmer depuis cette page validerait
+          une commande sans jamais avoir verifie que le numero existe. Il
+          reste donc en texte, sous le bloc des etapes, et non en bouton —
+          la seule chose a faire reste de repondre au message. */}
+      {recours && (
+        <div className="mt-3 text-sm leading-relaxed text-chaux-600">
+          <p>{recours}</p>
+          {versLaBoutique && (
+            <a
+              href={versLaBoutique}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex min-h-11 items-center font-medium text-nuit-800 underline decoration-chaux-300 underline-offset-4 transition hover:decoration-nuit-800"
+            >
+              Écrire à la boutique sur WhatsApp
+            </a>
+          )}
+        </div>
+      )}
 
       {/* La reference se garde : c'est elle qu'on donne au commercant au
           telephone, et celle que `/suivi` et `/mes-donnees` demandent. En

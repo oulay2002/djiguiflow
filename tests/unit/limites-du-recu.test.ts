@@ -79,7 +79,7 @@ describe('une absence de reponse n’est pas un refus', () => {
   it('elle ne dit pas « non envoyee » : on ne sait pas si la commande est partie', () => {
     expect(vitrine).not.toContain('Commande non envoyée, vérifiez votre connexion et réessayez.');
     expect(vitrine).toContain('votre commande est peut-être partie');
-    expect(vitrine).toContain('regardez si un message WhatsApp de la boutique est arrivé');
+    expect(vitrine).toContain('Regardez si un message WhatsApp de la boutique est arrivé');
   });
 
   it('chaque nouvel envoi repart d’un etat net', () => {
