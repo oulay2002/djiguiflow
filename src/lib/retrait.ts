@@ -246,3 +246,32 @@ export function horodaterRetrait(
 
   return { ok: true, iso: vise.toISOString() };
 }
+
+/**
+ * Ou et quand venir chercher une commande — en une phrase, ou rien.
+ *
+ * ── POURQUOI ELLE EXISTE ───────────────────────────────────────────────────
+ *
+ * Le message WhatsApp mene le client a la page ou il confirme. Pour une
+ * commande a RETIRER, cette page lui demandait « Serez-vous disponible pour la
+ * reception ? » et n'indiquait aucun lieu : il confirmait un deplacement sans
+ * savoir ou aller. C'est le dernier endroit ou il lit quelque chose avant de
+ * se mettre en route.
+ *
+ * ── CE QU'ELLE NE FAIT PAS ─────────────────────────────────────────────────
+ *
+ * Elle rend une chaine VIDE pour une livraison : l'appelant n'a rien a
+ * afficher, et n'a pas a refaire le test du mode. Et elle n'invente ni heure
+ * ni lieu — `heure` NULL veut dire « des que pret » (voir `heureRetraitLisible`),
+ * une adresse absente se dit « sur place ».
+ */
+export function phraseRetrait(mode: unknown, heureIso: unknown, adresse: unknown): string {
+  if (String(mode ?? '') !== 'retrait') return '';
+
+  const heure = heureRetraitLisible(heureIso);
+  const lieu = String(adresse ?? '').trim();
+  const quand = heure ? `vers ${heure}` : 'dès que c’est prêt';
+
+  if (lieu) return `À retirer ${quand} : ${lieu}.`;
+  return heure ? `À retirer sur place ${quand}.` : `À retirer sur place, ${quand}.`;
+}

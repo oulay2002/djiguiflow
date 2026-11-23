@@ -10,6 +10,7 @@ import { motifExact, referenceRecevable } from '@/lib/reference';
 import { positionRecevable } from '@/lib/positionRecevable';
 import { secretWebhookN8n } from '@/lib/secretN8n';
 import { DELAI_WEBHOOK, delai } from '@/lib/reseau';
+import { phraseRetrait } from '@/lib/retrait';
 
 export const dynamic = 'force-dynamic';
 
@@ -85,7 +86,35 @@ type Ligne = {
   /** `0` = rien a encaisser. NULL = le livreur n'a pas encore annonce. */
   frais_livraison: number | null;
   commande_items: LigneItem[] | null;
+  /** La boutique de la commande : seule son adresse de retrait est lue ici. */
+  boutiques: { adresse_retrait: string | null } | null;
 };
+
+/**
+ * La seconde ligne du recapitulatif, et la phrase de retrait quand il y en a une.
+ *
+ * UNE COMMANDE A RETIRER N'A PAS D'ADRESSE DE LIVRAISON — la route de commande
+ * l'efface a dessein. Le recapitulatif affichait donc « 6 000 FCFA · » suivi
+ * de rien, et ne disait nulle part ou aller. Il dit maintenant ou et quand,
+ * avec les mots de `phraseRetrait`, la ou le client lit avant de confirmer.
+ */
+function lignesDuRecap(ligne: Ligne): string {
+  const montant = `${Number(ligne.total ?? 0).toLocaleString('fr-FR')} FCFA`;
+  const retrait = phraseRetrait(
+    ligne.mode_recuperation,
+    ligne.heure_retrait,
+    ligne.boutiques?.adresse_retrait,
+  );
+
+  if (retrait) {
+    return (
+      `<p style="font-family:${MONO};color:${ENCRE.gris};margin:0 0 6px;font-size:14px">${montant}</p>`
+      + `<p style="color:${ENCRE.nuit};margin:0 0 18px;font-size:15px;line-height:1.5">${echapper(retrait)}</p>`
+    );
+  }
+
+  return `<p style="font-family:${MONO};color:${ENCRE.gris};margin:0 0 18px;font-size:14px">${montant} · ${echapper(ligne.client_adresse)}</p>`;
+}
 
 /**
  * Pourquoi un bouton, et non un simple lien.
@@ -166,6 +195,12 @@ const COULEUR_TON: Record<Ton, string> = {
  * Elle porte donc le meme objet que partout ailleurs — le talon, la
  * perforation, le tampon — et le tampon remplace l'emoji : il dit l'etat en
  * un mot, ce que le pictogramme laissait deviner.
+ */
+/**
+ * `detail` ET `corps` SONT INSERES TELS QUELS. Ils sont composes ici, de phrases
+ * fixes et de balises ; toute valeur venue de la base — nom, adresse, article —
+ * doit passer par `echapper` AVANT d'y entrer. L'adresse de retrait est saisie
+ * par un marchand : non echappee, elle s'executerait chez son client.
  */
 function pageHtml(tampon: string, ton: Ton, titre: string, detail: string, corps = ''): string {
   const teinte = COULEUR_TON[ton];
@@ -393,7 +428,9 @@ async function chargerCommande(ref: string) {
         // « Confirmation Client » enchaine sur « Lancer livreurs » sans rien
         // savoir de la commande au-dela de ce que cette route lui transmet.
         ' mode_recuperation, heure_retrait, frais_livraison,' +
-        ' commande_items(nom_produit, quantite)',
+        ' commande_items(nom_produit, quantite),' +
+        // L'adresse de retrait vit sur la boutique, pas sur la commande.
+        ' boutiques(adresse_retrait)',
     )
     .ilike('reference', motifExact(ref))
     .maybeSingle();
@@ -479,7 +516,12 @@ function dejaRepondu(ligne: Ligne): Response | null {
         'CONFIRMÉE',
         'ok',
         'Commande confirmée',
-        'Vous avez déjà confirmé cette commande. Le commerçant la prépare.',
+        // Qui rouvre son lien avant de partir doit y retrouver ou aller.
+        ['Vous avez déjà confirmé cette commande. Le commerçant la prépare.', echapper(phraseRetrait(
+          ligne.mode_recuperation,
+          ligne.heure_retrait,
+          ligne.boutiques?.adresse_retrait,
+        ))].filter(Boolean).join(' '),
         200,
         extra,
       )
@@ -537,10 +579,20 @@ export async function GET(req: Request) {
   const recap =
     `<div style="border-top:1px dashed ${ENCRE.perfo};margin:20px 0 14px"></div>` +
     `<p style="color:${ENCRE.nuit};margin:0 0 4px;font-weight:600">${echapper(articles) || 'Votre commande'}</p>` +
-    `<p style="font-family:${MONO};color:${ENCRE.gris};margin:0 0 18px;font-size:14px">${Number(ligne.total ?? 0).toLocaleString('fr-FR')} FCFA · ${echapper(ligne.client_adresse)}</p>` +
+    lignesDuRecap(ligne) +
     `<div>${bouton('oui', 'Je confirme', ENCRE.feuille)}${bouton('non', "J'annule", ENCRE.bissap)}</div>`;
 
-  return reponseHtml('À CONFIRMER', 'attente', 'Confirmez votre commande', 'Serez-vous disponible pour la réception ?', 200, recap);
+  return reponseHtml(
+    'À CONFIRMER',
+    'attente',
+    'Confirmez votre commande',
+    // La question suit le mode : on ne « receptionne » pas ce qu'on va chercher.
+    String(ligne.mode_recuperation ?? '') === 'retrait'
+      ? 'Viendrez-vous la chercher ?'
+      : 'Serez-vous disponible pour la réception ?',
+    200,
+    recap,
+  );
 }
 
 /** L'ecriture, declenchee par le bouton et par lui seul. */
@@ -681,7 +733,12 @@ export async function POST(req: Request) {
         'CONFIRMÉE',
         'ok',
         'Commande confirmée',
-        'Le commerçant prépare votre commande.',
+        // Le lieu se redit ICI : c'est la derniere chose lue avant de partir.
+        ['Le commerçant prépare votre commande.', echapper(phraseRetrait(
+          ligne.mode_recuperation,
+          ligne.heure_retrait,
+          ligne.boutiques?.adresse_retrait,
+        ))].filter(Boolean).join(' '),
         200,
         blocPosition(ligne.reference, ligne.jeton_suivi ?? '') + blocSuivi(ligne.reference),
       )
