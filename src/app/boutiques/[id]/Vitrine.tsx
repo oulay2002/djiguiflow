@@ -18,6 +18,8 @@ import { EMOJI_DEFAUT, Enseigne, initiale } from '@/components/ui/Enseigne';
 import type { FicheVitrine, ProduitVitrine } from '@/lib/vitrine/donnees';
 import { etatInitial } from '@/lib/vitrine/etatInitial';
 import { clefBrouillon, ecrireBrouillon, lireBrouillon, type Brouillon } from '@/lib/vitrine/brouillon';
+import { clefRecu, ecrireRecu, lireRecu, type Recu as DonneesRecu } from '@/lib/vitrine/recu';
+import { Recu } from './Recu';
 
 type Produit = {
   id: string;
@@ -354,11 +356,20 @@ export default function Vitrine({ slug, fiche: ficheServeur, menu: menuServeur }
   const [adresse, setAdresse] = useState('');
   const [instructions, setInstructions] = useState('');
   const [envoi, setEnvoi] = useState(false);
-  const [confirmation, setConfirmation] = useState('');
-  // Le jeton du lien de suivi. Il vient de la reponse de la route et n'est
-  // jamais fabrique ici : la reference seule ne suffit plus a ouvrir un suivi,
-  // parce qu'elle se devine.
-  const [jetonSuivi, setJetonSuivi] = useState('');
+  /**
+   * LE RECU DE LA COMMANDE PARTIE, ou `null`.
+   *
+   * Il porte tout ce que l'ecran de fin affiche — reference, jeton du lien de
+   * suivi, lignes, total, mode — FIGE au moment de l'envoi : le panier se vide
+   * et le selecteur redevient modifiable, et un recu qui les relirait en
+   * direct changerait apres coup. Trois etats separes le portaient
+   * (`confirmation`, `jetonSuivi`, `recupConfirmee`) ; un seul objet ne peut
+   * pas se retrouver a moitie rempli.
+   *
+   * Le jeton vient de la reponse de la route et n'est jamais fabrique ici : la
+   * reference seule ne suffit plus a ouvrir un suivi, parce qu'elle se devine.
+   */
+  const [recu, setRecu] = useState<DonneesRecu | null>(null);
   const [echec, setEchec] = useState('');
   /**
    * La voie WhatsApp a-t-elle ete empruntee ?
@@ -429,15 +440,6 @@ export default function Vitrine({ slug, fiche: ficheServeur, menu: menuServeur }
    */
   const [heureRetrait, setHeureRetrait] = useState('');
 
-  /**
-   * CE QUI A ETE COMMANDE, fige au moment de l'envoi.
-   *
-   * Le bandeau « REÇUE » vit apres le formulaire, qui se vide et redevient
-   * modifiable : lire `modeChoisi` en direct ferait changer le bandeau d'une
-   * commande DEJA PARTIE si le client rebasculait le selecteur en la relisant.
-   * Il lirait alors « vous viendrez la chercher » sur une livraison.
-   */
-  const [recupConfirmee, setRecupConfirmee] = useState<{ mode: ModeCommande; heure: string } | null>(null);
 
   /**
    * LE BROUILLON : CE QUI A ETE COMPOSE SURVIT A UN RECHARGEMENT.
@@ -463,6 +465,10 @@ export default function Vitrine({ slug, fiche: ficheServeur, menu: menuServeur }
     (async () => {
       let b: Brouillon | null = null;
       try {
+        // Le recu d'une commande deja partie revient avec le reste : c'est
+        // lui qui porte la reference et le lien de suivi.
+        const ancien = lireRecu(window.sessionStorage.getItem(clefRecu(slug)));
+        if (ancien) setRecu((r) => r ?? ancien);
         b = lireBrouillon(
           window.sessionStorage.getItem(clefBrouillon(slug)),
           produits,
@@ -832,6 +838,16 @@ export default function Vitrine({ slug, fiche: ficheServeur, menu: menuServeur }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [estMarchandSheets, telOk, tel, nom, slug, JSON.stringify(panier)]);
 
+  /** Range le recu : a l'ecran ET dans l'onglet, sans quoi il reviendrait. */
+  const masquerRecu = () => {
+    setRecu(null);
+    try {
+      window.sessionStorage.removeItem(clefRecu(slug));
+    } catch {
+      // Rien a effacer si le stockage est indisponible.
+    }
+  };
+
   const commander = async () => {
     if (estMarchandSheets) {
       setEnvoi(true);
@@ -871,9 +887,32 @@ export default function Vitrine({ slug, fiche: ficheServeur, menu: menuServeur }
         });
         const d = await res.json();
         if (d.ok) {
-          setConfirmation(d.order_id);
-          setJetonSuivi(String(d.jeton_suivi ?? ''));
-          setRecupConfirmee({ mode: modeChoisi, heure: heureRetrait });
+          // LE RECU SE COMPOSE AVANT QUE LE PANIER SE VIDE : deux lignes plus
+          // bas, il n'y aura plus rien a y inscrire.
+          const nouveau: DonneesRecu = {
+            reference: String(d.order_id),
+            jeton: String(d.jeton_suivi ?? ''),
+            lignes: lignes.map((l) => ({
+              quantite: l.q,
+              nom: l.prod.nom,
+              variante: l.variante,
+              montant: l.q * l.prod.prix,
+            })),
+            total,
+            mode: modeChoisi,
+            heure: modeChoisi === 'retrait' ? heureRetrait : '',
+            adresseRetrait: modeChoisi === 'retrait' ? recuperation.adresse : '',
+            paiements: infos.paiements,
+            frais: mentionFrais({ mode: modeChoisi, offerteDes: recuperation.offerteDes, total }),
+          };
+          setRecu(nouveau);
+          // Garde le temps de l'onglet : le recu envoie le client sur
+          // WhatsApp, et c'est ce trajet qui fait decharger la page.
+          try {
+            window.sessionStorage.setItem(clefRecu(slug), ecrireRecu(nouveau));
+          } catch {
+            // Stockage indisponible : le recu reste a l'ecran, c'est l'essentiel.
+          }
           setPanier({}); setNom(''); setTel(''); setAdresse(''); setInstructions('');
           // L'heure demandee appartenait a la commande qui vient de partir :
           // la garder ferait proposer la meme a la suivante, sans un mot.
@@ -948,7 +987,7 @@ export default function Vitrine({ slug, fiche: ficheServeur, menu: menuServeur }
       // et champs conserves. Le client revenait sur l onglet sans savoir si son
       // message etait parti.
       setEchec('');
-      setConfirmation('');
+      masquerRecu();
       setEnvoiWhatsapp(true);
       verdictRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
@@ -1359,7 +1398,9 @@ export default function Vitrine({ slug, fiche: ficheServeur, menu: menuServeur }
       </header>
 
       <main id="contenu" className="mx-auto max-w-6xl px-5 pb-8 pt-5 sm:px-8 sm:py-8">
-        <div ref={verdictRef} />
+        {/* `scroll-mt-4` : le recu et le refus arrivent par defilement ; sans marge
+            ils collaient au bord haut de l'ecran, comme coupes. */}
+        <div ref={verdictRef} className="scroll-mt-4" />
 
         {/* La voie WhatsApp : ni reference ni suivi -- mais un accuse, sans
             lequel le client ne savait pas si son message etait parti. */}
@@ -1376,45 +1417,14 @@ export default function Vitrine({ slug, fiche: ficheServeur, menu: menuServeur }
           </div>
         )}
 
-        {confirmation && (
-          <div className="mb-8 flex flex-wrap items-center gap-4 border border-accent-200 bg-accent-50 p-5">
-            <span className="stamp font-mono text-xs font-bold text-accent-700">REÇUE</span>
-            <p className="text-sm text-accent-800">
-              Commande <b className="font-mono">{confirmation}</b> transmise au commerçant.
-              {/* CE QU IL FAUT DIRE ICI, ET QUI MANQUAIT.
-                  Un message part sur WhatsApp avec « Je confirme » / « J annule »,
-                  et la commande n est PAS lancee tant qu il n a pas repondu. Le
-                  bandeau s arretait a « transmise » : le client refermait
-                  l onglet en croyant avoir fini. */}{' '}
-              <b>Répondez au message WhatsApp qui va vous être envoyé</b> pour
-              qu’elle soit préparée.{' '}
-              {/* CE QU'IL DOIT SAVOIR AVANT DE FERMER L'ONGLET : doit-il
-                  attendre chez lui, ou se deplacer ? On ne le lui dit qu'en
-                  retrait — en livraison, la page n'a jamais eu a le preciser
-                  et l'ajouter alourdirait le seul moment ou il lit
-                  vraiment. */}
-              {recupConfirmee?.mode === 'retrait' && (
-                <>
-                  <b>
-                    Vous viendrez la chercher sur place
-                    {recupConfirmee.heure ? ` vers ${recupConfirmee.heure}` : ''}
-                    {recuperation.adresse ? ` : ${recuperation.adresse}` : ''}.
-                  </b>{' '}
-                  Le commerçant vous prévient dès qu’elle est prête.{' '}
-                </>
-              )}
-              <Link
-                href={
-                  `/suivi?ref=${encodeURIComponent(confirmation)}`
-                  + `&boutique=${encodeURIComponent(slug)}`
-                  + (jetonSuivi ? `&t=${encodeURIComponent(jetonSuivi)}` : '')
-                }
-                className="font-bold underline underline-offset-2"
-              >
-                Suivre ma commande
-              </Link>
-            </p>
-          </div>
+        {/* LE RECU REMPLACE LE BANDEAU.
+            Le succes tenait dans un paragraphe de petit texte, ou « Repondez
+            au message WhatsApp » etait une incise — alors que la commande
+            n'est PAS lancee tant que le client n'a pas repondu. Il refermait
+            l'onglet en croyant avoir fini. Le recu met cette etape en titre,
+            et montre ce qui a ete commande : voir `./Recu.tsx`. */}
+        {recu && (
+          <Recu recu={recu} slug={slug} fondPage={FOND_PAGE} onMasquer={masquerRecu} />
         )}
 
         {/* Le pendant du bandeau « REÇUE ». Une commande refusee doit se voir
