@@ -735,6 +735,22 @@ export default function Home() {
             <Link href="/legal" className="whitespace-nowrap transition hover:text-white">
               Documents légaux
             </Link>
+            {/*
+              DEUX LIENS DIRECTS, EN PLUS DE L'INDEX.
+              Google refuse de valider l'ecran « Se connecter avec Google » —
+              et affiche alors l'adresse technique du fournisseur a la place
+              du nom et du logo — tant que la page d'accueil ne mene pas
+              DIRECTEMENT a la politique de confidentialite. Un lien vers
+              l'index des documents ne lui suffit pas : son controle cherche
+              la page elle-meme. Et c'est aussi ce qu'un visiteur cherche
+              avant de confier son numero.
+            */}
+            <Link href="/legal/confidentialite" className="whitespace-nowrap transition hover:text-white">
+              Confidentialité
+            </Link>
+            <Link href="/legal/cgu" className="whitespace-nowrap transition hover:text-white">
+              Conditions d’utilisation
+            </Link>
           </nav>
         </div>
 
