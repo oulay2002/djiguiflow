@@ -42,7 +42,7 @@ describe('l’adresse de retrait tient de la base a la vitrine', () => {
     expect(vitrine).toContain("modeChoisi === 'retrait' && recuperation.adresse && (");
   });
 
-  it('elle est rappelee dans la confirmation d’une commande a retirer', () => {
-    expect(vitrine).toContain('{recuperation.adresse ? ` : ${recuperation.adresse}` : \'\'}');
+  it('elle est figee dans le recu d’une commande a retirer, et pas dans celui d’une livraison', () => {
+    expect(vitrine).toContain("adresseRetrait: modeChoisi === 'retrait' ? recuperation.adresse : '',");
   });
 });
