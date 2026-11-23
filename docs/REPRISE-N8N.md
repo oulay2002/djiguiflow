@@ -24,6 +24,7 @@ Vérifié le 23 août :
 | Les données | Export quotidien, dépôt privé |
 | Le sous-domaine | `n8n.djiguiflow.com` vit au DNS, pas sur la machine |
 | Savoir que c'est tombé | `veille-n8n.yml` tourne sur GitHub Actions, **hors du VPS** |
+| **Les identifiants, la base, la configuration** | **Depuis le 23 novembre 2026** : `sauvegarde-n8n.yml`, chaque nuit à 5 h 15 UTC, dépôt privé, dossier `n8n/` — voir [Restaurer depuis la sauvegarde nocturne](#restaurer-depuis-la-sauvegarde-nocturne) |
 
 Ce dernier point est le plus important, et il a été vérifié : la sonde alerte
 « n8n est injoignable depuis la sonde » après plusieurs essais, toutes les
@@ -39,8 +40,12 @@ en quelques minutes depuis `n8n/`. Ce qui ne revient pas :
 
 ### 1. Les sept identifiants — 70 nœuds
 
-Aucune API ne les exporte : ils vivent chiffrés dans la base de n8n et nulle
-part ailleurs.
+Aucune API ne les exporte : ils vivent chiffrés dans la base de n8n. Jusqu'au
+23 novembre 2026, nulle part ailleurs — et le VPS perdu en septembre l'a fait
+payer : deux mois de n8n mort, puis tout à ressaisir. Depuis, la CLI les
+exporte chaque nuit (`n8n export:credentials`, chiffrés) vers le dépôt privé.
+Ce tableau garde sa valeur : c'est ce qu'il faut ressaisir **si la sauvegarde
+nocturne a elle aussi manqué**.
 
 | Identifiant | Nœuds | Ce qui tombe sans lui |
 |---|---:|---|
@@ -165,6 +170,41 @@ Rien de ce qui suit ne se rattrape après coup.
 3. **Copier `/docker/n8n/.env`** au même endroit.
 4. **Poser une clé SSH sur le poste du gérant.** Il n'y en a aucune aujourd'hui :
    personne ne peut inspecter le VPS depuis ici, ni le redémarrer.
+
+---
+
+## Restaurer depuis la sauvegarde nocturne
+
+Depuis le 23 novembre 2026, `.github/workflows/sauvegarde-n8n.yml` reçoit
+chaque nuit du VPS une archive produite par `scripts/vps/sauvegarde-n8n.sh`
+et la pousse dans le dépôt privé `djiguiflow-sauvegardes`, dossier `n8n/` :
+
+| Fichier | Contenu | Sert à |
+|---|---|---|
+| `identifiants.chiffres.json` | `n8n export:credentials --all` | `n8n import:credentials --input=…` — **ids d'origine conservés**, aucun nœud à rebrancher |
+| `workflows.json` | `n8n export:workflow --all` | `n8n import:workflow --input=…` — même propriété |
+| `database.sqlite` | copie cohérente de la base | tout le reste : exécutions, réglages, variables ; restauration intégrale en la posant dans `/home/node/.n8n/`, conteneur arrêté |
+| `config/` | compose, Caddyfile, `.env` | la machine ; **toute valeur `<retire de la sauvegarde>` est à ressaisir** |
+| `VERSION`, `HORODATAGE` | version de n8n, heure de prise | figer la même version avant d'importer |
+
+**La clé de chiffrement n'y est pas, et c'est voulu.** Les identifiants exportés
+sont chiffrés avec `N8N_ENCRYPTION_KEY` ; sa seule copie hors serveur est sur le
+poste de l'exploitant (`C:\Users\oulay\.djiguiflow\n8n-cle-de-chiffrement.txt`).
+Sans elle, l'archive ne rend que les workflows. Avec elle posée dans le `.env`
+du serveur neuf **avant le premier démarrage**, `import:credentials` rend des
+identifiants utilisables tels quels — sauf la connexion OAuth Google, dont le
+jeton ne survit à aucune migration (section 3).
+
+Pose sur un serveur neuf : `scripts/vps/installer-sauvegarde-n8n.sh` (une
+ligne, en commentaire d'en-tête) installe le script et la clé SSH bridée dont la
+privée est le secret GitHub `VPS_SAUVEGARDE_SSH_KEY` ; la clé d'hôte épinglée
+dans le workflow est alors à remplacer. La sonde `/api/internal/sante` crie si
+la sauvegarde n'a pas pointé depuis 30 h.
+
+**Non prouvé** : la restauration complète depuis cette archive n'a pas encore été
+rejouée sur une machine vierge. La reconstruction du 23 novembre a utilisé les
+mêmes commandes `import:*` sur des exports de même forme — c'est l'indice, pas
+la preuve.
 
 ---
 

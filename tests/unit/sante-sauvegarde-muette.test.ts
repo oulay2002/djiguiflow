@@ -34,6 +34,7 @@ type Pointage = { cle: string; dernier_le: string };
 const TACHES = [
   { cle: 'sauvegarde_donnees', nom: 'Sauvegarde des donnees' },
   { cle: 'sauvegarde_schema', nom: 'Sauvegarde du schema' },
+  { cle: 'sauvegarde_n8n', nom: 'Sauvegarde de n8n' },
 ];
 
 /** Le détecteur, tel que la sonde l'applique. */
@@ -82,7 +83,7 @@ describe('sonde de santé — la sauvegarde qui ne tourne plus', () => {
   describe('ce qui doit crier', () => {
     it('au-delà du seuil, la tâche est signalée', () => {
       const vus = silences(toutesAJour(31), MAINTENANT);
-      expect(vus).toHaveLength(2);
+      expect(vus).toHaveLength(TACHES.length);
       expect(vus[0].jamais).toBe(false);
     });
 
@@ -103,7 +104,8 @@ describe('sonde de santé — la sauvegarde qui ne tourne plus', () => {
     it('le cas reel du 27 aout : 27 h, encore sous le seuil a 8 h', () => {
       const vus = silences(
         [{ cle: 'sauvegarde_donnees', dernier_le: '2026-08-26T05:04:00Z' },
-         { cle: 'sauvegarde_schema', dernier_le: ilYA(2) }],
+         { cle: 'sauvegarde_schema', dernier_le: ilYA(2) },
+         { cle: 'sauvegarde_n8n', dernier_le: ilYA(2) }],
         MAINTENANT,
       );
       expect(vus).toHaveLength(0);
@@ -112,7 +114,8 @@ describe('sonde de santé — la sauvegarde qui ne tourne plus', () => {
     it('le meme cas a 12 h : l alerte part', () => {
       const vus = silences(
         [{ cle: 'sauvegarde_donnees', dernier_le: '2026-08-26T05:04:00Z' },
-         { cle: 'sauvegarde_schema', dernier_le: '2026-08-27T05:57:00Z' }],
+         { cle: 'sauvegarde_schema', dernier_le: '2026-08-27T05:57:00Z' },
+         { cle: 'sauvegarde_n8n', dernier_le: '2026-08-27T05:57:00Z' }],
         Date.parse('2026-08-27T12:00:00Z'),
       );
       expect(vus).toHaveLength(1);
@@ -125,12 +128,16 @@ describe('sonde de santé — la sauvegarde qui ne tourne plus', () => {
     // tâches ATTENDUES, pas celles qu'on trouve.
     it('une tâche qui n a JAMAIS pointé est signalée', () => {
       const vus = silences([], MAINTENANT);
-      expect(vus).toHaveLength(2);
+      expect(vus).toHaveLength(TACHES.length);
       expect(vus.every((v) => v.jamais)).toBe(true);
     });
 
-    it('une seule des deux manque : seule celle-là est signalée', () => {
-      const vus = silences([{ cle: 'sauvegarde_donnees', dernier_le: ilYA(2) }], MAINTENANT);
+    it('une seule des trois manque : seule celle-là est signalée', () => {
+      const vus = silences(
+        [{ cle: 'sauvegarde_donnees', dernier_le: ilYA(2) },
+         { cle: 'sauvegarde_n8n', dernier_le: ilYA(2) }],
+        MAINTENANT,
+      );
       expect(vus).toHaveLength(1);
       expect(vus[0].cle).toBe('sauvegarde_schema');
       expect(vus[0].jamais).toBe(true);

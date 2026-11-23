@@ -252,7 +252,7 @@ export async function POST(req: Request) {
   const { data: pointages, error: errPointage } = await sb
     .from('pointages')
     .select('cle, dernier_le')
-    .in('cle', ['sauvegarde_donnees', 'sauvegarde_schema']);
+    .in('cle', ['sauvegarde_donnees', 'sauvegarde_schema', 'sauvegarde_n8n']);
 
   const panne = errLivreur ?? errStock ?? errAbandons ?? errTemoin ?? errPrevenu ?? errPointage;
   if (panne) {
@@ -274,6 +274,9 @@ export async function POST(req: Request) {
   const TACHES_ATTENDUES: { cle: string; nom: string }[] = [
     { cle: 'sauvegarde_donnees', nom: 'Sauvegarde des donnees' },
     { cle: 'sauvegarde_schema', nom: 'Sauvegarde du schema' },
+    // Ajoutee le 23 novembre 2026, apres la perte du VPS : les identifiants n8n
+    // n'ont de copie que par elle (voir .github/workflows/sauvegarde-n8n.yml).
+    { cle: 'sauvegarde_n8n', nom: 'Sauvegarde de n8n' },
   ];
 
   const vuLe = new Map(

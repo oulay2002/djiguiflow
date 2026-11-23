@@ -25,7 +25,7 @@ export const dynamic = 'force-dynamic';
  */
 
 /** Les tâches qu'on accepte de pointer. Une clef inconnue est refusée. */
-const CLES_CONNUES = new Set(['sauvegarde_donnees', 'sauvegarde_schema', 'export_n8n']);
+const CLES_CONNUES = new Set(['sauvegarde_donnees', 'sauvegarde_schema', 'sauvegarde_n8n', 'export_n8n']);
 
 export async function POST(req: Request) {
   const secret = req.headers.get('x-sync-secret');

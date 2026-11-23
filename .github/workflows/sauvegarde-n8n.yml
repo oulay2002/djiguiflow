@@ -1,0 +1,229 @@
+# La sauvegarde de n8n. Celle qui aurait evite deux mois de reconstruction.
+#
+# CE QU'ON A DECOUVERT LE 23 NOVEMBRE 2026. Le VPS qui portait n8n avait ete
+# supprime pour impaye le 23 septembre — sans sauvegarde chez l'hebergeur, sans
+# sauvegarde chez nous. Les workflows etaient dans le depot grace a l'export
+# quotidien. Les IDENTIFIANTS (Telegram, Mistral, wasender, Supabase, le secret
+# des webhooks…) ne l'etaient pas : ils n'existaient que dans la base SQLite du
+# serveur disparu. Il a fallu tout ressaisir.
+#
+# CE QUE CE FICHIER FAIT. Chaque nuit, il se connecte au VPS avec une cle SSH
+# dediee, recoit une archive produite par `scripts/vps/sauvegarde-n8n.sh`
+# (identifiants chiffres, workflows, copie coherente de la base SQLite,
+# configuration sans ses secrets), la verifie, et la pousse dans le depot PRIVE
+# de sauvegardes — le meme que les donnees Supabase, dossier `n8n/`.
+#
+# POURQUOI DEPUIS GITHUB ET PAS PAR UN CRON SUR LE SERVEUR. Un cron meurt avec
+# le serveur, et c'est exactement la panne qu'on couvre. Ici la tache est
+# visible dans Actions, alerte sur Telegram si elle echoue, et pointe son
+# passage pour que la sonde de sante crie si elle cesse de tourner — tout le
+# filet des sauvegardes Supabase, sans rien inventer.
+#
+# LA CLE SSH NE PEUT FAIRE QU'UNE CHOSE. Sa ligne `authorized_keys` sur le
+# serveur porte `command="/opt/n8n/sauvegarde.sh"` et `no-pty`,
+# `no-port-forwarding`… : quoi qu'on lui demande, le serveur n'execute que la
+# sauvegarde. Le secret vit dans un depot public ; s'il fuyait, le voleur
+# obtiendrait des identifiants chiffres sans la cle pour les lire. Cette cle de
+# chiffrement n'est NULLE PART ici — elle a sa copie hors ligne sur le poste
+# de l'exploitant, et c'est deliberement la seule.
+#
+# POURQUOI CA NE PEUT PAS ATTERRIR DANS CE DEPOT. Il est public. Meme chiffres,
+# des identifiants n'ont rien a faire dans des artefacts telechargeables par
+# tous. L'archive est ecrite dans $RUNNER_TEMP, hors de l'arbre de travail.
+name: Sauvegarde de n8n
+
+on:
+  schedule:
+    # Abidjan = UTC. 5 h 15 : apres les donnees (4 h 30) et l'export des
+    # workflows (5 h 00), avant la reference de schema (5 h 30) et la purge
+    # de conservation (5 h 45).
+    - cron: '15 5 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sauvegarde-n8n
+  cancel-in-progress: false
+
+env:
+  # L'hote par son NOM, pas par son adresse : le DNS a deja suivi un changement
+  # de serveur en novembre, ce fichier n'a pas eu a bouger.
+  HOTE_VPS: n8n.djiguiflow.com
+  # LA CLE D'HOTE EST EPINGLEE, PAS DECOUVERTE A CHAQUE PASSAGE. Un
+  # `ssh-keyscan` au moment de la connexion accepterait n'importe quel serveur
+  # qui repondrait a ce nom — un DNS detourne recevrait notre cle privee en
+  # tentative de connexion. Relevee le 23 novembre 2026 sur le nouveau VPS ;
+  # a remplacer si le serveur est reinstalle (le job echouera alors en clair
+  # sur « Host key verification failed », ce qui est le bon comportement).
+  CLE_HOTE_VPS: 'n8n.djiguiflow.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPWp4PwFnmDkGfNdiBsCkQr/jdLUlxCi0uxDMRLgnSCI'
+  CHAT_DEFAUT: '-1003994906478'
+  DEPOT_SAUVEGARDES: oulay2002/djiguiflow-sauvegardes
+  # Au-dela, GitHub refuse le fichier et la sauvegarde echouerait au push, en
+  # ayant deja tout fait. On prefere echouer avant, avec un message qui nomme
+  # la cause : la base grossit, il faut purger les executions.
+  TAILLE_MAX_MO: 90
+
+jobs:
+  sauvegarder:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Verifier que les secrets sont poses
+        env:
+          CLE_VPS: ${{ secrets.VPS_SAUVEGARDE_SSH_KEY }}
+          CLE_DEPOT: ${{ secrets.SAUVEGARDE_DEPLOY_KEY }}
+        run: |
+          manque=0
+          [ -z "$CLE_VPS" ]   && { echo "::error::VPS_SAUVEGARDE_SSH_KEY est absent (la cle privee dont la publique est scripts/vps/sauvegarde-n8n.pub)."; manque=1; }
+          [ -z "$CLE_DEPOT" ] && { echo "::error::SAUVEGARDE_DEPLOY_KEY est absent."; manque=1; }
+          exit $manque
+
+      - name: Recevoir l'archive du serveur
+        env:
+          CLE_VPS: ${{ secrets.VPS_SAUVEGARDE_SSH_KEY }}
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$CLE_VPS" > ~/.ssh/vps
+          chmod 600 ~/.ssh/vps
+          printf '%s\n' "$CLE_HOTE_VPS" > ~/.ssh/known_hosts_vps
+
+          # Aucune commande n'est demandee : le serveur n'en executerait de
+          # toute facon qu'une seule, celle de `command=`. Ce qui arrive sur
+          # stdout EST l'archive ; le script parle sur stderr, qui finit dans
+          # ce journal.
+          ssh -i ~/.ssh/vps -o IdentitiesOnly=yes -o BatchMode=yes \
+              -o UserKnownHostsFile=~/.ssh/known_hosts_vps -o StrictHostKeyChecking=yes \
+              -o ConnectTimeout=30 \
+              "root@$HOTE_VPS" > "$RUNNER_TEMP/n8n.tar.gz"
+
+          taille=$(stat -c %s "$RUNNER_TEMP/n8n.tar.gz")
+          [ "$taille" -gt 1024 ] || { echo "::error::L'archive recue fait $taille octets : le serveur n'a rien envoye."; exit 1; }
+          echo "archive : $((taille / 1024)) Ko"
+
+      # ON VERIFIE CE QU'ELLE CONTIENT plutot que de faire confiance au script
+      # distant : il tourne sur une machine qu'on ne voit pas, et c'est ici
+      # qu'une archive creuse doit etre refusee — pas le jour d'une restauration.
+      - name: Verifier le contenu
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP"
+          tar -xzf n8n.tar.gz
+          for f in identifiants.chiffres.json workflows.json database.sqlite VERSION HORODATAGE; do
+            [ -s "n8n/$f" ] || { echo "::error::n8n/$f manque ou est vide."; exit 1; }
+          done
+          head -c 15 n8n/database.sqlite | grep -q 'SQLite format 3' || { echo "::error::database.sqlite n'est pas une base SQLite."; exit 1; }
+
+          nb_ident=$(jq 'length' n8n/identifiants.chiffres.json)
+          nb_wf=$(jq 'length' n8n/workflows.json)
+          # Six identifiants et vingt-trois workflows a la reconstruction du
+          # 23 novembre 2026. Des planchers larges : on veut attraper le ZERO
+          # et le fichier tronque, pas la suppression legitime d'un workflow.
+          [ "$nb_ident" -ge 3 ]  || { echo "::error::$nb_ident identifiant(s) seulement : export incomplet."; exit 1; }
+          [ "$nb_wf" -ge 10 ]    || { echo "::error::$nb_wf workflow(s) seulement : export incomplet."; exit 1; }
+
+          # Jamais la cle de chiffrement a cote des identifiants chiffres.
+          if grep -rq 'encryptionKey' n8n/identifiants.chiffres.json n8n/config 2>/dev/null; then
+            echo "::error::L'archive contient une cle de chiffrement : rien n'est pousse."; exit 1
+          fi
+          if grep -Eq '^[[:space:]]*-?[[:space:]]*N8N_ENCRYPTION_KEY[=:][[:space:]]*[^<[:space:]]' n8n/config/* 2>/dev/null; then
+            echo "::error::N8N_ENCRYPTION_KEY a une valeur dans la configuration sauvegardee : rien n'est pousse."; exit 1
+          fi
+
+          mo=$(( $(stat -c %s n8n/database.sqlite) / 1048576 ))
+          [ "$mo" -lt "$TAILLE_MAX_MO" ] || { echo "::error::database.sqlite fait $mo Mo (max $TAILLE_MAX_MO) : purger les executions sur le serveur."; exit 1; }
+
+          echo "$nb_ident identifiants chiffres, $nb_wf workflows, base $mo Mo, n8n $(cat n8n/VERSION), prise le $(cat n8n/HORODATAGE)"
+
+      # On ne « cat » jamais ces fichiers : les journaux d'un depot public sont
+      # lisibles par tout le monde. Seulement des nombres.
+      - name: Pousser vers le depot prive
+        env:
+          CLE: ${{ secrets.SAUVEGARDE_DEPLOY_KEY }}
+        run: |
+          set -euo pipefail
+          printf '%s\n' "$CLE" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -t ed25519 github.com >> ~/.ssh/known_hosts 2>/dev/null
+
+          git clone --depth 1 "git@github.com:$DEPOT_SAUVEGARDES.git" "$RUNNER_TEMP/prive"
+          cd "$RUNNER_TEMP/prive"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # `rm -rf` avant la copie : un fichier de configuration supprime sur
+          # le serveur ne doit pas survivre ici pour toujours.
+          rm -rf n8n
+          cp -r "$RUNNER_TEMP/n8n" n8n
+
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "Rien n'a bouge depuis la derniere sauvegarde."
+            exit 0
+          fi
+
+          git add -A
+          git commit -m "n8n au $(date -u '+%Y-%m-%d')" \
+                     -m "Identifiants chiffres, workflows, base SQLite et configuration sans secrets. La cle de chiffrement n'est PAS ici : voir docs/REPRISE-N8N.md dans djiguiflow."
+          # Les donnees Supabase poussent dans le meme depot a 4 h 30. Si la
+          # file GitHub les a retardees jusqu'a maintenant, un seul rebase suffit.
+          git push || { git pull --rebase && git push; }
+          echo "Pousse."
+
+      # Meme logique que `sauvegarde-donnees.yml` : APRES le push, non bloquant,
+      # et l'absence du secret se dit au lieu de se taire.
+      - name: Pointer le passage
+        if: success()
+        continue-on-error: true
+        env:
+          SECRET: ${{ secrets.SYNC_SECRET }}
+          SITE: https://www.djiguiflow.com
+        run: |
+          if [ -z "$SECRET" ]; then
+            echo "::warning::SYNC_SECRET absent — le passage n'est pas pointe."
+            exit 0
+          fi
+          code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 \
+            -X POST "$SITE/api/internal/pointage" \
+            -H "x-sync-secret: $SECRET" \
+            -H 'Content-Type: application/json' \
+            -d '{"cle":"sauvegarde_n8n","detail":"identifiants chiffres, workflows, base SQLite"}')
+          if [ "$code" = "200" ]; then
+            echo "Passage pointe."
+          else
+            echo "::warning::Pointage refuse (HTTP $code) — la sauvegarde, elle, est bien poussee."
+          fi
+
+      - name: Alerter si la sauvegarde a echoue
+        if: failure()
+        env:
+          TOKEN: ${{ secrets.TELEGRAM_ALERTE_TOKEN }}
+          CHAT: ${{ vars.TELEGRAM_ALERTE_CHAT_ID || env.CHAT_DEFAUT }}
+        run: |
+          if [ -z "$TOKEN" ]; then
+            echo "::error::TELEGRAM_ALERTE_TOKEN est absent : la panne de sauvegarde n'a PAS pu etre signalee."
+            exit 1
+          fi
+          curl -s -X POST "https://api.telegram.org/bot$TOKEN/sendMessage" \
+            --data-urlencode "chat_id=$CHAT" \
+            --data-urlencode "text=SAUVEGARDE DE N8N EN ECHEC. Les identifiants n8n n'ont de copie que par elle : si le serveur disparait maintenant, il faudra tout ressaisir. Voir ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+            > /dev/null
+
+      - name: Confirmer le lundi
+        if: success() && github.event_name == 'schedule'
+        env:
+          TOKEN: ${{ secrets.TELEGRAM_ALERTE_TOKEN }}
+          CHAT: ${{ vars.TELEGRAM_ALERTE_CHAT_ID || env.CHAT_DEFAUT }}
+        run: |
+          [ "$(date -u '+%u')" = "1" ] || exit 0
+          [ -n "$TOKEN" ] || exit 0
+          TEXTE=$(printf '%s\n%s\n%s' \
+            "Sauvegarde de n8n : la nuit de ce lundi est passee." \
+            "Identifiants chiffres, workflows et base, une sauvegarde par commit :" \
+            "https://github.com/$DEPOT_SAUVEGARDES/tree/main/n8n")
+          curl -s -X POST "https://api.telegram.org/bot$TOKEN/sendMessage" \
+            --data-urlencode "chat_id=$CHAT" \
+            --data-urlencode "text=$TEXTE" \
+            > /dev/null
