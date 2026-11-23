@@ -179,7 +179,7 @@ function Etape({
  *
  * `py-3` et non `py-2.5` : 44 px de haut, la cible se touche au pouce. Et le
  * placeholder est en chaux encre, parce qu'il porte le FORMAT attendu
- * (« 2250759486701 ») : au gris par defaut du navigateur il tombe sous le
+ * (« 2250700000000 ») : au gris par defaut du navigateur il tombe sous le
  * seuil de contraste, et c'est justement ce qu'il faut pouvoir recopier.
  */
 const CHAMP =
@@ -462,14 +462,14 @@ export default function OnboardingPage() {
             <Etape
               rang={1}
               titre="Votre numéro WhatsApp"
-              aide="Le numéro auquel vos clients écrivent. Au format international, sans le plus — par exemple 2250759486701."
+              aide="Le numéro auquel vos clients écrivent. Au format international, sans le plus — par exemple 2250700000000."
             >
               <input
                 key={'tel' + (boutique.telephone || '')}
                 defaultValue={boutique.telephone || ''}
                 onBlur={(e) => enregistrer('telephone', e.target.value)}
                 className={CHAMP}
-                placeholder="2250759486701"
+                placeholder="2250700000000"
                 aria-label="Numéro WhatsApp de la boutique"
               />
             </Etape>
@@ -599,7 +599,7 @@ export default function OnboardingPage() {
                 defaultValue={boutique.telegram_marchand || ''}
                 onBlur={(e) => enregistrer('telegram_marchand', e.target.value)}
                 className={CHAMP}
-                placeholder="1724402569"
+                placeholder="123456789"
                 aria-label="Identifiant Telegram du gérant"
               />
             </Etape>
@@ -619,7 +619,7 @@ export default function OnboardingPage() {
                 defaultValue={boutique.groupe_livreurs || ''}
                 onBlur={(e) => enregistrer('groupe_livreurs', e.target.value)}
                 className={CHAMP}
-                placeholder="-1004461402565"
+                placeholder="-1001234567890"
                 aria-label="Identifiant du groupe des livreurs"
               />
             </Etape>
@@ -758,7 +758,13 @@ export default function OnboardingPage() {
                   },
                 ].map((l) => (
                   <div key={l.cle} className="flex flex-wrap items-baseline gap-x-3 gap-y-1 p-4">
-                    <dt className="min-w-0 flex-1 text-sm text-nuit-800">{l.question}</dt>
+                    {/* UNE LARGEUR PLANCHER, SINON LA QUESTION SE LIT UN MOT PAR LIGNE.
+                        `min-w-0 flex-1` laissait la question retrecir jusqu'a
+                        son mot le plus long des que la reponse etait longue
+                        (« le livreur annonce ses frais ») : sur un telephone,
+                        neuf lignes d'un mot. Avec un plancher, c'est la REPONSE
+                        qui passe a la ligne. */}
+                    <dt className="min-w-[12rem] flex-1 text-sm text-nuit-800">{l.question}</dt>
                     {/* L'ETAT SE LIT SANS COULEUR. Peindre « pas encore pose »
                         en rouge en ferait une faute, alors que c'est un choix
                         que le marchand a le droit de ne pas faire. Le pose est

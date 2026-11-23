@@ -475,6 +475,17 @@ export default function Page() {
   // — sinon il ne pourrait plus la defaire — et a celui qui la demande.
   const montrerDuJour = estRestauration || duJour.length > 0 || duJourForce;
 
+  // Les champs de rayon (marque, public, declinaison) a la modification : voir
+  // le commentaire pose devant eux dans le formulaire.
+  const montrerRayonsALaModification =
+    !estRestauration
+    || Boolean(
+      fiche?.marque
+      || fiche?.public_vise
+      || fiche?.attribut_nom
+      || (fiche?.attribut_valeurs ?? []).length,
+    );
+
   const cats = ['toutes', ...Array.from(new Set(prods.map(p => p.categorie).filter(Boolean)))];
   const filtrés = cat === 'toutes' ? prods : prods.filter(p => p.categorie === cat);
 
@@ -794,6 +805,20 @@ export default function Page() {
                 Facultatifs, et vides ils ne s'affichent pas du tout : un
                 restaurant n'a ni marque ni rayon, et sa carte ne doit pas se
                 couvrir de mentions vides. */}
+            {/* UN RESTAURANT NE VOIT PAS LES CHAMPS D'UNE BOUTIQUE DE VETEMENTS.
+                Le commentaire ci-dessus le disait deja — « un restaurant n'a ni
+                marque ni rayon » — mais les champs, eux, s'affichaient pour tout
+                le monde : en jouant le parcours d'un restaurateur le
+                23 novembre 2026, son premier plat se saisissait sous « Marque
+                (ex : Nike) », « Pour qui (ex : Enfant) », des pointures et des
+                coloris. Vides ils ne coutent rien a la vitrine, mais ils coutent
+                au marchand, qui se demande quoi y mettre.
+
+                Les trois blocs sont caches ensemble pour la restauration : la
+                declinaison aussi, parce que le prix vaut pour toutes les
+                valeurs — une « grande portion » plus chere ne s'y exprime pas,
+                elle se saisit comme un second article. */}
+            {!estRestauration && (<>
             <div className="grid gap-2 sm:grid-cols-2">
               <div>
                 <label className="mb-1 block text-sm font-semibold text-nuit-700">
@@ -938,6 +963,7 @@ export default function Page() {
                 </div>
               )}
             </div>
+            </>)}
 
             <div className="grid gap-3 border border-mangue-200 bg-mangue-50 p-3 sm:grid-cols-2">
               <div>
@@ -1021,6 +1047,13 @@ export default function Page() {
                 pointures disponibles changent en cours de saison, et un
                 marchand qui ne peut pas les mettre a jour cesse vite d'y
                 croire. Vider les deux champs la retire. */}
+            {/* MEME REGLE QU'A LA CREATION, AVEC UNE EXCEPTION : un article qui
+                PORTE DEJA une marque, un public ou une declinaison les garde
+                a l'ecran, quel que soit le metier. Les cacher les rendrait
+                impossibles a corriger ou a retirer. On juge sur la fiche
+                telle qu'elle a ete ouverte, pas sur la saisie en cours : sinon
+                le bloc disparaitrait sous les doigts de celui qui vide le champ. */}
+            {montrerRayonsALaModification && (<>
             <div className="grid gap-2 sm:grid-cols-2">
               <div>
                 <label className="mb-1 block text-sm font-semibold text-nuit-700">
@@ -1096,6 +1129,7 @@ export default function Page() {
                 </label>
               )}
             </div>
+            </>)}
 
             <div>
               <label className="mb-1 block text-sm font-semibold text-nuit-700">Remplacer la photo</label>
