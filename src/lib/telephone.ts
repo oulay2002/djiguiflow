@@ -124,8 +124,24 @@ export function memeNumero(a: unknown, b: unknown): boolean {
   return true;
 }
 
-/** Formatage lisible pendant la saisie : 01 02 03 04 05. */
+/**
+ * Formatage lisible pendant la saisie : 01 02 03 04 05.
+ *
+ * L'INDICATIF SE RETIRE AVANT DE COUPER, PAS APRES. Un numero colle depuis un
+ * contact, ou pose par le remplissage automatique d'Android, arrive en
+ * `+225 07 08 09 10 11`. On coupait d'abord a dix chiffres : il restait
+ * `22 50 70 80 91`, et le client lisait « Le numero doit commencer par 0 »
+ * devant un numero parfaitement juste — `normaliserTelephone` sait retirer
+ * l'indicatif, mais ne recevait plus qu'un numero deja ampute.
+ *
+ * Le retrait n'est pas ambigu : un numero national commence par 0, donc jamais
+ * par 225. On attend seulement qu'un chiffre SUIVE l'indicatif, pour que le
+ * champ ne se vide pas sous les doigts de celui qui le tape.
+ */
 export function formaterTelephone(saisie: string): string {
-  const d = String(saisie ?? '').replace(/\D/g, '').slice(0, LONGUEUR_NATIONALE);
+  let d = String(saisie ?? '').replace(/\D/g, '');
+  if (d.startsWith('00' + INDICATIF) && d.length > 5) d = d.slice(5);
+  else if (d.startsWith(INDICATIF) && d.length > 3) d = d.slice(3);
+  d = d.slice(0, LONGUEUR_NATIONALE);
   return d.replace(/(\d{2})(?=\d)/g, '$1 ').trim();
 }
