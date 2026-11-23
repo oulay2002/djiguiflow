@@ -201,10 +201,20 @@ privée est le secret GitHub `VPS_SAUVEGARDE_SSH_KEY` ; la clé d'hôte épingl�
 dans le workflow est alors à remplacer. La sonde `/api/internal/sante` crie si
 la sauvegarde n'a pas pointé depuis 30 h.
 
-**Non prouvé** : la restauration complète depuis cette archive n'a pas encore été
-rejouée sur une machine vierge. La reconstruction du 23 novembre a utilisé les
-mêmes commandes `import:*` sur des exports de même forme — c'est l'indice, pas
-la preuve.
+**La preuve se rejoue en une ligne**, sur le serveur, sans toucher a la
+production : `scripts/vps/exercice-restauration-n8n.sh` (la commande est en
+tete du fichier). Il fabrique une archive fraiche — ou prend celle qu'on lui
+donne par `ARCHIVE=` —, lance un n8n jetable **sans reseau** (sinon il volerait
+les messages Telegram de la production), y rejoue les deux chemins, les
+imports de la CLI et la base SQLite posee telle quelle, et compte ce qui se
+dechiffre : il n'est vert que si **tous** les identifiants rendent un contenu
+avec la cle, si les workflows reviennent avec leurs ids d'origine, et si n8n
+demarre sur la base restauree. Puis il detruit tout.
+
+| Exercice | Date | Resultat |
+|---|---|---|
+| premier passage | a faire | — |
+
 
 ---
 
