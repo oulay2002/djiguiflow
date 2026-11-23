@@ -1,4 +1,5 @@
 import { exigerAccesMarchand } from '@/lib/dashboardAuth';
+import { PHOTO_REFUSEE, photoDuStockage } from '@/lib/images/stockage';
 import { prixRecevable } from '@/lib/prixArticle';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 
@@ -140,6 +141,13 @@ export async function POST(req: Request) {
   // deux `produits` : un plat ecrit seulement dans la feuille n'existe pour
   // personne. L'ordre etait inverse jusqu'ici — la feuille bloquait
   // l'enregistrement, et l'echec de la copie Supabase n'etait que journalise.
+  // LA PHOTO EST DES NOTRES, OU ELLE N'EST PAS. Le formulaire n'envoie plus que
+  // l'adresse rendue par `/api/dashboard/produits/photo` ; ce controle tient
+  // pour tout autre appelant. Voir `@/lib/images/stockage`.
+  if (image && !photoDuStockage(image, process.env.NEXT_PUBLIC_SUPABASE_URL)) {
+    return Response.json({ error: PHOTO_REFUSEE }, { status: 400 });
+  }
+
   const sb = getSupabaseAdmin();
   if (!sb) {
     return Response.json({ error: 'Enregistrement impossible, reessayez' }, { status: 503 });
@@ -280,7 +288,13 @@ export async function PATCH(req: Request) {
     patch.prix = luPatch.prix;
   }
   if (description !== undefined) patch.description = String(description || '');
-  if (image !== undefined) patch.photo_url = String(image || '') || null;
+  if (image !== undefined) {
+    // Vide = retirer la photo. Sinon, la meme regle qu'a la creation.
+    if (image && !photoDuStockage(image, process.env.NEXT_PUBLIC_SUPABASE_URL)) {
+      return Response.json({ error: PHOTO_REFUSEE }, { status: 400 });
+    }
+    patch.photo_url = String(image || '') || null;
+  }
 
   const { error } = await sb
     .from('produits')
