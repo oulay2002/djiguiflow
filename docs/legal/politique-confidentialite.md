@@ -111,6 +111,7 @@ Ces durées sont appliquées automatiquement par un traitement périodique de la
 | Donnée | Durée | Action au terme |
 |---|---|---|
 | **Panier non converti** | 30 jours | **Suppression complète** |
+| Panier ayant abouti à une commande | 30 jours après la commande | Suppression complète ; la commande demeure, selon sa propre règle |
 | **Commande close** | 12 mois | **Anonymisation** |
 | **Position GPS** (client et livreur) | 30 jours après clôture | Effacement du point ; l’adresse en toutes lettres demeure |
 | **Trace de relance** | 90 jours | Suppression |

@@ -20,6 +20,7 @@ import { etatInitial } from '@/lib/vitrine/etatInitial';
 import { clefBrouillon, ecrireBrouillon, lireBrouillon, type Brouillon } from '@/lib/vitrine/brouillon';
 import { clefRecu, ecrireRecu, lireRecu, type Recu as DonneesRecu } from '@/lib/vitrine/recu';
 import { Recu } from './Recu';
+import { JOURS_PANIER_ABANDONNE } from '@/lib/conservation';
 import { clePourEnvoi, clefDeLaCle, empreinteEnvoi, oublierCle, type StockageCle } from '@/lib/cleEnvoi';
 
 type Produit = {
@@ -829,9 +830,13 @@ export default function Vitrine({ slug, fiche: ficheServeur, menu: menuServeur }
       fetch(`/api/boutiques/${slug}/panier`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        // LE NOM NE PART PAS. Cette mesure sert a compter les paniers qui
+        // n'aboutissent pas : le marchand n'en voit qu'un nombre et une
+        // valeur. Le numero suffit a ne pas compter deux fois le meme client ;
+        // le nom n'apprenait rien, et c'etait celui de quelqu'un qui n'avait
+        // encore rien commande. Il part avec la commande, pas avant.
         body: JSON.stringify({
           tel,
-          nom,
           lignes: lignes.map(l => ({
             id: l.prod.id,
             nom: l.variante ? `${l.prod.nom} (${l.variante})` : l.prod.nom,
@@ -848,7 +853,7 @@ export default function Vitrine({ slug, fiche: ficheServeur, menu: menuServeur }
     // `lignes` est reconstruit a chaque rendu ; on se declenche donc sur ce qui
     // change vraiment — le contenu du panier et le numero.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [estMarchandSheets, telOk, tel, nom, slug, JSON.stringify(panier)]);
+  }, [estMarchandSheets, telOk, tel, slug, JSON.stringify(panier)]);
 
   /** Le stockage de l'onglet, ou `null` s'il est interdit (navigation privee). */
   const stockageOnglet = (): StockageCle | null => {
@@ -2181,6 +2186,39 @@ export default function Vitrine({ slug, fiche: ficheServeur, menu: menuServeur }
                           .join(', ')}
                         .
                       </p>
+                    )}
+
+                    {/* CE QUI EST ENREGISTRE AVANT L'ENVOI, DIT LA OU IL L'EST.
+                        Des qu'un numero valide est saisi, il part avec le
+                        panier pour mesurer les commandes interrompues — avant
+                        que le client ait appuye sur quoi que ce soit. La
+                        politique de confidentialite le decrit, mais personne
+                        ne la lit avant de commander : l'information doit etre
+                        au moment de la collecte, pas dans un document.
+
+                        La mention n'apparait que la ou la mesure existe
+                        (`estMarchandSheets`) : l'afficher ailleurs annoncerait
+                        un enregistrement qui n'a pas lieu.
+
+                        Le lien mene a la politique et non a « Vos donnees » :
+                        cet ecran-la demande une reference de commande, que
+                        n'a pas celui qui n'a pas encore commande. */}
+                    {estMarchandSheets && (
+                      <div className="text-xs leading-relaxed text-chaux-600">
+                        <p>
+                          Votre numéro et votre panier sont enregistrés dès la saisie, pour mesurer
+                          les commandes interrompues. Ils sont supprimés au bout de{' '}
+                          {JOURS_PANIER_ABANDONNE} jours si vous ne commandez pas.
+                        </p>
+                        {/* Sur sa propre ligne : dans le fil du texte, ses 44 px de
+                            haut ecartaient la derniere ligne du paragraphe. */}
+                        <Link
+                          href="/legal/confidentialite"
+                          className="inline-flex min-h-11 items-center font-medium text-nuit-800 underline decoration-chaux-300 underline-offset-4 transition hover:decoration-nuit-800"
+                        >
+                          Politique de confidentialité
+                        </Link>
+                      </div>
                     )}
                   </div>
                 </>

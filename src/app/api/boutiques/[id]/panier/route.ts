@@ -93,7 +93,11 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     {
       boutique_id: boutiqueUuid,
       telephone: tel.international,
-      nom: String(corps.nom ?? '').trim().slice(0, 80) || null,
+      // LE NOM N'EST PLUS ENREGISTRE, MEME S'IL ARRIVE. Une page gardee en
+      // cache par un navigateur l'envoie encore : on l'ignore ici plutot que
+      // de compter sur la vitrine seule. Ecrire `null` efface aussi celui
+      // qu'un passage precedent aurait laisse pour ce numero.
+      nom: null,
       lignes,
       articles,
       total,

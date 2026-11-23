@@ -49,10 +49,18 @@
 export const CONSERVATION_STOP_ILLIMITEE = true;
 
 /**
- * Paniers non convertis : 30 jours.
+ * Paniers : 30 jours, qu'ils aient abouti ou non.
  *
- * La relance d'abandon vise les heures qui suivent, jamais les semaines. Passé
- * un mois, ce numéro ne sert plus à rien — il ne reste qu'un risque.
+ * NON CONVERTI, le délai court depuis sa création. La relance d'abandon vise
+ * les heures qui suivent, jamais les semaines. Passé un mois, ce numéro ne
+ * sert plus à rien — il ne reste qu'un risque.
+ *
+ * ABOUTI, le délai court depuis la commande. Le panier n'est alors plus qu'un
+ * double de ce que la commande porte déjà ; il n'était purgé par rien avant le
+ * 23 novembre 2026, et survivait à l'anonymisation de sa propre commande.
+ *
+ * Une seule constante pour les deux : c'est aussi la durée que la vitrine
+ * affiche au client sous le formulaire, et il n'y en a qu'une à lui annoncer.
  */
 export const JOURS_PANIER_ABANDONNE = 30;
 
