@@ -279,6 +279,24 @@ export default function Vitrine({ slug, fiche: ficheServeur, menu: menuServeur }
     [ficheServeur, menuServeur],
   );
   const commandeRef = useRef<HTMLDivElement>(null);
+  // Le bloc « ce qu'il faut savoir » est replie sur telephone : voir plus bas.
+  const [infosOuvertes, setInfosOuvertes] = useState(false);
+  // Le ticket est-il a l'ecran ? La barre du bas s'efface alors : voir plus bas.
+  const [ticketVisible, setTicketVisible] = useState(false);
+
+  useEffect(() => {
+    const ticket = commandeRef.current;
+    if (!ticket || typeof IntersectionObserver === 'undefined') return;
+    // La marge du bas vaut la hauteur de la barre : le ticket ne compte comme
+    // visible qu'une fois sorti de dessous elle, sinon elle disparaitrait
+    // pour ne rien decouvrir.
+    const veille = new IntersectionObserver(
+      ([entree]) => setTicketVisible(entree.isIntersecting),
+      { rootMargin: '0px 0px -96px 0px' },
+    );
+    veille.observe(ticket);
+    return () => veille.disconnect();
+  }, []);
   /** Le haut de la page, ou s affichent « REÇUE » et « REFUSÉE ». */
   const verdictRef = useRef<HTMLDivElement>(null);
 
@@ -1195,9 +1213,27 @@ export default function Vitrine({ slug, fiche: ficheServeur, menu: menuServeur }
     <div className="min-h-screen bg-[var(--background)] pb-28 lg:pb-10">
       {/* Bandeau resserre sur telephone : c'est le menu qui doit occuper
           l'ecran, pas l'enseigne. */}
-      <header className="indigo-weave relative bg-nuit-900 px-5 pb-7 pt-5 text-white sm:px-8 sm:pb-10 sm:pt-6">
+      <header className="indigo-weave relative bg-nuit-900 px-5 pb-6 pt-5 text-white sm:px-8 sm:pb-10 sm:pt-6">
         <div className="mx-auto max-w-6xl">
-          <LienRetour href="/boutiques">Retour aux boutiques</LienRetour>
+          {/* LES DEUX SORTIES SUR UNE SEULE LIGNE.
+              « Suivre ma commande » occupait sa propre rangee sous l'enseigne :
+              56 px pris au menu, pour un client qui vient d'arriver et n'a
+              encore rien commande. Mesure a 390 px le 23 novembre 2026 : aucun
+              plat n'etait nomme sur le premier ecran. Les deux liens partagent
+              maintenant la rangee du haut, et le talon se raccourcit sur
+              telephone pour leur laisser la place. */}
+          <div className="flex items-center justify-between gap-3">
+            <LienRetour href="/boutiques">
+              <span className="sm:hidden">Boutiques</span>
+              <span className="hidden sm:inline">Retour aux boutiques</span>
+            </LienRetour>
+            <Link
+              href="/suivi"
+              className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-white/90 underline decoration-white/35 underline-offset-4 transition hover:decoration-white sm:border sm:border-white/25 sm:bg-white/10 sm:px-4 sm:font-mono sm:text-xs sm:font-normal sm:uppercase sm:tracking-[0.18em] sm:no-underline sm:hover:bg-white/20"
+            >
+              <MapPin className="h-4 w-4" /> Suivre ma commande
+            </Link>
+          </div>
 
           <div className="mt-4 flex flex-wrap items-end justify-between gap-4 sm:mt-6 sm:gap-5">
             <div>
@@ -1245,13 +1281,6 @@ export default function Vitrine({ slug, fiche: ficheServeur, menu: menuServeur }
                 </p>
               )}
             </div>
-
-            <Link
-              href="/suivi"
-              className="inline-flex min-h-10 items-center gap-2 border border-white/25 bg-white/10 px-4 font-mono text-xs uppercase tracking-[0.18em] transition hover:bg-white/20"
-            >
-              <MapPin className="h-4 w-4" /> Suivre ma commande
-            </Link>
           </div>
         </div>
 
@@ -1259,7 +1288,7 @@ export default function Vitrine({ slug, fiche: ficheServeur, menu: menuServeur }
         <div className="perf-line absolute inset-x-0 bottom-0 text-white" />
       </header>
 
-      <main id="contenu" className="mx-auto max-w-6xl px-5 py-8 sm:px-8">
+      <main id="contenu" className="mx-auto max-w-6xl px-5 pb-8 pt-5 sm:px-8 sm:py-8">
         <div ref={verdictRef} />
 
         {/* La voie WhatsApp : ni reference ni suivi -- mais un accuse, sans
@@ -1363,8 +1392,42 @@ export default function Vitrine({ slug, fiche: ficheServeur, menu: menuServeur }
         {(infos.delai || infos.zones || infos.paiements.length > 0 || infos.minimum !== null) && (
           <section
             aria-label="Ce qu’il faut savoir avant de commander"
-            className="mb-6 border border-[var(--hairline)] bg-white"
+            className="mb-4 border border-[var(--hairline)] bg-white sm:mb-6"
           >
+            {/* SUR TELEPHONE, UNE LIGNE — LE DETAIL A LA DEMANDE.
+                Ce bloc prenait 300 px entre l'enseigne et le premier plat :
+                le client qui arrive d'un lien WhatsApp lisait un delai, une
+                ville et des moyens de paiement avant d'avoir vu a manger. Il
+                se pose ces questions au moment de donner son adresse, pas
+                avant d'avoir faim. La ligne garde l'essentiel sous les yeux ;
+                le reste s'ouvre d'un geste, et reste deplie sur grand ecran
+                ou la place ne manque pas. */}
+            <button
+              type="button"
+              aria-expanded={infosOuvertes}
+              aria-controls="infos-detail"
+              onClick={() => setInfosOuvertes(o => !o)}
+              className="flex min-h-11 w-full items-center justify-between gap-4 px-4 py-3 text-left sm:hidden"
+            >
+              <span className="text-sm leading-snug text-nuit-800">
+                {[
+                  infos.delai && (/^\d+$/.test(infos.delai) ? `${infos.delai} min` : infos.delai),
+                  infos.minimum !== null && `Minimum ${fcfa(infos.minimum)} FCFA`,
+                  infos.paiements.length > 0 && infos.paiements.join(', '),
+                  'Livraison en plus',
+                ]
+                  .filter(Boolean)
+                  .join(' · ')}
+              </span>
+              <span className="shrink-0 font-mono text-xs uppercase tracking-[0.16em] text-chaux-600 underline decoration-chaux-300 underline-offset-4">
+                {infosOuvertes ? 'Fermer' : 'Détails'}
+              </span>
+            </button>
+
+            <div
+              id="infos-detail"
+              className={infosOuvertes ? 'border-t border-[var(--hairline)] sm:border-t-0' : 'hidden sm:block'}
+            >
             <div className="grid gap-px bg-[var(--hairline)] sm:grid-cols-2">
               {infos.delai && (
                 <div className="bg-white p-4">
@@ -1426,6 +1489,7 @@ export default function Vitrine({ slug, fiche: ficheServeur, menu: menuServeur }
               Les frais de livraison sont annoncés par le livreur et se règlent en plus,
               à la réception.
             </p>
+            </div>
           </section>
         )}
 
@@ -1638,28 +1702,67 @@ export default function Vitrine({ slug, fiche: ficheServeur, menu: menuServeur }
                 </>
               ) : (
                 <>
-                  <ul className="mt-4 space-y-2">
-                    {lignes.map(l => (
-                      // La clef porte le CHOIX autant que l'article : deux
-                      // pointures du meme modele partagent le meme
-                      // identifiant, et React aurait vu deux fois la meme
-                      // ligne — il n'en aurait affiche qu'une.
-                      <li
-                        key={clefLigne(l.prod.id, l.variante)}
-                        className="flex items-baseline justify-between gap-3 text-sm"
-                      >
-                        <span className="truncate text-nuit-800">
-                          <span className="font-mono font-bold text-chaux-600">{l.q}×</span>{' '}
-                          {l.prod.nom}
-                          {l.variante && (
-                            <span className="text-chaux-600"> · {l.variante}</span>
-                          )}
-                        </span>
-                        <span className="shrink-0 font-mono text-nuit-900">
-                          {fcfa(l.q * l.prod.prix)}
-                        </span>
-                      </li>
-                    ))}
+                  {/* LE TICKET SE CORRIGE LA OU ON LE LIT.
+                      Ses lignes etaient muettes : pour enlever un plat, il
+                      fallait remonter toute la page jusqu'a sa carte — sur
+                      telephone, un menu entier a refaire defiler, au moment
+                      meme ou l'on relit sa commande avant de l'envoyer.
+                      Le compteur est celui des cartes, a la meme taille : le
+                      geste appris plus haut vaut ici. Le nom passe a la ligne
+                      au lieu d'etre coupe — on relit ce qu'on commande. */}
+                  <ul className="mt-4 divide-y divide-[var(--hairline)]">
+                    {lignes.map(l => {
+                      const libelle = `${l.prod.nom}${l.variante ? ` ${l.variante}` : ''}`;
+                      return (
+                        // La clef porte le CHOIX autant que l'article : deux
+                        // pointures du meme modele partagent le meme
+                        // identifiant, et React aurait vu deux fois la meme
+                        // ligne — il n'en aurait affiche qu'une.
+                        <li key={clefLigne(l.prod.id, l.variante)} className="py-3 first:pt-0 last:pb-0">
+                          <div className="flex items-baseline justify-between gap-3 text-sm">
+                            <span className="min-w-0 break-words text-nuit-800">
+                              {l.prod.nom}
+                              {l.variante && (
+                                <span className="text-chaux-600"> · {l.variante}</span>
+                              )}
+                            </span>
+                            <span className="shrink-0 font-mono text-nuit-900">
+                              {fcfa(l.q * l.prod.prix)}
+                            </span>
+                          </div>
+                          <div className="mt-2 inline-flex items-center border border-[var(--hairline)] bg-white">
+                            <button
+                              type="button"
+                              onClick={() => retirer(l.prod.id, l.variante)}
+                              aria-label={`Retirer un ${libelle}`}
+                              className="flex h-11 w-11 items-center justify-center text-nuit-700 transition hover:bg-chaux-100"
+                            >
+                              <Minus className="h-4 w-4" />
+                            </button>
+                            <span className="w-8 text-center font-mono text-sm font-bold text-nuit-900">
+                              {l.q}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => ajouter(l.prod.id, l.variante)}
+                              // Meme plafond que sur la carte : la SOMME des
+                              // tailles, rien en base ne tient un stock par
+                              // pointure.
+                              disabled={
+                                typeof l.prod.stock === 'number'
+                                && lignes
+                                  .filter(x => x.prod.id === l.prod.id)
+                                  .reduce((s, x) => s + x.q, 0) >= l.prod.stock
+                              }
+                              aria-label={`Ajouter un ${libelle}`}
+                              className="flex h-11 w-11 items-center justify-center text-nuit-700 transition hover:bg-chaux-100 disabled:cursor-not-allowed disabled:text-chaux-300"
+                            >
+                              <Plus className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </li>
+                      );
+                    })}
                   </ul>
 
                   <div className="perf-line my-4 text-nuit-900" />
@@ -1750,29 +1853,53 @@ export default function Vitrine({ slug, fiche: ficheServeur, menu: menuServeur }
                     </div>
                   )}
 
+                  {/* CHAQUE CHAMP PORTE SON NOM AU-DESSUS DE LUI.
+                      Les quatre n'avaient qu'une indication grisee, qui
+                      s'efface au premier caractere : une fois rempli, le
+                      formulaire ne disait plus ce que contenait chaque case,
+                      et un lecteur d'ecran n'avait rien a annoncer. */}
                   <div className="mt-5 space-y-3">
-                    <input
-                      className="w-full border border-[var(--hairline)] bg-white px-3 py-2.5 text-sm outline-none transition focus:border-nuit-400"
-                      placeholder="Votre nom complet"
-                      value={nom}
-                      onChange={e => setNom(e.target.value)}
-                    />
                     <div>
+                      <label htmlFor="champ-nom" className="mb-1 block text-xs font-semibold text-nuit-800">
+                        Votre nom
+                      </label>
                       <input
+                        id="champ-nom"
+                        autoComplete="name"
+                        className="min-h-11 w-full border border-[var(--hairline)] bg-white px-3 py-2.5 text-base outline-none transition focus:border-nuit-400"
+                        value={nom}
+                        onChange={e => setNom(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      {/* « TELEPHONE » NE DISAIT PAS L'ESSENTIEL. La commande
+                          n'est preparee que si le client repond au message
+                          WhatsApp : un numero qui n'y est pas donne une
+                          commande qui meurt sans bruit. On nomme donc le
+                          numero qu'il faut, et pourquoi on le demande — c'est
+                          aussi ce qui rassure au moment de le donner. */}
+                      <label htmlFor="champ-tel" className="mb-1 block text-xs font-semibold text-nuit-800">
+                        Votre numéro WhatsApp
+                      </label>
+                      <input
+                        id="champ-tel"
                         type="tel"
-                        inputMode="numeric"
+                        inputMode="tel"
                         autoComplete="tel"
                         aria-invalid={!!erreurTel}
-                        aria-describedby={erreurTel ? 'erreur-tel' : undefined}
-                        className={`w-full border bg-white px-3 py-2.5 text-sm outline-none transition ${
+                        aria-describedby={erreurTel ? 'erreur-tel aide-tel' : 'aide-tel'}
+                        className={`min-h-11 w-full border bg-white px-3 py-2.5 font-mono text-base outline-none transition ${
                           erreurTel
                             ? 'border-bissap-400 bg-bissap-50'
                             : 'border-[var(--hairline)] focus:border-nuit-400'
                         }`}
-                        placeholder="Téléphone (ex. 01 02 03 04 05)"
+                        placeholder="07 08 09 10 11"
                         value={tel}
                         onChange={e => setTel(formaterTelephone(e.target.value))}
                       />
+                      <p id="aide-tel" className="mt-1 text-xs text-chaux-600">
+                        Le commerçant vous y écrit pour confirmer la commande.
+                      </p>
                       {erreurTel && (
                         <p id="erreur-tel" role="alert" className="mt-1 text-xs text-bissap-600">
                           {erreurTel}
@@ -1785,12 +1912,19 @@ export default function Vitrine({ slug, fiche: ficheServeur, menu: menuServeur }
                         aucune adresse a donner — il aurait invente n'importe
                         quoi, ou serait parti. */}
                     {modeChoisi === 'livraison' && (
-                      <input
-                        className="w-full border border-[var(--hairline)] bg-white px-3 py-2.5 text-sm outline-none transition focus:border-nuit-400"
-                        placeholder="Adresse de livraison"
-                        value={adresse}
-                        onChange={e => setAdresse(e.target.value)}
-                      />
+                      <div>
+                        <label htmlFor="champ-adresse" className="mb-1 block text-xs font-semibold text-nuit-800">
+                          Adresse de livraison
+                        </label>
+                        <input
+                          id="champ-adresse"
+                          autoComplete="street-address"
+                          className="min-h-11 w-full border border-[var(--hairline)] bg-white px-3 py-2.5 text-base outline-none transition focus:border-nuit-400"
+                          placeholder="Quartier, rue, repère"
+                          value={adresse}
+                          onChange={e => setAdresse(e.target.value)}
+                        />
+                      </div>
                     )}
 
                     {modeChoisi === 'retrait' && (
@@ -1828,12 +1962,17 @@ export default function Vitrine({ slug, fiche: ficheServeur, menu: menuServeur }
                       </div>
                     )}
 
-                    <input
-                      className="w-full border border-[var(--hairline)] bg-white px-3 py-2.5 text-sm outline-none transition focus:border-nuit-400"
-                      placeholder="Instructions (facultatif)"
-                      value={instructions}
-                      onChange={e => setInstructions(e.target.value)}
-                    />
+                    <div>
+                      <label htmlFor="champ-instructions" className="mb-1 block text-xs font-semibold text-nuit-800">
+                        Instructions <span className="font-normal text-chaux-600">(facultatif)</span>
+                      </label>
+                      <input
+                        id="champ-instructions"
+                        className="min-h-11 w-full border border-[var(--hairline)] bg-white px-3 py-2.5 text-base outline-none transition focus:border-nuit-400"
+                        value={instructions}
+                        onChange={e => setInstructions(e.target.value)}
+                      />
+                    </div>
 
                     <button
                       onClick={commander}
@@ -1884,8 +2023,14 @@ export default function Vitrine({ slug, fiche: ficheServeur, menu: menuServeur }
         </div>
       </main>
 
-      {/* Barre mobile : le ticket est hors écran, le total doit rester visible. */}
-      {articles > 0 && (
+      {/* Barre mobile : le ticket est hors écran, le total doit rester visible.
+
+          ELLE S'EFFACE QUAND LE TICKET EST A L'ECRAN. Elle restait posee sous
+          « Envoyer la commande » : meme rouge, meme largeur, et un geste qui
+          ne menait nulle part puisqu'on y etait deja. Un client presse
+          touchait le bouton du bas, croyait avoir commande et s'en allait.
+          Un seul bouton rouge pleine largeur a la fois. */}
+      {articles > 0 && !ticketVisible && (
         <div className="fixed inset-x-0 bottom-0 z-50 border-t border-[var(--hairline)] bg-chaux-50 p-3 lg:hidden">
           {/* SUR TELEPHONE, CETTE BARRE EST TOUT CE QUE LE CLIENT VOIT du
               panier : le ticket est hors ecran. Un objectif qui n'apparaitrait
