@@ -104,6 +104,8 @@ export default function MaBoutiquePage() {
     mode_recuperation: 'livraison',
     /** Minutes de preparation, pour annoncer une heure de retrait credible. */
     delai_preparation_min: '',
+    /** Ou le client vient chercher sa commande. Vide = la vitrine n'en dit rien. */
+    adresse_retrait: '',
   });
 
   /**
@@ -229,6 +231,7 @@ export default function MaBoutiquePage() {
             data.delai_preparation_min === null || data.delai_preparation_min === undefined
               ? ''
               : String(data.delai_preparation_min),
+          adresse_retrait: data.adresse_retrait || '',
         });
         // LES TROIS ETATS SE RELISENT ICI, ET ZERO N'EST PAS UN TROU. Sans ce
         // test explicite sur `null`, « toujours offerte » (0) serait retombe
@@ -259,7 +262,7 @@ export default function MaBoutiquePage() {
           nom: '', description: '', zone: '', categorie: 'Commerce',
           telephone: '', logo_url: '',
           delai_livraison: '', zones_livrees: '', commande_minimum: '',
-          mode_recuperation: 'livraison', delai_preparation_min: '',
+          mode_recuperation: 'livraison', delai_preparation_min: '', adresse_retrait: '',
         });
         setGratuite('livreur');
         setGratuiteSeuil('');
@@ -379,6 +382,11 @@ export default function MaBoutiquePage() {
 
       // ---- COMMENT LE CLIENT RECUPERE SA COMMANDE ------------------------
       mode_recuperation: formData.mode_recuperation,
+      // CONSERVEE quand la boutique repasse en livraison seule, comme le seuil
+      // de gratuite plus bas : un marchand qui rouvre le retrait retrouve son
+      // adresse au lieu de la retaper. La vitrine ne la montre qu'en retrait.
+      // Vide = `null`, et non une chaine vide : la page lit « non renseignee ».
+      adresse_retrait: formData.adresse_retrait.trim().slice(0, 200) || null,
       delai_preparation_min: (() => {
         const n = Number(formData.delai_preparation_min);
         return Number.isFinite(n) && n > 0 ? Math.round(n) : null;
@@ -645,6 +653,43 @@ export default function MaBoutiquePage() {
                       <p className="mt-1 text-xs text-chaux-600">
                         En minutes. Sert à proposer une heure de retrait tenable.
                         Vide = aucune heure n’est annoncée.
+                      </p>
+                    </div>
+                  )}
+
+                  {/* OU VENIR — CE QUE « RETRAIT » NE DISAIT PAS AU CLIENT.
+                      La vitrine annoncait « Vous venez chercher. » sans lieu :
+                      la fiche ne portait qu'un quartier, souvent « Abidjan ».
+                      Le champ est LIBRE et tient sur plusieurs lignes, parce
+                      qu'ici une adresse est un repere, pas un numero de rue.
+
+                      Il n'est PAS obligatoire : une boutique deja en retrait
+                      ne doit pas voir son enregistrement refuse en ouvrant
+                      cette page. On dit seulement ce que le client verra s'il
+                      reste vide. */}
+                  {formData.mode_recuperation !== 'livraison' && (
+                    <div className="mt-4">
+                      <label
+                        htmlFor="adresse-retrait"
+                        className="mb-1 block text-sm font-medium text-nuit-700"
+                      >
+                        Où vos clients viennent chercher
+                      </label>
+                      <textarea
+                        id="adresse-retrait"
+                        rows={2}
+                        maxLength={200}
+                        value={formData.adresse_retrait}
+                        onChange={(e) =>
+                          setFormData({ ...formData, adresse_retrait: e.target.value })
+                        }
+                        aria-describedby="aide-adresse-retrait"
+                        className="w-full border border-chaux-200 px-4 py-2.5 focus:border-nuit-300 focus:ring-2 focus:ring-nuit-200"
+                        placeholder="Ex : Riviera 2, face à la station, à côté de la pharmacie"
+                      />
+                      <p id="aide-adresse-retrait" className="mt-1 text-xs text-chaux-600">
+                        Quartier, rue, repère. Vos clients la lisent quand ils choisissent le
+                        retrait. Vide = ils ne savent pas où venir.
                       </p>
                     </div>
                   )}

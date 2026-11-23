@@ -17,6 +17,7 @@ import { LienRetour, classesBouton } from '@/components/ui/Bouton';
 import { EMOJI_DEFAUT, Enseigne, initiale } from '@/components/ui/Enseigne';
 import type { FicheVitrine, ProduitVitrine } from '@/lib/vitrine/donnees';
 import { etatInitial } from '@/lib/vitrine/etatInitial';
+import { clefBrouillon, ecrireBrouillon, lireBrouillon, type Brouillon } from '@/lib/vitrine/brouillon';
 
 type Produit = {
   id: string;
@@ -410,6 +411,8 @@ export default function Vitrine({ slug, fiche: ficheServeur, menu: menuServeur }
    */
   const [recuperation, setRecuperation] = useState<{
     mode: string;
+    /** Ou venir chercher sa commande. Vide = le marchand ne l'a pas dit. */
+    adresse: string;
     preparationMin: number | null;
     offerteDes: number | null;
   }>(depart.recuperation);
@@ -435,6 +438,70 @@ export default function Vitrine({ slug, fiche: ficheServeur, menu: menuServeur }
    * Il lirait alors « vous viendrez la chercher » sur une livraison.
    */
   const [recupConfirmee, setRecupConfirmee] = useState<{ mode: ModeCommande; heure: string } | null>(null);
+
+  /**
+   * LE BROUILLON : CE QUI A ETE COMPOSE SURVIT A UN RECHARGEMENT.
+   *
+   * Mesure en production le 23 novembre 2026 : deux plats, un nom, un numero
+   * et une adresse, puis un rechargement — tout avait disparu. Sur le
+   * telephone du client d'ici, passer sur WhatsApp retrouver une adresse
+   * suffit a faire decharger l'onglet. La regle, ses raisons et ses bornes
+   * vivent dans `@/lib/vitrine/brouillon`, avec leurs tests.
+   *
+   * DEUX TEMPS, ET L'ORDRE EST LE VERROU. On RELIT d'abord, une seule fois,
+   * quand le catalogue est connu — c'est contre lui que le brouillon est
+   * verifie. On n'ECRIT qu'ensuite : sans `brouillonRelu`, le tout premier
+   * rendu, panier vide, ecraserait ce qu'on s'appretait a restaurer.
+   *
+   * Tout est dans un `try` : en navigation privee ou stockage plein, l'acces
+   * leve. Ce n'est alors qu'un confort perdu, jamais une vitrine en panne.
+   */
+  const [brouillonRelu, setBrouillonRelu] = useState(false);
+
+  useEffect(() => {
+    if (brouillonRelu || chargement || produits.length === 0) return;
+    (async () => {
+      let b: Brouillon | null = null;
+      try {
+        b = lireBrouillon(
+          window.sessionStorage.getItem(clefBrouillon(slug)),
+          produits,
+          modesProposes(recuperation.mode),
+        );
+      } catch {
+        b = null;
+      }
+      if (b) {
+        const relu = b;
+        // Ce que le client a deja touche depuis l'arrivee prime sur le
+        // brouillon : on ne lui reprend pas un article qu'il vient d'ajouter.
+        setPanier((p) => (Object.keys(p).length > 0 ? p : relu.panier));
+        if (relu.mode) setModeChoisi(relu.mode);
+        setHeureRetrait((h) => h || relu.heureRetrait);
+        setNom((v) => v || relu.nom);
+        setTel((v) => v || relu.tel);
+        setAdresse((v) => v || relu.adresse);
+        setInstructions((v) => v || relu.instructions);
+      }
+      setBrouillonRelu(true);
+    })();
+  }, [brouillonRelu, chargement, produits, recuperation.mode, slug]);
+
+  useEffect(() => {
+    if (!brouillonRelu) return;
+    try {
+      const clef = clefBrouillon(slug);
+      const texte = ecrireBrouillon({
+        panier, mode: modeChoisi, heureRetrait, nom, tel, adresse, instructions,
+      });
+      // Une commande partie vide le panier et les champs : le brouillon
+      // disparait donc de lui-meme, sans qu'il faille y penser a l'envoi.
+      if (texte === null) window.sessionStorage.removeItem(clef);
+      else window.sessionStorage.setItem(clef, texte);
+    } catch {
+      // Stockage indisponible : rien a faire, et surtout rien a afficher.
+    }
+  }, [brouillonRelu, slug, panier, modeChoisi, heureRetrait, nom, tel, adresse, instructions]);
 
   /**
    * LE REPLI, ET LUI SEUL.
@@ -507,6 +574,9 @@ export default function Vitrine({ slug, fiche: ficheServeur, menu: menuServeur }
         // marchand croyait offrir.
         setRecuperation({
           mode: String(b.mode_recuperation ?? 'livraison'),
+          // Le repli ne lit pas cette colonne : la page se tait, comme pour
+          // toute boutique qui ne l'a pas renseignee.
+          adresse: '',
           preparationMin:
             typeof b.delai_preparation_min === 'number' ? b.delai_preparation_min : null,
           offerteDes:
@@ -1327,7 +1397,8 @@ export default function Vitrine({ slug, fiche: ficheServeur, menu: menuServeur }
                 <>
                   <b>
                     Vous viendrez la chercher sur place
-                    {recupConfirmee.heure ? ` vers ${recupConfirmee.heure}` : ''}.
+                    {recupConfirmee.heure ? ` vers ${recupConfirmee.heure}` : ''}
+                    {recuperation.adresse ? ` : ${recuperation.adresse}` : ''}.
                   </b>{' '}
                   Le commerçant vous prévient dès qu’elle est prête.{' '}
                 </>
@@ -1924,6 +1995,30 @@ export default function Vitrine({ slug, fiche: ficheServeur, menu: menuServeur }
                           value={adresse}
                           onChange={e => setAdresse(e.target.value)}
                         />
+                      </div>
+                    )}
+
+                    {/* OU ALLER — LA QUESTION QUE « RETRAIT » POSAIT SANS Y REPONDRE.
+                        Le selecteur disait « Vous venez chercher. », et la page
+                        ne portait que « Restaurant · Abidjan ». Le client
+                        s'engageait a se deplacer sans savoir ou.
+
+                        Affichee ICI et pas en haut de page : c'est au moment de
+                        choisir le retrait qu'on se demande si c'est loin. Et
+                        hors du selecteur, pour qu'une boutique qui ne fait QUE
+                        du retrait — ou le selecteur n'existe pas — la montre
+                        aussi.
+
+                        Rien quand le marchand ne l'a pas renseignee : on ne
+                        remplace pas une adresse par « sur place ». */}
+                    {modeChoisi === 'retrait' && recuperation.adresse && (
+                      <div className="border border-dashed border-chaux-300 bg-white px-3 py-2.5">
+                        <p className="font-mono text-xs font-bold uppercase tracking-[0.16em] text-chaux-600">
+                          Où venir chercher
+                        </p>
+                        <p className="mt-1 break-words text-sm leading-relaxed text-nuit-900">
+                          {recuperation.adresse}
+                        </p>
                       </div>
                     )}
 
