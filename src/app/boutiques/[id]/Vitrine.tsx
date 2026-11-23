@@ -372,6 +372,16 @@ export default function Vitrine({ slug, fiche: ficheServeur, menu: menuServeur }
   const [recu, setRecu] = useState<DonneesRecu | null>(null);
   const [echec, setEchec] = useState('');
   /**
+   * L'ECHEC EST-IL UN REFUS, OU UNE ABSENCE DE REPONSE ?
+   *
+   * Les deux portaient le tampon « REFUSÉE ». Or quand la connexion tombe, on
+   * ne sait PAS si la commande est arrivee : la demande a pu partir et sa
+   * reponse se perdre. Dire « refusee » invitait a recommencer aussitot — au
+   * risque d'une commande en double, et de livreurs alertes deux fois.
+   * Un indetermine n'est pas un refus : il a son tampon et sa consigne.
+   */
+  const [sansReponse, setSansReponse] = useState(false);
+  /**
    * La voie WhatsApp a-t-elle ete empruntee ?
    *
    * Elle n ouvre qu un onglet : aucune commande n est enregistree chez nous, il
@@ -849,6 +859,7 @@ export default function Vitrine({ slug, fiche: ficheServeur, menu: menuServeur }
   };
 
   const commander = async () => {
+    setSansReponse(false);
     if (estMarchandSheets) {
       setEnvoi(true);
       // Une nouvelle tentative efface le verdict de la precedente : sans cela,
@@ -940,7 +951,13 @@ export default function Vitrine({ slug, fiche: ficheServeur, menu: menuServeur }
         }
       } catch {
         // Reseau coupe ou reponse illisible : meme regle, on ne se tait pas.
-        setEchec('Commande non envoyée, vérifiez votre connexion et réessayez.');
+        // Pas de reponse lisible : la connexion est tombee, a l'aller ou au
+        // retour. On ne sait pas lequel, et on le dit.
+        setSansReponse(true);
+        setEchec(
+          'Nous n’avons pas reçu de réponse : votre commande est peut-être partie.'
+          + ' Avant de réessayer, regardez si un message WhatsApp de la boutique est arrivé.',
+        );
       } finally {
         setEnvoi(false);
         // Un echec doit se voir autant qu un succes : meme raison qu au-dessus.
@@ -1433,10 +1450,21 @@ export default function Vitrine({ slug, fiche: ficheServeur, menu: menuServeur }
         {echec && (
           <div
             role="alert"
-            className="mb-8 flex flex-wrap items-center gap-4 border border-bissap-200 bg-bissap-50 p-5"
+            /* LA MANGUE POUR CE QU'ON NE SAIT PAS, le bissap pour ce qui est refuse :
+               DESIGN.md donne a la mangue « en attente, a surveiller ». Peindre
+               en rouge une commande peut-etre partie la declarerait perdue. */
+            className={`mb-8 flex flex-wrap items-center gap-4 border p-5 ${
+              sansReponse ? 'border-mangue-200 bg-mangue-50' : 'border-bissap-200 bg-bissap-50'
+            }`}
           >
-            <span className="stamp font-mono text-xs font-bold text-bissap-700">REFUSÉE</span>
-            <p className="text-sm text-bissap-800">
+            <span
+              className={`stamp shrink-0 font-mono text-xs font-bold ${
+                sansReponse ? 'text-mangue-700' : 'text-bissap-700'
+              }`}
+            >
+              {sansReponse ? 'SANS RÉPONSE' : 'REFUSÉE'}
+            </span>
+            <p className={`min-w-0 flex-1 basis-56 text-sm ${sansReponse ? 'text-nuit-900' : 'text-bissap-800'}`}>
               {echec} Votre panier est conservé.
             </p>
           </div>
