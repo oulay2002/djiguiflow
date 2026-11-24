@@ -3,12 +3,14 @@ import { effacerDossier } from '@/lib/dossierClient';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import {
   CHAMPS_A_EFFACER,
+  HEURES_SAUVEGARDE_MAX,
   JOURS_PANIER_ABANDONNE,
   JOURS_POSITION_GPS,
   JOURS_TRACE_RELANCE,
   MOIS_AVANT_ANONYMISATION,
   NOM_ANONYME,
   STATUTS_CLOS,
+  sauvegardeAssezRecente,
 } from '@/lib/conservation';
 
 export const dynamic = 'force-dynamic';
@@ -60,6 +62,46 @@ export async function POST(req: Request) {
   }
 
   const maintenant = Date.now();
+
+  /**
+   * AVANT D'EFFACER QUOI QUE CE SOIT : EXISTE-T-IL UNE SAUVEGARDE RÉCENTE ?
+   *
+   * La purge suivait la sauvegarde par un simple écart d'horaires, entre deux
+   * plateformes dont une ne tient pas les siens. La règle, ses raisons et son
+   * délai vivent dans `@/lib/conservation`.
+   *
+   * UN REFUS REND 503, ET C'EST VOULU. La tâche n8n qui appelle cette route
+   * échoue alors en rouge, et son alerte part : une purge qui se tairait en
+   * attendant sa sauvegarde ferait d'une panne de sauvegarde une panne
+   * muette — exactement ce que ce contrôle sert à empêcher.
+   *
+   * L'essai à blanc, lui, passe toujours : il n'efface rien, et c'est lui
+   * qu'on lance pour comprendre pourquoi la purge refuse.
+   */
+  const { data: pointage, error: errPointage } = await sb
+    .from('pointages')
+    .select('dernier_le')
+    .eq('cle', 'sauvegarde_donnees')
+    .maybeSingle();
+
+  const sauvegarde = sauvegardeAssezRecente(pointage?.dernier_le, maintenant);
+
+  if (!sauvegarde.ok && !essai) {
+    // Une seule ligne, sans tiret bas ni astérisque : le message traverse n8n
+    // puis Telegram, qui avalent l'un les retours à la ligne, l'autre le
+    // Markdown mal fermé.
+    const motif = errPointage
+      ? `le pointage de la sauvegarde est illisible (${errPointage.message})`
+      : sauvegarde.ageHeures === null
+        ? 'la sauvegarde des donnees n a jamais pointe son passage'
+        : `la derniere sauvegarde des donnees date de ${sauvegarde.ageHeures} h, plus que les ${HEURES_SAUVEGARDE_MAX} h admises`;
+    const erreur = `Purge NON effectuee : ${motif}. Rien n a ete efface.`;
+    console.error('Conservation —', erreur);
+    return NextResponse.json(
+      { ok: false, erreurs: [erreur], essai, sauvegarde },
+      { status: 503 },
+    );
+  }
   const iso = (ms: number) => new Date(ms).toISOString();
 
   const seuilPanier = iso(maintenant - JOURS_PANIER_ABANDONNE * 86_400_000);
@@ -334,7 +376,7 @@ export async function POST(req: Request) {
    */
   if (erreurs.length) {
     console.error('Conservation —', erreurs.join(' | '));
-    return NextResponse.json({ ok: false, erreurs, fait, essai }, { status: 503 });
+    return NextResponse.json({ ok: false, erreurs, fait, essai, sauvegarde }, { status: 503 });
   }
 
   const total = fait.paniers + fait.paniersAboutis + fait.commandes + fait.relances + fait.effacements;
@@ -349,6 +391,8 @@ export async function POST(req: Request) {
     ok: true,
     essai,
     fait,
+    // L'âge de la sauvegarde sur laquelle la purge s'est appuyée.
+    sauvegarde,
     // Rendus pour que le journal n8n dise SUR QUOI la regle a porte, sans avoir
     // a ouvrir le code.
     regles: {
