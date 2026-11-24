@@ -190,3 +190,58 @@ export function peutEtreAnonymisee(a: {
   // rapporterait le même travail comme s'il venait d'être fait.
   return String(a.client_nom ?? '') !== NOM_ANONYME;
 }
+
+/**
+ * ── LA PURGE N'EFFACE QUE CE QU'UNE SAUVEGARDE RÉCENTE CONTIENT ────────────
+ *
+ * L'ORDRE DE LA NUIT ÉTAIT UNE PROMESSE D'HORLOGE, ET L'HORLOGE N'EST PAS LA
+ * NÔTRE. La sauvegarde des données part de GitHub à 4 h 30, la purge de n8n à
+ * 5 h 45 : ce que la purge retire devait encore figurer dans la copie de la
+ * nuit. Mais GitHub ne garantit pas l'heure de ses tâches planifiées. Constaté
+ * les 23 et 24 novembre 2026 : la sauvegarde de 4 h 30 est partie à 15 h 12,
+ * puis n'était toujours pas partie à 11 h le lendemain. La purge, elle, est
+ * passée à l'heure — AVANT la sauvegarde qu'elle était censée suivre.
+ *
+ * On ne compare donc plus deux horaires : la purge LIT l'heure du dernier
+ * passage de la sauvegarde (la table `pointages`), et refuse d'effacer si elle
+ * est trop ancienne ou absente.
+ *
+ * POURQUOI 36 HEURES, ET PAS 24. Tout ce que la purge efface a au moins trente
+ * jours : n'importe quelle sauvegarde récente le contient déjà. Il ne s'agit
+ * pas d'exiger la sauvegarde de CETTE nuit, mais de s'assurer qu'il en existe
+ * une. Vingt-quatre heures refuseraient chaque fois que GitHub a du retard un
+ * jour et pas le suivant — une fausse alerte par semaine apprend à ne plus les
+ * lire. Trente-six tolèrent un passage en retard, et arrêtent tout dès qu'une
+ * nuit entière a été manquée.
+ */
+export const HEURES_SAUVEGARDE_MAX = 36;
+
+export type EtatSauvegarde = {
+  /** Vrai : une sauvegarde assez récente existe, la purge peut effacer. */
+  ok: boolean;
+  /** Âge du dernier passage, en heures. `null` : jamais pointée, ou illisible. */
+  ageHeures: number | null;
+};
+
+/**
+ * Le dernier passage de la sauvegarde autorise-t-il la purge ?
+ *
+ * DANS LE DOUTE, NON. Une date absente, illisible ou située dans le futur ne
+ * prouve l'existence d'aucune sauvegarde : la purge attend. Effacer un jour
+ * trop tard ne coûte rien ; effacer ce qu'aucune copie ne contient ne se
+ * rattrape pas.
+ */
+export function sauvegardeAssezRecente(dernierLe: unknown, maintenant: number): EtatSauvegarde {
+  const brut = typeof dernierLe === 'string' ? dernierLe.trim() : '';
+  if (!brut) return { ok: false, ageHeures: null };
+
+  const passage = new Date(brut).getTime();
+  if (Number.isNaN(passage)) return { ok: false, ageHeures: null };
+
+  const ageHeures = Math.round(((maintenant - passage) / 3_600_000) * 10) / 10;
+  // Un passage « dans le futur » trahit une horloge fausse ou une valeur
+  // trafiquée : cinq minutes de tolérance pour l'écart entre deux serveurs.
+  if (ageHeures < -(5 / 60)) return { ok: false, ageHeures };
+
+  return { ok: ageHeures <= HEURES_SAUVEGARDE_MAX, ageHeures };
+}

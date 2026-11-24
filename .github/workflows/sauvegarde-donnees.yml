@@ -210,6 +210,19 @@ jobs:
       # SANS `SYNC_SECRET`, LE POINTAGE N'A PAS LIEU et la sonde annoncera
       # « n'a JAMAIS pointe ». C'est voulu : l'absence du secret se voit, au
       # lieu de se taire.
+      # CE POINTAGE N'EST PLUS SEULEMENT UN VOYANT : LA PURGE EN DEPEND.
+      #
+      # La purge de conservation part de n8n a 5 h 45, cette sauvegarde de
+      # GitHub a 4 h 30 — et GitHub ne tient pas ses horaires. Les 23 et 24
+      # novembre 2026, cette tache est partie avec une dizaine d'heures de
+      # retard : la purge est passee AVANT la sauvegarde qu'elle devait suivre.
+      #
+      # Depuis, `/api/internal/conservation` lit l'heure pointee ici et refuse
+      # d'effacer si elle a plus de 36 heures (`HEURES_SAUVEGARDE_MAX`). Un
+      # pointage qui echoue ne casse toujours pas la sauvegarde — elle est
+      # poussee — mais la purge de la nuit suivante refusera, en rouge.
+      # C'est voulu : mieux vaut une purge en retard qu'un effacement que rien
+      # ne permet de rattraper.
       - name: Pointer le passage
         if: success()
         continue-on-error: true
