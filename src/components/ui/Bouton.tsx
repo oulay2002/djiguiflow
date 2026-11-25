@@ -17,7 +17,7 @@ import type { ButtonHTMLAttributes, ReactNode } from 'react';
  * Les deux dernieres existent parce qu'un bouton bissap jurerait sur un
  * bandeau colore : c'est la surface qui decide, pas le geste.
  */
-export type VarianteBouton = 'action' | 'calme' | 'fantome' | 'contraste' | 'voile';
+export type VarianteBouton = 'action' | 'encre' | 'calme' | 'fantome' | 'contraste' | 'voile';
 export type TailleBouton = 'sm' | 'md';
 
 /**
@@ -74,6 +74,16 @@ const VARIANTES: Record<VarianteBouton, string> = {
    * chaux n'a besoin de rien de plus.
    */
   action: 'bg-bissap-500 text-white soft-shadow hover:bg-bissap-600',
+  /**
+   * L'ENCRE, POUR LE GESTE QUI SE REPETE.
+   *
+   * Sur la vitrine, cinq « Ajouter » bissap par ecran — plus les prix dans la
+   * meme couleur : l'accent etait partout, donc nulle part, et le seul bouton
+   * qui engage le client (« Envoyer » dans le ticket) ne se distinguait plus
+   * du reste. Le geste repete s'ecrit a l'encre ; le bissap reste au geste
+   * unique.
+   */
+  encre: 'bg-nuit-900 text-chaux-50 hover:bg-nuit-800',
   calme: 'border border-[var(--hairline)] bg-white text-nuit-700 hover:bg-white',
   fantome: 'text-nuit-600 hover:bg-nuit-50 hover:text-nuit-900',
   contraste: 'bg-white text-nuit-800 soft-shadow hover:bg-chaux-50',

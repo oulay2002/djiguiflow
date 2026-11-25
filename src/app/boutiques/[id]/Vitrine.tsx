@@ -20,6 +20,7 @@ import { etatInitial } from '@/lib/vitrine/etatInitial';
 import { clefBrouillon, ecrireBrouillon, lireBrouillon, type Brouillon } from '@/lib/vitrine/brouillon';
 import { clefRecu, ecrireRecu, lireRecu, type Recu as DonneesRecu } from '@/lib/vitrine/recu';
 import { Recu } from './Recu';
+import { casseDouce } from '@/lib/vitrine/casse';
 import { prendreLesAppuis, type FenetreAvantEveil } from '@/lib/vitrine/avantEveil';
 import { JOURS_PANIER_ABANDONNE } from '@/lib/conservation';
 import { clePourEnvoi, clefDeLaCle, empreinteEnvoi, oublierCle, type StockageCle } from '@/lib/cleEnvoi';
@@ -102,9 +103,8 @@ function grouperEnArticles(produits: Produit[]): Article[] {
 }
 
 const fcfa = (n: number) => n.toLocaleString('fr-FR');
-
 /** Fond de la page : sert aux encoches du ticket, qui doivent être des trous. */
-const FOND_PAGE = '#eeece5';
+const FOND_PAGE = 'var(--background)';
 
 type FicheRow = {
   id: string;
@@ -240,7 +240,7 @@ function Visuel({ p, rang }: { p: Produit; rang: number }) {
           // Ce qui est visible passe devant le reste ; ce qui ne l'est pas
           // cede le tuyau au JavaScript dont la page a besoin pour repondre.
           fetchPriority={immediate ? 'high' : 'low'}
-          className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.04]"
+          className="h-full w-full object-cover"
         />
       </div>
     );
@@ -253,12 +253,12 @@ function Visuel({ p, rang }: { p: Produit; rang: number }) {
     <div className="relative flex h-24 items-end overflow-hidden bg-chaux-100 px-4 pb-2.5">
       <span
         aria-hidden
-        className="pointer-events-none absolute -top-4 left-2 select-none font-display text-[5.5rem] font-black leading-none text-nuit-900/[0.07]"
+        className="pointer-events-none absolute -top-4 left-2 select-none font-display text-[5.5rem] font-semibold leading-none text-nuit-900/[0.07]"
       >
         {initiale(p.nom)}
       </span>
       {p.categorie && (
-        <span className="relative font-mono text-xs uppercase tracking-[0.2em] text-nuit-900/45">
+        <span className="relative text-xs font-medium text-chaux-600">
           {p.categorie}
         </span>
       )}
@@ -1227,7 +1227,7 @@ export default function Vitrine({ slug, fiche: ficheServeur, menu: menuServeur }
         return (
           <article
             key={article.cle}
-            className="group flex flex-col overflow-hidden border border-[var(--hairline)] bg-chaux-50 transition duration-200 soft-shadow hover:-translate-y-1"
+            className="group flex flex-col overflow-hidden border border-[var(--hairline)] bg-chaux-50 soft-shadow"
           >
             <Visuel p={p} rang={depart + i} />
 
@@ -1242,19 +1242,19 @@ export default function Vitrine({ slug, fiche: ficheServeur, menu: menuServeur }
                   donnee : un restaurant n'a pas de marque, et sa carte ne doit
                   pas se couvrir de mentions vides. */}
               {marque && (
-                <p className="font-mono text-xs font-bold uppercase tracking-[0.18em] text-nuit-900">
+                <p className="text-sm font-medium text-chaux-600">
                   {marque}
                 </p>
               )}
 
-              <h3 className={`font-display text-lg font-bold leading-tight text-nuit-900 ${marque ? 'mt-0.5' : ''}`}>
+              <h3 className={`font-display text-lg font-semibold leading-tight text-nuit-900 ${marque ? 'mt-0.5' : ''}`}>
                 {article.titre}
               </h3>
 
               {/* Le coloris et le rayon se lisent sous le titre, comme sur une
                   etiquette coutue au col. */}
               {(p.couleur || publicVise) && (
-                <p className="mt-0.5 font-mono text-xs uppercase tracking-[0.14em] text-chaux-600">
+                <p className="mt-0.5 text-xs font-medium text-chaux-600">
                   {[p.couleur, publicVise].filter(Boolean).join(' · ')}
                 </p>
               )}
@@ -1281,7 +1281,7 @@ export default function Vitrine({ slug, fiche: ficheServeur, menu: menuServeur }
                   « Taille » chez le tailleur. */}
               {doitChoisir && (
                 <div className="mt-3">
-                  <p className="font-mono text-xs uppercase tracking-[0.14em] text-chaux-600">
+                  <p className="text-xs font-medium text-chaux-600">
                     {attributNom}
                   </p>
                   <div className="mt-2 flex flex-wrap gap-1.5">
@@ -1313,7 +1313,7 @@ export default function Vitrine({ slug, fiche: ficheServeur, menu: menuServeur }
               {/* ---- Les coloris, quand il y en a plusieurs. */}
               {plusieurs && (
                 <div className="mt-3">
-                  <p className="font-mono text-xs uppercase tracking-[0.14em] text-chaux-600">
+                  <p className="text-xs font-medium text-chaux-600">
                     {article.variantes.length} coloris disponibles
                   </p>
                   <div className="mt-2 flex flex-wrap gap-2">
@@ -1348,7 +1348,7 @@ export default function Vitrine({ slug, fiche: ficheServeur, menu: menuServeur }
                               className="h-full w-full object-cover"
                             />
                           ) : (
-                            <span className="flex h-full w-full items-center justify-center bg-chaux-100 font-display text-sm font-black text-nuit-900/30">
+                            <span className="flex h-full w-full items-center justify-center bg-chaux-100 font-display text-sm font-semibold text-nuit-900/30">
                               {initiale(v.couleur || v.nom)}
                             </span>
                           )}
@@ -1357,7 +1357,7 @@ export default function Vitrine({ slug, fiche: ficheServeur, menu: menuServeur }
                           {vide && (
                             <span
                               aria-hidden
-                              className="absolute inset-0 flex items-center justify-center bg-chaux-50/75 font-mono text-[9px] font-bold uppercase tracking-wider text-chaux-600"
+                              className="absolute inset-0 flex items-center justify-center bg-chaux-50/80 text-[11px] font-semibold text-nuit-800"
                             >
                               Épuisé
                             </span>
@@ -1372,7 +1372,7 @@ export default function Vitrine({ slug, fiche: ficheServeur, menu: menuServeur }
               <div className="mt-auto flex items-center justify-between gap-3 pt-4">
                 {/* Le prix est une donnée : en mono, il s'aligne d'une carte
                     à l'autre et se compare d'un coup d'œil. */}
-                <p className="font-mono text-lg font-bold leading-none text-bissap-600">
+                <p className="font-mono text-lg font-semibold leading-none tabular-nums text-nuit-900">
                   {fcfa(p.prix)}
                   <span className="ml-1 text-xs font-semibold text-chaux-600">FCFA</span>
                 </p>
@@ -1395,7 +1395,7 @@ export default function Vitrine({ slug, fiche: ficheServeur, menu: menuServeur }
                       // base ne tient un stock par pointure.
                       disabled={typeof p.stock === 'number' && prisPour(p.id) >= p.stock}
                       aria-label={`Ajouter un ${p.nom}${tailleChoisie ? ` ${tailleChoisie}` : ''}`}
-                      className="flex h-11 w-11 items-center justify-center bg-bissap-500 text-white transition hover:bg-bissap-600 disabled:cursor-not-allowed disabled:bg-chaux-300"
+                      className="flex h-11 w-11 items-center justify-center bg-nuit-900 text-chaux-50 transition-colors hover:bg-nuit-800 disabled:cursor-not-allowed disabled:bg-chaux-300"
                     >
                       <Plus className="h-4 w-4" />
                     </button>
@@ -1404,7 +1404,7 @@ export default function Vitrine({ slug, fiche: ficheServeur, menu: menuServeur }
                   /* ON NE CHOISIT PAS A SA PLACE. Le bouton attend, et dit ce
                      qu'il attend — un bouton grisé sans explication passe pour
                      une panne, et le client s'en va. */
-                  <span className="border border-dashed border-chaux-300 px-3 py-2 text-center font-mono text-xs uppercase tracking-[0.12em] text-chaux-600">
+                  <span className="border border-dashed border-chaux-300 px-3 py-2 text-center text-xs font-medium text-chaux-600">
                     Choisissez votre {attributNom.toLowerCase()}
                   </span>
                 ) : p.stock === 0 ? (
@@ -1413,7 +1413,7 @@ export default function Vitrine({ slug, fiche: ficheServeur, menu: menuServeur }
                      donne l'impression d'une carte pauvre.
                      Le serveur refuse de toute facon la commande — cet affichage
                      evite au client de composer un panier pour rien. */
-                  <span className="border border-[var(--hairline)] bg-chaux-100 px-3 py-2 font-mono text-xs font-bold uppercase tracking-[0.15em] text-chaux-600">
+                  <span className="border border-[var(--hairline)] bg-chaux-100 px-3 py-2 text-xs font-semibold text-chaux-600">
                     Épuisé
                   </span>
                 ) : (
@@ -1426,7 +1426,7 @@ export default function Vitrine({ slug, fiche: ficheServeur, menu: menuServeur }
                     data-ajout={p.id}
                     data-variante={tailleChoisie}
                     suppressHydrationWarning
-                    className={`${classesBouton('action', 'md', 'carree')} aria-busy:cursor-progress aria-busy:opacity-60`}
+                    className={`${classesBouton('encre', 'md', 'carree')} aria-busy:cursor-progress aria-busy:opacity-60`}
                   >
                     <Plus className="h-4 w-4" /> Ajouter
                   </button>
@@ -1476,7 +1476,7 @@ export default function Vitrine({ slug, fiche: ficheServeur, menu: menuServeur }
             </LienRetour>
             <Link
               href="/suivi"
-              className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-white/90 underline decoration-white/35 underline-offset-4 transition hover:decoration-white sm:border sm:border-white/25 sm:bg-white/10 sm:px-4 sm:font-mono sm:text-xs sm:font-normal sm:uppercase sm:tracking-[0.18em] sm:no-underline sm:hover:bg-white/20"
+              className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-white/90 underline decoration-white/35 underline-offset-4 transition hover:decoration-white"
             >
               <MapPin className="h-4 w-4" /> Suivre ma commande
             </Link>
@@ -1484,9 +1484,9 @@ export default function Vitrine({ slug, fiche: ficheServeur, menu: menuServeur }
 
           <div className="mt-4 flex flex-wrap items-end justify-between gap-4 sm:mt-6 sm:gap-5">
             <div>
-              <p className="font-mono text-xs uppercase tracking-[0.28em] text-mangue-300">
+              <p className="text-sm font-medium text-mangue-300">
                 {header.secteur}
-                {zone && ` · ${zone}`}
+                {zone && ` · ${casseDouce(zone)}`}
               </p>
               <div className="mt-1.5 flex items-center gap-3 sm:mt-2 sm:gap-4">
                 {/* LA MARQUE DU MARCHAND, PAS UNE VIGNETTE GENERIQUE.
@@ -1506,7 +1506,7 @@ export default function Vitrine({ slug, fiche: ficheServeur, menu: menuServeur }
                   variante="nuit"
                   className="h-12 w-12 text-2xl sm:h-16 sm:w-16 sm:text-3xl"
                 />
-                <h1 className="font-display text-3xl font-black leading-[1.05] sm:text-5xl">
+                <h1 className="font-display text-3xl font-semibold leading-[1.05] sm:text-5xl">
                   {header.nom}
                 </h1>
               </div>
@@ -1623,7 +1623,7 @@ export default function Vitrine({ slug, fiche: ficheServeur, menu: menuServeur }
                   .filter(Boolean)
                   .join(' · ')}
               </span>
-              <span className="shrink-0 font-mono text-xs uppercase tracking-[0.16em] text-chaux-600 underline decoration-chaux-300 underline-offset-4">
+              <span className="shrink-0 text-sm font-medium text-nuit-700 underline decoration-chaux-300 underline-offset-4">
                 {infosOuvertes ? 'Fermer' : 'Détails'}
               </span>
             </button>
@@ -1632,10 +1632,13 @@ export default function Vitrine({ slug, fiche: ficheServeur, menu: menuServeur }
               id="infos-detail"
               className={infosOuvertes ? 'border-t border-[var(--hairline)] sm:border-t-0' : 'hidden sm:block'}
             >
-            <div className="grid gap-px bg-[var(--hairline)] sm:grid-cols-2">
+            {/* Un nombre impair de cases laissait un trou gris au bout de la
+                grille sur grand ecran : la derniere case prend alors toute la
+                largeur. */}
+            <div className="grid gap-px bg-[var(--hairline)] sm:grid-cols-2 sm:[&>*:last-child:nth-child(odd)]:col-span-2">
               {infos.delai && (
                 <div className="bg-white p-4">
-                  <p className="font-mono text-xs uppercase tracking-[0.16em] text-chaux-600">
+                  <p className="text-xs font-medium text-chaux-600">
                     Délai habituel
                   </p>
                   {/* UN NOMBRE SEUL NE DIT RIEN AU CLIENT.
@@ -1650,7 +1653,7 @@ export default function Vitrine({ slug, fiche: ficheServeur, menu: menuServeur }
                       livraison, se compte en minutes — c'est d'ailleurs ce que
                       propose le champ. Tout le reste passe intact : on ne
                       reecrit pas ce que le marchand a formule lui-meme. */}
-                  <p className="mt-1 font-display text-lg font-bold text-nuit-900">
+                  <p className="mt-1 font-display text-lg font-semibold text-nuit-900">
                     {/^\d+$/.test(infos.delai) ? `${infos.delai} min` : infos.delai}
                   </p>
                 </div>
@@ -1658,7 +1661,7 @@ export default function Vitrine({ slug, fiche: ficheServeur, menu: menuServeur }
 
               {infos.zones && (
                 <div className="bg-white p-4">
-                  <p className="font-mono text-xs uppercase tracking-[0.16em] text-chaux-600">
+                  <p className="text-xs font-medium text-chaux-600">
                     Quartiers livrés
                   </p>
                   <p className="mt-1 text-sm leading-relaxed text-nuit-800">{infos.zones}</p>
@@ -1667,7 +1670,7 @@ export default function Vitrine({ slug, fiche: ficheServeur, menu: menuServeur }
 
               {infos.paiements.length > 0 && (
                 <div className="bg-white p-4">
-                  <p className="font-mono text-xs uppercase tracking-[0.16em] text-chaux-600">
+                  <p className="text-xs font-medium text-chaux-600">
                     Paiement accepté
                   </p>
                   <p className="mt-1 text-sm leading-relaxed text-nuit-800">
@@ -1678,10 +1681,10 @@ export default function Vitrine({ slug, fiche: ficheServeur, menu: menuServeur }
 
               {infos.minimum !== null && (
                 <div className="bg-white p-4">
-                  <p className="font-mono text-xs uppercase tracking-[0.16em] text-chaux-600">
+                  <p className="text-xs font-medium text-chaux-600">
                     Commande minimum
                   </p>
-                  <p className="mt-1 font-display text-lg font-bold text-nuit-900">
+                  <p className="mt-1 font-display text-lg font-semibold tabular-nums text-nuit-900">
                     {fcfa(infos.minimum)}
                     <span className="ml-1 text-xs font-semibold text-chaux-600">FCFA</span>
                   </p>
@@ -1711,7 +1714,7 @@ export default function Vitrine({ slug, fiche: ficheServeur, menu: menuServeur }
               .filter(f => f.valeurs.length > 1)
               .map(f => (
                 <div key={f.titre}>
-                  <p className="mb-1.5 font-mono text-xs uppercase tracking-[0.16em] text-chaux-600">
+                  <p className="mb-1.5 text-xs font-medium text-chaux-600">
                     {f.titre}
                   </p>
                   <div className="-mx-5 flex gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:px-0 [&::-webkit-scrollbar]:hidden">
@@ -1744,9 +1747,10 @@ export default function Vitrine({ slug, fiche: ficheServeur, menu: menuServeur }
                 key={c}
                 onClick={() => setCategorie(c)}
                 aria-pressed={categorie === c}
-                // Memes onglets que sur la liste des boutiques : c'est le meme
-                // classeur qu'on feuillette.
-                className={`min-h-9 shrink-0 border px-3.5 font-mono text-xs uppercase tracking-[0.16em] transition ${
+                // En casse normale : les capitales espacees en chiffres de
+                // caisse sont reservees au ticket, dont elles sont la
+                // signature. Partout ailleurs elles font page generee.
+                className={`min-h-11 shrink-0 border px-4 text-sm font-medium transition-colors ${
                   categorie === c
                     ? 'border-nuit-900 bg-nuit-900 text-chaux-50'
                     : 'border-[var(--hairline)] text-chaux-600 hover:border-nuit-900 hover:text-nuit-900'
@@ -1789,14 +1793,14 @@ export default function Vitrine({ slug, fiche: ficheServeur, menu: menuServeur }
             ) : sectionne ? (
               <>
                 <section>
-                  <h2 className="mb-4 flex items-center gap-3 font-mono text-xs font-bold uppercase tracking-[0.24em] text-mangue-600">
+                  <h2 className="mb-4 flex items-center gap-3 font-display text-lg font-semibold text-nuit-900">
                     {mots.duJour}
                     <span className="h-px flex-1 bg-mangue-200" />
                   </h2>
                   {grille(enVedette)}
                 </section>
                 <section>
-                  <h2 className="mb-4 flex items-center gap-3 font-mono text-xs font-bold uppercase tracking-[0.24em] text-chaux-600">
+                  <h2 className="mb-4 flex items-center gap-3 font-display text-lg font-semibold text-nuit-900">
                     {mots.reste}
                     <span className="h-px flex-1 bg-chaux-200" />
                   </h2>
@@ -1818,7 +1822,7 @@ export default function Vitrine({ slug, fiche: ficheServeur, menu: menuServeur }
                 cliquer ici meme. */}
             {lignes.length > 0 && suggestions.length > 0 && (
               <section className="mt-10 border-t border-[var(--hairline)] pt-6">
-                <h2 className="mb-4 flex items-center gap-3 font-mono text-xs font-bold uppercase tracking-[0.24em] text-chaux-600">
+                <h2 className="mb-4 flex items-center gap-3 font-display text-lg font-semibold text-nuit-900">
                   Complétez votre commande
                   <span className="h-px flex-1 bg-chaux-200" />
                 </h2>
@@ -1836,7 +1840,7 @@ export default function Vitrine({ slug, fiche: ficheServeur, menu: menuServeur }
                         type="button"
                         onClick={() => ajouter(s.id)}
                         aria-label={`Ajouter ${s.nom}`}
-                        className="flex h-10 w-10 shrink-0 items-center justify-center bg-bissap-500 text-white transition hover:bg-bissap-600"
+                        className="flex h-11 w-11 shrink-0 items-center justify-center bg-nuit-900 text-chaux-50 transition-colors hover:bg-nuit-800"
                       >
                         <Plus className="h-4 w-4" />
                       </button>
@@ -1864,7 +1868,7 @@ export default function Vitrine({ slug, fiche: ficheServeur, menu: menuServeur }
               <div className="tear absolute inset-x-0 top-11" />
 
               <h2 className="flex items-center gap-2 pt-8 font-display text-lg font-bold text-nuit-900">
-                <ShoppingBag className="h-5 w-5 text-bissap-500" />
+                <ShoppingBag className="h-5 w-5 text-nuit-700" />
                 Votre commande
               </h2>
 
@@ -1894,7 +1898,7 @@ export default function Vitrine({ slug, fiche: ficheServeur, menu: menuServeur }
                               type="button"
                               onClick={() => ajouter(s.id)}
                               aria-label={`Ajouter ${s.nom}`}
-                              className="flex h-9 w-9 shrink-0 items-center justify-center bg-bissap-500 text-white transition hover:bg-bissap-600"
+                              className="flex h-11 w-11 shrink-0 items-center justify-center bg-nuit-900 text-chaux-50 transition-colors hover:bg-nuit-800"
                             >
                               <Plus className="h-4 w-4" />
                             </button>
@@ -1975,7 +1979,7 @@ export default function Vitrine({ slug, fiche: ficheServeur, menu: menuServeur }
                     <span className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-chaux-600">
                       Total
                     </span>
-                    <span className="font-mono text-2xl font-black text-bissap-600">
+                    <span className="font-mono text-2xl font-semibold tabular-nums text-bissap-600">
                       {fcfa(total)}
                       <span className="ml-1 text-xs font-semibold text-chaux-600">FCFA</span>
                     </span>
