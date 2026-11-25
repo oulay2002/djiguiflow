@@ -19,3 +19,17 @@ export function casseDouce(texte: string): string {
     (_, avant: string, lettre: string) => avant + lettre.toLocaleUpperCase('fr-FR'),
   );
 }
+
+/**
+ * UN LIBELLE COMMENCE PAR UNE MAJUSCULE.
+ *
+ * Le secteur « vêtements et accessoire » est saisi ainsi par le marchand ; en
+ * capitales forcees, ca ne se voyait pas. En casse normale, un onglet
+ * « vêtements et accessoire » a cote de « Restaurant » fait brouillon. On ne
+ * touche qu'a la premiere lettre ; une saisie criee passe d'abord par
+ * `casseDouce`.
+ */
+export function libelle(texte: string): string {
+  const doux = casseDouce(texte);
+  return doux.replace(/^\p{Ll}/u, (l) => l.toLocaleUpperCase('fr-FR'));
+}

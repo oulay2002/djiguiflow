@@ -6,6 +6,7 @@ import { ArrowRight, MapPin, Search } from 'lucide-react';
 import { ligneConfiance } from '@/lib/paliers';
 import { Enseigne } from '@/components/ui/Enseigne';
 import type { BoutiqueAnnuaire } from '@/lib/vitrine/annuaire';
+import { casseDouce, libelle } from '@/lib/vitrine/casse';
 
 /**
  * La vitrine des marchands, en bons de commande.
@@ -100,18 +101,18 @@ export default function Annuaire({ boutiques: listeServeur }: Props) {
       <header className="indigo-weave bg-nuit-900 text-chaux-50">
         <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 sm:py-20">
           <div className="flex items-center justify-between gap-4">
-            <p className="font-mono text-xs uppercase tracking-[0.28em] text-mangue-300">
+            <p className="text-sm font-medium text-mangue-300">
               Carnet de commandes · Abidjan
             </p>
             <Link
               href="/"
-              className="font-mono text-xs uppercase tracking-[0.2em] text-chaux-300 underline-offset-4 hover:text-chaux-50 hover:underline"
+              className="text-sm font-medium text-chaux-300 underline-offset-4 hover:text-chaux-50 hover:underline"
             >
               DjiguiFlow
             </Link>
           </div>
 
-          <h1 className="mt-6 max-w-2xl font-display text-4xl font-black leading-[0.95] tracking-tight sm:text-6xl">
+          <h1 className="mt-6 max-w-2xl font-display text-4xl font-semibold leading-[1.02] tracking-tight sm:text-6xl">
             Commandez chez les commerçants de votre quartier.
           </h1>
 
@@ -135,7 +136,7 @@ export default function Annuaire({ boutiques: listeServeur }: Props) {
               />
             </label>
 
-            <p className="font-mono text-xs uppercase tracking-[0.18em] text-chaux-300 sm:w-40 sm:text-right">
+            <p className="font-mono text-sm tabular-nums text-chaux-300 sm:w-40 sm:text-right">
               {`${boutiques.length} boutique${boutiques.length > 1 ? 's' : ''}`}
             </p>
           </div>
@@ -156,24 +157,24 @@ export default function Annuaire({ boutiques: listeServeur }: Props) {
                   type="button"
                   onClick={() => setCategorie(c)}
                   aria-pressed={actif}
-                  className={`flex min-h-11 items-center border px-3.5 font-mono text-xs uppercase tracking-[0.16em] transition ${
+                  className={`flex min-h-11 items-center border px-4 text-sm font-medium transition-colors ${
                     actif
                       ? 'border-nuit-900 bg-nuit-900 text-chaux-50'
                       : 'border-[var(--hairline)] text-chaux-600 hover:border-nuit-900 hover:text-nuit-900'
                   }`}
                 >
-                  {c}
+                  {libelle(c)}
                 </button>
               );
             })}
           </div>
 
-          <label className="flex items-center gap-2 font-mono text-xs uppercase tracking-[0.16em] text-chaux-600">
+          <label className="flex items-center gap-2 text-sm font-medium text-chaux-600">
             Trier
             <select
               value={tri}
               onChange={(e) => setTri(e.target.value as Tri)}
-              className="border border-[var(--hairline)] bg-transparent px-2 py-1.5 font-mono text-xs uppercase tracking-[0.16em] text-nuit-900"
+              className="min-h-11 border border-[var(--hairline)] bg-transparent px-3 text-sm font-medium text-nuit-900"
             >
               {TRIS.map((t) => (
                 <option key={t.cle} value={t.cle}>
@@ -192,7 +193,7 @@ export default function Annuaire({ boutiques: listeServeur }: Props) {
 
         {!erreur && visibles.length === 0 && (
           <div className="border border-dashed border-[var(--hairline)] px-6 py-16 text-center">
-            <p className="font-display text-xl font-bold text-nuit-900">Aucune boutique ici</p>
+            <p className="font-display text-xl font-semibold text-nuit-900">Aucune boutique ici</p>
             <p className="mt-2 text-sm text-chaux-600">
               Essayez un autre quartier, ou effacez la recherche pour tout revoir.
             </p>
@@ -213,8 +214,8 @@ export default function Annuaire({ boutiques: listeServeur }: Props) {
                     // lecteur d'écran annoncerait le ticket entier comme nom
                     // du lien.
                     aria-label={`${b.nom} — voir la boutique`}
-                    className="group relative flex h-full flex-col border border-[var(--hairline)] bg-chaux-50 soft-shadow transition-transform hover:-translate-y-1"
-                    style={{ ['--tear-bg' as string]: '#eeece5' }}
+                    className="group relative flex h-full flex-col border border-[var(--hairline)] bg-chaux-50 soft-shadow"
+                    style={{ ['--tear-bg' as string]: 'var(--color-chaux-100)' }}
                   >
                     <span className="tear absolute inset-x-0 top-0" aria-hidden />
 
@@ -253,7 +254,7 @@ export default function Annuaire({ boutiques: listeServeur }: Props) {
                         />
                       </div>
 
-                      <h2 className="mt-6 font-display text-[1.7rem] font-black uppercase leading-[0.95] tracking-tight text-nuit-900">
+                      <h2 className="mt-6 font-display text-2xl font-semibold leading-tight text-nuit-900">
                         {b.nom}
                       </h2>
 
@@ -303,19 +304,19 @@ export default function Annuaire({ boutiques: listeServeur }: Props) {
                           La photo en tete de bande est la sienne : la fonction
                           de vitrine la remonte en premier. */}
                       {b.vedette && (
-                        <p className="mt-3 flex items-baseline gap-2 font-mono text-xs uppercase tracking-[0.14em]">
-                          <span className="text-chaux-600">le plus commandé</span>
-                          <span className="min-w-0 truncate normal-case tracking-normal text-nuit-900">
+                        <p className="mt-3 flex items-baseline gap-2 text-xs">
+                          <span className="shrink-0 text-chaux-600">Le plus commandé</span>
+                          <span className="min-w-0 truncate font-medium text-nuit-900">
                             {b.vedette}
                           </span>
                         </p>
                       )}
 
-                      <dl className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 font-mono text-xs uppercase tracking-[0.14em] text-chaux-600">
+                      <dl className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-chaux-600">
                         <div className="flex items-center gap-1.5">
                           <dt className="sr-only">Quartier</dt>
                           <MapPin aria-hidden className="h-3.5 w-3.5" />
-                          <dd>{b.zone}</dd>
+                          <dd>{casseDouce(b.zone)}</dd>
                         </div>
                         <div>
                           <dt className="sr-only">Articles</dt>
@@ -334,8 +335,8 @@ export default function Annuaire({ boutiques: listeServeur }: Props) {
                                 le lecteur d'ecran entendait deja la bonne
                                 formule — l'oeil, lui, avait la mauvaise. */}
                             <dt className="sr-only">Prix</dt>
-                            <dd className="text-nuit-900">
-                              à partir de {b.prixMin.toLocaleString('fr-FR')} F
+                            <dd className="tabular-nums text-nuit-900">
+                              À partir de {b.prixMin.toLocaleString('fr-FR')} F
                             </dd>
                           </div>
                         )}
@@ -349,7 +350,7 @@ export default function Annuaire({ boutiques: listeServeur }: Props) {
                       {b.messageHoraire && (
                         <p className="mt-4">
                           <span
-                            className={`inline-flex items-center gap-1.5 border px-2.5 py-1 font-mono text-xs uppercase tracking-[0.14em] ${
+                            className={`inline-flex items-center gap-1.5 border px-2.5 py-1 text-xs font-semibold ${
                               b.ouvert
                                 ? 'border-accent-300 bg-accent-50 text-accent-700'
                                 : 'border-[var(--hairline)] bg-chaux-100 text-chaux-600'
@@ -357,7 +358,9 @@ export default function Annuaire({ boutiques: listeServeur }: Props) {
                           >
                             <span
                               aria-hidden
-                              className={`h-1.5 w-1.5 rounded-full ${
+                              // Carre, comme le voyant de la vitrine : la maison
+                              // n'a pas de point rond.
+                              className={`h-1.5 w-1.5 ${
                                 b.ouvert ? 'bg-accent-500' : 'bg-chaux-400'
                               }`}
                             />
@@ -368,12 +371,12 @@ export default function Annuaire({ boutiques: listeServeur }: Props) {
 
                       <p className="mt-auto flex items-baseline gap-2 pt-6">
                         {b.note !== null && (
-                          <span className="font-display text-lg font-bold text-nuit-900">
+                          <span className="font-display text-lg font-semibold tabular-nums text-nuit-900">
                             {b.note.toFixed(1).replace('.', ',')}
                             <span className="text-chaux-600">/5</span>
                           </span>
                         )}
-                        <span className="font-mono text-xs uppercase tracking-[0.14em] text-chaux-600">
+                        <span className="text-xs text-chaux-600">
                           {ligneConfiance(b)}
                         </span>
                       </p>
@@ -381,7 +384,7 @@ export default function Annuaire({ boutiques: listeServeur }: Props) {
 
                     {/* La couture, puis le talon qu'on détache pour entrer. */}
                     <div className="perf-line mx-6 text-nuit-900" aria-hidden />
-                    <span className="flex items-center justify-between px-6 py-4 font-mono text-xs uppercase tracking-[0.18em] text-nuit-900 transition-colors group-hover:bg-nuit-900 group-hover:text-chaux-50">
+                    <span className="flex items-center justify-between px-6 py-4 text-sm font-medium text-nuit-900 transition-colors group-hover:bg-nuit-900 group-hover:text-chaux-50">
                       Voir la boutique
                       <ArrowRight
                         aria-hidden

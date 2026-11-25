@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { casseDouce } from '@/lib/vitrine/casse';
+import { casseDouce, libelle } from '@/lib/vitrine/casse';
+
+describe('libelle', () => {
+  it('met une majuscule initiale, et seulement celle-là', () => {
+    expect(libelle('vêtements et accessoire')).toBe('Vêtements et accessoire');
+    expect(libelle('Restaurant')).toBe('Restaurant');
+    expect(libelle('RESTAURANT')).toBe('Restaurant');
+    expect(libelle('')).toBe('');
+  });
+});
 
 describe('casseDouce', () => {
   it('adoucit une saisie entièrement en capitales', () => {

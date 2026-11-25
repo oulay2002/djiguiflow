@@ -20,7 +20,7 @@ import { etatInitial } from '@/lib/vitrine/etatInitial';
 import { clefBrouillon, ecrireBrouillon, lireBrouillon, type Brouillon } from '@/lib/vitrine/brouillon';
 import { clefRecu, ecrireRecu, lireRecu, type Recu as DonneesRecu } from '@/lib/vitrine/recu';
 import { Recu } from './Recu';
-import { casseDouce } from '@/lib/vitrine/casse';
+import { casseDouce, libelle } from '@/lib/vitrine/casse';
 import { prendreLesAppuis, type FenetreAvantEveil } from '@/lib/vitrine/avantEveil';
 import { JOURS_PANIER_ABANDONNE } from '@/lib/conservation';
 import { clePourEnvoi, clefDeLaCle, empreinteEnvoi, oublierCle, type StockageCle } from '@/lib/cleEnvoi';
@@ -1485,7 +1485,7 @@ export default function Vitrine({ slug, fiche: ficheServeur, menu: menuServeur }
           <div className="mt-4 flex flex-wrap items-end justify-between gap-4 sm:mt-6 sm:gap-5">
             <div>
               <p className="text-sm font-medium text-mangue-300">
-                {header.secteur}
+                {libelle(header.secteur)}
                 {zone && ` · ${casseDouce(zone)}`}
               </p>
               <div className="mt-1.5 flex items-center gap-3 sm:mt-2 sm:gap-4">
@@ -1756,7 +1756,7 @@ export default function Vitrine({ slug, fiche: ficheServeur, menu: menuServeur }
                     : 'border-[var(--hairline)] text-chaux-600 hover:border-nuit-900 hover:text-nuit-900'
                 }`}
               >
-                {c === 'tout' ? mots.tout : c}
+                {c === 'tout' ? mots.tout : libelle(c)}
               </button>
             ))}
           </div>
