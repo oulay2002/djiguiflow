@@ -46,7 +46,7 @@
       ]
     }
   },
-  "description": "Toutes les 15 min : cherche les chaines rompues (commande confirmee sans livreur, livree sans frais, sans decompte de stock, panier oublie) et alerte l exploitant en nommant le marchand.",
+  "description": null,
   "etat_publication": "publie",
   "id": "v6q3ymV13soFdzja",
   "isArchived": false,
@@ -190,6 +190,7 @@
       "webhookId": "1163d155-4431-495b-8293-63682605f061"
     }
   ],
+  "parentFolder": null,
   "settings": {
     "availableInMCP": true,
     "errorWorkflow": "NfWU666FLz9jR1Zv",

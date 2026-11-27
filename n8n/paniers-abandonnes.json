@@ -13,7 +13,7 @@
       ]
     }
   },
-  "description": "Toutes les 15 min : relance une fois les commandes dont la confirmation n est jamais revenue, puis ferme celles de plus de 24 h. n8n ne sert que d horloge, la regle vit dans /api/internal/commandes/abandons.",
+  "description": null,
   "etat_publication": "publie",
   "id": "H5bMJktmCNCCFvgC",
   "isArchived": false,
@@ -83,6 +83,7 @@
       "waitBetweenTries": 5000
     }
   ],
+  "parentFolder": null,
   "settings": {
     "availableInMCP": true,
     "errorWorkflow": "NfWU666FLz9jR1Zv",

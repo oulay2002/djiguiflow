@@ -864,7 +864,7 @@
                 "conditions": [
                   {
                     "id": "tg-frais-tapes",
-                    "leftValue": "={{ !$('Webhook').first().json.body?.callback_query && !!$('Webhook').first().json.body?.message?.reply_to_message && /^\\s*\\d{2,6}\\s*$/.test(String($('Webhook').first().json.body?.message?.text || '')) && /Commande\\s+\\S+/.test(String($('Webhook').first().json.body?.message?.reply_to_message?.text || '')) }}",
+                    "leftValue": "={{ !$('Webhook').first().json.body?.callback_query && !!$('Webhook').first().json.body?.message?.reply_to_message && /^\\s*\\d{2,6}\\s*$/.test(String($('Webhook').first().json.body?.message?.text || '')) && /Commande\\s+\\S+/.test(String($('Webhook').first().json.body?.message?.reply_to_message?.text || '')) && String($('Charger fiche').first().json.groupe_livreurs || '').trim() !== '' && String($('Webhook').first().json.body?.message?.chat?.id || '') === String($('Charger fiche').first().json.groupe_livreurs || '').trim() && $('Webhook').first().json.body?.message?.reply_to_message?.from?.is_bot === true }}",
                     "operator": {
                       "operation": "true",
                       "singleValue": true,
@@ -1663,7 +1663,7 @@
       "parameters": {
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
-        "jsonBody": "={{ JSON.stringify({ boutique: String($('Charger fiche').first().json.slug || ''), reference: $json.reference, montant: $json.montant }) }}",
+        "jsonBody": "={{ JSON.stringify({ boutique: String($('Charger fiche').first().json.slug || ''), reference: $json.reference, montant: $json.montant, groupe: String($json.groupe || '') }) }}",
         "method": "POST",
         "options": {},
         "sendBody": true,
@@ -2117,6 +2117,7 @@
       "typeVersion": 2
     }
   ],
+  "parentFolder": null,
   "settings": {
     "availableInMCP": true,
     "errorWorkflow": "NfWU666FLz9jR1Zv",
