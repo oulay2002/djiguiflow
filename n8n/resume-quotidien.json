@@ -254,6 +254,7 @@
       "typeVersion": 2
     }
   ],
+  "parentFolder": null,
   "settings": {
     "availableInMCP": true,
     "errorWorkflow": "NfWU666FLz9jR1Zv",

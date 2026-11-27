@@ -811,6 +811,7 @@
       "typeVersion": 1
     }
   ],
+  "parentFolder": null,
   "settings": {
     "availableInMCP": true,
     "binaryMode": "separate",

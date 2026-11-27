@@ -86,6 +86,7 @@
       "webhookId": "58637caa-b616-4443-a1d6-eb0aee5ce1dc"
     }
   ],
+  "parentFolder": null,
   "settings": {
     "availableInMCP": true,
     "executionOrder": "v1"

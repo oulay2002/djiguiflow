@@ -160,6 +160,7 @@
       "webhookId": "87239467-4a6c-41b7-b216-2085bda487d2"
     }
   ],
+  "parentFolder": null,
   "settings": {
     "availableInMCP": true,
     "errorWorkflow": "NfWU666FLz9jR1Zv",
