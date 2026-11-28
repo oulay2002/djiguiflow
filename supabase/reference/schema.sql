@@ -1,8 +1,8 @@
--- INSTANTANE DU 2026-09-02 17:55 UTC
--- DERNIERE MIGRATION APPLIQUEE : 20260902151138
+-- INSTANTANE DU 2026-11-28 14:27 UTC
+-- DERNIERE MIGRATION APPLIQUEE : 20261123231000
 --
 -- Pour restaurer : rejouer ce fichier, PUIS tous les fichiers de
--- supabase/migrations/ dont l'horodatage est superieur a 20260902151138.
+-- supabase/migrations/ dont l'horodatage est superieur a 20261123231000.
 -- Sauter cette etape ramene le schema jusqu'a vingt-quatre heures en
 -- arriere, verrous compris.
 
@@ -324,6 +324,15 @@ declare
   deja integer;
   ligne record;
 begin
+  new.user_id := coalesce(new.user_id, (select auth.uid()));
+
+  if new.user_id is null then
+    raise exception 'user_id requis pour creer une boutique.'
+      using errcode = 'not_null_violation';
+  end if;
+
+  perform pg_advisory_xact_lock(hashtextextended('boutiques:' || new.user_id::text, 0));
+
   select count(*) into deja from public.boutiques where user_id = new.user_id;
 
   -- La premiere boutique d'un compte passe toujours. Sans cette ligne, un
@@ -765,7 +774,57 @@ $$;
 ALTER FUNCTION "public"."set_boutique_user_id"() OWNER TO "postgres";
 
 
-CREATE OR REPLACE FUNCTION "public"."vitrine_boutique"("p_ref" "text") RETURNS TABLE("id" "uuid", "slug" "text", "nom" "text", "description" "text", "zone" "text", "categorie" "text", "logo_url" "text", "emoji" "text", "telephone" "text", "delai_livraison" "text", "zones_livrees" "text", "paiements_acceptes" "text"[], "commande_minimum" integer, "mode_recuperation" "text", "delai_preparation_min" integer, "livraison_offerte_des" integer)
+CREATE OR REPLACE FUNCTION "public"."verifier_slug_boutique"() RETURNS "trigger"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO ''
+    AS $_$
+begin
+  if new.slug is null then
+    return new;
+  end if;
+
+  if tg_op = 'UPDATE' and new.slug is not distinct from old.slug then
+    return new;
+  end if;
+
+  if new.slug !~ '^[a-z0-9]+(-[a-z0-9]+)*$' or length(new.slug) not between 2 and 120 then
+    raise exception 'Slug de boutique invalide : minuscules, chiffres et tirets seulement.'
+      using errcode = 'check_violation';
+  end if;
+
+  -- La forme d'un uuid, avec ou sans tirets : c'est l'alias d'une AUTRE
+  -- boutique dans toutes les resolutions `slug = $1 or id::text = $1`.
+  if replace(new.slug, '-', '') ~ '^[0-9a-f]{32}$' then
+    raise exception 'Slug de boutique invalide : il a la forme d''un identifiant.'
+      using errcode = 'check_violation';
+  end if;
+
+  -- Le registre connait aussi chaque boutique sous son slug sans tirets et
+  -- sous son nom sans espaces. On ne laisse pas un compte s'y installer.
+  -- `service_role` en est dispense : l'exploitant qui cree deux enseignes
+  -- homonymes sait ce qu'il fait, et `slugDisponible` lui a deja reserve une cle.
+  if coalesce((select auth.role()), '') = 'authenticated' and exists (
+    select 1
+      from public.boutiques b
+     where b.id <> new.id
+       and (
+         replace(coalesce(b.slug, ''), '-', '') = replace(new.slug, '-', '')
+         or lower(regexp_replace(coalesce(b.nom, ''), '\s+', '', 'g')) = new.slug
+       )
+  ) then
+    raise exception 'Ce slug est trop proche de celui d''une boutique existante.'
+      using errcode = 'unique_violation';
+  end if;
+
+  return new;
+end;
+$_$;
+
+
+ALTER FUNCTION "public"."verifier_slug_boutique"() OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."vitrine_boutique"("p_ref" "text") RETURNS TABLE("id" "uuid", "slug" "text", "nom" "text", "description" "text", "zone" "text", "categorie" "text", "logo_url" "text", "emoji" "text", "telephone" "text", "delai_livraison" "text", "zones_livrees" "text", "paiements_acceptes" "text"[], "commande_minimum" integer, "mode_recuperation" "text", "delai_preparation_min" integer, "livraison_offerte_des" integer, "adresse_retrait" "text")
     LANGUAGE "sql" STABLE SECURITY DEFINER
     SET "search_path" TO 'public'
     AS $$
@@ -773,7 +832,8 @@ CREATE OR REPLACE FUNCTION "public"."vitrine_boutique"("p_ref" "text") RETURNS T
          b.emoji, b.telephone,
          b.delai_livraison, b.zones_livrees,
          b.paiements_acceptes, b.commande_minimum,
-         b.mode_recuperation, b.delai_preparation_min, b.livraison_offerte_des
+         b.mode_recuperation, b.delai_preparation_min, b.livraison_offerte_des,
+         b.adresse_retrait
     from boutiques b
    where coalesce(b.actif, true)
      and (b.slug = p_ref or b.id::text = p_ref)
@@ -941,6 +1001,9 @@ CREATE TABLE IF NOT EXISTS "public"."boutiques" (
     "delai_preparation_min" integer,
     "livraison_offerte_des" integer,
     "wasender_session_id" "text",
+    "indexable" boolean DEFAULT true NOT NULL,
+    "adresse_retrait" "text",
+    CONSTRAINT "boutiques_adresse_retrait_longueur" CHECK ((("adresse_retrait" IS NULL) OR ("char_length"("adresse_retrait") <= 200))),
     CONSTRAINT "boutiques_commande_minimum_positif" CHECK ((("commande_minimum" IS NULL) OR ("commande_minimum" > 0))),
     CONSTRAINT "boutiques_delai_preparation_positif" CHECK ((("delai_preparation_min" IS NULL) OR ("delai_preparation_min" > 0))),
     CONSTRAINT "boutiques_livraison_offerte_positive" CHECK ((("livraison_offerte_des" IS NULL) OR ("livraison_offerte_des" >= 0))),
@@ -1035,6 +1098,14 @@ COMMENT ON COLUMN "public"."boutiques"."wasender_session_id" IS 'Identifiant de 
 
 
 
+COMMENT ON COLUMN "public"."boutiques"."indexable" IS 'false = la vitrine reste en ligne mais se declare noindex et sort du sitemap et de llms.txt. Reserve a l''exploitant.';
+
+
+
+COMMENT ON COLUMN "public"."boutiques"."adresse_retrait" IS 'Ou le client vient chercher sa commande (texte libre, repere). NULL = non renseignee : la vitrine n''affiche rien.';
+
+
+
 CREATE TABLE IF NOT EXISTS "public"."commande_items" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
     "commande_id" "uuid" NOT NULL,
@@ -1092,6 +1163,8 @@ CASE
 END) STORED,
     "mode_recuperation" "text" DEFAULT 'livraison'::"text" NOT NULL,
     "heure_retrait" timestamp with time zone,
+    "cle_envoi" "text",
+    CONSTRAINT "commandes_cle_envoi_forme" CHECK ((("cle_envoi" IS NULL) OR (("char_length"("cle_envoi") >= 32) AND ("char_length"("cle_envoi") <= 36)))),
     CONSTRAINT "commandes_mode_recuperation_connu" CHECK (("mode_recuperation" = ANY (ARRAY['livraison'::"text", 'retrait'::"text"]))),
     CONSTRAINT "commandes_statut_check" CHECK (("statut" = ANY (ARRAY['panier'::"text", 'en_attente'::"text", 'en_preparation'::"text", 'en_livraison'::"text", 'livree'::"text", 'annulee'::"text", 'abandonnee'::"text"])))
 );
@@ -1153,6 +1226,10 @@ COMMENT ON COLUMN "public"."commandes"."mode_recuperation" IS 'Ce que le client 
 
 
 COMMENT ON COLUMN "public"."commandes"."heure_retrait" IS 'L heure demandee par le client. NULL = des que pret. Ne vaut que pour un retrait.';
+
+
+
+COMMENT ON COLUMN "public"."commandes"."cle_envoi" IS 'Cle tiree par la vitrine pour reconnaitre un second envoi de la meme commande. NULL = commande sans cle (WhatsApp, assistante).';
 
 
 
@@ -1595,6 +1672,10 @@ CREATE INDEX "commandes_boutique_chat_cle_idx" ON "public"."commandes" USING "bt
 
 
 
+CREATE UNIQUE INDEX "commandes_cle_envoi_unique" ON "public"."commandes" USING "btree" ("boutique_id", "cle_envoi") WHERE ("cle_envoi" IS NOT NULL);
+
+
+
 CREATE INDEX "commandes_confirmation_attente_idx" ON "public"."commandes" USING "btree" ("confirmation_statut", "created_at") WHERE ("confirmation_statut" = 'demandee'::"text");
 
 
@@ -1768,6 +1849,10 @@ CREATE UNIQUE INDEX "subscriptions_stripe_subscription_id_uidx" ON "public"."sub
 
 
 CREATE OR REPLACE TRIGGER "boutiques_limite_par_plan" BEFORE INSERT ON "public"."boutiques" FOR EACH ROW EXECUTE FUNCTION "public"."limiter_boutiques_par_plan"();
+
+
+
+CREATE OR REPLACE TRIGGER "boutiques_slug_forme" BEFORE INSERT OR UPDATE OF "slug" ON "public"."boutiques" FOR EACH ROW EXECUTE FUNCTION "public"."verifier_slug_boutique"();
 
 
 
@@ -2387,10 +2472,15 @@ GRANT ALL ON FUNCTION "public"."set_boutique_user_id"() TO "service_role";
 
 
 
+REVOKE ALL ON FUNCTION "public"."verifier_slug_boutique"() FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."verifier_slug_boutique"() TO "service_role";
+
+
+
 REVOKE ALL ON FUNCTION "public"."vitrine_boutique"("p_ref" "text") FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."vitrine_boutique"("p_ref" "text") TO "service_role";
 GRANT ALL ON FUNCTION "public"."vitrine_boutique"("p_ref" "text") TO "anon";
 GRANT ALL ON FUNCTION "public"."vitrine_boutique"("p_ref" "text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."vitrine_boutique"("p_ref" "text") TO "service_role";
 
 
 
@@ -2432,9 +2522,85 @@ GRANT ALL ON TABLE "public"."anomalies_signalees" TO "service_role";
 
 
 
-GRANT INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,MAINTAIN,UPDATE ON TABLE "public"."boutiques" TO "anon";
-GRANT ALL ON TABLE "public"."boutiques" TO "authenticated";
+GRANT MAINTAIN ON TABLE "public"."boutiques" TO "anon";
+GRANT SELECT,DELETE,MAINTAIN ON TABLE "public"."boutiques" TO "authenticated";
 GRANT ALL ON TABLE "public"."boutiques" TO "service_role";
+
+
+
+GRANT INSERT("user_id") ON TABLE "public"."boutiques" TO "authenticated";
+
+
+
+GRANT INSERT("nom"),UPDATE("nom") ON TABLE "public"."boutiques" TO "authenticated";
+
+
+
+GRANT INSERT("description"),UPDATE("description") ON TABLE "public"."boutiques" TO "authenticated";
+
+
+
+GRANT INSERT("logo_url"),UPDATE("logo_url") ON TABLE "public"."boutiques" TO "authenticated";
+
+
+
+GRANT INSERT("zone"),UPDATE("zone") ON TABLE "public"."boutiques" TO "authenticated";
+
+
+
+GRANT INSERT("categorie"),UPDATE("categorie") ON TABLE "public"."boutiques" TO "authenticated";
+
+
+
+GRANT INSERT("telephone"),UPDATE("telephone") ON TABLE "public"."boutiques" TO "authenticated";
+
+
+
+GRANT INSERT("slug") ON TABLE "public"."boutiques" TO "authenticated";
+
+
+
+GRANT INSERT("emoji"),UPDATE("emoji") ON TABLE "public"."boutiques" TO "authenticated";
+
+
+
+GRANT INSERT("horaires"),UPDATE("horaires") ON TABLE "public"."boutiques" TO "authenticated";
+
+
+
+GRANT UPDATE("pause_jusqua") ON TABLE "public"."boutiques" TO "authenticated";
+
+
+
+GRANT INSERT("delai_livraison"),UPDATE("delai_livraison") ON TABLE "public"."boutiques" TO "authenticated";
+
+
+
+GRANT INSERT("zones_livrees"),UPDATE("zones_livrees") ON TABLE "public"."boutiques" TO "authenticated";
+
+
+
+GRANT INSERT("paiements_acceptes"),UPDATE("paiements_acceptes") ON TABLE "public"."boutiques" TO "authenticated";
+
+
+
+GRANT INSERT("commande_minimum"),UPDATE("commande_minimum") ON TABLE "public"."boutiques" TO "authenticated";
+
+
+
+GRANT INSERT("mode_recuperation"),UPDATE("mode_recuperation") ON TABLE "public"."boutiques" TO "authenticated";
+
+
+
+GRANT INSERT("delai_preparation_min"),UPDATE("delai_preparation_min") ON TABLE "public"."boutiques" TO "authenticated";
+
+
+
+GRANT INSERT("livraison_offerte_des"),UPDATE("livraison_offerte_des") ON TABLE "public"."boutiques" TO "authenticated";
+
+
+
+GRANT INSERT("adresse_retrait"),UPDATE("adresse_retrait") ON TABLE "public"."boutiques" TO "authenticated";
 
 
 
@@ -2547,8 +2713,6 @@ ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON SEQ
 
 
 ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON FUNCTIONS TO "postgres";
-ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON FUNCTIONS TO "anon";
-ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON FUNCTIONS TO "authenticated";
 ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON FUNCTIONS TO "service_role";
 
 
@@ -2563,6 +2727,10 @@ ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TAB
 
 
 
+
+
+
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" REVOKE ALL ON FUNCTIONS FROM PUBLIC;
 
 
 
